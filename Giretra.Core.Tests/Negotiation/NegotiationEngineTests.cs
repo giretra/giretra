@@ -326,4 +326,43 @@ public class NegotiationEngineTests
         Assert.Contains(validActions, a => a is AcceptAction);
         Assert.Contains(validActions, a => a is RedoubleAction { TargetMode: GameMode.ColourDiamonds });
     }
+
+    [Fact]
+    public void CannotDouble_AfterAnnouncingPassed()
+    {
+        // Dealer is Right, so Bottom speaks first
+        // │ # │ Player        │ Action               │
+        // │ 1 │ Bottom        │ Announces Diamonds ♦ │
+        // │ 2 │ Left          │ Announces Hearts ♥   │  <- Left implicitly passed on doubling Diamonds
+        // │ 3 │ Top (Partner) │ Double Hearts ♥      │
+        // │ 4 │ Right         │ Redouble Hearts ♥    │
+        // │ 5 │ Bottom        │ Accept               │
+        // │ 6 │ Left          │ Double Diamonds ♦    │  <- Should fail!
+
+        var state = NegotiationState.Create(PlayerPosition.Right);
+
+        // Step 1: Bottom announces Diamonds
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourDiamonds));
+
+        // Step 2: Left announces Hearts (implicitly passing on doubling Diamonds)
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourHearts));
+
+        // Step 3: Top doubles Hearts
+        state = state.Apply(new DoubleAction(PlayerPosition.Top, GameMode.ColourHearts));
+
+        // Step 4: Right redoubles Hearts (Right is on Left's team who announced Hearts)
+        state = state.Apply(new RedoubleAction(PlayerPosition.Right, GameMode.ColourHearts));
+
+        // Step 5: Bottom accepts
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+
+        // Step 6: Left tries to double Diamonds - this should NOT be allowed
+        // Because Left already announced Hearts, they implicitly passed on doubling Diamonds
+        Assert.False(NegotiationEngine.CanDouble(state, out var doubleableModes));
+        Assert.DoesNotContain(GameMode.ColourDiamonds, doubleableModes);
+
+        // Verify validation also rejects it
+        var error = NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Left, GameMode.ColourDiamonds));
+        Assert.NotNull(error);
+    }
 }

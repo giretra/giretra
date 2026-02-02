@@ -75,10 +75,22 @@ public static class NegotiationEngine
         var playerTeam = state.CurrentPlayer.GetTeam();
         var modes = new List<GameMode>();
 
-        // Find all opponent bids that haven't been doubled yet
-        foreach (var action in state.Actions)
+        // Find the index of first announcement by the current player (if any)
+        // If the player has announced, they implicitly passed on all earlier opponent bids
+        int playerFirstAnnouncementIndex = -1;
+        for (int i = 0; i < state.Actions.Count; i++)
         {
-            if (action is AnnouncementAction announcement)
+            if (state.Actions[i] is AnnouncementAction a && a.Player == state.CurrentPlayer)
+            {
+                playerFirstAnnouncementIndex = i;
+                break;
+            }
+        }
+
+        // Find all opponent bids that haven't been doubled yet
+        for (int i = 0; i < state.Actions.Count; i++)
+        {
+            if (state.Actions[i] is AnnouncementAction announcement)
             {
                 // Can only double opponent's bids
                 if (announcement.Player.GetTeam() != playerTeam)
@@ -86,7 +98,12 @@ public static class NegotiationEngine
                     // Check if not already doubled
                     if (!state.DoubledModes.ContainsKey(announcement.Mode))
                     {
-                        modes.Add(announcement.Mode);
+                        // If player has announced, they can only double bids made AFTER their announcement
+                        // (they passed on earlier bids by announcing)
+                        if (playerFirstAnnouncementIndex == -1 || i > playerFirstAnnouncementIndex)
+                        {
+                            modes.Add(announcement.Mode);
+                        }
                     }
                 }
             }
@@ -259,10 +276,18 @@ public static class NegotiationEngine
 
         var playerTeam = action.Player.GetTeam();
 
-        // Find who announced this mode
-        var announcer = state.Actions
-            .OfType<AnnouncementAction>()
-            .FirstOrDefault(a => a.Mode == action.TargetMode);
+        // Find who announced this mode and its index
+        int targetModeIndex = -1;
+        AnnouncementAction? announcer = null;
+        for (int i = 0; i < state.Actions.Count; i++)
+        {
+            if (state.Actions[i] is AnnouncementAction a && a.Mode == action.TargetMode)
+            {
+                announcer = a;
+                targetModeIndex = i;
+                break;
+            }
+        }
 
         if (announcer is null)
         {
@@ -277,6 +302,22 @@ public static class NegotiationEngine
         if (state.DoubledModes.ContainsKey(action.TargetMode))
         {
             return $"{action.TargetMode} has already been doubled.";
+        }
+
+        // Check if player has announced - if so, they can only double bids made after their announcement
+        int playerFirstAnnouncementIndex = -1;
+        for (int i = 0; i < state.Actions.Count; i++)
+        {
+            if (state.Actions[i] is AnnouncementAction a && a.Player == action.Player)
+            {
+                playerFirstAnnouncementIndex = i;
+                break;
+            }
+        }
+
+        if (playerFirstAnnouncementIndex != -1 && targetModeIndex < playerFirstAnnouncementIndex)
+        {
+            return $"Cannot double {action.TargetMode}: you passed on this bid when you announced.";
         }
 
         return null;
