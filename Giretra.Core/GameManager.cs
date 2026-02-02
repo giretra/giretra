@@ -1,4 +1,5 @@
 using Giretra.Core.Cards;
+using Giretra.Core.GameModes;
 using Giretra.Core.Negotiation;
 using Giretra.Core.Play;
 using Giretra.Core.Players;
@@ -230,9 +231,88 @@ public sealed class GameManager
                     $"Player {currentPosition} tried to play {card} which is not in their hand.");
             }
 
+            // Track completed tricks count before playing
+            var trickCountBefore = deal.Hand.CompletedTricks.Count;
+
             deal = deal.PlayCard(currentPosition, card);
             _matchState = _matchState.WithDeal(deal);
+
+            // Notify all players that a card was played
+            await NotifyAllPlayersAsync(p => p.OnCardPlayedAsync(currentPosition, card, deal.Hand!, _matchState));
+
+            // Check if a trick was just completed
+            if (deal.Hand != null && deal.Hand.CompletedTricks.Count > trickCountBefore)
+            {
+                var completedTrick = deal.Hand.CompletedTricks[^1];
+                // The winner is the leader of the next trick, or we can get it from completed trick
+                var winner = deal.Hand.CurrentTrick?.Leader ?? completedTrick.PlayedCards[0].Player;
+                // Actually, the next trick's leader IS the winner of the previous trick
+                if (deal.Hand.CurrentTrick != null)
+                {
+                    winner = deal.Hand.CurrentTrick.Leader;
+                }
+                else
+                {
+                    // Last trick - determine winner from the completed trick
+                    // The winner leads next, but there's no next trick. We need to find who won.
+                    // Look at who would have led - it's stored implicitly
+                    // Actually we can check Team1TricksWon vs previous to determine winner team
+                    // But simpler: iterate through completed trick to find winner
+                    winner = DetermineWinner(completedTrick, deal.Hand.GameMode);
+                }
+
+                await NotifyAllPlayersAsync(p => p.OnTrickCompletedAsync(completedTrick, winner, deal.Hand, _matchState));
+            }
         }
+    }
+
+    /// <summary>
+    /// Determines the winner of a completed trick.
+    /// </summary>
+    private static PlayerPosition DetermineWinner(State.TrickState trick, GameModes.GameMode gameMode)
+    {
+        var trumpSuit = gameMode.GetTrumpSuit();
+        var leadSuit = trick.LeadSuit!.Value;
+
+        var winningCard = trick.PlayedCards[0];
+
+        foreach (var playedCard in trick.PlayedCards.Skip(1))
+        {
+            if (IsBetter(playedCard, winningCard, leadSuit, trumpSuit, gameMode))
+            {
+                winningCard = playedCard;
+            }
+        }
+
+        return winningCard.Player;
+    }
+
+    private static bool IsBetter(Play.PlayedCard challenger, Play.PlayedCard current, Cards.CardSuit leadSuit, Cards.CardSuit? trumpSuit, GameModes.GameMode gameMode)
+    {
+        var challengerSuit = challenger.Card.Suit;
+        var currentSuit = current.Card.Suit;
+
+        // Trump beats non-trump
+        if (trumpSuit.HasValue)
+        {
+            if (challengerSuit == trumpSuit && currentSuit != trumpSuit)
+                return true;
+            if (currentSuit == trumpSuit && challengerSuit != trumpSuit)
+                return false;
+        }
+
+        // If different suits (and neither is trump, or no trump mode), lead suit wins
+        if (challengerSuit != currentSuit)
+        {
+            if (currentSuit == leadSuit && challengerSuit != leadSuit)
+                return false;
+            if (challengerSuit == leadSuit && currentSuit != leadSuit)
+                return true;
+            return false;
+        }
+
+        // Same suit: compare strength
+        return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
     }
 
     /// <summary>

@@ -70,6 +70,24 @@ public interface IPlayerAgent
     Task OnDealEndedAsync(DealResult result, MatchState matchState);
 
     /// <summary>
+    /// Called when any player plays a card, allowing observation of the play.
+    /// </summary>
+    /// <param name="player">The player who played the card.</param>
+    /// <param name="card">The card that was played.</param>
+    /// <param name="handState">The current state of the hand after the card was played.</param>
+    /// <param name="matchState">The current state of the match.</param>
+    Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState);
+
+    /// <summary>
+    /// Called when a trick is completed, allowing observation before the next trick starts.
+    /// </summary>
+    /// <param name="completedTrick">The trick that was just completed.</param>
+    /// <param name="winner">The player who won the trick.</param>
+    /// <param name="handState">The current state of the hand after the trick.</param>
+    /// <param name="matchState">The current state of the match.</param>
+    Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState);
+
+    /// <summary>
     /// Called when the match ends.
     /// </summary>
     /// <param name="matchState">The final state of the match.</param>

@@ -32,38 +32,94 @@ public static class TableRenderer
                 playedCards[pos] = null;
         }
 
+        // Build the compact table layout (fits in 80 chars)
+        var table = new Table()
+            .Border(TableBorder.None)
+            .HideHeaders()
+            .Width(78);
+
+        table.AddColumn(new TableColumn("left").Width(20));
+        table.AddColumn(new TableColumn("center").Width(38));
+        table.AddColumn(new TableColumn("right").Width(20));
+
+        // Row 1: Empty | TOP | Empty
+        var topContent = BuildCompactPlayerContent("TOP", cardCounts[PlayerPosition.Top], playedCards[PlayerPosition.Top], gameMode, "blue", isPartner: true);
+        table.AddRow(
+            new Text(""),
+            new Panel(topContent).Header("[blue]TOP (Partner)[/]").Border(BoxBorder.Rounded).Expand(),
+            new Text(""));
+
+        // Row 2: LEFT | TRICK | RIGHT
+        var leftContent = BuildCompactPlayerContent("LEFT", cardCounts[PlayerPosition.Left], playedCards[PlayerPosition.Left], gameMode, "green");
+        var rightContent = BuildCompactPlayerContent("RIGHT", cardCounts[PlayerPosition.Right], playedCards[PlayerPosition.Right], gameMode, "green");
+        var trickContent = BuildCompactTrickPanel(trick, gameMode);
+
+        table.AddRow(
+            new Panel(leftContent).Header("[green]LEFT[/]").Border(BoxBorder.Rounded).Expand(),
+            trickContent,
+            new Panel(rightContent).Header("[green]RIGHT[/]").Border(BoxBorder.Rounded).Expand());
+
         AnsiConsole.WriteLine();
+        AnsiConsole.Write(table);
 
-        // TOP player panel
-        var topPanel = BuildPlayerPanel("TOP (Partner)", cardCounts[PlayerPosition.Top], playedCards[PlayerPosition.Top], gameMode, "blue");
-
-        // Create top row table (centered TOP player)
-        var topRow = new Table().Border(TableBorder.None).HideHeaders();
-        topRow.AddColumn(new TableColumn("").Centered());
-        topRow.AddRow(topPanel);
-        AnsiConsole.Write(topRow);
-
-        AnsiConsole.WriteLine();
-
-        // Middle row: LEFT | TRICK BOX | RIGHT
-        var middleTable = new Table().Border(TableBorder.None).HideHeaders();
-        middleTable.AddColumn(new TableColumn("left").Width(25));
-        middleTable.AddColumn(new TableColumn("center").Width(35));
-        middleTable.AddColumn(new TableColumn("right").Width(25));
-
-        var leftPanel = BuildPlayerPanel("LEFT", cardCounts[PlayerPosition.Left], playedCards[PlayerPosition.Left], gameMode, "green");
-        var trickPanel = BuildTrickPanel(trick, gameMode);
-        var rightPanel = BuildPlayerPanel("RIGHT", cardCounts[PlayerPosition.Right], playedCards[PlayerPosition.Right], gameMode, "green");
-
-        middleTable.AddRow(leftPanel, trickPanel, rightPanel);
-        AnsiConsole.Write(middleTable);
-
-        AnsiConsole.WriteLine();
-
-        // Trick points summary
+        // Trick points summary (compact)
         ScoreboardRenderer.RenderTrickPoints(handState);
-
         AnsiConsole.WriteLine();
+    }
+
+    private static IRenderable BuildCompactPlayerContent(string name, int cardCount, Card? playedCard, GameMode gameMode, string teamColor, bool isPartner = false)
+    {
+        var hiddenCards = CardRenderer.RenderFaceDown(cardCount);
+        var playedText = playedCard.HasValue
+            ? CardRenderer.ToMarkup(playedCard.Value, gameMode)
+            : "[dim]--[/]";
+
+        // Use [[ and ]] to escape brackets in Spectre.Console markup
+        return new Markup($"[[{hiddenCards}]] {playedText}");
+    }
+
+    private static Panel BuildCompactTrickPanel(TrickState? trick, GameMode gameMode)
+    {
+        var trickNum = trick?.TrickNumber ?? 1;
+        var leadSuit = trick?.LeadSuit;
+        var leader = trick?.Leader;
+
+        var topCard = GetTrickCardMarkup(trick, PlayerPosition.Top, gameMode);
+        var leftCard = GetTrickCardMarkup(trick, PlayerPosition.Left, gameMode);
+        var rightCard = GetTrickCardMarkup(trick, PlayerPosition.Right, gameMode);
+        var bottomCard = GetTrickCardMarkup(trick, PlayerPosition.Bottom, gameMode);
+
+        var leadText = leadSuit.HasValue
+            ? $"Lead: {CardRenderer.SuitToMarkup(leadSuit.Value)}"
+            : "[dim]Waiting...[/]";
+
+        // Show leader with arrow marker
+        string GetPlayerLabel(PlayerPosition pos, string teamColor, string name)
+        {
+            var marker = leader == pos ? "[yellow bold]>[/]" : " ";
+            return $"{marker}[{teamColor}]{name}[/]";
+        }
+
+        // Compact 2x2 grid layout for played cards
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().Width(9));
+        grid.AddColumn(new GridColumn().Width(6));
+        grid.AddColumn(new GridColumn().Width(9));
+        grid.AddColumn(new GridColumn().Width(6));
+
+        grid.AddRow(GetPlayerLabel(PlayerPosition.Top, "blue", "TOP"), topCard, GetPlayerLabel(PlayerPosition.Left, "green", "LEFT"), leftCard);
+        grid.AddRow(GetPlayerLabel(PlayerPosition.Bottom, "blue", "YOU"), bottomCard, GetPlayerLabel(PlayerPosition.Right, "green", "RIGHT"), rightCard);
+
+        var content = new Rows(
+            new Markup(leadText),
+            new Text(""),
+            grid
+        );
+
+        return new Panel(content)
+            .Header($"[yellow]Trick #{trickNum}[/]")
+            .Border(BoxBorder.Rounded)
+            .Expand();
     }
 
     private static Panel BuildPlayerPanel(string name, int cardCount, Card? playedCard, GameMode gameMode, string teamColor)
@@ -122,6 +178,107 @@ public static class TableRenderer
         var playedCard = trick.PlayedCards.FirstOrDefault(pc => pc.Player == pos);
         if (playedCard.Card.Equals(default(Card))) return "[dim]--[/]";
         return CardRenderer.ToMarkup(playedCard.Card, gameMode);
+    }
+
+    /// <summary>
+    /// Renders the table with a specific completed trick, highlighting the winner.
+    /// </summary>
+    public static void RenderTableWithTrick(
+        TrickState trick,
+        PlayerPosition winner,
+        IReadOnlyDictionary<PlayerPosition, int> cardCounts,
+        GameMode gameMode)
+    {
+        // Get played cards for each position from the completed trick
+        var playedCards = new Dictionary<PlayerPosition, Card?>();
+        foreach (var pos in Enum.GetValues<PlayerPosition>())
+        {
+            var played = trick.PlayedCards.FirstOrDefault(pc => pc.Player == pos);
+            playedCards[pos] = played.Card.Equals(default(Card)) ? null : played.Card;
+        }
+
+        // Build the compact table layout (fits in 80 chars)
+        var table = new Table()
+            .Border(TableBorder.None)
+            .HideHeaders()
+            .Width(78);
+
+        table.AddColumn(new TableColumn("left").Width(20));
+        table.AddColumn(new TableColumn("center").Width(38));
+        table.AddColumn(new TableColumn("right").Width(20));
+
+        // Row 1: Empty | TOP | Empty
+        var topContent = BuildCompactPlayerContent("TOP", cardCounts[PlayerPosition.Top], playedCards[PlayerPosition.Top], gameMode, "blue", isPartner: true);
+        table.AddRow(
+            new Text(""),
+            new Panel(topContent).Header("[blue]TOP (Partner)[/]").Border(BoxBorder.Rounded).Expand(),
+            new Text(""));
+
+        // Row 2: LEFT | TRICK | RIGHT
+        var leftContent = BuildCompactPlayerContent("LEFT", cardCounts[PlayerPosition.Left], playedCards[PlayerPosition.Left], gameMode, "green");
+        var rightContent = BuildCompactPlayerContent("RIGHT", cardCounts[PlayerPosition.Right], playedCards[PlayerPosition.Right], gameMode, "green");
+        var trickContent = BuildCompletedTrickPanel(trick, winner, gameMode);
+
+        table.AddRow(
+            new Panel(leftContent).Header("[green]LEFT[/]").Border(BoxBorder.Rounded).Expand(),
+            trickContent,
+            new Panel(rightContent).Header("[green]RIGHT[/]").Border(BoxBorder.Rounded).Expand());
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(table);
+    }
+
+    private static Panel BuildCompletedTrickPanel(TrickState trick, PlayerPosition winner, GameMode gameMode)
+    {
+        var trickNum = trick.TrickNumber;
+        var leadSuit = trick.LeadSuit;
+
+        var leadText = $"Lead: {CardRenderer.SuitToMarkup(leadSuit!.Value)}";
+
+        // Show winner with star marker
+        string GetPlayerLabel(PlayerPosition pos, string teamColor, string name)
+        {
+            var marker = winner == pos ? "[yellow bold]*[/]" : " ";
+            return $"{marker}[{teamColor}]{name}[/]";
+        }
+
+        string GetCardMarkup(PlayerPosition pos)
+        {
+            var played = trick.PlayedCards.FirstOrDefault(pc => pc.Player == pos);
+            if (played.Card.Equals(default(Card))) return "[dim]--[/]";
+            var cardMarkup = CardRenderer.ToMarkup(played.Card, gameMode);
+            // Highlight winner's card
+            return winner == pos ? $"[bold underline]{cardMarkup}[/]" : cardMarkup;
+        }
+
+        // Compact 2x2 grid layout for played cards
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().Width(9));
+        grid.AddColumn(new GridColumn().Width(6));
+        grid.AddColumn(new GridColumn().Width(9));
+        grid.AddColumn(new GridColumn().Width(6));
+
+        grid.AddRow(
+            GetPlayerLabel(PlayerPosition.Top, "blue", "TOP"),
+            GetCardMarkup(PlayerPosition.Top),
+            GetPlayerLabel(PlayerPosition.Left, "green", "LEFT"),
+            GetCardMarkup(PlayerPosition.Left));
+        grid.AddRow(
+            GetPlayerLabel(PlayerPosition.Bottom, "blue", "YOU"),
+            GetCardMarkup(PlayerPosition.Bottom),
+            GetPlayerLabel(PlayerPosition.Right, "green", "RIGHT"),
+            GetCardMarkup(PlayerPosition.Right));
+
+        var content = new Rows(
+            new Markup(leadText),
+            new Text(""),
+            grid
+        );
+
+        return new Panel(content)
+            .Header($"[yellow bold]Trick #{trickNum} - Complete[/]")
+            .Border(BoxBorder.Rounded)
+            .Expand();
     }
 
     /// <summary>

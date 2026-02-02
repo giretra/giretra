@@ -59,4 +59,8 @@ public sealed class RandomPlayerAgent : IPlayerAgent
     public Task OnDealEndedAsync(DealResult result, MatchState matchState) => Task.CompletedTask;
 
     public Task OnMatchEndedAsync(MatchState matchState) => Task.CompletedTask;
+
+    public Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState) => Task.CompletedTask;
+
+    public Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState) => Task.CompletedTask;
 }

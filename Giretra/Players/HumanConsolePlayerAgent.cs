@@ -17,6 +17,9 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
 {
     public PlayerPosition Position { get; }
 
+    // Track the last known hand for rendering during opponent turns
+    private IReadOnlyList<Card>? _lastKnownHand;
+
     public HumanConsolePlayerAgent(PlayerPosition position)
     {
         Position = position;
@@ -60,6 +63,8 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<Card> validPlays)
     {
+        _lastKnownHand = hand;
+
         while (true)
         {
             RenderPlayScreen(hand, handState, matchState, validPlays);
@@ -74,6 +79,8 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
 
             if (card.HasValue)
             {
+                // Update last known hand after playing a card
+                _lastKnownHand = hand.Where(c => !c.Equals(card.Value)).ToList();
                 return Task.FromResult(card.Value);
             }
         }
@@ -150,6 +157,105 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
     {
         AnsiConsole.Clear();
         ScoreboardRenderer.RenderMatchResult(matchState);
+
+        return Task.CompletedTask;
+    }
+
+    public async Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState)
+    {
+        // Don't animate when we (Bottom) play - the user already knows what they played
+        if (player == PlayerPosition.Bottom)
+            return;
+
+        // Get player name for display
+        var playerName = player switch
+        {
+            PlayerPosition.Top => "[blue]Partner[/]",
+            PlayerPosition.Left => "[green]Left[/]",
+            PlayerPosition.Right => "[green]Right[/]",
+            _ => player.ToString()
+        };
+
+        var cardMarkup = CardRenderer.ToMarkup(card, handState.GameMode);
+
+        // Render the current game state with the played card
+        RenderPlayScreenWithStatus(handState, matchState);
+
+        // Show animated status for the play
+        await AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .SpinnerStyle(Style.Parse("yellow"))
+            .StartAsync($"{playerName} thinking...", async ctx =>
+            {
+                await Task.Delay(500);
+                ctx.Status($"{playerName} plays {cardMarkup}");
+                await Task.Delay(500);
+            });
+    }
+
+    private void RenderPlayScreenWithStatus(HandState handState, MatchState matchState)
+    {
+        AnsiConsole.Clear();
+
+        var hand = _lastKnownHand ?? [];
+
+        // Get card counts for all players
+        var cardCounts = new Dictionary<PlayerPosition, int>
+        {
+            [PlayerPosition.Bottom] = hand.Count,
+            [PlayerPosition.Left] = 8 - handState.CompletedTricks.Count - (handState.CurrentTrick?.PlayedCards.Any(pc => pc.Player == PlayerPosition.Left) == true ? 1 : 0),
+            [PlayerPosition.Top] = 8 - handState.CompletedTricks.Count - (handState.CurrentTrick?.PlayedCards.Any(pc => pc.Player == PlayerPosition.Top) == true ? 1 : 0),
+            [PlayerPosition.Right] = 8 - handState.CompletedTricks.Count - (handState.CurrentTrick?.PlayedCards.Any(pc => pc.Player == PlayerPosition.Right) == true ? 1 : 0)
+        };
+
+        MultiplierState? multiplier = matchState.CurrentDeal?.Multiplier;
+
+        ScoreboardRenderer.RenderHeader(matchState, handState.GameMode, multiplier);
+        TableRenderer.RenderTable(handState, cardCounts, matchState);
+        HandRenderer.RenderHand(hand, handState.GameMode);
+        AnsiConsole.WriteLine();
+    }
+
+    public Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
+    {
+        AnsiConsole.Clear();
+
+        var hand = _lastKnownHand ?? [];
+        MultiplierState? multiplier = matchState.CurrentDeal?.Multiplier;
+
+        // Card counts (cards already played this trick are now gone)
+        var cardCounts = new Dictionary<PlayerPosition, int>
+        {
+            [PlayerPosition.Bottom] = hand.Count,
+            [PlayerPosition.Left] = 8 - handState.CompletedTricks.Count,
+            [PlayerPosition.Top] = 8 - handState.CompletedTricks.Count,
+            [PlayerPosition.Right] = 8 - handState.CompletedTricks.Count
+        };
+
+        ScoreboardRenderer.RenderHeader(matchState, handState.GameMode, multiplier);
+
+        // Render the table with the completed trick's cards
+        TableRenderer.RenderTableWithTrick(completedTrick, winner, cardCounts, handState.GameMode);
+
+        // Show current scores
+        ScoreboardRenderer.RenderTrickPoints(handState);
+
+        AnsiConsole.WriteLine();
+        HandRenderer.RenderHand(hand, handState.GameMode);
+
+        // Winner message
+        var winnerName = winner switch
+        {
+            PlayerPosition.Bottom => "[blue bold]You[/]",
+            PlayerPosition.Top => "[blue bold]Partner[/]",
+            PlayerPosition.Left => "[green bold]Left[/]",
+            PlayerPosition.Right => "[green bold]Right[/]",
+            _ => winner.ToString()
+        };
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"  {winnerName} wins! [dim]Press any key to continue...[/]");
+        Console.ReadKey(true);
 
         return Task.CompletedTask;
     }
