@@ -9,7 +9,7 @@ namespace Giretra.Core.Players;
 /// Represents a player that can participate in a full Belote match,
 /// making decisions during all phases of the game.
 /// </summary>
-public interface IPlayer
+public interface IPlayerAgent
 {
     /// <summary>
     /// Gets the position this player occupies at the table.
@@ -30,29 +30,31 @@ public interface IPlayer
 
     /// <summary>
     /// Called when this player must make a negotiation decision.
-    /// Use <see cref="NegotiationEngine.GetValidActions"/> to get the list of valid actions.
     /// </summary>
     /// <param name="hand">The player's current hand (5 cards during initial negotiation).</param>
     /// <param name="negotiationState">The current state of the negotiation.</param>
     /// <param name="matchState">The current state of the match.</param>
-    /// <returns>The negotiation action to take.</returns>
+    /// <param name="validActions">The list of valid negotiation actions the player can take.</param>
+    /// <returns>The negotiation action to take (must be one of the valid actions).</returns>
     Task<NegotiationAction> ChooseNegotiationActionAsync(
         IReadOnlyList<Card> hand,
         NegotiationState negotiationState,
-        MatchState matchState);
+        MatchState matchState,
+        IReadOnlyList<NegotiationAction> validActions);
 
     /// <summary>
     /// Called when this player must play a card.
-    /// Use <see cref="Play.PlayValidator.GetValidPlays"/> to get the list of valid cards.
     /// </summary>
     /// <param name="hand">The player's current hand.</param>
     /// <param name="handState">The current state of the hand (tricks played, current trick).</param>
     /// <param name="matchState">The current state of the match.</param>
-    /// <returns>The card to play.</returns>
+    /// <param name="validPlays">The list of valid cards the player can play.</param>
+    /// <returns>The card to play (must be one of the valid plays).</returns>
     Task<Card> ChooseCardAsync(
         IReadOnlyList<Card> hand,
         HandState handState,
-        MatchState matchState);
+        MatchState matchState,
+        IReadOnlyList<Card> validPlays);
 
     /// <summary>
     /// Called when a deal starts, allowing the player to observe initial state.

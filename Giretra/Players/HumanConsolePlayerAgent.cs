@@ -1,6 +1,5 @@
 using Giretra.Core.Cards;
 using Giretra.Core.Negotiation;
-using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
@@ -9,10 +8,10 @@ using Giretra.UI;
 namespace Giretra.Players;
 
 /// <summary>
-/// An IPlayer implementation for a human player using the console.
+/// An IPlayerAgent implementation for a human player using the console.
 /// Uses Spectre.Console for rendering and prompts.
 /// </summary>
-public sealed class HumanConsolePlayer : IPlayer
+public sealed class HumanConsolePlayerAgent : IPlayerAgent
 {
     public PlayerPosition Position => PlayerPosition.Bottom;
 
@@ -37,13 +36,11 @@ public sealed class HumanConsolePlayer : IPlayer
     public Task<NegotiationAction> ChooseNegotiationActionAsync(
         IReadOnlyList<Card> hand,
         NegotiationState negotiationState,
-        MatchState matchState)
+        MatchState matchState,
+        IReadOnlyList<NegotiationAction> validActions)
     {
         // Render the current state
         GameRenderer.RenderNegotiationState(matchState, hand);
-
-        // Get valid actions
-        var validActions = NegotiationEngine.GetValidActions(negotiationState);
 
         // Show prompt and get selection
         var action = Prompts.SelectNegotiationAction(validActions, Position);
@@ -54,12 +51,9 @@ public sealed class HumanConsolePlayer : IPlayer
     public Task<Card> ChooseCardAsync(
         IReadOnlyList<Card> hand,
         HandState handState,
-        MatchState matchState)
+        MatchState matchState,
+        IReadOnlyList<Card> validPlays)
     {
-        // Get valid plays
-        var player = Player.Create(Position, hand);
-        var validPlays = PlayValidator.GetValidPlays(player, handState.CurrentTrick!, handState.GameMode);
-
         // Render current state with valid plays highlighted
         GameRenderer.RenderPlayState(matchState, hand, validPlays);
 

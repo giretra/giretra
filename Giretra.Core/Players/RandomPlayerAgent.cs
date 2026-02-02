@@ -1,6 +1,5 @@
 using Giretra.Core.Cards;
 using Giretra.Core.Negotiation;
-using Giretra.Core.Play;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
@@ -10,18 +9,18 @@ namespace Giretra.Core.Players;
 /// A player that makes random valid choices at each decision point.
 /// Useful for testing and as a baseline opponent.
 /// </summary>
-public sealed class RandomPlayer : IPlayer
+public sealed class RandomPlayerAgent : IPlayerAgent
 {
     private readonly Random _random;
 
     public PlayerPosition Position { get; }
 
-    public RandomPlayer(PlayerPosition position)
+    public RandomPlayerAgent(PlayerPosition position)
         : this(position, new Random())
     {
     }
 
-    public RandomPlayer(PlayerPosition position, Random random)
+    public RandomPlayerAgent(PlayerPosition position, Random random)
     {
         Position = position;
         _random = random;
@@ -38,9 +37,9 @@ public sealed class RandomPlayer : IPlayer
     public Task<NegotiationAction> ChooseNegotiationActionAsync(
         IReadOnlyList<Card> hand,
         NegotiationState negotiationState,
-        MatchState matchState)
+        MatchState matchState,
+        IReadOnlyList<NegotiationAction> validActions)
     {
-        var validActions = NegotiationEngine.GetValidActions(negotiationState);
         var chosenAction = validActions[_random.Next(validActions.Count)];
         return Task.FromResult(chosenAction);
     }
@@ -48,10 +47,9 @@ public sealed class RandomPlayer : IPlayer
     public Task<Card> ChooseCardAsync(
         IReadOnlyList<Card> hand,
         HandState handState,
-        MatchState matchState)
+        MatchState matchState,
+        IReadOnlyList<Card> validPlays)
     {
-        var player = Player.Create(Position, hand);
-        var validPlays = PlayValidator.GetValidPlays(player, handState.CurrentTrick!, handState.GameMode);
         var chosenCard = validPlays[_random.Next(validPlays.Count)];
         return Task.FromResult(chosenCard);
     }

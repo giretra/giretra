@@ -18,10 +18,10 @@ internal class Program
         Prompts.ShowWelcome();
 
         // Create players
-        var humanPlayer = new HumanConsolePlayer();
-        var leftPlayer = new RandomPlayer(PlayerPosition.Left);
-        var topPlayer = new RandomPlayer(PlayerPosition.Top);
-        var rightPlayer = new RandomPlayer(PlayerPosition.Right);
+        var humanPlayer = new HumanConsolePlayerAgent();
+        var leftPlayer = new RandomPlayerAgent(PlayerPosition.Left);
+        var topPlayer = new RandomPlayerAgent(PlayerPosition.Top);
+        var rightPlayer = new RandomPlayerAgent(PlayerPosition.Right);
 
         // Choose first dealer randomly
         var positions = Enum.GetValues<PlayerPosition>();
@@ -43,7 +43,7 @@ internal class Program
             // Play the match
             var finalState = await gameManager.PlayMatchAsync();
 
-            // The HumanConsolePlayer.OnMatchEndedAsync already shows the final result
+            // The HumanConsolePlayerAgent.OnMatchEndedAsync already shows the final result
         }
         catch (Exception ex)
         {

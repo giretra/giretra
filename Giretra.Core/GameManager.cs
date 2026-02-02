@@ -1,4 +1,6 @@
 using Giretra.Core.Cards;
+using Giretra.Core.Negotiation;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
@@ -11,7 +13,7 @@ namespace Giretra.Core;
 /// </summary>
 public sealed class GameManager
 {
-    private readonly IReadOnlyDictionary<PlayerPosition, IPlayer> _players;
+    private readonly IReadOnlyDictionary<PlayerPosition, IPlayerAgent> _players;
     private readonly Func<Deck> _deckProvider;
 
     private MatchState _matchState;
@@ -28,7 +30,7 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal. Defaults to standard deck.</param>
     public GameManager(
-        IReadOnlyDictionary<PlayerPosition, IPlayer> players,
+        IReadOnlyDictionary<PlayerPosition, IPlayerAgent> players,
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null)
     {
@@ -67,14 +69,14 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal.</param>
     public GameManager(
-        IPlayer bottom,
-        IPlayer left,
-        IPlayer top,
-        IPlayer right,
+        IPlayerAgent bottom,
+        IPlayerAgent left,
+        IPlayerAgent top,
+        IPlayerAgent right,
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null)
         : this(
-            new Dictionary<PlayerPosition, IPlayer>
+            new Dictionary<PlayerPosition, IPlayerAgent>
             {
                 [PlayerPosition.Bottom] = bottom,
                 [PlayerPosition.Left] = left,
@@ -174,10 +176,14 @@ public sealed class GameManager
             var player = _players[currentPosition];
             var hand = deal.Players[currentPosition].Hand;
 
+            // Compute valid actions to pass to the agent
+            var validActions = NegotiationEngine.GetValidActions(deal.Negotiation);
+
             var action = await player.ChooseNegotiationActionAsync(
                 hand,
                 deal.Negotiation,
-                _matchState);
+                _matchState,
+                validActions);
 
             // Validate action is from correct player
             if (action.Player != currentPosition)
@@ -202,15 +208,23 @@ public sealed class GameManager
         {
             var currentPosition = deal.Hand!.CurrentTrick!.CurrentPlayer!.Value;
             var player = _players[currentPosition];
-            var hand = deal.Players[currentPosition].Hand;
+            var playerState = deal.Players[currentPosition];
+            var hand = playerState.Hand;
+
+            // Compute valid plays to pass to the agent
+            var validPlays = PlayValidator.GetValidPlays(
+                Player.Create(currentPosition, hand),
+                deal.Hand.CurrentTrick,
+                deal.Hand.GameMode);
 
             var card = await player.ChooseCardAsync(
                 hand,
                 deal.Hand,
-                _matchState);
+                _matchState,
+                validPlays);
 
             // Validate player has the card
-            if (!deal.Players[currentPosition].HasCard(card))
+            if (!playerState.HasCard(card))
             {
                 throw new InvalidOperationException(
                     $"Player {currentPosition} tried to play {card} which is not in their hand.");
@@ -224,7 +238,7 @@ public sealed class GameManager
     /// <summary>
     /// Notifies all players with the given action.
     /// </summary>
-    private async Task NotifyAllPlayersAsync(Func<IPlayer, Task> action)
+    private async Task NotifyAllPlayersAsync(Func<IPlayerAgent, Task> action)
     {
         foreach (var player in _players.Values)
         {
