@@ -1,0 +1,64 @@
+using Giretra.Core.Cards;
+using Giretra.Core.Negotiation;
+using Giretra.Core.Play;
+using Giretra.Core.Scoring;
+using Giretra.Core.State;
+
+namespace Giretra.Core.Players;
+
+/// <summary>
+/// A player that makes random valid choices at each decision point.
+/// Useful for testing and as a baseline opponent.
+/// </summary>
+public sealed class RandomPlayer : IPlayer
+{
+    private readonly Random _random;
+
+    public PlayerPosition Position { get; }
+
+    public RandomPlayer(PlayerPosition position)
+        : this(position, new Random())
+    {
+    }
+
+    public RandomPlayer(PlayerPosition position, Random random)
+    {
+        Position = position;
+        _random = random;
+    }
+
+    public Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
+    {
+        // Cut must be between 6 and 26 cards
+        int position = _random.Next(6, 27);
+        bool fromTop = _random.Next(2) == 0;
+        return Task.FromResult((position, fromTop));
+    }
+
+    public Task<NegotiationAction> ChooseNegotiationActionAsync(
+        IReadOnlyList<Card> hand,
+        NegotiationState negotiationState,
+        MatchState matchState)
+    {
+        var validActions = NegotiationEngine.GetValidActions(negotiationState);
+        var chosenAction = validActions[_random.Next(validActions.Count)];
+        return Task.FromResult(chosenAction);
+    }
+
+    public Task<Card> ChooseCardAsync(
+        IReadOnlyList<Card> hand,
+        HandState handState,
+        MatchState matchState)
+    {
+        var player = Player.Create(Position, hand);
+        var validPlays = PlayValidator.GetValidPlays(player, handState.CurrentTrick!, handState.GameMode);
+        var chosenCard = validPlays[_random.Next(validPlays.Count)];
+        return Task.FromResult(chosenCard);
+    }
+
+    public Task OnDealStartedAsync(MatchState matchState) => Task.CompletedTask;
+
+    public Task OnDealEndedAsync(DealResult result, MatchState matchState) => Task.CompletedTask;
+
+    public Task OnMatchEndedAsync(MatchState matchState) => Task.CompletedTask;
+}
