@@ -272,4 +272,58 @@ public class NegotiationEngineTests
         Assert.Equal(Team.Team1, team); // Bottom's team
         Assert.Equal(MultiplierState.Doubled, multiplier);
     }
+
+    [Fact]
+    public void AvailableChoices_AfterDoubleOnOpponentBid()
+    {
+        // Dealer is Bottom, so Left speaks first
+        var state = NegotiationState.Create(PlayerPosition.Bottom);
+
+        // Left (Team2) announces Colour Clubs
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourClubs));
+
+        // Top (Team1) announces Colour Diamonds
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.ColourDiamonds));
+
+        // Right (Team2) doubles Diamonds
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourDiamonds));
+
+        // Now it's Bottom's turn (Team1)
+        // Available choices should be: Accept, Double Clubs, Redouble Diamonds
+
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        Assert.Equal(3, validActions.Count);
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.ColourClubs });
+        Assert.Contains(validActions, a => a is RedoubleAction { TargetMode: GameMode.ColourDiamonds });
+    }
+
+    [Fact]
+    public void AvailableChoices_AfterBothTeamsDouble()
+    {
+        // Dealer is Bottom, so Left speaks first
+        var state = NegotiationState.Create(PlayerPosition.Bottom);
+
+        // Left (Team2) announces Colour Diamonds
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourDiamonds));
+
+        // Top (Team1) announces Colour Hearts
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts));
+
+        // Right (Team2) doubles Hearts
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourHearts));
+
+        // Bottom (Team1) doubles Diamonds
+        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.ColourDiamonds));
+
+        // Now it's Left's turn (Team2)
+        // ONLY available choices should be: Accept, Redouble Diamonds
+
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        Assert.Equal(2, validActions.Count);
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is RedoubleAction { TargetMode: GameMode.ColourDiamonds });
+    }
 }
