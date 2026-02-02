@@ -5,124 +5,139 @@ using Spectre.Console;
 namespace Giretra.UI;
 
 /// <summary>
-/// Renders cards with colored suit symbols using Spectre.Console markup.
+/// Renders cards with colors and symbols using Spectre.Console markup.
 /// </summary>
 public static class CardRenderer
 {
-    /// <summary>
-    /// Gets the Unicode symbol for a suit.
-    /// </summary>
-    public static string GetSuitSymbol(CardSuit suit) => suit switch
+    private static readonly Dictionary<CardSuit, string> SuitSymbols = new()
     {
-        CardSuit.Clubs => "\u2663",
-        CardSuit.Diamonds => "\u2666",
-        CardSuit.Hearts => "\u2665",
-        CardSuit.Spades => "\u2660",
-        _ => "?"
+        [CardSuit.Clubs] = "♣",
+        [CardSuit.Diamonds] = "♦",
+        [CardSuit.Hearts] = "♥",
+        [CardSuit.Spades] = "♠"
+    };
+
+    private static readonly Dictionary<CardRank, string> RankNames = new()
+    {
+        [CardRank.Ace] = "A",
+        [CardRank.King] = "K",
+        [CardRank.Queen] = "Q",
+        [CardRank.Jack] = "J",
+        [CardRank.Ten] = "10",
+        [CardRank.Nine] = "9",
+        [CardRank.Eight] = "8",
+        [CardRank.Seven] = "7"
     };
 
     /// <summary>
-    /// Gets the short name for a rank.
+    /// Gets the suit symbol for a card suit.
     /// </summary>
-    public static string GetRankName(CardRank rank) => rank switch
+    public static string GetSuitSymbol(CardSuit suit) => SuitSymbols[suit];
+
+    /// <summary>
+    /// Gets the rank display name for a card rank.
+    /// </summary>
+    public static string GetRankName(CardRank rank) => RankNames[rank];
+
+    /// <summary>
+    /// Renders a card as plain text (no markup).
+    /// </summary>
+    public static string ToPlainText(Card card) => $"{GetRankName(card.Rank)}{GetSuitSymbol(card.Suit)}";
+
+    /// <summary>
+    /// Gets the base color for a suit (red for hearts/diamonds, default for clubs/spades).
+    /// </summary>
+    public static string GetSuitColor(CardSuit suit) => suit switch
     {
-        CardRank.Ace => "A",
-        CardRank.King => "K",
-        CardRank.Queen => "Q",
-        CardRank.Jack => "J",
-        _ => ((int)rank).ToString()
+        CardSuit.Hearts => "red",
+        CardSuit.Diamonds => "red",
+        _ => "default"
     };
 
     /// <summary>
-    /// Renders a card with colored markup.
-    /// Hearts and Diamonds are red, Spades and Clubs are default color.
+    /// Renders a card with Spectre.Console markup, applying appropriate colors.
     /// </summary>
-    public static string Render(Card card, GameMode? gameMode = null)
+    public static string ToMarkup(Card card, GameMode? gameMode = null, bool isTrump = false)
     {
-        var rankStr = GetRankName(card.Rank);
-        var suitSymbol = GetSuitSymbol(card.Suit);
-        var isRed = card.Suit is CardSuit.Hearts or CardSuit.Diamonds;
+        var text = ToPlainText(card);
+        var color = GetSuitColor(card.Suit);
 
-        var isTrump = gameMode.HasValue &&
-                      (gameMode.Value.GetCategory() == GameModeCategory.ToutAs ||
-                       gameMode.Value.GetTrumpSuit() == card.Suit);
-
-        var text = $"{rankStr}{suitSymbol}";
+        // Check if this card is trump
+        if (gameMode.HasValue)
+        {
+            var trumpSuit = gameMode.Value.GetTrumpSuit();
+            isTrump = trumpSuit.HasValue && card.Suit == trumpSuit.Value;
+        }
 
         if (isTrump)
         {
-            return isRed
-                ? $"[bold underline red]{text}[/]"
-                : $"[bold underline]{text}[/]";
+            return $"[bold yellow]{text}[/]";
         }
 
-        return isRed
-            ? $"[red]{text}[/]"
-            : text;
-    }
-
-    /// <summary>
-    /// Renders a card as plain text without markup (for prompts).
-    /// </summary>
-    public static string RenderPlain(Card card)
-    {
-        return $"{GetRankName(card.Rank)}{GetSuitSymbol(card.Suit)}";
-    }
-
-    /// <summary>
-    /// Renders a list of cards grouped by suit.
-    /// </summary>
-    public static string RenderHand(IReadOnlyList<Card> hand, GameMode? gameMode = null)
-    {
-        var grouped = hand
-            .GroupBy(c => c.Suit)
-            .OrderBy(g => g.Key);
-
-        var parts = new List<string>();
-        foreach (var group in grouped)
+        if (color == "default")
         {
-            var suitSymbol = GetSuitSymbol(group.Key);
-            var isRed = group.Key is CardSuit.Hearts or CardSuit.Diamonds;
-            var suitMarkup = isRed ? $"[red]{suitSymbol}[/]" : suitSymbol;
-
-            var cardStrings = group
-                .OrderByDescending(c => c.GetStrength(gameMode ?? GameMode.SansAs))
-                .Select(c => Render(c, gameMode));
-
-            parts.Add($"{suitMarkup}: {string.Join(" ", cardStrings)}");
+            return text;
         }
 
-        return string.Join("  |  ", parts);
+        return $"[{color}]{text}[/]";
     }
 
     /// <summary>
-    /// Renders a game mode with suit symbol if applicable.
+    /// Renders a card as dimmed (for invalid plays).
     /// </summary>
-    public static string RenderGameMode(GameMode mode)
-    {
-        var trumpSuit = mode.GetTrumpSuit();
-        if (trumpSuit.HasValue)
-        {
-            var symbol = GetSuitSymbol(trumpSuit.Value);
-            var isRed = trumpSuit.Value is CardSuit.Hearts or CardSuit.Diamonds;
-            var suitMarkup = isRed ? $"[red]{symbol}[/]" : symbol;
-            return $"{mode} {suitMarkup}";
-        }
+    public static string ToDimmedMarkup(Card card) => $"[dim]{ToPlainText(card)}[/]";
 
-        return mode.ToString();
+    /// <summary>
+    /// Renders a list of cards with markup, separated by spaces.
+    /// </summary>
+    public static string ToMarkup(IEnumerable<Card> cards, GameMode? gameMode = null)
+    {
+        return string.Join("  ", cards.Select(c => ToMarkup(c, gameMode)));
     }
+
+    /// <summary>
+    /// Renders a game mode with its symbol.
+    /// </summary>
+    public static string GameModeToMarkup(GameMode mode) => mode switch
+    {
+        GameMode.ColourClubs => $"Clubs {GetSuitSymbol(CardSuit.Clubs)}",
+        GameMode.ColourDiamonds => $"[red]Diamonds {GetSuitSymbol(CardSuit.Diamonds)}[/]",
+        GameMode.ColourHearts => $"[red]Hearts {GetSuitSymbol(CardSuit.Hearts)}[/]",
+        GameMode.ColourSpades => $"Spades {GetSuitSymbol(CardSuit.Spades)}",
+        GameMode.SansAs => "SansAs",
+        GameMode.ToutAs => "[bold]ToutAs[/]",
+        _ => mode.ToString()
+    };
 
     /// <summary>
     /// Renders a game mode as plain text.
     /// </summary>
-    public static string RenderGameModePlain(GameMode mode)
+    public static string GameModeToPlainText(GameMode mode) => mode switch
     {
-        var trumpSuit = mode.GetTrumpSuit();
-        if (trumpSuit.HasValue)
-        {
-            return $"{mode} {GetSuitSymbol(trumpSuit.Value)}";
-        }
+        GameMode.ColourClubs => $"Clubs {GetSuitSymbol(CardSuit.Clubs)}",
+        GameMode.ColourDiamonds => $"Diamonds {GetSuitSymbol(CardSuit.Diamonds)}",
+        GameMode.ColourHearts => $"Hearts {GetSuitSymbol(CardSuit.Hearts)}",
+        GameMode.ColourSpades => $"Spades {GetSuitSymbol(CardSuit.Spades)}",
+        GameMode.SansAs => "SansAs",
+        GameMode.ToutAs => "ToutAs",
+        _ => mode.ToString()
+    };
 
-        return mode.ToString();
+    /// <summary>
+    /// Renders a suit with its symbol and color.
+    /// </summary>
+    public static string SuitToMarkup(CardSuit suit)
+    {
+        var symbol = GetSuitSymbol(suit);
+        var color = GetSuitColor(suit);
+        return color == "default" ? symbol : $"[{color}]{symbol}[/]";
+    }
+
+    /// <summary>
+    /// Renders face-down cards for opponents.
+    /// </summary>
+    public static string RenderFaceDown(int count)
+    {
+        return string.Join("", Enumerable.Repeat("█", count));
     }
 }

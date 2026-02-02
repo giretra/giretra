@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Éléments de solution/">
+    <File Path="CLAUDE.md" />
     <File Path="SPEC.md" />
   </Folder>
   <Project Path="Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
