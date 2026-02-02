@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Éléments de solution/">
+    <File Path="SPEC.md" />
+  </Folder>
+  <Project Path="Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
+  <Project Path="Giretra.Core/Giretra.Core.csproj" />
+  <Project Path="Giretra/Giretra.csproj" />
+</Solution>
