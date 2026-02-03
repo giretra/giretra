@@ -25,6 +25,8 @@ namespace Giretra.Core.Players;
 ///   <item>Considers: raw points, high cards, trump count, and mode-specific bonuses</item>
 ///   <item>Announces at 60%+ strength eagerly, 45%+ if competitive bidding</item>
 ///   <item>Only doubles/redoubles when holding 3+ potential master cards (risk threshold)</item>
+///   <item>Only accepts Clubs/SansAs (which auto-double) with 40%+ hand strength;
+///         otherwise tries to announce a higher mode to escape the doubled game</item>
 /// </list>
 ///
 /// <para><b>Play Behavior:</b></para>
@@ -149,10 +151,37 @@ public class CalculatingPlayerAgent : IPlayerAgent
             }
         }
 
-        // Default: accept
+        // Default: accept (but be selective about Clubs/SansAs which auto-double)
         var acceptAction = validActions.OfType<AcceptAction>().FirstOrDefault();
         if (acceptAction != null)
         {
+            var currentBid = negotiationState.CurrentBid;
+            if (currentBid.HasValue)
+            {
+                var bidMode = currentBid.Value;
+
+                // Accepting Clubs or SansAs triggers auto-double, so be careful
+                if (bidMode == GameMode.ColourClubs || bidMode == GameMode.SansAs)
+                {
+                    // Only accept if we have decent cards for that mode (>= 40%)
+                    double ourStrength = modeScores[bidMode];
+                    if (ourStrength < 40)
+                    {
+                        // Try to announce something higher instead of accepting a bad doubled game
+                        var escapeAnnounce = validActions
+                            .OfType<AnnouncementAction>()
+                            .Where(a => modeScores[a.Mode] >= 35) // Lower threshold to escape
+                            .OrderByDescending(a => modeScores[a.Mode])
+                            .FirstOrDefault();
+
+                        if (escapeAnnounce != null)
+                        {
+                            return Task.FromResult<NegotiationAction>(escapeAnnounce);
+                        }
+                    }
+                }
+            }
+
             return Task.FromResult<NegotiationAction>(acceptAction);
         }
 

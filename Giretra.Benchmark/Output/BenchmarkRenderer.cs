@@ -92,6 +92,7 @@ public sealed class BenchmarkRenderer
         // Confidence intervals
         var ci1 = result.Team1WinRateConfidenceInterval;
         var ci2 = result.Team2WinRateConfidenceInterval;
+
         summaryTable.AddRow(
             "95% CI",
             $"[blue]{ci1.Lower:P1} - {ci1.Upper:P1}[/]",
