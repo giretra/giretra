@@ -15,8 +15,8 @@ public sealed class RandomPlayerAgent : IPlayerAgent
 
     public PlayerPosition Position { get; }
 
-    public RandomPlayerAgent(PlayerPosition position)
-        : this(position, new Random())
+    public RandomPlayerAgent(PlayerPosition position, int? seed = null)
+        : this(position, seed.HasValue ? new Random(seed.Value) : new Random())
     {
     }
 

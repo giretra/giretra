@@ -39,6 +39,7 @@ public sealed class BenchmarkRenderer
         configTable.AddRow("Matches", _config.MatchCount.ToString());
         configTable.AddRow("Target Score", _config.TargetScore.ToString());
         configTable.AddRow("K-Factor", _config.EloKFactor.ToString());
+        configTable.AddRow("Seed", _config.Seed?.ToString() ?? "[dim]random[/]");
 
         AnsiConsole.Write(configTable);
         AnsiConsole.WriteLine();

@@ -11,9 +11,9 @@ if (config is null)
     return 1;
 }
 
-// Create factories
-var team1Factory = new RandomPlayerAgentFactory();
-var team2Factory = new RandomPlayerAgentFactory();
+// Create factories with seeds offset for each team
+var team1Factory = new RandomPlayerAgentFactory(config.Seed);
+var team2Factory = new RandomPlayerAgentFactory(config.Seed);
 
 // Create runner and renderer
 var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
@@ -41,6 +41,7 @@ static BenchmarkConfig? ParseArguments(string[] args)
     var elo2 = config.Team2InitialElo;
     var kFactor = config.EloKFactor;
     var targetScore = config.TargetScore;
+    int? seed = config.Seed;
 
     for (int i = 0; i < args.Length; i++)
     {
@@ -114,6 +115,19 @@ static BenchmarkConfig? ParseArguments(string[] args)
                 }
                 break;
 
+            case "-s":
+            case "--seed":
+                if (i + 1 < args.Length && int.TryParse(args[++i], out var s))
+                {
+                    seed = s;
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[red]Error: --seed requires an integer value[/]");
+                    return null;
+                }
+                break;
+
             default:
                 AnsiConsole.MarkupLine($"[yellow]Warning: Unknown argument '{args[i]}'[/]");
                 break;
@@ -126,7 +140,8 @@ static BenchmarkConfig? ParseArguments(string[] args)
         Team1InitialElo = elo1,
         Team2InitialElo = elo2,
         EloKFactor = kFactor,
-        TargetScore = targetScore
+        TargetScore = targetScore,
+        Seed = seed
     };
 }
 
@@ -147,9 +162,10 @@ static void PrintHelp()
 
     table.AddRow("-n, --matches", "Number of matches to play", "1000");
     table.AddRow("-t, --target", "Target score to win a match", "500");
+    table.AddRow("-s, --seed", "Random seed for reproducibility", "random");
     table.AddRow("--elo1", "Initial ELO for Team 1", "1200");
     table.AddRow("--elo2", "Initial ELO for Team 2", "1200");
-    table.AddRow("-k, --k-factor", "ELO K-factor", "32");
+    table.AddRow("-k, --k-factor", "ELO K-factor", "24");
     table.AddRow("-h, --help", "Show this help message", "");
 
     AnsiConsole.Write(table);

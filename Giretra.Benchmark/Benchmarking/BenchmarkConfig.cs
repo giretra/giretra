@@ -29,4 +29,9 @@ public sealed class BenchmarkConfig
     /// Target score to win a match (default 150 for normal play, 500 for benchmarks).
     /// </summary>
     public int TargetScore { get; init; } = 500;
+
+    /// <summary>
+    /// Random seed for reproducibility. If null, uses non-deterministic randomness.
+    /// </summary>
+    public int? Seed { get; init; }
 }
