@@ -11,9 +11,9 @@ if (config is null)
     return 1;
 }
 
-// Create factories: CalculatingPlayer (Team1) vs RandomPlayer (Team2)
+// Create factories: RandomPlayer (Team1) vs BadPlayer (Team2)
 var team1Factory = new CalculatingPlayerAgentFactory();
-var team2Factory = new RandomPlayerAgentFactory(config.Seed);
+var team2Factory = new BadPlayerAgentFactory();
 
 // Create runner and renderer
 var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
