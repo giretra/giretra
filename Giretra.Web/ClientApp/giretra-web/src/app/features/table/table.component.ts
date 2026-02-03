@@ -40,6 +40,8 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
         [myPosition]="gameState.myPosition()"
         [activePlayer]="gameState.activePlayer()"
         [currentTrick]="gameState.currentTrick()"
+        [completedTrickToShow]="gameState.completedTrickToShow()"
+        [showingCompletedTrick]="gameState.showingCompletedTrick()"
         [gameMode]="gameState.gameMode()"
         [dealer]="gameState.dealer()"
         [negotiationHistory]="gameState.negotiationHistory()"
@@ -54,6 +56,7 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
         (startGame)="onStartGame()"
         (submitCut)="onSubmitCut()"
         (hideDealSummary)="onHideDealSummary()"
+        (dismissCompletedTrick)="onDismissCompletedTrick()"
       />
 
       <!-- Zone C: Hand / Action Area -->
@@ -223,6 +226,10 @@ export class TableComponent implements OnInit, OnDestroy {
 
   onHideDealSummary(): void {
     this.gameState.hideDealSummary();
+  }
+
+  onDismissCompletedTrick(): void {
+    this.gameState.dismissCompletedTrick();
   }
 
   async onPlayAgain(): Promise<void> {

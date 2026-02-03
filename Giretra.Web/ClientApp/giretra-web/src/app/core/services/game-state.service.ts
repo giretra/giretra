@@ -473,10 +473,35 @@ export class GameStateService {
       this.refreshState();
     });
 
-    // Trick completed
+    // Trick completed - show cards briefly before clearing
     this.hub.trickCompleted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: trickCompleted', event);
-      this.refreshState();
+
+      // Clear any existing timeout
+      if (this._completedTrickTimeoutId) {
+        clearTimeout(this._completedTrickTimeoutId);
+      }
+
+      // Convert SignalR TrickResponse to API TrickResponse format
+      const trick: TrickResponse = {
+        leader: event.trick.leader,
+        trickNumber: event.trick.trickNumber,
+        playedCards: event.trick.playedCards,
+        isComplete: event.trick.isComplete,
+        winner: event.trick.winner ?? null,
+      };
+
+      // Store the completed trick and show it
+      this._completedTrickToShow.set(trick);
+      this._showingCompletedTrick.set(true);
+
+      // Auto-dismiss after delay
+      this._completedTrickTimeoutId = setTimeout(() => {
+        this._completedTrickTimeoutId = null;
+        this._showingCompletedTrick.set(false);
+        this._completedTrickToShow.set(null);
+        this.refreshState();
+      }, this.COMPLETED_TRICK_DELAY_MS);
     });
 
     // Deal ended

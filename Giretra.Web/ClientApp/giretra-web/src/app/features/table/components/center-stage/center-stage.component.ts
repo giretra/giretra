@@ -48,8 +48,11 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
         @case ('playing') {
           <app-trick-area
             [currentTrick]="currentTrick()"
+            [completedTrickToShow]="completedTrickToShow()"
+            [showingCompletedTrick]="showingCompletedTrick()"
             [myPosition]="myPosition()"
             [gameMode]="gameMode()"
+            (dismissCompletedTrick)="dismissCompletedTrick.emit()"
           />
         }
         @case ('dealSummary') {
@@ -77,6 +80,8 @@ export class CenterStageComponent {
   readonly isCreator = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
   readonly currentTrick = input<TrickResponse | null>(null);
+  readonly completedTrickToShow = input<TrickResponse | null>(null);
+  readonly showingCompletedTrick = input<boolean>(false);
   readonly myPosition = input<PlayerPosition | null>(null);
   readonly gameMode = input<GameMode | null>(null);
   readonly negotiationHistory = input<NegotiationAction[]>([]);
@@ -90,4 +95,5 @@ export class CenterStageComponent {
   readonly startGame = output<void>();
   readonly submitCut = output<void>();
   readonly hideDealSummary = output<void>();
+  readonly dismissCompletedTrick = output<void>();
 }

@@ -7,7 +7,7 @@ import { Card } from '../models';
 /**
  * Get the SVG href for a card from svg-cards.svg
  * Format: "assets/svg-cards.svg#suit_rank" (lowercase)
- * Examples: #heart_king, #spade_ace, #club_7
+ * Examples: #heart_king, #spade_1, #club_7
  */
 export function getCardSvgHref(card: Card): string {
   const suitNames: Record<CardSuit, string> = {
@@ -25,7 +25,7 @@ export function getCardSvgHref(card: Card): string {
     [CardRank.Jack]: 'jack',
     [CardRank.Queen]: 'queen',
     [CardRank.King]: 'king',
-    [CardRank.Ace]: 'ace',
+    [CardRank.Ace]: '1',
   };
 
   return `assets/svg-cards.svg#${suitNames[card.suit]}_${rankNames[card.rank]}`;

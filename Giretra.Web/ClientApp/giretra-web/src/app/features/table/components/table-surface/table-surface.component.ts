@@ -52,6 +52,8 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
             [isCreator]="isCreator()"
             [isWatcher]="isWatcher()"
             [currentTrick]="currentTrick()"
+            [completedTrickToShow]="completedTrickToShow()"
+            [showingCompletedTrick]="showingCompletedTrick()"
             [myPosition]="myPosition()"
             [gameMode]="gameMode()"
             [negotiationHistory]="negotiationHistory()"
@@ -64,6 +66,7 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
             (startGame)="startGame.emit()"
             (submitCut)="submitCut.emit()"
             (hideDealSummary)="hideDealSummary.emit()"
+            (dismissCompletedTrick)="dismissCompletedTrick.emit()"
           />
         </div>
 
@@ -147,6 +150,8 @@ export class TableSurfaceComponent {
   readonly myPosition = input<PlayerPosition | null>(null);
   readonly activePlayer = input<PlayerPosition | null>(null);
   readonly currentTrick = input<TrickResponse | null>(null);
+  readonly completedTrickToShow = input<TrickResponse | null>(null);
+  readonly showingCompletedTrick = input<boolean>(false);
   readonly gameMode = input<GameMode | null>(null);
   readonly dealer = input<PlayerPosition | null>(null);
   readonly negotiationHistory = input<NegotiationAction[]>([]);
@@ -162,6 +167,7 @@ export class TableSurfaceComponent {
   readonly startGame = output<void>();
   readonly submitCut = output<void>();
   readonly hideDealSummary = output<void>();
+  readonly dismissCompletedTrick = output<void>();
 
   // Get slots relative to my position (for proper table layout)
   readonly relativePositions = computed(() => {
