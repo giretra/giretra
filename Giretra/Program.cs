@@ -16,9 +16,9 @@ internal class Program
 
         // Create players
         var human = new HumanConsolePlayerAgent(PlayerPosition.Bottom);
-        var leftAgent = new RandomPlayerAgent(PlayerPosition.Left);
-        var topAgent = new RandomPlayerAgent(PlayerPosition.Top);
-        var rightAgent = new RandomPlayerAgent(PlayerPosition.Right);
+        var leftAgent = new CalculatingPlayerAgent(PlayerPosition.Left);
+        var topAgent = new CalculatingPlayerAgent(PlayerPosition.Top);
+        var rightAgent = new CalculatingPlayerAgent(PlayerPosition.Right);
 
         // Create game manager
         var gameManager = new GameManager(
