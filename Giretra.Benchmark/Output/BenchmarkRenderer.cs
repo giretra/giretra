@@ -70,6 +70,7 @@ public sealed class BenchmarkRenderer
     {
         AnsiConsole.WriteLine();
 
+        // Main results table
         var summaryTable = new Table()
             .Border(TableBorder.Double)
             .Title("[bold]Benchmark Results[/]")
@@ -87,6 +88,14 @@ public sealed class BenchmarkRenderer
             $"[blue]{result.Team1WinRate:P1}[/]",
             $"[green]{result.Team2WinRate:P1}[/]");
 
+        // Confidence intervals
+        var ci1 = result.Team1WinRateConfidenceInterval;
+        var ci2 = result.Team2WinRateConfidenceInterval;
+        summaryTable.AddRow(
+            "95% CI",
+            $"[blue]{ci1.Lower:P1} - {ci1.Upper:P1}[/]",
+            $"[green]{ci2.Lower:P1} - {ci2.Upper:P1}[/]");
+
         summaryTable.AddRow(
             "Initial ELO",
             $"{result.Team1InitialElo:F0}",
@@ -98,12 +107,29 @@ public sealed class BenchmarkRenderer
             FormatEloChange(result.Team2FinalElo, result.Team2InitialElo, "green"));
 
         summaryTable.AddRow(
+            "ELO Range",
+            $"[blue]{result.Team1MinElo:F0} - {result.Team1MaxElo:F0}[/]",
+            $"[green]{result.Team2MinElo:F0} - {result.Team2MaxElo:F0}[/]");
+
+        summaryTable.AddRow(
             "ELO Change",
             FormatEloChangeDelta(result.Team1FinalElo - result.Team1InitialElo),
             FormatEloChangeDelta(result.Team2FinalElo - result.Team2InitialElo));
 
         AnsiConsole.Write(summaryTable);
 
+        // Statistical significance panel
+        var significanceColor = result.IsSignificant ? "yellow" : "dim";
+        var significancePanel = new Panel(
+            $"P-value: [bold]{result.PValue:F4}[/]\n" +
+            $"Result: [{significanceColor}]{result.SignificanceInterpretation}[/]\n" +
+            $"Conclusion: {(result.IsSignificant ? "[yellow]Win rates differ significantly from 50%[/]" : "[dim]No significant difference from 50% (agents are equivalent)[/]")}")
+            .Header("[bold]Statistical Significance[/]")
+            .Border(BoxBorder.Rounded);
+
+        AnsiConsole.Write(significancePanel);
+
+        // General statistics panel
         var statsPanel = new Panel(
             $"Total Matches: [bold]{result.Matches.Count}[/]\n" +
             $"Total Deals: [bold]{result.TotalDeals}[/]\n" +

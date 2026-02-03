@@ -11,9 +11,9 @@ if (config is null)
     return 1;
 }
 
-// Create factories with seeds offset for each team
+// Create factories with different seeds for each team to ensure independent behavior
 var team1Factory = new RandomPlayerAgentFactory(config.Seed);
-var team2Factory = new RandomPlayerAgentFactory(config.Seed);
+var team2Factory = new RandomPlayerAgentFactory(config.Seed.HasValue ? config.Seed.Value + 10000 : null);
 
 // Create runner and renderer
 var runner = new BenchmarkRunner(team1Factory, team2Factory, config);

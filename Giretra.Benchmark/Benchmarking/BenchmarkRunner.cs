@@ -41,6 +41,10 @@ public sealed class BenchmarkRunner
 
         var team1Elo = _config.Team1InitialElo;
         var team2Elo = _config.Team2InitialElo;
+        var team1MinElo = team1Elo;
+        var team1MaxElo = team1Elo;
+        var team2MinElo = team2Elo;
+        var team2MaxElo = team2Elo;
         var team1Wins = 0;
         var team2Wins = 0;
         var totalDeals = 0;
@@ -90,6 +94,12 @@ public sealed class BenchmarkRunner
             team1Elo = newTeam1Elo;
             team2Elo = newTeam2Elo;
 
+            // Track ELO extremes
+            team1MinElo = Math.Min(team1MinElo, team1Elo);
+            team1MaxElo = Math.Max(team1MaxElo, team1Elo);
+            team2MinElo = Math.Min(team2MinElo, team2Elo);
+            team2MaxElo = Math.Max(team2MaxElo, team2Elo);
+
             if (team1Won)
                 team1Wins++;
             else
@@ -110,6 +120,10 @@ public sealed class BenchmarkRunner
             Team2InitialElo = _config.Team2InitialElo,
             Team1FinalElo = team1Elo,
             Team2FinalElo = team2Elo,
+            Team1MinElo = team1MinElo,
+            Team1MaxElo = team1MaxElo,
+            Team2MinElo = team2MinElo,
+            Team2MaxElo = team2MaxElo,
             Team1Wins = team1Wins,
             Team2Wins = team2Wins,
             TotalDeals = totalDeals,
