@@ -29,7 +29,7 @@ interface PositionedCard {
               [card]="posCard.card"
               [faceUp]="true"
               [gameMode]="gameMode()"
-              [width]="64"
+              [width]="76"
             />
           }
         </div>
@@ -46,8 +46,8 @@ interface PositionedCard {
   styles: [`
     .trick-area {
       position: relative;
-      width: 200px;
-      height: 200px;
+      width: 230px;
+      height: 230px;
     }
 
     .trick-area.clickable {

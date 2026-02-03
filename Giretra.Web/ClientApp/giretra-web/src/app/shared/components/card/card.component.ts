@@ -97,7 +97,7 @@ export class CardComponent {
   readonly lifted = input<boolean>(false);
   readonly trumpSuit = input<CardSuit | null>(null);
   readonly gameMode = input<GameMode | null>(null);
-  readonly width = input<number>(80);
+  readonly width = input<number>(96);
 
   // Outputs
   readonly cardClicked = output<Card>();

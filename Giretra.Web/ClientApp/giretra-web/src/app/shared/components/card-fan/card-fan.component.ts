@@ -38,7 +38,7 @@ import { CardComponent } from '../card/card.component';
     }
 
     .card-wrapper {
-      margin-left: -24px;
+      margin-left: -30px;
       transition: transform 0.15s ease;
     }
 
@@ -48,7 +48,7 @@ import { CardComponent } from '../card/card.component';
 
     @media (min-width: 640px) {
       .card-wrapper {
-        margin-left: -20px;
+        margin-left: -26px;
       }
     }
   `],
@@ -64,8 +64,8 @@ export class CardFanComponent {
   readonly cardWidth = computed(() => {
     // Responsive card size
     const count = this.cards().length;
-    if (count > 6) return 56;
-    return 64;
+    if (count > 6) return 68;
+    return 80;
   });
 
   cardTrackBy(card: CardResponse, index: number): string {
