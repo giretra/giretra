@@ -1,0 +1,35 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+/* ── Giretra dark card-table theme ─────────────────────────────── */
+@layer base {
+  :root {
+    --background: 220 20% 10%;
+    --foreground: 210 40% 96%;
+    --card: 220 20% 14%;
+    --card-foreground: 210 40% 96%;
+    --primary: 142 50% 35%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 210 40% 96%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 220 20% 10%;
+    --muted: 220 15% 25%;
+    --muted-foreground: 215 16% 57%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 142 50% 35%;
+    --radius: 0.5rem;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+}
