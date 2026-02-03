@@ -35,11 +35,36 @@ namespace Giretra.Core.Players;
 ///   <item><b>Opponent winning:</b> Attempts to win with minimum necessary card.
 ///         If unable to win, discards the least valuable card.</item>
 /// </list>
+///
+/// <para><b>Partner Behavior Observation:</b></para>
+/// <para>
+/// The agent observes partner's plays (when not leading) to infer suit preferences:
+/// </para>
+/// <list type="bullet">
+///   <item><b>Disliked suits:</b> When partner drops a high-value card (8+ points) on a trick
+///         the team isn't winning, they probably want to get rid of that suit.</item>
+///   <item><b>Preferred suits:</b> When partner leads a suit, they likely want to continue
+///         playing that suit (tracked as recently led).</item>
+/// </list>
+/// <para>
+/// These observations influence lead selection: prefer partner's preferred suits,
+/// avoid partner's disliked suits when possible.
+/// </para>
 /// </remarks>
 public class CalculatingPlayerAgent : IPlayerAgent
 {
     private readonly HashSet<Card> _playedCards = [];
     private readonly Random _random = new();
+
+    // Partner behavior tracking
+    private readonly HashSet<CardSuit> _partnerDislikedSuits = [];
+    private readonly HashSet<CardSuit> _partnerPreferredSuits = [];
+
+    // Current trick state for partner observation (reset each trick)
+    private PlayerPosition? _currentTrickLeader;
+    private CardSuit? _currentTrickLeadSuit;
+    private PlayerPosition? _currentTrickWinner;
+    private GameMode? _currentGameMode;
 
     public PlayerPosition Position { get; }
 
@@ -198,6 +223,12 @@ public class CalculatingPlayerAgent : IPlayerAgent
     {
         // Reset tracking for new deal
         _playedCards.Clear();
+        _partnerDislikedSuits.Clear();
+        _partnerPreferredSuits.Clear();
+        _currentTrickLeader = null;
+        _currentTrickLeadSuit = null;
+        _currentTrickWinner = null;
+        _currentGameMode = null;
         return Task.CompletedTask;
     }
 
@@ -210,11 +241,72 @@ public class CalculatingPlayerAgent : IPlayerAgent
     {
         // Track all played cards to determine master cards
         _playedCards.Add(card);
+
+        var trick = handState.CurrentTrick;
+        if (trick == null) return Task.CompletedTask;
+
+        _currentGameMode = handState.GameMode;
+
+        // Track trick leader and lead suit
+        if (trick.PlayedCards.Count == 1)
+        {
+            _currentTrickLeader = player;
+            _currentTrickLeadSuit = card.Suit;
+            _currentTrickWinner = player;
+
+            // If partner leads a suit, they prefer it
+            if (player == Position.Teammate())
+            {
+                _partnerPreferredSuits.Add(card.Suit);
+            }
+        }
+        else
+        {
+            // Update current winner
+            var (winner, _) = DetermineCurrentWinner(trick, handState.GameMode);
+            _currentTrickWinner = winner;
+
+            // Observe partner's non-leading plays
+            if (player == Position.Teammate() && player != _currentTrickLeader)
+            {
+                ObservePartnerPlay(player, card, handState.GameMode);
+            }
+        }
+
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Observes partner's play when they are not leading to infer suit preferences.
+    /// </summary>
+    private void ObservePartnerPlay(PlayerPosition partner, Card card, GameMode mode)
+    {
+        // Check if partner dropped a high-value card
+        int cardPoints = card.GetPointValue(mode);
+        bool isHighValue = cardPoints >= 8; // 10, A, J(trump), 9(trump)
+
+        if (!isHighValue) return;
+
+        // Check if our team is NOT winning the current trick
+        bool teamWinning = _currentTrickWinner?.GetTeam() == Position.GetTeam();
+
+        if (!teamWinning)
+        {
+            // Partner dropped a high-value card when we're losing
+            // They probably don't like this suit (trying to get rid of it)
+            _partnerDislikedSuits.Add(card.Suit);
+
+            // Remove from preferred if it was there
+            _partnerPreferredSuits.Remove(card.Suit);
+        }
     }
 
     public Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
     {
+        // Reset current trick tracking
+        _currentTrickLeader = null;
+        _currentTrickLeadSuit = null;
+        _currentTrickWinner = null;
         return Task.CompletedTask;
     }
 
@@ -358,7 +450,7 @@ public class CalculatingPlayerAgent : IPlayerAgent
 
     /// <summary>
     /// Chooses a card to lead the trick.
-    /// Prefers master cards, or cards that might force out master cards.
+    /// Prefers master cards, considers partner preferences, or cards that might force out master cards.
     /// </summary>
     private Card ChooseLeadCard(IReadOnlyList<Card> validPlays, GameMode mode)
     {
@@ -367,18 +459,51 @@ public class CalculatingPlayerAgent : IPlayerAgent
         // Lead with master cards to guarantee points
         if (masterCards.Count > 0)
         {
-            // Prefer high-value master cards
+            // Prefer master cards in suits partner likes, avoid suits partner dislikes
+            var preferredMasters = masterCards
+                .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
+                .OrderByDescending(c => _partnerPreferredSuits.Contains(c.Suit))
+                .ThenByDescending(c => c.GetPointValue(mode))
+                .ToList();
+
+            if (preferredMasters.Count > 0)
+            {
+                return preferredMasters.First();
+            }
+
+            // Fall back to any master card
             return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
         }
 
-        // No master cards - try to force out opponent's master cards
-        // Lead with second-best cards in suits where we don't have the master
+        // No master cards - consider partner preferences first
         var trumpSuit = mode.GetTrumpSuit();
+
+        // Try to lead a suit partner prefers (and we have cards in)
+        if (_partnerPreferredSuits.Count > 0)
+        {
+            var preferredSuitCards = validPlays
+                .Where(c => _partnerPreferredSuits.Contains(c.Suit))
+                .Where(c => !trumpSuit.HasValue || c.Suit != trumpSuit.Value) // Don't waste trumps
+                .ToList();
+
+            if (preferredSuitCards.Count > 0)
+            {
+                // Lead strongest in partner's preferred suit
+                return preferredSuitCards.OrderByDescending(c => c.GetStrength(mode)).First();
+            }
+        }
+
+        // Filter out suits partner dislikes if possible
+        var nonDislikedPlays = validPlays
+            .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
+            .ToList();
+
+        var playsToConsider = nonDislikedPlays.Count > 0 ? nonDislikedPlays : validPlays.ToList();
 
         // In Colour mode, leading trump can be strong
         if (trumpSuit.HasValue)
         {
-            var trumpCards = validPlays.Where(c => c.Suit == trumpSuit.Value).ToList();
+            var trumpCards = playsToConsider.Where(c => c.Suit == trumpSuit.Value).ToList();
             if (trumpCards.Count > 0)
             {
                 // Lead with a medium trump to draw out higher trumps
@@ -391,15 +516,15 @@ public class CalculatingPlayerAgent : IPlayerAgent
         }
 
         // Lead with cards from suits we have multiple cards in (sequence play)
-        var suitGroups = validPlays.GroupBy(c => c.Suit).Where(g => g.Count() >= 2).ToList();
+        var suitGroups = playsToConsider.GroupBy(c => c.Suit).Where(g => g.Count() >= 2).ToList();
         if (suitGroups.Count > 0)
         {
             var bestGroup = suitGroups.OrderByDescending(g => g.Max(c => c.GetStrength(mode))).First();
             return bestGroup.OrderByDescending(c => c.GetStrength(mode)).First();
         }
 
-        // Default: lead highest strength card
-        return validPlays.OrderByDescending(c => c.GetStrength(mode)).First();
+        // Default: lead highest strength card from non-disliked suits
+        return playsToConsider.OrderByDescending(c => c.GetStrength(mode)).First();
     }
 
     /// <summary>
