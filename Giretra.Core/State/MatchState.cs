@@ -71,12 +71,14 @@ public sealed class MatchState
     }
 
     /// <summary>
-    /// Creates a new match with a randomly chosen first dealer.
+    /// Creates a new match with the specified first dealer.
     /// </summary>
-    public static MatchState Create(PlayerPosition firstDealer)
+    /// <param name="firstDealer">The position of the first dealer.</param>
+    /// <param name="targetScore">The target score to win (default 150).</param>
+    public static MatchState Create(PlayerPosition firstDealer, int targetScore = 150)
     {
         return new MatchState(
-            150,
+            targetScore,
             0,
             0,
             firstDealer,

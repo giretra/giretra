@@ -30,10 +30,12 @@ public sealed class GameManager
     /// <param name="players">Dictionary mapping positions to player implementations.</param>
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal. Defaults to standard deck.</param>
+    /// <param name="targetScore">The target score to win the match (default 150).</param>
     public GameManager(
         IReadOnlyDictionary<PlayerPosition, IPlayerAgent> players,
         PlayerPosition firstDealer,
-        Func<Deck>? deckProvider = null)
+        Func<Deck>? deckProvider = null,
+        int targetScore = 150)
     {
         if (players.Count != 4)
         {
@@ -57,7 +59,7 @@ public sealed class GameManager
 
         _players = players;
         _deckProvider = deckProvider ?? Deck.CreateStandard;
-        _matchState = MatchState.Create(firstDealer);
+        _matchState = MatchState.Create(firstDealer, targetScore);
     }
 
     /// <summary>
@@ -69,13 +71,15 @@ public sealed class GameManager
     /// <param name="right">Player at the Right position.</param>
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal.</param>
+    /// <param name="targetScore">The target score to win the match (default 150).</param>
     public GameManager(
         IPlayerAgent bottom,
         IPlayerAgent left,
         IPlayerAgent top,
         IPlayerAgent right,
         PlayerPosition firstDealer,
-        Func<Deck>? deckProvider = null)
+        Func<Deck>? deckProvider = null,
+        int targetScore = 150)
         : this(
             new Dictionary<PlayerPosition, IPlayerAgent>
             {
@@ -85,7 +89,8 @@ public sealed class GameManager
                 [PlayerPosition.Right] = right
             },
             firstDealer,
-            deckProvider)
+            deckProvider,
+            targetScore)
     {
     }
 

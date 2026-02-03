@@ -16,16 +16,16 @@ internal class Program
 
         // Create players
         var human = new HumanConsolePlayerAgent(PlayerPosition.Bottom);
-        var leftAI = new RandomPlayerAgent(PlayerPosition.Left);
-        var topAI = new RandomPlayerAgent(PlayerPosition.Top);
-        var rightAI = new RandomPlayerAgent(PlayerPosition.Right);
+        var leftAgent = new RandomPlayerAgent(PlayerPosition.Left);
+        var topAgent = new RandomPlayerAgent(PlayerPosition.Top);
+        var rightAgent = new RandomPlayerAgent(PlayerPosition.Right);
 
         // Create game manager
         var gameManager = new GameManager(
             bottom: human,
-            left: leftAI,
-            top: topAI,
-            right: rightAI,
+            left: leftAgent,
+            top: topAgent,
+            right: rightAgent,
             firstDealer: PlayerPosition.Right,
             deckProvider: Deck.CreateStandard);
 
