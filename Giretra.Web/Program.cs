@@ -21,6 +21,22 @@ public class Program
 
         builder.Services.AddOpenApi();
 
+        // Add NSwag OpenAPI/Swagger
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddOpenApiDocument(config =>
+        {
+            config.Title = "Giretra API";
+            config.Version = "v1";
+            config.Description = "Malagasy Belote card game API";
+            config.SerializerSettings = new NJsonSchema.Generation.SystemTextJsonSchemaGeneratorSettings
+            {
+                SerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                }
+            };
+        });
+
         // Add SignalR
         builder.Services.AddSignalR();
 
@@ -50,6 +66,15 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
+
+            // NSwag middleware
+            app.UseOpenApi();
+            app.UseSwaggerUi(config =>
+            {
+                config.DocumentTitle = "Giretra API";
+                config.Path = "/swagger";
+                config.DocumentPath = "/swagger/{documentName}/swagger.json";
+            });
         }
 
         app.UseCors();

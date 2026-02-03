@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "api:generate": "cd ../.. && dotnet nswag run nswag.json",
+    "api:generate:watch": "cd ../.. && dotnet watch nswag run nswag.json"
   },
   "prettier": {
     "printWidth": 100,
