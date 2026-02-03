@@ -29,18 +29,17 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
             }
           }
           @case ('negotiation') {
+            <!-- Always show hand during negotiation -->
+            <app-card-fan
+              [cards]="hand()"
+              [validCards]="[]"
+              [gameMode]="gameMode()"
+              [interactive]="false"
+            />
             @if (isMyTurn() && pendingActionType() === 'Negotiate') {
               <app-bid-button-row
                 [validActions]="validActions()"
                 (actionSelected)="onNegotiationAction($event)"
-              />
-            } @else {
-              <!-- Show hand preview during negotiation -->
-              <app-card-fan
-                [cards]="hand()"
-                [validCards]="[]"
-                [gameMode]="gameMode()"
-                [interactive]="false"
               />
             }
           }
