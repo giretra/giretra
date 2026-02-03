@@ -79,33 +79,52 @@ export class GameStateService {
 
   /** Current high-level phase for UI rendering */
   readonly phase = computed<GamePhase>(() => {
+    const gameState = this._gameState();
+    const room = this._currentRoom();
+    const showingSummary = this._showingDealSummary();
+
+    console.log('[GameState] phase computed:', {
+      gameStateIsComplete: gameState?.isComplete,
+      showingSummary,
+      roomStatus: room?.status,
+      gamePhase: gameState?.phase,
+      hasGame: !!gameState,
+    });
+
     // Match end takes precedence
-    if (this._gameState()?.isComplete) return 'matchEnd';
+    if (gameState?.isComplete) return 'matchEnd';
 
     // Deal summary overlay
-    if (this._showingDealSummary()) return 'dealSummary';
-
-    const room = this._currentRoom();
-    const game = this._gameState();
+    if (showingSummary) return 'dealSummary';
 
     // No game started yet
-    if (!game || room?.status === 'Waiting') return 'waiting';
+    if (!gameState || room?.status === 'Waiting') {
+      console.log('[GameState] → phase = waiting (no game or room waiting)');
+      return 'waiting';
+    }
 
     // Map server phase to UI phase
-    switch (game.phase) {
+    let result: GamePhase;
+    switch (gameState.phase) {
       case 'AwaitingCut':
       case 'InitialDistribution':
-        return 'cut';
+        result = 'cut';
+        break;
       case 'Negotiation':
       case 'FinalDistribution':
-        return 'negotiation';
+        result = 'negotiation';
+        break;
       case 'Playing':
-        return 'playing';
+        result = 'playing';
+        break;
       case 'Completed':
-        return game.isComplete ? 'matchEnd' : 'dealSummary';
+        result = gameState.isComplete ? 'matchEnd' : 'dealSummary';
+        break;
       default:
-        return 'waiting';
+        result = 'waiting';
     }
+    console.log('[GameState] → phase =', result);
+    return result;
   });
 
   /** My position in the game */
@@ -120,34 +139,61 @@ export class GameStateService {
   /** Is it my turn? */
   readonly isMyTurn = computed(() => {
     const playerState = this._playerState();
-    return playerState?.isYourTurn ?? false;
+    const isMyTurn = playerState?.isYourTurn ?? false;
+    console.log('[GameState] isMyTurn computed:', {
+      isYourTurn: playerState?.isYourTurn,
+      pendingActionType: playerState?.pendingActionType,
+      hasPlayerState: !!playerState,
+    });
+    return isMyTurn;
   });
 
   /** What action is pending for me? */
   readonly pendingActionType = computed<PendingActionType | null>(() => {
     const playerState = this._playerState();
-    if (!playerState?.isYourTurn) return null;
+    if (!playerState?.isYourTurn) {
+      console.log('[GameState] pendingActionType: not my turn');
+      return null;
+    }
 
+    let result: PendingActionType | null = null;
     switch (playerState.pendingActionType) {
       case 'Cut':
-        return PendingActionType.Cut;
+        result = PendingActionType.Cut;
+        break;
       case 'Negotiate':
-        return PendingActionType.Negotiate;
+        result = PendingActionType.Negotiate;
+        break;
       case 'PlayCard':
-        return PendingActionType.PlayCard;
+        result = PendingActionType.PlayCard;
+        break;
       default:
-        return null;
+        result = null;
     }
+    console.log('[GameState] pendingActionType:', result, '(from:', playerState.pendingActionType, ')');
+    return result;
   });
 
   /** My hand of cards */
-  readonly hand = computed(() => this._playerState()?.hand ?? []);
+  readonly hand = computed(() => {
+    const hand = this._playerState()?.hand ?? [];
+    console.log('[GameState] hand computed:', hand.length, 'cards');
+    return hand;
+  });
 
   /** Cards I can legally play */
-  readonly validCards = computed(() => this._playerState()?.validCards ?? []);
+  readonly validCards = computed(() => {
+    const validCards = this._playerState()?.validCards ?? [];
+    console.log('[GameState] validCards computed:', validCards.length, 'cards', validCards);
+    return validCards;
+  });
 
   /** Actions I can take during negotiation */
-  readonly validActions = computed(() => this._playerState()?.validActions ?? []);
+  readonly validActions = computed(() => {
+    const validActions = this._playerState()?.validActions ?? [];
+    console.log('[GameState] validActions computed:', validActions.length, 'actions', validActions);
+    return validActions;
+  });
 
   /** Current trick being played */
   readonly currentTrick = computed(() => this._gameState()?.currentTrick ?? null);
@@ -206,6 +252,7 @@ export class GameStateService {
    * Initialize state for a room
    */
   async enterRoom(room: RoomResponse, isCreator: boolean): Promise<void> {
+    console.log('[GameState] enterRoom', { room, isCreator });
     this._currentRoom.set(room);
     this._isCreator.set(isCreator);
     this._gameId.set(room.gameId);
@@ -213,12 +260,15 @@ export class GameStateService {
     // Connect to SignalR hub
     await this.hub.connect(environment.hubUrl);
     const clientId = this.session.clientId();
+    console.log('[GameState] Joining room with clientId', clientId);
     if (clientId) {
       await this.hub.joinRoom(room.roomId, clientId);
+      console.log('[GameState] Joined room successfully');
     }
 
     // If game is in progress, fetch state
     if (room.gameId) {
+      console.log('[GameState] Game in progress, fetching state');
       await this.refreshState();
     }
   }
@@ -258,17 +308,24 @@ export class GameStateService {
     const clientId = this.session.clientId();
     const isWatcher = this.session.isWatcher();
 
-    if (!gameId) return;
+    console.log('[GameState] refreshState called', { gameId, clientId, isWatcher });
+
+    if (!gameId) {
+      console.log('[GameState] No gameId, skipping refresh');
+      return;
+    }
 
     try {
       if (isWatcher) {
         const watcherState = await this.api.getWatcherState(gameId).toPromise();
+        console.log('[GameState] Watcher state received', watcherState);
         if (watcherState) {
           this._gameState.set(watcherState.gameState);
           this._playerCardCounts.set(watcherState.playerCardCounts);
         }
       } else if (clientId) {
         const playerState = await this.api.getPlayerState(gameId, clientId).toPromise();
+        console.log('[GameState] Player state received', playerState);
         if (playerState) {
           this._playerState.set(playerState);
           this._gameState.set(playerState.gameState);
@@ -324,57 +381,82 @@ export class GameStateService {
   // ─────────────────────────────────────────────────────────────────────────
 
   private setupHubListeners(): void {
+    console.log('[GameState] Setting up hub listeners');
+
     // Player joined room
     this.hub.playerJoined$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: playerJoined', event);
       const room = this._currentRoom();
       if (room && room.roomId === event.roomId) {
         // Update room state - fetch fresh data
-        this.api.getRoom(event.roomId).subscribe((r) => this._currentRoom.set(r));
+        this.api.getRoom(event.roomId).subscribe((r) => {
+          console.log('[GameState] Refreshed room after playerJoined:', r);
+          this._currentRoom.set(r);
+        });
       }
     });
 
     // Player left room
     this.hub.playerLeft$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: playerLeft', event);
       const room = this._currentRoom();
       if (room && room.roomId === event.roomId) {
-        this.api.getRoom(event.roomId).subscribe((r) => this._currentRoom.set(r));
+        this.api.getRoom(event.roomId).subscribe((r) => {
+          console.log('[GameState] Refreshed room after playerLeft:', r);
+          this._currentRoom.set(r);
+        });
       }
     });
 
     // Game started
     this.hub.gameStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: gameStarted', event);
       this._gameId.set(event.gameId);
+      // Also refresh the room to get updated status
+      const room = this._currentRoom();
+      if (room) {
+        this.api.getRoom(room.roomId).subscribe((r) => {
+          console.log('[GameState] Refreshed room after gameStarted:', r);
+          this._currentRoom.set(r);
+        });
+      }
       this.refreshState();
     });
 
     // Deal started
-    this.hub.dealStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.dealStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: dealStarted', event);
       this.hideDealSummary();
       this.refreshState();
     });
 
     // Your turn
-    this.hub.yourTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.yourTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: yourTurn', event);
       this.refreshState();
     });
 
     // Player turn (broadcast)
-    this.hub.playerTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.playerTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: playerTurn', event);
       this.refreshState();
     });
 
     // Card played
-    this.hub.cardPlayed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.cardPlayed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: cardPlayed', event);
       this.refreshState();
     });
 
     // Trick completed
-    this.hub.trickCompleted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.trickCompleted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: trickCompleted', event);
       this.refreshState();
     });
 
     // Deal ended
     this.hub.dealEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: dealEnded', event);
       this.showDealSummary({
         gameMode: event.gameMode,
         team1CardPoints: event.team1CardPoints,
@@ -389,7 +471,8 @@ export class GameStateService {
     });
 
     // Match ended
-    this.hub.matchEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.hub.matchEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: matchEnded', event);
       this.refreshState();
     });
   }

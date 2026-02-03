@@ -110,9 +110,9 @@ public class RoomsController : ControllerBase
     [HttpPost("{roomId}/start")]
     public ActionResult<StartGameResponse> StartGame(string roomId, [FromBody] StartGameRequest request)
     {
-        var response = _roomService.StartGame(roomId, request.ClientId);
+        var (response, error) = _roomService.StartGame(roomId, request.ClientId);
         if (response == null)
-            return BadRequest("Unable to start game. Only the creator can start the game.");
+            return BadRequest(new { error = error ?? "Unable to start game" });
 
         return Ok(response);
     }

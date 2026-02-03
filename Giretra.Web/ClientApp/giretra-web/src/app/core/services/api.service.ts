@@ -266,13 +266,21 @@ export class ApiService {
   private handleError(error: HttpErrorResponse): Observable<never> {
     let message = 'An error occurred';
 
-    if (error.error && typeof error.error === 'object' && 'detail' in error.error) {
-      message = (error.error as ApiError).detail;
+    if (error.error && typeof error.error === 'object') {
+      // Try different error response formats
+      if ('detail' in error.error) {
+        message = (error.error as ApiError).detail;
+      } else if ('error' in error.error) {
+        message = error.error.error;
+      } else if ('message' in error.error) {
+        message = error.error.message;
+      }
     } else if (error.message) {
       message = error.message;
     }
 
     console.error('API Error:', error);
+    console.error('Error message:', message);
     return throwError(() => new Error(message));
   }
 }

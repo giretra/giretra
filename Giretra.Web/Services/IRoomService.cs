@@ -48,7 +48,8 @@ public interface IRoomService
     /// <summary>
     /// Starts the game in a room.
     /// </summary>
-    StartGameResponse? StartGame(string roomId, string clientId);
+    /// <returns>A tuple containing the response (or null on failure) and an error message.</returns>
+    (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId);
 
     /// <summary>
     /// Gets the room a client is in.

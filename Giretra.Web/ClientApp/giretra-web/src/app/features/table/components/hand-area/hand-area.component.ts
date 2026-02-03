@@ -1,4 +1,4 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, OnInit, DoCheck } from '@angular/core';
 import { CardResponse, GameMode, PlayerPosition, PendingActionType } from '../../../../api/generated/signalr-types.generated';
 import { ValidAction } from '../../../../core/services/api.service';
 import { GamePhase } from '../../../../core/services/game-state.service';
@@ -95,7 +95,7 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
     }
   `],
 })
-export class HandAreaComponent {
+export class HandAreaComponent implements OnInit, DoCheck {
   readonly phase = input.required<GamePhase>();
   readonly isMyTurn = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
@@ -111,10 +111,42 @@ export class HandAreaComponent {
   readonly submitNegotiation = output<{ actionType: string; mode?: string | null }>();
 
   onCardSelected(card: Card): void {
+    console.log('[HandArea] onCardSelected:', {
+      card: `${card.rank} of ${card.suit}`,
+      phase: this.phase(),
+      isMyTurn: this.isMyTurn(),
+      pendingActionType: this.pendingActionType(),
+    });
     this.playCard.emit({ rank: card.rank, suit: card.suit });
   }
 
   onNegotiationAction(action: { actionType: string; mode?: string | null }): void {
+    console.log('[HandArea] onNegotiationAction:', action);
     this.submitNegotiation.emit(action);
+  }
+
+  private _lastLoggedState: string = '';
+
+  // Debug helper - log state on template evaluation
+  ngOnInit(): void {
+    console.log('[HandArea] Component initialized');
+  }
+
+  ngDoCheck(): void {
+    // Log state changes for debugging (only on change)
+    const state = {
+      phase: this.phase(),
+      isMyTurn: this.isMyTurn(),
+      isWatcher: this.isWatcher(),
+      pendingActionType: this.pendingActionType(),
+      handCount: this.hand().length,
+      validCardsCount: this.validCards().length,
+      validActionsCount: this.validActions().length,
+    };
+    const stateKey = JSON.stringify(state);
+    if (stateKey !== this._lastLoggedState) {
+      console.log('[HandArea] State changed:', state);
+      this._lastLoggedState = stateKey;
+    }
   }
 }

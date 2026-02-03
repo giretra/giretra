@@ -129,16 +129,32 @@ export class TableComponent implements OnInit, OnDestroy {
   onStartGame(): void {
     const roomId = this.gameState.currentRoom()?.roomId;
     const clientId = this.session.clientId();
+    const isCreator = this.gameState.isCreator();
+
+    console.log('[Table] Starting game', {
+      roomId,
+      clientId,
+      isCreator,
+      playerName: this.session.playerName(),
+      sessionSnapshot: this.session.getSession(),
+    });
 
     if (roomId && clientId) {
       this.api.startGame(roomId, clientId).subscribe({
-        next: (response) => {
+        next: async (response) => {
+          console.log('[Table] Game started', response);
           this.gameState.setGameId(response.gameId);
+          // Immediately refresh state after game starts (don't wait for SignalR)
+          await this.gameState.refreshState();
         },
         error: (err) => {
-          console.error('Failed to start game', err);
+          console.error('Failed to start game', err.message || err);
+          // Show alert with error message for debugging
+          alert(`Failed to start game: ${err.message || 'Unknown error'}`);
         },
       });
+    } else {
+      console.warn('[Table] Cannot start game - missing roomId or clientId', { roomId, clientId });
     }
   }
 
@@ -161,14 +177,20 @@ export class TableComponent implements OnInit, OnDestroy {
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
 
+    console.log('[Table] Playing card', { card, gameId, clientId });
     if (gameId && clientId) {
       this.api.playCard(gameId, clientId, card.rank as any, card.suit as any).subscribe({
+        next: () => {
+          console.log('[Table] Card played successfully');
+        },
         error: (err) => {
           console.error('Failed to play card', err);
           // Refresh state to revert optimistic update
           this.gameState.refreshState();
         },
       });
+    } else {
+      console.warn('[Table] Cannot play card - missing gameId or clientId');
     }
   }
 
@@ -176,6 +198,7 @@ export class TableComponent implements OnInit, OnDestroy {
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
 
+    console.log('[Table] Submitting negotiation', { action, gameId, clientId });
     if (gameId && clientId) {
       this.api
         .submitNegotiation(
@@ -185,11 +208,16 @@ export class TableComponent implements OnInit, OnDestroy {
           action.mode as any
         )
         .subscribe({
+          next: () => {
+            console.log('[Table] Negotiation submitted successfully');
+          },
           error: (err) => {
             console.error('Failed to submit negotiation', err);
             this.gameState.refreshState();
           },
         });
+    } else {
+      console.warn('[Table] Cannot submit negotiation - missing gameId or clientId');
     }
   }
 

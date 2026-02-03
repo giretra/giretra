@@ -13,11 +13,13 @@ public sealed class RoomService : IRoomService
 {
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
+    private readonly INotificationService _notifications;
 
-    public RoomService(IRoomRepository roomRepository, IGameService gameService)
+    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications)
     {
         _roomRepository = roomRepository;
         _gameService = gameService;
+        _notifications = notifications;
     }
 
     public RoomListResponse GetAllRooms()
@@ -179,34 +181,40 @@ public sealed class RoomService : IRoomService
         return false;
     }
 
-    public StartGameResponse? StartGame(string roomId, string clientId)
+    public (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId)
     {
         var room = _roomRepository.GetById(roomId);
-        if (room == null || room.Status != RoomStatus.Waiting)
-            return null;
+        if (room == null)
+            return (null, "Room not found");
+
+        if (room.Status != RoomStatus.Waiting)
+            return (null, $"Room is not in waiting state (current: {room.Status})");
 
         // Only creator can start the game
         if (room.CreatorClientId != clientId)
-            return null;
+            return (null, $"Only the room creator can start the game. Expected clientId starting with '{room.CreatorClientId[..Math.Min(12, room.CreatorClientId.Length)]}...', got '{clientId[..Math.Min(12, clientId.Length)]}...'");
 
         // Need at least 1 human player
         if (room.PlayerCount == 0)
-            return null;
+            return (null, "No human players in the room");
 
         // Start the game (fills empty slots with AI)
         var gameSession = _gameService.CreateGame(room);
         if (gameSession == null)
-            return null;
+            return (null, "Failed to create game session");
 
         room.Status = RoomStatus.Playing;
         room.GameSessionId = gameSession.GameId;
         _roomRepository.Update(room);
 
-        return new StartGameResponse
+        // Notify all clients in the room that the game has started
+        _ = _notifications.NotifyGameStartedAsync(roomId, gameSession.GameId);
+
+        return (new StartGameResponse
         {
             GameId = gameSession.GameId,
             RoomId = roomId
-        };
+        }, null);
     }
 
     public Room? GetRoomForClient(string clientId)

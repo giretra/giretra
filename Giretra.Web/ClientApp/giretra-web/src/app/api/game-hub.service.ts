@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import {
   HubConnection,
   HubConnectionBuilder,
@@ -24,6 +24,7 @@ import {
   providedIn: 'root',
 })
 export class GameHubService implements OnDestroy {
+  private readonly ngZone = inject(NgZone);
   private hubConnection: HubConnection | null = null;
 
   // Event subjects
@@ -40,9 +41,11 @@ export class GameHubService implements OnDestroy {
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
+      console.log('[Hub] Already connected');
       return;
     }
 
+    console.log('[Hub] Connecting to', hubUrl);
     this.hubConnection = new HubConnectionBuilder()
       .withUrl(hubUrl)
       .withAutomaticReconnect()
@@ -52,6 +55,7 @@ export class GameHubService implements OnDestroy {
     this.registerEventHandlers();
 
     await this.hubConnection.start();
+    console.log('[Hub] Connected successfully');
   }
 
   async disconnect(): Promise<void> {
@@ -97,43 +101,53 @@ export class GameHubService implements OnDestroy {
     if (!this.hubConnection) return;
 
     this.hubConnection.on(GameHubEventNames.PlayerJoined, (event: PlayerJoinedEvent) => {
-      this.playerJoined$.next(event);
+      console.log('[Hub] PlayerJoined', event);
+      this.ngZone.run(() => this.playerJoined$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.PlayerLeft, (event: PlayerLeftEvent) => {
-      this.playerLeft$.next(event);
+      console.log('[Hub] PlayerLeft', event);
+      this.ngZone.run(() => this.playerLeft$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.GameStarted, (event: GameStartedEvent) => {
-      this.gameStarted$.next(event);
+      console.log('[Hub] GameStarted', event);
+      this.ngZone.run(() => this.gameStarted$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.DealStarted, (event: DealStartedEvent) => {
-      this.dealStarted$.next(event);
+      console.log('[Hub] DealStarted', event);
+      this.ngZone.run(() => this.dealStarted$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.DealEnded, (event: DealEndedEvent) => {
-      this.dealEnded$.next(event);
+      console.log('[Hub] DealEnded', event);
+      this.ngZone.run(() => this.dealEnded$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.YourTurn, (event: YourTurnEvent) => {
-      this.yourTurn$.next(event);
+      console.log('[Hub] YourTurn', event);
+      this.ngZone.run(() => this.yourTurn$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.PlayerTurn, (event: PlayerTurnEvent) => {
-      this.playerTurn$.next(event);
+      console.log('[Hub] PlayerTurn', event);
+      this.ngZone.run(() => this.playerTurn$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.CardPlayed, (event: CardPlayedEvent) => {
-      this.cardPlayed$.next(event);
+      console.log('[Hub] CardPlayed', event);
+      this.ngZone.run(() => this.cardPlayed$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.TrickCompleted, (event: TrickCompletedEvent) => {
-      this.trickCompleted$.next(event);
+      console.log('[Hub] TrickCompleted', event);
+      this.ngZone.run(() => this.trickCompleted$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.MatchEnded, (event: MatchEndedEvent) => {
-      this.matchEnded$.next(event);
+      console.log('[Hub] MatchEnded', event);
+      this.ngZone.run(() => this.matchEnded$.next(event));
     });
   }
 }

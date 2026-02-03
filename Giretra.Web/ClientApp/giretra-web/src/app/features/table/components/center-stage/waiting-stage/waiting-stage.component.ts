@@ -1,5 +1,6 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, OnInit, DoCheck, inject } from '@angular/core';
 import { RoomResponse } from '../../../../../core/services/api.service';
+import { ClientSessionService } from '../../../../../core/services/client-session.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 
 @Component({
@@ -10,6 +11,11 @@ import { HlmButton } from '@spartan-ng/helm/button';
     <div class="waiting-stage">
       <h2 class="title">Waiting for players</h2>
       <p class="count">{{ playerCount() }} / 4</p>
+
+      <!-- Debug info - remove later -->
+      <p class="debug" style="font-size: 0.7rem; color: gray;">
+        isCreator: {{ isCreator() }} | isWatcher: {{ isWatcher() }} | clientId: {{ debugClientId() }}
+      </p>
 
       @if (showStartButton()) {
         <button
@@ -62,7 +68,9 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
   `],
 })
-export class WaitingStageComponent {
+export class WaitingStageComponent implements OnInit, DoCheck {
+  private readonly session = inject(ClientSessionService);
+
   readonly room = input<RoomResponse | null>(null);
   readonly isCreator = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
@@ -74,4 +82,40 @@ export class WaitingStageComponent {
   readonly showStartButton = computed(() => {
     return this.isCreator() && !this.isWatcher();
   });
+
+  // Debug: show clientId to help diagnose issues
+  readonly debugClientId = computed(() => {
+    const id = this.session.clientId();
+    return id ? `${id.slice(0, 12)}...` : 'none';
+  });
+
+  private _lastLoggedState: string = '';
+
+  ngOnInit(): void {
+    console.log('[WaitingStage] Component initialized');
+  }
+
+  ngDoCheck(): void {
+    const room = this.room();
+    const state = {
+      roomId: room?.roomId,
+      roomStatus: room?.status,
+      playerCount: room?.playerCount,
+      gameId: room?.gameId,
+      slots: room?.playerSlots?.map(s => ({
+        position: s.position,
+        occupied: s.isOccupied,
+        name: s.playerName,
+        isAi: s.isAi,
+      })),
+      isCreator: this.isCreator(),
+      isWatcher: this.isWatcher(),
+      showStartButton: this.showStartButton(),
+    };
+    const stateKey = JSON.stringify(state);
+    if (stateKey !== this._lastLoggedState) {
+      console.log('[WaitingStage] State changed:', state);
+      this._lastLoggedState = stateKey;
+    }
+  }
 }

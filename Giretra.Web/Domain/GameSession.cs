@@ -22,7 +22,7 @@ public sealed class GameSession
     /// <summary>
     /// Player agents for each position.
     /// </summary>
-    public required IReadOnlyDictionary<PlayerPosition, IPlayerAgent> PlayerAgents { get; init; }
+    public IReadOnlyDictionary<PlayerPosition, IPlayerAgent> PlayerAgents { get; set; } = null!;
 
     /// <summary>
     /// Mapping of client IDs to player positions (for human players only).

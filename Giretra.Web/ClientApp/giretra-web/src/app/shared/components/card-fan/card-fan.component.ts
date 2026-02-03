@@ -73,9 +73,11 @@ export class CardFanComponent {
   }
 
   isPlayable(card: CardResponse): boolean {
-    if (!this.interactive()) return false;
+    const interactive = this.interactive();
+    if (!interactive) return false;
     const valid = this.validCards();
-    return valid.some((vc) => cardEquals(vc, card));
+    const playable = valid.some((vc) => cardEquals(vc, card));
+    return playable;
   }
 
   isDimmed(card: CardResponse): boolean {
@@ -90,8 +92,23 @@ export class CardFanComponent {
   }
 
   onCardClicked(card: Card): void {
-    if (this.isPlayable(card)) {
+    const interactive = this.interactive();
+    const validCards = this.validCards();
+    const playable = this.isPlayable(card);
+
+    console.log('[CardFan] onCardClicked:', {
+      card: `${card.rank} of ${card.suit}`,
+      interactive,
+      validCardsCount: validCards.length,
+      validCards: validCards.map(c => `${c.rank}${c.suit}`),
+      playable,
+    });
+
+    if (playable) {
+      console.log('[CardFan] Emitting cardSelected');
       this.cardSelected.emit(card);
+    } else {
+      console.log('[CardFan] Card not playable, ignoring click');
     }
   }
 }

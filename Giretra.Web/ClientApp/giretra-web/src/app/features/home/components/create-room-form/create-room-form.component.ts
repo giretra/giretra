@@ -193,12 +193,25 @@ export class CreateRoomFormComponent {
 
     this.api.createRoom(name, this.playerName(), this.fillWithAi).subscribe({
       next: (response) => {
+        console.log('[CreateRoom] Response received:', {
+          roomId: response.room.roomId,
+          clientId: response.clientId,
+          position: response.position,
+          fullResponse: response,
+        });
+
         // Store session info
         this.session.joinRoom(
           response.room.roomId,
           response.clientId,
           response.position
         );
+
+        console.log('[CreateRoom] Session updated:', {
+          storedClientId: this.session.clientId(),
+          storedRoomId: this.session.roomId(),
+        });
+
         this.submitting.set(false);
         this.roomCreated.emit(response.room);
       },

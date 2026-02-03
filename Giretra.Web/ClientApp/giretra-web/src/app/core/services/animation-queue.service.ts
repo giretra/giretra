@@ -1,6 +1,4 @@
 import { Injectable, signal } from '@angular/core';
-import { Subject } from 'rxjs';
-import { concatMap, delay } from 'rxjs/operators';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 import { Card } from '../models';
 
@@ -15,19 +13,15 @@ export interface TrickCollectAnimation {
   cards: Card[];
 }
 
-type AnimationItem =
-  | { type: 'cardFly'; data: CardFlyAnimation }
-  | { type: 'winnerHighlight'; data: { winner: PlayerPosition } }
-  | { type: 'trickCollect'; data: TrickCollectAnimation }
-  | { type: 'delay'; data: { ms: number } };
-
+/**
+ * Simplified animation service that uses delays instead of animations.
+ * The animation signals are kept for API compatibility but animations are disabled.
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class AnimationQueueService {
-  private readonly queue$ = new Subject<AnimationItem>();
-
-  // Signals for component reactivity
+  // Signals for component reactivity (kept for API compatibility)
   private readonly _cardFlying = signal<CardFlyAnimation | null>(null);
   private readonly _winnerHighlight = signal<PlayerPosition | null>(null);
   private readonly _trickCollecting = signal<TrickCollectAnimation | null>(null);
@@ -38,88 +32,43 @@ export class AnimationQueueService {
   readonly trickCollecting = this._trickCollecting.asReadonly();
   readonly isAnimating = this._isAnimating.asReadonly();
 
-  constructor() {
-    this.setupQueue();
-  }
-
-  private setupQueue(): void {
-    this.queue$
-      .pipe(
-        concatMap((item) => this.processAnimation(item))
-      )
-      .subscribe();
-  }
-
-  private async processAnimation(item: AnimationItem): Promise<void> {
-    this._isAnimating.set(true);
-
-    switch (item.type) {
-      case 'cardFly':
-        this._cardFlying.set(item.data);
-        await this.wait(300); // Animation duration
-        this._cardFlying.set(null);
-        break;
-
-      case 'winnerHighlight':
-        this._winnerHighlight.set(item.data.winner);
-        await this.wait(1500); // Highlight duration
-        this._winnerHighlight.set(null);
-        break;
-
-      case 'trickCollect':
-        this._trickCollecting.set(item.data);
-        await this.wait(500); // Collect animation duration
-        this._trickCollecting.set(null);
-        break;
-
-      case 'delay':
-        await this.wait(item.data.ms);
-        break;
-    }
-
-    this._isAnimating.set(false);
-  }
-
   private wait(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-   * Queue a card fly animation
+   * Queue a card fly - replaced with a short delay
    */
-  flyCard(animation: CardFlyAnimation): void {
-    this.queue$.next({ type: 'cardFly', data: animation });
+  async flyCard(_animation: CardFlyAnimation): Promise<void> {
+    await this.wait(50);
   }
 
   /**
-   * Queue a winner highlight animation
+   * Queue a winner highlight - replaced with a short delay
    */
-  highlightWinner(winner: PlayerPosition): void {
-    this.queue$.next({ type: 'winnerHighlight', data: { winner } });
+  async highlightWinner(_winner: PlayerPosition): Promise<void> {
+    await this.wait(100);
   }
 
   /**
-   * Queue a trick collect animation
+   * Queue a trick collect - replaced with a short delay
    */
-  collectTrick(animation: TrickCollectAnimation): void {
-    this.queue$.next({ type: 'trickCollect', data: animation });
+  async collectTrick(_animation: TrickCollectAnimation): Promise<void> {
+    await this.wait(50);
   }
 
   /**
    * Queue a delay
    */
-  addDelay(ms: number): void {
-    this.queue$.next({ type: 'delay', data: { ms } });
+  async addDelay(ms: number): Promise<void> {
+    await this.wait(ms);
   }
 
   /**
-   * Animate a complete trick sequence:
-   * 1. Highlight winner
-   * 2. Collect cards
+   * Animate a complete trick sequence - replaced with a short delay
    */
-  animateTrickComplete(winner: PlayerPosition, cards: Card[]): void {
-    this.highlightWinner(winner);
-    this.collectTrick({ winner, cards });
+  async animateTrickComplete(_winner: PlayerPosition, _cards: Card[]): Promise<void> {
+    await this.wait(150);
   }
 
   /**

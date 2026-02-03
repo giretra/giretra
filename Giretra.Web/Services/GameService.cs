@@ -44,12 +44,11 @@ public sealed class GameService : IGameService
             }
         }
 
-        // Create the game session first (needed for WebApiPlayerAgent)
+        // Create the game session (single instance used throughout)
         var session = new GameSession
         {
             GameId = gameId,
             RoomId = room.RoomId,
-            PlayerAgents = null!, // Will be set after creating agents
             ClientPositions = clientPositions
         };
 
@@ -74,30 +73,24 @@ public sealed class GameService : IGameService
             }
         }
 
-        // Update session with agents (a bit awkward but needed for the circular reference)
-        var finalSession = new GameSession
-        {
-            GameId = gameId,
-            RoomId = room.RoomId,
-            PlayerAgents = agents,
-            ClientPositions = clientPositions
-        };
+        // Set agents on the session
+        session.PlayerAgents = agents;
 
         // Create the GameManager
         var firstDealer = PlayerPosition.Bottom;
         var gameManager = new GameManager(agents, firstDealer);
-        finalSession.GameManager = gameManager;
+        session.GameManager = gameManager;
 
-        _gameRepository.Add(finalSession);
+        _gameRepository.Add(session);
 
         // Start the game loop in the background
-        finalSession.GameLoopTask = Task.Run(async () =>
+        session.GameLoopTask = Task.Run(async () =>
         {
             try
             {
                 _logger.LogInformation("Starting game {GameId}", gameId);
                 await gameManager.PlayMatchAsync();
-                finalSession.CompletedAt = DateTime.UtcNow;
+                session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
             }
             catch (Exception ex)
@@ -106,7 +99,7 @@ public sealed class GameService : IGameService
             }
         });
 
-        return finalSession;
+        return session;
     }
 
     public GameSession? GetGame(string gameId)
