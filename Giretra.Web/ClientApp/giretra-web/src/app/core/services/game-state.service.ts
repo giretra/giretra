@@ -74,6 +74,17 @@ export class GameStateService {
   readonly dealSummary = this._dealSummary.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Completed Trick Display State (brief pause after trick ends)
+  // ─────────────────────────────────────────────────────────────────────────
+  private readonly _showingCompletedTrick = signal<boolean>(false);
+  private readonly _completedTrickToShow = signal<TrickResponse | null>(null);
+  private _completedTrickTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private readonly COMPLETED_TRICK_DELAY_MS = 3000;
+
+  readonly showingCompletedTrick = this._showingCompletedTrick.asReadonly();
+  readonly completedTrickToShow = this._completedTrickToShow.asReadonly();
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Computed Signals: Derived State
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -374,6 +385,20 @@ export class GameStateService {
   hideDealSummary(): void {
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
+  }
+
+  /**
+   * Dismiss completed trick display early (user clicked to continue)
+   */
+  dismissCompletedTrick(): void {
+    if (this._completedTrickTimeoutId) {
+      clearTimeout(this._completedTrickTimeoutId);
+      this._completedTrickTimeoutId = null;
+    }
+    this._showingCompletedTrick.set(false);
+    this._completedTrickToShow.set(null);
+    // Now refresh state to get the next trick
+    this.refreshState();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
