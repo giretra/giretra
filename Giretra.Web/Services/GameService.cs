@@ -1,0 +1,428 @@
+using Giretra.Core;
+using Giretra.Core.Cards;
+using Giretra.Core.GameModes;
+using Giretra.Core.Negotiation;
+using Giretra.Core.Players;
+using Giretra.Core.State;
+using Giretra.Web.Domain;
+using Giretra.Web.Models.Responses;
+using Giretra.Web.Players;
+using Giretra.Web.Repositories;
+
+namespace Giretra.Web.Services;
+
+/// <summary>
+/// Service for managing game sessions.
+/// </summary>
+public sealed class GameService : IGameService
+{
+    private readonly IGameRepository _gameRepository;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<GameService> _logger;
+
+    public GameService(
+        IGameRepository gameRepository,
+        INotificationService notifications,
+        ILogger<GameService> logger)
+    {
+        _gameRepository = gameRepository;
+        _notifications = notifications;
+        _logger = logger;
+    }
+
+    public GameSession? CreateGame(Room room)
+    {
+        var gameId = $"game_{Guid.NewGuid():N}";
+
+        // Build client positions mapping (human players only)
+        var clientPositions = new Dictionary<string, PlayerPosition>();
+        foreach (var (position, client) in room.PlayerSlots)
+        {
+            if (client != null)
+            {
+                clientPositions[client.ClientId] = position;
+            }
+        }
+
+        // Create the game session first (needed for WebApiPlayerAgent)
+        var session = new GameSession
+        {
+            GameId = gameId,
+            RoomId = room.RoomId,
+            PlayerAgents = null!, // Will be set after creating agents
+            ClientPositions = clientPositions
+        };
+
+        // Create player agents (WebApiPlayerAgent for humans, CalculatingPlayerAgent for AI)
+        var agents = new Dictionary<PlayerPosition, IPlayerAgent>();
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            var client = room.PlayerSlots[position];
+            if (client != null)
+            {
+                // Human player
+                agents[position] = new WebApiPlayerAgent(
+                    position,
+                    client.ClientId,
+                    session,
+                    _notifications);
+            }
+            else
+            {
+                // AI player
+                agents[position] = new CalculatingPlayerAgent(position);
+            }
+        }
+
+        // Update session with agents (a bit awkward but needed for the circular reference)
+        var finalSession = new GameSession
+        {
+            GameId = gameId,
+            RoomId = room.RoomId,
+            PlayerAgents = agents,
+            ClientPositions = clientPositions
+        };
+
+        // Create the GameManager
+        var firstDealer = PlayerPosition.Bottom;
+        var gameManager = new GameManager(agents, firstDealer);
+        finalSession.GameManager = gameManager;
+
+        _gameRepository.Add(finalSession);
+
+        // Start the game loop in the background
+        finalSession.GameLoopTask = Task.Run(async () =>
+        {
+            try
+            {
+                _logger.LogInformation("Starting game {GameId}", gameId);
+                await gameManager.PlayMatchAsync();
+                finalSession.CompletedAt = DateTime.UtcNow;
+                _logger.LogInformation("Game {GameId} completed", gameId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Game {GameId} failed with error", gameId);
+            }
+        });
+
+        return finalSession;
+    }
+
+    public GameSession? GetGame(string gameId)
+    {
+        return _gameRepository.GetById(gameId);
+    }
+
+    public GameStateResponse? GetGameState(string gameId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session?.MatchState == null)
+            return null;
+
+        return MapToGameStateResponse(session);
+    }
+
+    public PlayerStateResponse? GetPlayerState(string gameId, string clientId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session?.MatchState == null)
+            return null;
+
+        var position = session.GetPositionForClient(clientId);
+        if (position == null)
+            return null;
+
+        var matchState = session.MatchState;
+        var deal = matchState.CurrentDeal;
+
+        // Get player's hand
+        var hand = deal?.Players[position.Value].Hand ?? [];
+
+        // Get valid actions based on pending action
+        IReadOnlyList<CardResponse>? validCards = null;
+        IReadOnlyList<ValidActionResponse>? validActions = null;
+        PendingActionType? pendingType = null;
+
+        var isMyTurn = session.PendingAction?.Player == position.Value;
+        if (isMyTurn && session.PendingAction != null)
+        {
+            pendingType = session.PendingAction.ActionType;
+
+            if (session.PendingAction.ValidCards != null)
+            {
+                validCards = session.PendingAction.ValidCards
+                    .Select(CardResponse.FromCard)
+                    .ToList();
+            }
+
+            if (session.PendingAction.ValidNegotiationActions != null)
+            {
+                validActions = session.PendingAction.ValidNegotiationActions
+                    .Select(a => MapToValidActionResponse(a))
+                    .ToList();
+            }
+        }
+
+        return new PlayerStateResponse
+        {
+            Position = position.Value,
+            Hand = hand.Select(CardResponse.FromCard).ToList(),
+            IsYourTurn = isMyTurn,
+            PendingActionType = pendingType,
+            ValidCards = validCards,
+            ValidActions = validActions,
+            GameState = MapToGameStateResponse(session)
+        };
+    }
+
+    public bool SubmitCut(string gameId, string clientId, int position, bool fromTop)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var pending = session.PendingAction;
+        if (pending == null || pending.ActionType != PendingActionType.Cut)
+            return false;
+
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null || playerPosition.Value != pending.Player)
+            return false;
+
+        // Validate cut position
+        if (position < 6 || position > 26)
+            return false;
+
+        // Complete the pending action
+        pending.CutTcs?.TrySetResult((position, fromTop));
+        return true;
+    }
+
+    public bool SubmitNegotiation(string gameId, string clientId, NegotiationAction action)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var pending = session.PendingAction;
+        if (pending == null || pending.ActionType != PendingActionType.Negotiate)
+            return false;
+
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null || playerPosition.Value != pending.Player)
+            return false;
+
+        // Validate the action is one of the valid options
+        if (pending.ValidNegotiationActions != null)
+        {
+            var isValid = pending.ValidNegotiationActions.Any(va => ActionsMatch(va, action));
+            if (!isValid)
+                return false;
+        }
+
+        // Complete the pending action
+        pending.NegotiationTcs?.TrySetResult(action);
+        return true;
+    }
+
+    public bool SubmitCardPlay(string gameId, string clientId, Card card)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var pending = session.PendingAction;
+        if (pending == null || pending.ActionType != PendingActionType.PlayCard)
+            return false;
+
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null || playerPosition.Value != pending.Player)
+            return false;
+
+        // Validate the card is one of the valid options
+        if (pending.ValidCards != null && !pending.ValidCards.Contains(card))
+            return false;
+
+        // Complete the pending action
+        pending.PlayCardTcs?.TrySetResult(card);
+        return true;
+    }
+
+    public WatcherStateResponse? GetWatcherState(string gameId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session?.MatchState == null)
+            return null;
+
+        var matchState = session.MatchState;
+        var deal = matchState.CurrentDeal;
+
+        // Build card counts for each player
+        var cardCounts = new Dictionary<PlayerPosition, int>();
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            cardCounts[position] = deal?.Players[position].CardCount ?? 0;
+        }
+
+        return new WatcherStateResponse
+        {
+            GameState = MapToGameStateResponse(session),
+            PlayerCardCounts = cardCounts
+        };
+    }
+
+    private static bool ActionsMatch(NegotiationAction a, NegotiationAction b)
+    {
+        return (a, b) switch
+        {
+            (AcceptAction, AcceptAction) => true,
+            (AnnouncementAction aa, AnnouncementAction ab) => aa.Mode == ab.Mode,
+            (DoubleAction da, DoubleAction db) => da.TargetMode == db.TargetMode,
+            (RedoubleAction ra, RedoubleAction rb) => ra.TargetMode == rb.TargetMode,
+            _ => false
+        };
+    }
+
+    private static ValidActionResponse MapToValidActionResponse(NegotiationAction action)
+    {
+        return action switch
+        {
+            AcceptAction => new ValidActionResponse { ActionType = "Accept", Mode = null },
+            AnnouncementAction a => new ValidActionResponse { ActionType = "Announce", Mode = a.Mode },
+            DoubleAction d => new ValidActionResponse { ActionType = "Double", Mode = d.TargetMode },
+            RedoubleAction r => new ValidActionResponse { ActionType = "Redouble", Mode = r.TargetMode },
+            _ => throw new ArgumentException($"Unknown action type: {action.GetType().Name}")
+        };
+    }
+
+    private GameStateResponse MapToGameStateResponse(GameSession session)
+    {
+        var matchState = session.MatchState!;
+        var deal = matchState.CurrentDeal;
+
+        // Build trick responses
+        IReadOnlyList<TrickResponse>? completedTricks = null;
+        TrickResponse? currentTrick = null;
+
+        if (deal?.Hand != null)
+        {
+            completedTricks = deal.Hand.CompletedTricks
+                .Select(t => MapToTrickResponse(t, deal.Hand.GameMode))
+                .ToList();
+
+            if (deal.Hand.CurrentTrick != null)
+            {
+                currentTrick = MapToTrickResponse(deal.Hand.CurrentTrick, deal.Hand.GameMode);
+            }
+        }
+
+        // Build negotiation history
+        IReadOnlyList<NegotiationActionResponse>? negotiationHistory = null;
+        if (deal?.Negotiation != null)
+        {
+            negotiationHistory = deal.Negotiation.Actions
+                .Select(NegotiationActionResponse.FromAction)
+                .ToList();
+        }
+
+        return new GameStateResponse
+        {
+            GameId = session.GameId,
+            RoomId = session.RoomId,
+            TargetScore = matchState.TargetScore,
+            Team1MatchPoints = matchState.Team1MatchPoints,
+            Team2MatchPoints = matchState.Team2MatchPoints,
+            Dealer = matchState.CurrentDealer,
+            Phase = deal?.Phase ?? DealPhase.Completed,
+            CompletedDealsCount = matchState.CompletedDeals.Count,
+            GameMode = deal?.ResolvedMode,
+            Multiplier = deal?.Multiplier,
+            CurrentTrick = currentTrick,
+            CompletedTricks = completedTricks,
+            Team1CardPoints = deal?.Hand?.Team1CardPoints,
+            Team2CardPoints = deal?.Hand?.Team2CardPoints,
+            NegotiationHistory = negotiationHistory,
+            CurrentBid = deal?.Negotiation?.CurrentBid,
+            IsComplete = matchState.IsComplete,
+            Winner = matchState.Winner,
+            PendingActionType = session.PendingAction?.ActionType,
+            PendingActionPlayer = session.PendingAction?.Player
+        };
+    }
+
+    private static TrickResponse MapToTrickResponse(TrickState trick, GameMode gameMode)
+    {
+        PlayerPosition? winner = null;
+        if (trick.IsComplete)
+        {
+            winner = DetermineWinner(trick, gameMode);
+        }
+
+        return new TrickResponse
+        {
+            Leader = trick.Leader,
+            TrickNumber = trick.TrickNumber,
+            PlayedCards = trick.PlayedCards
+                .Select(pc => new PlayedCardResponse
+                {
+                    Player = pc.Player,
+                    Card = CardResponse.FromCard(pc.Card)
+                })
+                .ToList(),
+            IsComplete = trick.IsComplete,
+            Winner = winner
+        };
+    }
+
+    private static PlayerPosition DetermineWinner(TrickState trick, GameMode gameMode)
+    {
+        var trumpSuit = gameMode.GetTrumpSuit();
+        var leadSuit = trick.LeadSuit!.Value;
+
+        var winningCard = trick.PlayedCards[0];
+
+        foreach (var playedCard in trick.PlayedCards.Skip(1))
+        {
+            if (IsBetter(playedCard, winningCard, leadSuit, trumpSuit, gameMode))
+            {
+                winningCard = playedCard;
+            }
+        }
+
+        return winningCard.Player;
+    }
+
+    private static bool IsBetter(
+        Core.Play.PlayedCard challenger,
+        Core.Play.PlayedCard current,
+        CardSuit leadSuit,
+        CardSuit? trumpSuit,
+        GameMode gameMode)
+    {
+        var challengerSuit = challenger.Card.Suit;
+        var currentSuit = current.Card.Suit;
+
+        // Trump beats non-trump
+        if (trumpSuit.HasValue)
+        {
+            if (challengerSuit == trumpSuit && currentSuit != trumpSuit)
+                return true;
+            if (currentSuit == trumpSuit && challengerSuit != trumpSuit)
+                return false;
+        }
+
+        // If different suits (and neither is trump, or no trump mode), lead suit wins
+        if (challengerSuit != currentSuit)
+        {
+            if (currentSuit == leadSuit && challengerSuit != leadSuit)
+                return false;
+            if (challengerSuit == leadSuit && currentSuit != leadSuit)
+                return true;
+            return false;
+        }
+
+        // Same suit: compare strength
+        return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
+    }
+}

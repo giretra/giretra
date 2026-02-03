@@ -1,0 +1,101 @@
+@Giretra.Web_HostAddress = http://localhost:5067
+
+### List all rooms
+GET {{Giretra.Web_HostAddress}}/api/rooms
+Accept: application/json
+
+### Create a room
+POST {{Giretra.Web_HostAddress}}/api/rooms
+Content-Type: application/json
+
+{
+  "name": "Test Room",
+  "creatorName": "Player1"
+}
+
+### Get a specific room (replace ROOM_ID)
+GET {{Giretra.Web_HostAddress}}/api/rooms/{{roomId}}
+Accept: application/json
+
+### Join a room as player (replace ROOM_ID)
+POST {{Giretra.Web_HostAddress}}/api/rooms/{{roomId}}/join
+Content-Type: application/json
+
+{
+  "displayName": "Player2"
+}
+
+### Join a room as watcher (replace ROOM_ID)
+POST {{Giretra.Web_HostAddress}}/api/rooms/{{roomId}}/watch
+Content-Type: application/json
+
+{
+  "displayName": "Spectator1"
+}
+
+### Start a game (replace ROOM_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/rooms/{{roomId}}/start
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}"
+}
+
+### Leave a room (replace ROOM_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/rooms/{{roomId}}/leave
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}"
+}
+
+### Get game state (replace GAME_ID)
+GET {{Giretra.Web_HostAddress}}/api/games/{{gameId}}
+Accept: application/json
+
+### Get player state (replace GAME_ID and CLIENT_ID)
+GET {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/player/{{clientId}}
+Accept: application/json
+
+### Get watcher state (replace GAME_ID)
+GET {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/watch
+Accept: application/json
+
+### Submit cut decision (replace GAME_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/cut
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}",
+  "position": 16,
+  "fromTop": true
+}
+
+### Submit negotiation action - Accept (replace GAME_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/negotiate
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}",
+  "actionType": "Accept"
+}
+
+### Submit negotiation action - Announce (replace GAME_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/negotiate
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}",
+  "actionType": "Announce",
+  "mode": "ColourHearts"
+}
+
+### Play a card (replace GAME_ID and CLIENT_ID)
+POST {{Giretra.Web_HostAddress}}/api/games/{{gameId}}/play
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}",
+  "rank": "Ace",
+  "suit": "Spades"
+}
