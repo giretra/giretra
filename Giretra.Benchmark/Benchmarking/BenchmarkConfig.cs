@@ -34,4 +34,10 @@ public sealed class BenchmarkConfig
     /// Random seed for reproducibility. If null, uses non-deterministic randomness.
     /// </summary>
     public int? Seed { get; init; }
+
+    /// <summary>
+    /// Whether to shuffle the deck at the start of each match.
+    /// Required for valid statistics with deterministic agents.
+    /// </summary>
+    public bool Shuffle { get; init; } = false;
 }

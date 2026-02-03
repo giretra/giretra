@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Giretra.Benchmark.Elo;
 using Giretra.Benchmark.Factories;
 using Giretra.Core;
+using Giretra.Core.Cards;
 using Giretra.Core.Players;
 
 namespace Giretra.Benchmark.Benchmarking;
@@ -39,6 +40,11 @@ public sealed class BenchmarkRunner
         var results = ImmutableList.CreateBuilder<MatchResult>();
         var totalStopwatch = Stopwatch.StartNew();
 
+        // Create random for deck shuffling if enabled
+        var deckRandom = _config.Shuffle
+            ? (_config.Seed.HasValue ? new Random(_config.Seed.Value + 50000) : new Random())
+            : null;
+
         var team1Elo = _config.Team1InitialElo;
         var team2Elo = _config.Team2InitialElo;
         var team1MinElo = team1Elo;
@@ -62,7 +68,12 @@ public sealed class BenchmarkRunner
             // Alternate first dealer between matches
             var firstDealer = (PlayerPosition)(i % 4);
 
-            var gameManager = new GameManager(bottom, left, top, right, firstDealer, targetScore: _config.TargetScore);
+            // Create deck provider (shuffled or standard)
+            Func<Deck> deckProvider = deckRandom is not null
+                ? () => CreateShuffledDeck(deckRandom)
+                : Deck.CreateStandard;
+
+            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
             var matchState = await gameManager.PlayMatchAsync();
 
             matchStopwatch.Stop();
@@ -130,5 +141,22 @@ public sealed class BenchmarkRunner
             TotalDuration = totalStopwatch.Elapsed,
             Matches = results.ToImmutable()
         };
+    }
+
+    /// <summary>
+    /// Creates a shuffled deck using Fisher-Yates shuffle.
+    /// </summary>
+    private static Deck CreateShuffledDeck(Random random)
+    {
+        var cards = Deck.CreateStandard().Cards.ToArray();
+
+        // Fisher-Yates shuffle
+        for (int i = cards.Length - 1; i > 0; i--)
+        {
+            int j = random.Next(i + 1);
+            (cards[i], cards[j]) = (cards[j], cards[i]);
+        }
+
+        return Deck.FromCards(cards);
     }
 }

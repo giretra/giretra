@@ -40,6 +40,7 @@ public sealed class BenchmarkRenderer
         configTable.AddRow("Target Score", _config.TargetScore.ToString());
         configTable.AddRow("K-Factor", _config.EloKFactor.ToString());
         configTable.AddRow("Seed", _config.Seed?.ToString() ?? "[dim]random[/]");
+        configTable.AddRow("Shuffle", _config.Shuffle ? "[yellow]enabled[/]" : "[dim]disabled[/]");
 
         AnsiConsole.Write(configTable);
         AnsiConsole.WriteLine();

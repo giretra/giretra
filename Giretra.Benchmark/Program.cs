@@ -11,9 +11,9 @@ if (config is null)
     return 1;
 }
 
-// Create factories with different seeds for each team to ensure independent behavior
-var team1Factory = new RandomPlayerAgentFactory(config.Seed);
-var team2Factory = new RandomPlayerAgentFactory(config.Seed.HasValue ? config.Seed.Value + 10000 : null);
+// Create factories: CalculatingPlayer (Team1) vs RandomPlayer (Team2)
+var team1Factory = new CalculatingPlayerAgentFactory();
+var team2Factory = new RandomPlayerAgentFactory(config.Seed);
 
 // Create runner and renderer
 var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
@@ -42,6 +42,7 @@ static BenchmarkConfig? ParseArguments(string[] args)
     var kFactor = config.EloKFactor;
     var targetScore = config.TargetScore;
     int? seed = config.Seed;
+    var shuffle = config.Shuffle;
 
     for (int i = 0; i < args.Length; i++)
     {
@@ -128,6 +129,10 @@ static BenchmarkConfig? ParseArguments(string[] args)
                 }
                 break;
 
+            case "--shuffle":
+                shuffle = true;
+                break;
+
             default:
                 AnsiConsole.MarkupLine($"[yellow]Warning: Unknown argument '{args[i]}'[/]");
                 break;
@@ -141,7 +146,8 @@ static BenchmarkConfig? ParseArguments(string[] args)
         Team2InitialElo = elo2,
         EloKFactor = kFactor,
         TargetScore = targetScore,
-        Seed = seed
+        Seed = seed,
+        Shuffle = shuffle
     };
 }
 
@@ -163,6 +169,7 @@ static void PrintHelp()
     table.AddRow("-n, --matches", "Number of matches to play", "1000");
     table.AddRow("-t, --target", "Target score to win a match", "500");
     table.AddRow("-s, --seed", "Random seed for reproducibility", "random");
+    table.AddRow("--shuffle", "Shuffle deck each match (for deterministic agents)", "off");
     table.AddRow("--elo1", "Initial ELO for Team 1", "1200");
     table.AddRow("--elo2", "Initial ELO for Team 2", "1200");
     table.AddRow("-k, --k-factor", "ELO K-factor", "24");
