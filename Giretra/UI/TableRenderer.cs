@@ -1,5 +1,6 @@
 using Giretra.Core.Cards;
 using Giretra.Core.GameModes;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.State;
 using Spectre.Console;
@@ -83,21 +84,25 @@ public static class TableRenderer
         var trickNum = trick?.TrickNumber ?? 1;
         var leadSuit = trick?.LeadSuit;
         var leader = trick?.Leader;
-
-        var topCard = GetTrickCardMarkup(trick, PlayerPosition.Top, gameMode);
-        var leftCard = GetTrickCardMarkup(trick, PlayerPosition.Left, gameMode);
-        var rightCard = GetTrickCardMarkup(trick, PlayerPosition.Right, gameMode);
-        var bottomCard = GetTrickCardMarkup(trick, PlayerPosition.Bottom, gameMode);
+        var currentWinner = GetCurrentWinner(trick, gameMode);
 
         var leadText = leadSuit.HasValue
             ? $"Lead: {CardRenderer.SuitToMarkup(leadSuit.Value)}"
             : "[dim]Waiting...[/]";
 
-        // Show leader with arrow marker
-        string GetCardWithMarker(PlayerPosition pos, string card)
+        // Get card markup with markers for leader (>) and current winner (highlighted)
+        string GetCardWithMarkers(PlayerPosition pos)
         {
-            var marker = leader == pos ? "[yellow bold]>[/]" : " ";
-            return $"{marker}{card}";
+            var card = GetTrickCardMarkup(trick, pos, gameMode);
+            var leaderMarker = leader == pos ? "[yellow bold]>[/]" : " ";
+
+            // Highlight the currently winning card
+            if (currentWinner == pos)
+            {
+                card = $"[green bold]{card}[/]";
+            }
+
+            return $"{leaderMarker}{card}";
         }
 
         // Compass-style layout: cards positioned in front of each player
@@ -109,19 +114,19 @@ public static class TableRenderer
         // Row 1: TOP card centered
         grid.AddRow(
             new Text(""),
-            Align.Center(new Markup(GetCardWithMarker(PlayerPosition.Top, topCard))),
+            Align.Center(new Markup(GetCardWithMarkers(PlayerPosition.Top))),
             new Text(""));
 
         // Row 2: LEFT card | empty | RIGHT card
         grid.AddRow(
-            new Markup(GetCardWithMarker(PlayerPosition.Left, leftCard)),
+            new Markup(GetCardWithMarkers(PlayerPosition.Left)),
             new Text(""),
-            Align.Right(new Markup(GetCardWithMarker(PlayerPosition.Right, rightCard))));
+            Align.Right(new Markup(GetCardWithMarkers(PlayerPosition.Right))));
 
         // Row 3: BOTTOM/YOU card centered
         grid.AddRow(
             new Text(""),
-            Align.Center(new Markup(GetCardWithMarker(PlayerPosition.Bottom, bottomCard))),
+            Align.Center(new Markup(GetCardWithMarkers(PlayerPosition.Bottom))),
             new Text(""));
 
         var content = new Rows(
@@ -133,6 +138,28 @@ public static class TableRenderer
             .Header($"[yellow]Trick #{trickNum}[/]")
             .Border(BoxBorder.Rounded)
             .Expand();
+    }
+
+    /// <summary>
+    /// Finds the player currently winning the trick based on played cards.
+    /// </summary>
+    private static PlayerPosition? GetCurrentWinner(TrickState? trick, GameMode gameMode)
+    {
+        if (trick == null || trick.PlayedCards.Count == 0 || !trick.LeadSuit.HasValue)
+            return null;
+
+        var leadSuit = trick.LeadSuit.Value;
+        var winningCard = trick.PlayedCards[0];
+
+        foreach (var playedCard in trick.PlayedCards.Skip(1))
+        {
+            if (CardComparer.Beats(playedCard.Card, winningCard.Card, leadSuit, gameMode))
+            {
+                winningCard = playedCard;
+            }
+        }
+
+        return winningCard.Player;
     }
 
     private static Panel BuildPlayerPanel(string name, int cardCount, Card? playedCard, GameMode gameMode, string teamColor)
@@ -248,15 +275,15 @@ public static class TableRenderer
 
         var leadText = $"Lead: {CardRenderer.SuitToMarkup(leadSuit!.Value)}";
 
-        // Show winner with star marker
+        // Show winner with star marker and green highlight
         string GetCardMarkup(PlayerPosition pos)
         {
             var played = trick.PlayedCards.FirstOrDefault(pc => pc.Player == pos);
             if (played.Card.Equals(default(Card))) return "[dim]--[/]";
             var cardMarkup = CardRenderer.ToMarkup(played.Card, gameMode);
             var marker = winner == pos ? "[yellow bold]*[/]" : " ";
-            // Highlight winner's card
-            var card = winner == pos ? $"[bold underline]{cardMarkup}[/]" : cardMarkup;
+            // Highlight winner's card in green bold
+            var card = winner == pos ? $"[green bold]{cardMarkup}[/]" : cardMarkup;
             return $"{marker}{card}";
         }
 

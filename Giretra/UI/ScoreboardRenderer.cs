@@ -50,7 +50,7 @@ public static class ScoreboardRenderer
     }
 
     /// <summary>
-    /// Renders deal result summary.
+    /// Renders deal result summary with detailed score breakdown.
     /// </summary>
     public static void RenderDealResult(DealResult result, int dealNumber)
     {
@@ -58,45 +58,161 @@ public static class ScoreboardRenderer
         AnsiConsole.Write(new Rule($"[bold]DEAL #{dealNumber} RESULTS[/]").RuleStyle("yellow"));
         AnsiConsole.WriteLine();
 
-        var table = new Table()
-            .Border(TableBorder.Rounded)
-            .AddColumn("Team")
-            .AddColumn("Card Points")
-            .AddColumn("Match Points");
+        var mode = result.GameMode;
+        var category = mode.GetCategory();
+        var threshold = mode.GetWinThreshold();
+        var totalPoints = mode.GetTotalPoints();
+        var baseMatchPoints = mode.GetBaseMatchPoints();
 
-        var team1Style = result.AnnouncerTeam == Team.Team1 ? "blue bold" : "blue";
-        var team2Style = result.AnnouncerTeam == Team.Team2 ? "green bold" : "green";
-
-        table.AddRow(
-            $"[{team1Style}]Team 1 (You + Top)[/]",
-            $"[{team1Style}]{result.Team1CardPoints}[/]",
-            $"[{team1Style}]+{result.Team1MatchPoints}[/]");
-
-        table.AddRow(
-            $"[{team2Style}]Team 2 (Left + Right)[/]",
-            $"[{team2Style}]{result.Team2CardPoints}[/]",
-            $"[{team2Style}]+{result.Team2MatchPoints}[/]");
-
-        AnsiConsole.Write(table);
-
-        // Additional info
-        var modeText = CardRenderer.GameModeToMarkup(result.GameMode);
         var announcer = result.AnnouncerTeam == Team.Team1 ? "[blue]Team 1[/]" : "[green]Team 2[/]";
+        var defender = result.AnnouncerTeam == Team.Team1 ? "[green]Team 2[/]" : "[blue]Team 1[/]";
+        var announcerCardPoints = result.GetCardPoints(result.AnnouncerTeam);
+        var defenderCardPoints = result.GetCardPoints(result.AnnouncerTeam == Team.Team1 ? Team.Team2 : Team.Team1);
 
-        AnsiConsole.MarkupLine($"Mode: {modeText} | Announced by: {announcer}");
-
+        // Mode summary panel
+        var modeInfo = new Table().Border(TableBorder.None).HideHeaders();
+        modeInfo.AddColumn("");
+        modeInfo.AddColumn("");
+        modeInfo.AddRow("Mode:", CardRenderer.GameModeToMarkup(mode));
+        modeInfo.AddRow("Total Points:", $"{totalPoints}");
+        modeInfo.AddRow("Threshold:", $"{threshold}+ to win");
+        modeInfo.AddRow("Announced by:", announcer);
         if (result.Multiplier != MultiplierState.Normal)
         {
             var multText = result.Multiplier == MultiplierState.Doubled ? "[yellow]Doubled (x2)[/]" : "[red]Redoubled (x4)[/]";
-            AnsiConsole.MarkupLine($"Multiplier: {multText}");
+            modeInfo.AddRow("Multiplier:", multText);
         }
+
+        AnsiConsole.Write(new Panel(modeInfo).Header("[dim]Game Info[/]").Border(BoxBorder.Rounded));
+        AnsiConsole.WriteLine();
+
+        // Card points breakdown
+        var cardTable = new Table()
+            .Border(TableBorder.Rounded)
+            .AddColumn("Team")
+            .AddColumn("Role")
+            .AddColumn("Card Points")
+            .AddColumn("vs Threshold");
+
+        var team1IsAnnouncer = result.AnnouncerTeam == Team.Team1;
+        var team1Met = team1IsAnnouncer ? result.Team1CardPoints >= threshold : result.Team1CardPoints > (totalPoints - threshold);
+        var team2Met = !team1IsAnnouncer ? result.Team2CardPoints >= threshold : result.Team2CardPoints > (totalPoints - threshold);
+
+        cardTable.AddRow(
+            "[blue]Team 1 (You + Top)[/]",
+            team1IsAnnouncer ? "[yellow]Announcer[/]" : "Defender",
+            $"{result.Team1CardPoints}",
+            team1IsAnnouncer
+                ? (result.Team1CardPoints >= threshold ? $"[green]{result.Team1CardPoints} >= {threshold}[/]" : $"[red]{result.Team1CardPoints} < {threshold}[/]")
+                : $"{result.Team1CardPoints}");
+
+        cardTable.AddRow(
+            "[green]Team 2 (Left + Right)[/]",
+            !team1IsAnnouncer ? "[yellow]Announcer[/]" : "Defender",
+            $"{result.Team2CardPoints}",
+            !team1IsAnnouncer
+                ? (result.Team2CardPoints >= threshold ? $"[green]{result.Team2CardPoints} >= {threshold}[/]" : $"[red]{result.Team2CardPoints} < {threshold}[/]")
+                : $"{result.Team2CardPoints}");
+
+        AnsiConsole.Write(new Panel(cardTable).Header("[dim]Card Points[/]").Border(BoxBorder.Rounded));
+        AnsiConsole.WriteLine();
+
+        // Match points calculation
+        var calcTable = new Table().Border(TableBorder.None).HideHeaders();
+        calcTable.AddColumn("");
+        calcTable.AddColumn("");
 
         if (result.WasSweep)
         {
             var sweeper = result.SweepingTeam == Team.Team1 ? "[blue]Team 1[/]" : "[green]Team 2[/]";
-            AnsiConsole.MarkupLine($"[bold yellow]SWEEP![/] {sweeper} won all 8 tricks!");
+            calcTable.AddRow("[bold yellow]SWEEP![/]", $"{sweeper} won all 8 tricks!");
+
+            if (result.IsInstantWin)
+            {
+                calcTable.AddRow("Result:", "[bold yellow]INSTANT MATCH WIN![/]");
+            }
+            else
+            {
+                var sweepBonus = mode.GetSweepBonus();
+                calcTable.AddRow("Sweep Bonus:", $"{sweepBonus} match points");
+                if (result.Multiplier != MultiplierState.Normal)
+                {
+                    var mult = result.Multiplier.GetMultiplier();
+                    calcTable.AddRow("After Multiplier:", $"{sweepBonus} x {mult} = {sweepBonus * mult}");
+                }
+            }
+        }
+        else if (result.Team1CardPoints == result.Team2CardPoints)
+        {
+            calcTable.AddRow("Result:", "[yellow]TIE - No points awarded[/]");
+        }
+        else if (category == GameModeCategory.ToutAs)
+        {
+            // ToutAs split scoring explanation
+            if (announcerCardPoints < threshold)
+            {
+                calcTable.AddRow("Announcer Failed:", $"{announcerCardPoints} < {threshold}");
+                calcTable.AddRow("Result:", $"Defender takes all {baseMatchPoints} points");
+            }
+            else
+            {
+                var announcerRaw = (int)Math.Round(announcerCardPoints / 10.0, MidpointRounding.AwayFromZero);
+                var defenderRaw = (int)Math.Round(defenderCardPoints / 10.0, MidpointRounding.AwayFromZero);
+
+                calcTable.AddRow("Split Scoring:", $"Points / 10, rounded");
+                calcTable.AddRow("Announcer:", $"{announcerCardPoints} / 10 = {announcerRaw}");
+                calcTable.AddRow("Defender:", $"{defenderCardPoints} / 10 = {defenderRaw}");
+
+                if (announcerRaw == defenderRaw)
+                {
+                    calcTable.AddRow("Result:", "[yellow]Rounds to tie - 0 points each[/]");
+                }
+            }
+        }
+        else
+        {
+            // Winner-takes-all (SansAs/Colour)
+            var scoringType = category == GameModeCategory.SansAs ? "SansAs" : "Colour";
+            calcTable.AddRow($"{scoringType} Scoring:", "Winner takes all");
+            calcTable.AddRow("Base Points:", $"{baseMatchPoints}");
+
+            if (announcerCardPoints >= threshold)
+            {
+                calcTable.AddRow("Result:", $"Announcer wins ({announcerCardPoints} >= {threshold})");
+            }
+            else
+            {
+                calcTable.AddRow("Result:", $"Announcer fails ({announcerCardPoints} < {threshold})");
+                calcTable.AddRow("", $"Defender takes {baseMatchPoints} points");
+            }
         }
 
+        if (result.Multiplier != MultiplierState.Normal && !result.WasSweep && result.Team1CardPoints != result.Team2CardPoints)
+        {
+            var mult = result.Multiplier.GetMultiplier();
+            calcTable.AddRow("Multiplier:", $"x{mult}");
+        }
+
+        AnsiConsole.Write(new Panel(calcTable).Header("[dim]Calculation[/]").Border(BoxBorder.Rounded));
+        AnsiConsole.WriteLine();
+
+        // Final match points
+        var finalTable = new Table()
+            .Border(TableBorder.Double)
+            .AddColumn("Team")
+            .AddColumn("Match Points Earned");
+
+        var team1Style = result.Team1MatchPoints > result.Team2MatchPoints ? "blue bold" : "blue";
+        var team2Style = result.Team2MatchPoints > result.Team1MatchPoints ? "green bold" : "green";
+
+        finalTable.AddRow(
+            $"[{team1Style}]Team 1 (You + Top)[/]",
+            $"[{team1Style}]+{result.Team1MatchPoints}[/]");
+        finalTable.AddRow(
+            $"[{team2Style}]Team 2 (Left + Right)[/]",
+            $"[{team2Style}]+{result.Team2MatchPoints}[/]");
+
+        AnsiConsole.Write(new Panel(finalTable).Header("[bold]Final Result[/]").Border(BoxBorder.Rounded));
         AnsiConsole.WriteLine();
     }
 
