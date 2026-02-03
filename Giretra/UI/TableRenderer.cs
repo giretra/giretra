@@ -94,25 +94,38 @@ public static class TableRenderer
             : "[dim]Waiting...[/]";
 
         // Show leader with arrow marker
-        string GetPlayerLabel(PlayerPosition pos, string teamColor, string name)
+        string GetCardWithMarker(PlayerPosition pos, string card)
         {
             var marker = leader == pos ? "[yellow bold]>[/]" : " ";
-            return $"{marker}[{teamColor}]{name}[/]";
+            return $"{marker}{card}";
         }
 
-        // Compact 2x2 grid layout for played cards
+        // Compass-style layout: cards positioned in front of each player
         var grid = new Grid();
-        grid.AddColumn(new GridColumn().Width(9));
-        grid.AddColumn(new GridColumn().Width(6));
-        grid.AddColumn(new GridColumn().Width(9));
-        grid.AddColumn(new GridColumn().Width(6));
+        grid.AddColumn(new GridColumn().Width(10));  // left
+        grid.AddColumn(new GridColumn().Width(10));  // center
+        grid.AddColumn(new GridColumn().Width(10));  // right
 
-        grid.AddRow(GetPlayerLabel(PlayerPosition.Top, "blue", "TOP"), topCard, GetPlayerLabel(PlayerPosition.Left, "green", "LEFT"), leftCard);
-        grid.AddRow(GetPlayerLabel(PlayerPosition.Bottom, "blue", "YOU"), bottomCard, GetPlayerLabel(PlayerPosition.Right, "green", "RIGHT"), rightCard);
+        // Row 1: TOP card centered
+        grid.AddRow(
+            new Text(""),
+            Align.Center(new Markup(GetCardWithMarker(PlayerPosition.Top, topCard))),
+            new Text(""));
+
+        // Row 2: LEFT card | empty | RIGHT card
+        grid.AddRow(
+            new Markup(GetCardWithMarker(PlayerPosition.Left, leftCard)),
+            new Text(""),
+            Align.Right(new Markup(GetCardWithMarker(PlayerPosition.Right, rightCard))));
+
+        // Row 3: BOTTOM/YOU card centered
+        grid.AddRow(
+            new Text(""),
+            Align.Center(new Markup(GetCardWithMarker(PlayerPosition.Bottom, bottomCard))),
+            new Text(""));
 
         var content = new Rows(
             new Markup(leadText),
-            new Text(""),
             grid
         );
 
@@ -236,42 +249,43 @@ public static class TableRenderer
         var leadText = $"Lead: {CardRenderer.SuitToMarkup(leadSuit!.Value)}";
 
         // Show winner with star marker
-        string GetPlayerLabel(PlayerPosition pos, string teamColor, string name)
-        {
-            var marker = winner == pos ? "[yellow bold]*[/]" : " ";
-            return $"{marker}[{teamColor}]{name}[/]";
-        }
-
         string GetCardMarkup(PlayerPosition pos)
         {
             var played = trick.PlayedCards.FirstOrDefault(pc => pc.Player == pos);
             if (played.Card.Equals(default(Card))) return "[dim]--[/]";
             var cardMarkup = CardRenderer.ToMarkup(played.Card, gameMode);
+            var marker = winner == pos ? "[yellow bold]*[/]" : " ";
             // Highlight winner's card
-            return winner == pos ? $"[bold underline]{cardMarkup}[/]" : cardMarkup;
+            var card = winner == pos ? $"[bold underline]{cardMarkup}[/]" : cardMarkup;
+            return $"{marker}{card}";
         }
 
-        // Compact 2x2 grid layout for played cards
+        // Compass-style layout: cards positioned in front of each player
         var grid = new Grid();
-        grid.AddColumn(new GridColumn().Width(9));
-        grid.AddColumn(new GridColumn().Width(6));
-        grid.AddColumn(new GridColumn().Width(9));
-        grid.AddColumn(new GridColumn().Width(6));
+        grid.AddColumn(new GridColumn().Width(10));  // left
+        grid.AddColumn(new GridColumn().Width(10));  // center
+        grid.AddColumn(new GridColumn().Width(10));  // right
 
+        // Row 1: TOP card centered
         grid.AddRow(
-            GetPlayerLabel(PlayerPosition.Top, "blue", "TOP"),
-            GetCardMarkup(PlayerPosition.Top),
-            GetPlayerLabel(PlayerPosition.Left, "green", "LEFT"),
-            GetCardMarkup(PlayerPosition.Left));
+            new Text(""),
+            Align.Center(new Markup(GetCardMarkup(PlayerPosition.Top))),
+            new Text(""));
+
+        // Row 2: LEFT card | empty | RIGHT card
         grid.AddRow(
-            GetPlayerLabel(PlayerPosition.Bottom, "blue", "YOU"),
-            GetCardMarkup(PlayerPosition.Bottom),
-            GetPlayerLabel(PlayerPosition.Right, "green", "RIGHT"),
-            GetCardMarkup(PlayerPosition.Right));
+            new Markup(GetCardMarkup(PlayerPosition.Left)),
+            new Text(""),
+            Align.Right(new Markup(GetCardMarkup(PlayerPosition.Right))));
+
+        // Row 3: BOTTOM/YOU card centered
+        grid.AddRow(
+            new Text(""),
+            Align.Center(new Markup(GetCardMarkup(PlayerPosition.Bottom))),
+            new Text(""));
 
         var content = new Rows(
             new Markup(leadText),
-            new Text(""),
             grid
         );
 
