@@ -28,7 +28,7 @@ public class Program
             config.Title = "Giretra API";
             config.Version = "v1";
             config.Description = "Malagasy Belote card game API";
-            config.SerializerSettings = new NJsonSchema.Generation.SystemTextJsonSchemaGeneratorSettings
+            config.SchemaSettings = new NJsonSchema.Generation.SystemTextJsonSchemaGeneratorSettings
             {
                 SerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -45,9 +45,10 @@ public class Program
         {
             options.AddDefaultPolicy(policy =>
             {
-                policy.AllowAnyOrigin()
+                policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials();
             });
         });
 

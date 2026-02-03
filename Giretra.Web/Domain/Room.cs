@@ -39,6 +39,11 @@ public sealed class Room
     };
 
     /// <summary>
+    /// Positions reserved for AI players.
+    /// </summary>
+    public HashSet<PlayerPosition> AiSlots { get; } = [];
+
+    /// <summary>
     /// Watchers observing the room.
     /// </summary>
     public List<ConnectedClient> Watchers { get; } = [];
@@ -59,9 +64,9 @@ public sealed class Room
     public int PlayerCount => PlayerSlots.Values.Count(p => p != null);
 
     /// <summary>
-    /// Gets whether the room is full (4 players).
+    /// Gets whether the room is full (4 human players or human + AI).
     /// </summary>
-    public bool IsFull => PlayerCount == 4;
+    public bool IsFull => PlayerCount + AiSlots.Count == 4;
 
     /// <summary>
     /// Gets all connected clients (players and watchers).
@@ -79,10 +84,10 @@ public sealed class Room
         if (Status != RoomStatus.Waiting)
             return false;
 
-        // Find first empty slot
+        // Find first empty slot (not occupied by human and not reserved for AI)
         foreach (var position in Enum.GetValues<PlayerPosition>())
         {
-            if (PlayerSlots[position] == null)
+            if (PlayerSlots[position] == null && !AiSlots.Contains(position))
             {
                 PlayerSlots[position] = client;
                 client.Position = position;
@@ -102,7 +107,8 @@ public sealed class Room
         if (Status != RoomStatus.Waiting)
             return false;
 
-        if (PlayerSlots[position] != null)
+        // Cannot join if slot is occupied by human or reserved for AI
+        if (PlayerSlots[position] != null || AiSlots.Contains(position))
             return false;
 
         PlayerSlots[position] = client;

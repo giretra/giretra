@@ -57,6 +57,15 @@ public sealed class RoomService : IRoomService
         };
 
         room.PlayerSlots[PlayerPosition.Bottom] = creator;
+
+        // Fill other 3 seats with AI if requested
+        if (request.FillWithAi)
+        {
+            room.AiSlots.Add(PlayerPosition.Left);
+            room.AiSlots.Add(PlayerPosition.Top);
+            room.AiSlots.Add(PlayerPosition.Right);
+        }
+
         _roomRepository.Add(room);
 
         return new JoinRoomResponse
@@ -238,9 +247,9 @@ public sealed class RoomService : IRoomService
                 .Select(pos => new PlayerSlotResponse
                 {
                     Position = pos,
-                    IsOccupied = room.PlayerSlots[pos] != null,
+                    IsOccupied = room.PlayerSlots[pos] != null || room.AiSlots.Contains(pos),
                     PlayerName = room.PlayerSlots[pos]?.DisplayName,
-                    IsAi = false
+                    IsAi = room.AiSlots.Contains(pos)
                 })
                 .ToList(),
             GameId = room.GameSessionId,

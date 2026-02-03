@@ -1,0 +1,69 @@
+import { Component, input, computed } from '@angular/core';
+import { CardSuit, GameMode } from '../../../api/generated/signalr-types.generated';
+import { getTrumpSuit, isRedSuit, getSuitSymbol } from '../../../core/utils/card-utils';
+import { SuitIconComponent } from '../suit-icon/suit-icon.component';
+
+@Component({
+  selector: 'app-game-mode-badge',
+  standalone: true,
+  imports: [SuitIconComponent],
+  template: `
+    @if (mode()) {
+      <span class="badge" [class]="badgeClass()">
+        @if (trumpSuit(); as suit) {
+          <app-suit-icon [suit]="suit" [size]="size()" />
+        } @else {
+          <span class="mode-text">{{ modeText() }}</span>
+        }
+      </span>
+    }
+  `,
+  styles: [`
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      background: hsl(var(--secondary));
+    }
+
+    .mode-text {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .sans-as {
+      color: hsl(210, 40%, 96%);
+    }
+
+    .tout-as {
+      color: hsl(45, 90%, 55%);
+    }
+  `],
+})
+export class GameModeBadgeComponent {
+  readonly mode = input<GameMode | null>(null);
+  readonly size = input<string>('1.25rem');
+
+  readonly trumpSuit = computed(() => {
+    const m = this.mode();
+    return m ? getTrumpSuit(m) : null;
+  });
+
+  readonly modeText = computed(() => {
+    const m = this.mode();
+    if (m === GameMode.SansAs) return 'Sans As';
+    if (m === GameMode.ToutAs) return 'Tout As';
+    return '';
+  });
+
+  readonly badgeClass = computed(() => {
+    const m = this.mode();
+    if (m === GameMode.SansAs) return 'sans-as';
+    if (m === GameMode.ToutAs) return 'tout-as';
+    return '';
+  });
+}

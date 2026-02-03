@@ -14,4 +14,9 @@ public sealed class CreateRoomRequest
     /// Display name for the creator.
     /// </summary>
     public required string CreatorName { get; init; }
+
+    /// <summary>
+    /// If true, immediately fill the other 3 seats with AI players.
+    /// </summary>
+    public bool FillWithAi { get; init; }
 }
