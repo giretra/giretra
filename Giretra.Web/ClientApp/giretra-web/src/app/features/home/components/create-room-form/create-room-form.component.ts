@@ -24,16 +24,15 @@ import { HlmButton } from '@spartan-ng/helm/button';
       </div>
 
       <div class="form-field">
-        <label for="roomName">Room Name</label>
+        <label for="roomName">Room Name <span class="optional">(optional)</span></label>
         <input
           id="roomName"
           type="text"
           class="input"
           [(ngModel)]="roomName"
           name="roomName"
-          placeholder="Enter room name"
+          [placeholder]="playerName() + '_#00001'"
           maxlength="50"
-          required
           [disabled]="submitting()"
         />
       </div>
@@ -60,7 +59,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
         hlmBtn
         variant="default"
         class="submit-button"
-        [disabled]="!roomName.trim() || submitting()"
+        [disabled]="submitting()"
       >
         @if (submitting()) {
           Creating...
@@ -103,6 +102,11 @@ import { HlmButton } from '@spartan-ng/helm/button';
       font-size: 0.875rem;
       font-weight: 500;
       color: hsl(var(--foreground));
+    }
+
+    .optional {
+      font-weight: 400;
+      color: hsl(var(--muted-foreground));
     }
 
     .input {
@@ -185,8 +189,7 @@ export class CreateRoomFormComponent {
   readonly error = signal<string>('');
 
   onSubmit(): void {
-    const name = this.roomName.trim();
-    if (!name) return;
+    const name = this.roomName.trim() || null;
 
     this.submitting.set(true);
     this.error.set('');

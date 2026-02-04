@@ -14,6 +14,7 @@ public sealed class RoomService : IRoomService
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
+    private static int _roomCounter;
 
     public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications)
     {
@@ -51,10 +52,15 @@ public sealed class RoomService : IRoomService
             Position = PlayerPosition.Bottom
         };
 
+        // Generate room name if not provided
+        var roomName = string.IsNullOrWhiteSpace(request.Name)
+            ? GenerateRoomName(request.CreatorName)
+            : request.Name;
+
         var room = new Room
         {
             RoomId = roomId,
-            Name = request.Name,
+            Name = roomName,
             CreatorClientId = clientId
         };
 
@@ -240,6 +246,12 @@ public sealed class RoomService : IRoomService
     private static string GenerateId(string prefix)
     {
         return $"{prefix}_{Guid.NewGuid():N}";
+    }
+
+    private static string GenerateRoomName(string creatorName)
+    {
+        var roomNumber = Interlocked.Increment(ref _roomCounter);
+        return $"{creatorName}_#{roomNumber:D5}";
     }
 
     private static RoomResponse MapToResponse(Room room)

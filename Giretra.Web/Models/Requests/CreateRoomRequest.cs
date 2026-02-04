@@ -6,9 +6,9 @@ namespace Giretra.Web.Models.Requests;
 public sealed class CreateRoomRequest
 {
     /// <summary>
-    /// Display name for the room.
+    /// Display name for the room. If not provided, auto-generated as {CreatorName}_#XXXXX.
     /// </summary>
-    public required string Name { get; init; }
+    public string? Name { get; init; }
 
     /// <summary>
     /// Display name for the creator.
