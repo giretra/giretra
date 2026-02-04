@@ -1,5 +1,7 @@
 using Giretra.Core.GameModes;
 using Giretra.Core.Players;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Giretra.Core.Scoring;
 
@@ -8,6 +10,17 @@ namespace Giretra.Core.Scoring;
 /// </summary>
 public class ScoringCalculator
 {
+    private readonly ILogger<ScoringCalculator> _logger;
+
+    /// <summary>
+    /// Creates a new scoring calculator.
+    /// </summary>
+    /// <param name="logger">Optional logger for scoring diagnostics.</param>
+    public ScoringCalculator(ILogger<ScoringCalculator>? logger = null)
+    {
+        _logger = logger ?? NullLogger<ScoringCalculator>.Instance;
+    }
+
     /// <summary>
     /// Calculates the deal result based on card points earned.
     /// </summary>
@@ -21,24 +34,36 @@ public class ScoringCalculator
     {
         var category = gameMode.GetCategory();
 
+        _logger.LogDebug("Calculating score: Mode={GameMode}, Category={Category}, Multiplier={Multiplier}, Announcer={AnnouncerTeam}, CardPoints: Team1={Team1CardPoints}, Team2={Team2CardPoints}, Sweep={SweepingTeam}",
+            gameMode, category, multiplier, announcerTeam, team1CardPoints, team2CardPoints, sweepingTeam?.ToString() ?? "none");
+
+        DealResult result;
+
         // Handle sweep
         if (sweepingTeam.HasValue)
         {
-            return CalculateSweep(gameMode, multiplier, announcerTeam,
+            result = CalculateSweep(gameMode, multiplier, announcerTeam,
                 team1CardPoints, team2CardPoints, sweepingTeam.Value);
         }
-
-        // Calculate based on mode category
-        return category switch
+        else
         {
-            GameModeCategory.ToutAs => CalculateToutAs(gameMode, multiplier, announcerTeam,
-                team1CardPoints, team2CardPoints),
-            GameModeCategory.SansAs => CalculateSansAs(gameMode, multiplier, announcerTeam,
-                team1CardPoints, team2CardPoints),
-            GameModeCategory.Colour => CalculateColour(gameMode, multiplier, announcerTeam,
-                team1CardPoints, team2CardPoints),
-            _ => throw new ArgumentOutOfRangeException(nameof(gameMode))
-        };
+            // Calculate based on mode category
+            result = category switch
+            {
+                GameModeCategory.ToutAs => CalculateToutAs(gameMode, multiplier, announcerTeam,
+                    team1CardPoints, team2CardPoints),
+                GameModeCategory.SansAs => CalculateSansAs(gameMode, multiplier, announcerTeam,
+                    team1CardPoints, team2CardPoints),
+                GameModeCategory.Colour => CalculateColour(gameMode, multiplier, announcerTeam,
+                    team1CardPoints, team2CardPoints),
+                _ => throw new ArgumentOutOfRangeException(nameof(gameMode))
+            };
+        }
+
+        _logger.LogDebug("Score result: Team1={Team1MatchPoints}, Team2={Team2MatchPoints}{InstantWin}",
+            result.Team1MatchPoints, result.Team2MatchPoints, result.IsInstantWin ? " (INSTANT WIN)" : "");
+
+        return result;
     }
 
     private DealResult CalculateSweep(

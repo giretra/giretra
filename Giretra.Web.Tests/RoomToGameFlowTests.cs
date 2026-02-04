@@ -27,8 +27,9 @@ public sealed class RoomToGameFlowTests
         _gameRepository = new InMemoryGameRepository();
         _notifications = Substitute.For<INotificationService>();
         var logger = Substitute.For<ILogger<GameService>>();
+        var loggerFactory = Substitute.For<ILoggerFactory>();
 
-        _gameService = new GameService(_gameRepository, _notifications, logger);
+        _gameService = new GameService(_gameRepository, _notifications, logger, loggerFactory);
         _roomService = new RoomService(_roomRepository, _gameService, _notifications);
     }
 

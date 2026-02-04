@@ -5,6 +5,8 @@ using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Giretra.Core;
 
@@ -16,6 +18,7 @@ public sealed class GameManager
 {
     private readonly IReadOnlyDictionary<PlayerPosition, IPlayerAgent> _players;
     private readonly Func<Deck> _deckProvider;
+    private readonly ILogger<GameManager> _logger;
 
     private MatchState _matchState;
 
@@ -31,11 +34,13 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal. Defaults to standard deck.</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
+    /// <param name="logger">Optional logger for game flow diagnostics.</param>
     public GameManager(
         IReadOnlyDictionary<PlayerPosition, IPlayerAgent> players,
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null,
-        int targetScore = 150)
+        int targetScore = 150,
+        ILogger<GameManager>? logger = null)
     {
         if (players.Count != 4)
         {
@@ -60,6 +65,7 @@ public sealed class GameManager
         _players = players;
         _deckProvider = deckProvider ?? Deck.CreateStandard;
         _matchState = MatchState.Create(firstDealer, targetScore);
+        _logger = logger ?? NullLogger<GameManager>.Instance;
     }
 
     /// <summary>
@@ -72,6 +78,7 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal.</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
+    /// <param name="logger">Optional logger for game flow diagnostics.</param>
     public GameManager(
         IPlayerAgent bottom,
         IPlayerAgent left,
@@ -79,7 +86,8 @@ public sealed class GameManager
         IPlayerAgent right,
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null,
-        int targetScore = 150)
+        int targetScore = 150,
+        ILogger<GameManager>? logger = null)
         : this(
             new Dictionary<PlayerPosition, IPlayerAgent>
             {
@@ -90,7 +98,8 @@ public sealed class GameManager
             },
             firstDealer,
             deckProvider,
-            targetScore)
+            targetScore,
+            logger)
     {
     }
 
@@ -100,10 +109,16 @@ public sealed class GameManager
     /// <returns>The final match state with the winner.</returns>
     public async Task<MatchState> PlayMatchAsync()
     {
+        _logger.LogDebug("Match started with target score {TargetScore}, first dealer: {Dealer}",
+            _matchState.TargetScore, _matchState.CurrentDealer);
+
         while (!_matchState.IsComplete)
         {
             await PlayDealAsync();
         }
+
+        _logger.LogDebug("Match completed. Winner: {Winner}. Final score: Team1={Team1Score}, Team2={Team2Score}",
+            _matchState.Winner, _matchState.Team1MatchPoints, _matchState.Team2MatchPoints);
 
         // Notify all players that the match has ended
         await NotifyAllPlayersAsync(p => p.OnMatchEndedAsync(_matchState));
@@ -116,6 +131,10 @@ public sealed class GameManager
     /// </summary>
     private async Task PlayDealAsync()
     {
+        var dealNumber = _matchState.CompletedDeals.Count + 1;
+        _logger.LogDebug("Deal {DealNumber} started. Dealer: {Dealer}. Score: Team1={Team1Score}, Team2={Team2Score}",
+            dealNumber, _matchState.CurrentDealer, _matchState.Team1MatchPoints, _matchState.Team2MatchPoints);
+
         // Start the deal
         var deck = _deckProvider();
         _matchState = _matchState.StartDeal(deck);
@@ -129,6 +148,7 @@ public sealed class GameManager
         // Initial distribution (5 cards each)
         var deal = _matchState.CurrentDeal!.PerformInitialDistribution();
         _matchState = _matchState.WithDeal(deal);
+        _logger.LogDebug("Initial distribution complete (5 cards each)");
 
         // Negotiation phase
         await PerformNegotiationAsync();
@@ -136,12 +156,17 @@ public sealed class GameManager
         // Final distribution (3 more cards each)
         deal = _matchState.CurrentDeal!.PerformFinalDistribution();
         _matchState = _matchState.WithDeal(deal);
+        _logger.LogDebug("Final distribution complete (8 cards each). Game mode: {GameMode}, Announcer: {AnnouncerTeam}, Multiplier: {Multiplier}",
+            deal.ResolvedMode, deal.AnnouncerTeam, deal.Multiplier);
 
         // Playing phase (8 tricks)
         await PerformPlayingAsync();
 
         // Get the result and notify players
         var result = _matchState.CompletedDeals[^1];
+        _logger.LogDebug("Deal {DealNumber} completed. Card points: Team1={Team1CardPoints}, Team2={Team2CardPoints}. Match points: Team1={Team1MatchPoints}, Team2={Team2MatchPoints}{SweepInfo}",
+            dealNumber, result.Team1CardPoints, result.Team2CardPoints, result.Team1MatchPoints, result.Team2MatchPoints,
+            result.WasSweep ? $" (Sweep by {result.SweepingTeam})" : "");
         await NotifyAllPlayersAsync(p => p.OnDealEndedAsync(result, _matchState));
     }
 
@@ -165,6 +190,9 @@ public sealed class GameManager
                 $"Invalid cut position {position}. Must be between 6 and 26.");
         }
 
+        _logger.LogDebug("Deck cut by {Cutter}: {Position} cards from {Direction}",
+            cutter, position, fromTop ? "top" : "bottom");
+
         deal = deal.CutDeck(position, fromTop);
         _matchState = _matchState.WithDeal(deal);
     }
@@ -174,6 +202,7 @@ public sealed class GameManager
     /// </summary>
     private async Task PerformNegotiationAsync()
     {
+        _logger.LogDebug("Negotiation phase started");
         var deal = _matchState.CurrentDeal!;
 
         while (!deal.Negotiation!.IsComplete)
@@ -198,9 +227,26 @@ public sealed class GameManager
                     $"Player {currentPosition} returned action for {action.Player}.");
             }
 
+            _logger.LogDebug("Negotiation: {Player} - {Action}", currentPosition, FormatNegotiationAction(action));
+
             deal = deal.ApplyNegotiationAction(action);
             _matchState = _matchState.WithDeal(deal);
         }
+
+        _logger.LogDebug("Negotiation complete. Resolved mode: {Mode}, Announcer: {AnnouncerTeam}, Multiplier: {Multiplier}",
+            deal.ResolvedMode, deal.AnnouncerTeam, deal.Multiplier);
+    }
+
+    private static string FormatNegotiationAction(NegotiationAction action)
+    {
+        return action switch
+        {
+            AnnouncementAction a => $"Announce {a.Mode}",
+            AcceptAction => "Accept",
+            DoubleAction d => $"Double ({d.TargetMode})",
+            RedoubleAction r => $"Redouble ({r.TargetMode})",
+            _ => action.GetType().Name
+        };
     }
 
     /// <summary>
@@ -208,6 +254,7 @@ public sealed class GameManager
     /// </summary>
     private async Task PerformPlayingAsync()
     {
+        _logger.LogDebug("Playing phase started. Game mode: {GameMode}", _matchState.CurrentDeal!.ResolvedMode);
         var deal = _matchState.CurrentDeal!;
 
         while (deal.Phase == DealPhase.Playing)
@@ -238,9 +285,14 @@ public sealed class GameManager
 
             // Track completed tricks count before playing
             var trickCountBefore = deal.Hand.CompletedTricks.Count;
+            var trickNumber = deal.Hand.CurrentTrick.TrickNumber;
+            var isLead = deal.Hand.CurrentTrick.PlayedCards.Count == 0;
 
             deal = deal.PlayCard(currentPosition, card);
             _matchState = _matchState.WithDeal(deal);
+
+            _logger.LogDebug("Trick {TrickNumber}: {Player} plays {Card}{LeadMarker}",
+                trickNumber, currentPosition, card, isLead ? " (lead)" : "");
 
             // Notify all players that a card was played
             await NotifyAllPlayersAsync(p => p.OnCardPlayedAsync(currentPosition, card, deal.Hand!, _matchState));
@@ -266,9 +318,15 @@ public sealed class GameManager
                     winner = DetermineWinner(completedTrick, deal.Hand.GameMode);
                 }
 
+                _logger.LogDebug("Trick {TrickNumber} won by {Winner} ({Team}). Points: Team1={Team1Points}, Team2={Team2Points}",
+                    trickNumber, winner, winner.GetTeam(), deal.Hand.Team1CardPoints, deal.Hand.Team2CardPoints);
+
                 await NotifyAllPlayersAsync(p => p.OnTrickCompletedAsync(completedTrick, winner, deal.Hand, _matchState));
             }
         }
+
+        _logger.LogDebug("Playing phase complete. Final tricks: Team1={Team1Tricks}, Team2={Team2Tricks}",
+            deal.Hand!.Team1TricksWon, deal.Hand.Team2TricksWon);
     }
 
     /// <summary>

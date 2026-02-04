@@ -20,15 +20,18 @@ public sealed class GameService : IGameService
     private readonly IGameRepository _gameRepository;
     private readonly INotificationService _notifications;
     private readonly ILogger<GameService> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     public GameService(
         IGameRepository gameRepository,
         INotificationService notifications,
-        ILogger<GameService> logger)
+        ILogger<GameService> logger,
+        ILoggerFactory loggerFactory)
     {
         _gameRepository = gameRepository;
         _notifications = notifications;
         _logger = logger;
+        _loggerFactory = loggerFactory;
     }
 
     public GameSession? CreateGame(Room room)
@@ -77,9 +80,10 @@ public sealed class GameService : IGameService
         // Set agents on the session
         session.PlayerAgents = agents;
 
-        // Create the GameManager
+        // Create the GameManager with logger
         var firstDealer = PlayerPosition.Bottom;
-        var gameManager = new GameManager(agents, firstDealer);
+        var gameManagerLogger = _loggerFactory.CreateLogger<GameManager>();
+        var gameManager = new GameManager(agents, firstDealer, logger: gameManagerLogger);
         session.GameManager = gameManager;
 
         _gameRepository.Add(session);

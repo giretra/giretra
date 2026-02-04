@@ -19,6 +19,7 @@ public sealed class GameServiceTests
     private readonly IGameRepository _gameRepository;
     private readonly INotificationService _notifications;
     private readonly ILogger<GameService> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly GameService _gameService;
 
     public GameServiceTests()
@@ -26,7 +27,8 @@ public sealed class GameServiceTests
         _gameRepository = new InMemoryGameRepository();
         _notifications = Substitute.For<INotificationService>();
         _logger = Substitute.For<ILogger<GameService>>();
-        _gameService = new GameService(_gameRepository, _notifications, _logger);
+        _loggerFactory = Substitute.For<ILoggerFactory>();
+        _gameService = new GameService(_gameRepository, _notifications, _logger, _loggerFactory);
     }
 
     #region CreateGame Tests
