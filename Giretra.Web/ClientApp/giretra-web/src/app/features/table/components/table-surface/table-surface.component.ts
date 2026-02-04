@@ -5,33 +5,18 @@ import { GamePhase } from '../../../../core/services/game-state.service';
 import { getRelativePositions } from '../../../../core/utils/position-utils';
 import { PlayerSeatComponent } from '../../../../shared/components/player-seat/player-seat.component';
 import { CenterStageComponent } from '../center-stage/center-stage.component';
+import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component';
 
 @Component({
   selector: 'app-table-surface',
   standalone: true,
-  imports: [PlayerSeatComponent, CenterStageComponent],
+  imports: [PlayerSeatComponent, CenterStageComponent, SpeechBubbleComponent],
   template: `
     <div class="table-surface">
       <!-- Top player (across from me) -->
       <div class="seat-position top">
         @if (topSlot(); as slot) {
-          <app-player-seat
-            [position]="slot.position"
-            [playerName]="slot.playerName"
-            [isOccupied]="slot.isOccupied"
-            [isAi]="slot.isAi"
-            [isActiveTurn]="activePlayer() === slot.position"
-            [isDealer]="dealer() === slot.position"
-            [cardCount]="getCardCount(slot.position)"
-          />
-        }
-      </div>
-
-      <!-- Middle row: Left player, Center Stage, Right player -->
-      <div class="middle-row">
-        <!-- Left player -->
-        <div class="seat-position left">
-          @if (leftSlot(); as slot) {
+          <div class="seat-with-bubble">
             <app-player-seat
               [position]="slot.position"
               [playerName]="slot.playerName"
@@ -40,7 +25,47 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
               [isActiveTurn]="activePlayer() === slot.position"
               [isDealer]="dealer() === slot.position"
               [cardCount]="getCardCount(slot.position)"
+              [tricksWon]="getTricksWon(slot.position)"
             />
+            @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
+              <div class="bubble-position top">
+                <app-speech-bubble
+                  [actionType]="action.actionType"
+                  [mode]="action.mode"
+                  position="top"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Middle row: Left player, Center Stage, Right player -->
+      <div class="middle-row">
+        <!-- Left player -->
+        <div class="seat-position left">
+          @if (leftSlot(); as slot) {
+            <div class="seat-with-bubble horizontal">
+              @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
+                <div class="bubble-position left">
+                  <app-speech-bubble
+                    [actionType]="action.actionType"
+                    [mode]="action.mode"
+                    position="left"
+                  />
+                </div>
+              }
+              <app-player-seat
+                [position]="slot.position"
+                [playerName]="slot.playerName"
+                [isOccupied]="slot.isOccupied"
+                [isAi]="slot.isAi"
+                [isActiveTurn]="activePlayer() === slot.position"
+                [isDealer]="dealer() === slot.position"
+                [cardCount]="getCardCount(slot.position)"
+                [tricksWon]="getTricksWon(slot.position)"
+              />
+            </div>
           }
         </div>
 
@@ -63,6 +88,9 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
             [team1MatchPoints]="team1MatchPoints()"
             [team2MatchPoints]="team2MatchPoints()"
             [completedDeals]="completedDeals()"
+            [team1Tricks]="team1Tricks()"
+            [team2Tricks]="team2Tricks()"
+            [myTeam]="myTeam()"
             (startGame)="startGame.emit()"
             (submitCut)="submitCut.emit()"
             (hideDealSummary)="hideDealSummary.emit()"
@@ -73,15 +101,27 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
         <!-- Right player -->
         <div class="seat-position right">
           @if (rightSlot(); as slot) {
-            <app-player-seat
-              [position]="slot.position"
-              [playerName]="slot.playerName"
-              [isOccupied]="slot.isOccupied"
-              [isAi]="slot.isAi"
-              [isActiveTurn]="activePlayer() === slot.position"
-              [isDealer]="dealer() === slot.position"
-              [cardCount]="getCardCount(slot.position)"
-            />
+            <div class="seat-with-bubble horizontal">
+              <app-player-seat
+                [position]="slot.position"
+                [playerName]="slot.playerName"
+                [isOccupied]="slot.isOccupied"
+                [isAi]="slot.isAi"
+                [isActiveTurn]="activePlayer() === slot.position"
+                [isDealer]="dealer() === slot.position"
+                [cardCount]="getCardCount(slot.position)"
+                [tricksWon]="getTricksWon(slot.position)"
+              />
+              @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
+                <div class="bubble-position right">
+                  <app-speech-bubble
+                    [actionType]="action.actionType"
+                    [mode]="action.mode"
+                    position="right"
+                  />
+                </div>
+              }
+            </div>
           }
         </div>
       </div>
@@ -89,15 +129,27 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
       <!-- Bottom player (me) -->
       <div class="seat-position bottom">
         @if (bottomSlot(); as slot) {
-          <app-player-seat
-            [position]="slot.position"
-            [playerName]="slot.playerName"
-            [isOccupied]="slot.isOccupied"
-            [isAi]="slot.isAi"
-            [isActiveTurn]="activePlayer() === slot.position"
-            [isDealer]="dealer() === slot.position"
-            [showCardBacks]="false"
-          />
+          <div class="seat-with-bubble">
+            @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
+              <div class="bubble-position bottom">
+                <app-speech-bubble
+                  [actionType]="action.actionType"
+                  [mode]="action.mode"
+                  position="bottom"
+                />
+              </div>
+            }
+            <app-player-seat
+              [position]="slot.position"
+              [playerName]="slot.playerName"
+              [isOccupied]="slot.isOccupied"
+              [isAi]="slot.isAi"
+              [isActiveTurn]="activePlayer() === slot.position"
+              [isDealer]="dealer() === slot.position"
+              [showCardBacks]="false"
+              [tricksWon]="getTricksWon(slot.position)"
+            />
+          </div>
         }
       </div>
     </div>
@@ -142,6 +194,29 @@ import { CenterStageComponent } from '../center-stage/center-stage.component';
       min-width: 0;
       padding: 0 0.5rem;
     }
+
+    /* Seat with speech bubble container */
+    .seat-with-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .seat-with-bubble.horizontal {
+      flex-direction: row;
+    }
+
+    .bubble-position {
+      flex-shrink: 0;
+    }
+
+    /* Hide bubbles on very small screens */
+    @media (max-width: 400px) {
+      .bubble-position {
+        display: none;
+      }
+    }
   `],
 })
 export class TableSurfaceComponent {
@@ -163,6 +238,10 @@ export class TableSurfaceComponent {
   readonly team2MatchPoints = input<number>(0);
   readonly completedDeals = input<number>(0);
   readonly playerCardCounts = input<Record<PlayerPosition, number> | null>(null);
+  readonly team1Tricks = input<number>(0);
+  readonly team2Tricks = input<number>(0);
+  readonly myTeam = input<Team | null>(null);
+  readonly tricksWonByPosition = input<Record<PlayerPosition, number> | null>(null);
 
   readonly startGame = output<void>();
   readonly submitCut = output<void>();
@@ -202,5 +281,22 @@ export class TableSurfaceComponent {
   getCardCount(position: PlayerPosition): number {
     const counts = this.playerCardCounts();
     return counts?.[position] ?? 0;
+  }
+
+  getTricksWon(position: PlayerPosition): number {
+    const counts = this.tricksWonByPosition();
+    return counts?.[position] ?? 0;
+  }
+
+  /** Get the last negotiation action for a player */
+  getLastAction(position: PlayerPosition): NegotiationAction | null {
+    const history = this.negotiationHistory();
+    // Find the last action by this player
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].player === position) {
+        return history[i];
+      }
+    }
+    return null;
   }
 }

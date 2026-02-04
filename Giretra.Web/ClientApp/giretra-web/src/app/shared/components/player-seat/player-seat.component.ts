@@ -38,10 +38,19 @@ import { getTeam } from '../../../core/utils/position-utils';
 
       <!-- Tricks won indicator -->
       @if (tricksWon() > 0) {
-        <div class="tricks-won">
-          @for (i of tricksArray(); track i) {
-            <span class="trick-dot"></span>
-          }
+        <div class="tricks-badge" [class.highlight]="tricksWon() >= 4">
+          <svg
+            class="tricks-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="10" rx="1" />
+            <rect x="14" y="3" width="7" height="10" rx="1" />
+            <rect x="8" y="11" width="8" height="10" rx="1" />
+          </svg>
+          <span class="tricks-count">{{ tricksWon() }}</span>
         </div>
       }
 
@@ -131,17 +140,41 @@ import { getTeam } from '../../../core/utils/position-utils';
       border-radius: 2px;
     }
 
-    .tricks-won {
+    .tricks-badge {
       display: flex;
+      align-items: center;
       gap: 0.25rem;
       margin-top: 0.375rem;
+      padding: 0.125rem 0.5rem;
+      background: hsl(var(--muted));
+      border-radius: 9999px;
+      border: 1px solid hsl(var(--border));
     }
 
-    .trick-dot {
-      width: 6px;
-      height: 6px;
-      background: hsl(var(--primary));
-      border-radius: 50%;
+    .tricks-badge.highlight {
+      background: hsl(var(--primary) / 0.2);
+      border-color: hsl(var(--primary) / 0.5);
+    }
+
+    .tricks-icon {
+      width: 0.875rem;
+      height: 0.875rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .tricks-badge.highlight .tricks-icon {
+      color: hsl(var(--primary));
+    }
+
+    .tricks-count {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tricks-badge.highlight .tricks-count {
+      color: hsl(var(--primary));
     }
 
     .turn-ring {
@@ -194,9 +227,5 @@ export class PlayerSeatComponent {
   readonly cardBackArray = computed(() => {
     const count = Math.min(this.cardCount(), 8);
     return Array.from({ length: count }, (_, i) => i);
-  });
-
-  readonly tricksArray = computed(() => {
-    return Array.from({ length: this.tricksWon() }, (_, i) => i);
   });
 }

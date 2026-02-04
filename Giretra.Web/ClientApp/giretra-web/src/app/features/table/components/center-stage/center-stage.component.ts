@@ -52,6 +52,9 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [showingCompletedTrick]="showingCompletedTrick()"
             [myPosition]="myPosition()"
             [gameMode]="gameMode()"
+            [team1Tricks]="team1Tricks()"
+            [team2Tricks]="team2Tricks()"
+            [myTeam]="myTeam()"
             (dismissCompletedTrick)="dismissCompletedTrick.emit()"
           />
         }
@@ -91,6 +94,9 @@ export class CenterStageComponent {
   readonly team1MatchPoints = input<number>(0);
   readonly team2MatchPoints = input<number>(0);
   readonly completedDeals = input<number>(0);
+  readonly team1Tricks = input<number>(0);
+  readonly team2Tricks = input<number>(0);
+  readonly myTeam = input<Team | null>(null);
 
   readonly startGame = output<void>();
   readonly submitCut = output<void>();

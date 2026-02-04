@@ -245,6 +245,39 @@ export class GameStateService {
   /** Completed tricks */
   readonly completedTricks = computed(() => this._gameState()?.completedTricks ?? []);
 
+  /** Team 1 tricks won this deal */
+  readonly team1TricksWon = computed(() => {
+    const tricks = this.completedTricks();
+    return tricks.filter(t =>
+      t.winner === PlayerPosition.Bottom || t.winner === PlayerPosition.Top
+    ).length;
+  });
+
+  /** Team 2 tricks won this deal */
+  readonly team2TricksWon = computed(() => {
+    const tricks = this.completedTricks();
+    return tricks.filter(t =>
+      t.winner === PlayerPosition.Left || t.winner === PlayerPosition.Right
+    ).length;
+  });
+
+  /** Tricks won by player position */
+  readonly tricksWonByPosition = computed(() => {
+    const tricks = this.completedTricks();
+    const counts: Record<PlayerPosition, number> = {
+      [PlayerPosition.Bottom]: 0,
+      [PlayerPosition.Top]: 0,
+      [PlayerPosition.Left]: 0,
+      [PlayerPosition.Right]: 0,
+    };
+    for (const trick of tricks) {
+      if (trick.winner) {
+        counts[trick.winner]++;
+      }
+    }
+    return counts;
+  });
+
   /** Match winner */
   readonly matchWinner = computed(() => this._gameState()?.winner ?? null);
 

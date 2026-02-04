@@ -8,6 +8,7 @@ using Giretra.Web.Domain;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Players;
 using Giretra.Web.Repositories;
+using Giretra.Web.Utils;
 
 namespace Giretra.Web.Services;
 
@@ -129,8 +130,9 @@ public sealed class GameService : IGameService
         var matchState = session.MatchState;
         var deal = matchState.CurrentDeal;
 
-        // Get player's hand
-        var hand = deal?.Players[position.Value].Hand ?? [];
+        // Get player's hand (sorted by game mode, or ToutAs with natural suit order if no mode)
+        var unsortedHand = deal?.Players[position.Value].Hand ?? [];
+        var hand = CardSorter.SortHand(unsortedHand, deal?.ResolvedMode);
 
         // Get valid actions based on pending action
         IReadOnlyList<CardResponse>? validCards = null;

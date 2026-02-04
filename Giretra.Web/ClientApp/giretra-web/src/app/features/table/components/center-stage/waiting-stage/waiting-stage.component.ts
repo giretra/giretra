@@ -1,6 +1,5 @@
-import { Component, input, output, computed, OnInit, DoCheck, inject } from '@angular/core';
+import { Component, input, output, computed } from '@angular/core';
 import { RoomResponse } from '../../../../../core/services/api.service';
-import { ClientSessionService } from '../../../../../core/services/client-session.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 
 @Component({
@@ -11,11 +10,6 @@ import { HlmButton } from '@spartan-ng/helm/button';
     <div class="waiting-stage">
       <h2 class="title">Waiting for players</h2>
       <p class="count">{{ playerCount() }} / 4</p>
-
-      <!-- Debug info - remove later -->
-      <p class="debug" style="font-size: 0.7rem; color: gray;">
-        isCreator: {{ isCreator() }} | isWatcher: {{ isWatcher() }} | clientId: {{ debugClientId() }}
-      </p>
 
       @if (showStartButton()) {
         <button
@@ -59,6 +53,23 @@ import { HlmButton } from '@spartan-ng/helm/button';
 
     .start-button {
       margin-bottom: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+      font-weight: 600;
+      padding: 0.75rem 2rem;
+    }
+
+    .start-button:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+      filter: brightness(1.1);
+    }
+
+    .start-button:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2);
     }
 
     .hint {
@@ -68,9 +79,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
   `],
 })
-export class WaitingStageComponent implements OnInit, DoCheck {
-  private readonly session = inject(ClientSessionService);
-
+export class WaitingStageComponent {
   readonly room = input<RoomResponse | null>(null);
   readonly isCreator = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
@@ -82,40 +91,4 @@ export class WaitingStageComponent implements OnInit, DoCheck {
   readonly showStartButton = computed(() => {
     return this.isCreator() && !this.isWatcher();
   });
-
-  // Debug: show clientId to help diagnose issues
-  readonly debugClientId = computed(() => {
-    const id = this.session.clientId();
-    return id ? `${id.slice(0, 12)}...` : 'none';
-  });
-
-  private _lastLoggedState: string = '';
-
-  ngOnInit(): void {
-    console.log('[WaitingStage] Component initialized');
-  }
-
-  ngDoCheck(): void {
-    const room = this.room();
-    const state = {
-      roomId: room?.roomId,
-      roomStatus: room?.status,
-      playerCount: room?.playerCount,
-      gameId: room?.gameId,
-      slots: room?.playerSlots?.map(s => ({
-        position: s.position,
-        occupied: s.isOccupied,
-        name: s.playerName,
-        isAi: s.isAi,
-      })),
-      isCreator: this.isCreator(),
-      isWatcher: this.isWatcher(),
-      showStartButton: this.showStartButton(),
-    };
-    const stateKey = JSON.stringify(state);
-    if (stateKey !== this._lastLoggedState) {
-      console.log('[WaitingStage] State changed:', state);
-      this._lastLoggedState = stateKey;
-    }
-  }
 }
