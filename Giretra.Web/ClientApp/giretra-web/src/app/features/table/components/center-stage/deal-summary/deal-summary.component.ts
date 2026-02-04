@@ -1,11 +1,12 @@
-import { Component, input, output, OnInit, OnDestroy } from '@angular/core';
-import { GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
+import { Component, input, output } from '@angular/core';
+import { CardPointsBreakdownResponse, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
+import { HlmButton } from '@spartan-ng/helm/button';
 
 @Component({
   selector: 'app-deal-summary',
   standalone: true,
-  imports: [GameModeBadgeComponent],
+  imports: [GameModeBadgeComponent, HlmButton],
   template: `
     @if (summary(); as s) {
       <div class="deal-summary">
@@ -15,24 +16,92 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
           <app-game-mode-badge [mode]="s.gameMode" size="1.5rem" />
         </div>
 
-        <div class="scores">
-          <div class="team-score">
+        <div class="scores-section">
+          <div class="team-column team1">
             <span class="team-label">Team 1</span>
             <span class="card-points">{{ s.team1CardPoints }} pts</span>
             <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
-              +{{ s.team1MatchPointsEarned }}
+              +{{ s.team1MatchPointsEarned }} match pts
             </span>
           </div>
 
           <div class="divider"></div>
 
-          <div class="team-score">
+          <div class="team-column team2">
             <span class="team-label">Team 2</span>
             <span class="card-points">{{ s.team2CardPoints }} pts</span>
             <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
-              +{{ s.team2MatchPointsEarned }}
+              +{{ s.team2MatchPointsEarned }} match pts
             </span>
           </div>
+        </div>
+
+        <!-- Card Points Breakdown -->
+        <div class="breakdown-section">
+          <h3 class="breakdown-title">Points Breakdown</h3>
+          <table class="breakdown-table">
+            <thead>
+              <tr>
+                <th class="card-type">Card</th>
+                <th class="team1-col">Team 1</th>
+                <th class="team2-col">Team 2</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (s.team1Breakdown.jacks > 0 || s.team2Breakdown.jacks > 0) {
+                <tr>
+                  <td class="card-type">Jacks</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.jacks > 0">{{ s.team1Breakdown.jacks }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.jacks > 0">{{ s.team2Breakdown.jacks }}</td>
+                </tr>
+              }
+              @if (s.team1Breakdown.nines > 0 || s.team2Breakdown.nines > 0) {
+                <tr>
+                  <td class="card-type">Nines</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.nines > 0">{{ s.team1Breakdown.nines }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.nines > 0">{{ s.team2Breakdown.nines }}</td>
+                </tr>
+              }
+              @if (s.team1Breakdown.aces > 0 || s.team2Breakdown.aces > 0) {
+                <tr>
+                  <td class="card-type">Aces</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.aces > 0">{{ s.team1Breakdown.aces }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.aces > 0">{{ s.team2Breakdown.aces }}</td>
+                </tr>
+              }
+              @if (s.team1Breakdown.tens > 0 || s.team2Breakdown.tens > 0) {
+                <tr>
+                  <td class="card-type">Tens</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.tens > 0">{{ s.team1Breakdown.tens }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.tens > 0">{{ s.team2Breakdown.tens }}</td>
+                </tr>
+              }
+              @if (s.team1Breakdown.kings > 0 || s.team2Breakdown.kings > 0) {
+                <tr>
+                  <td class="card-type">Kings</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.kings > 0">{{ s.team1Breakdown.kings }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.kings > 0">{{ s.team2Breakdown.kings }}</td>
+                </tr>
+              }
+              @if (s.team1Breakdown.queens > 0 || s.team2Breakdown.queens > 0) {
+                <tr>
+                  <td class="card-type">Queens</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.queens > 0">{{ s.team1Breakdown.queens }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.queens > 0">{{ s.team2Breakdown.queens }}</td>
+                </tr>
+              }
+              <tr class="last-trick-row">
+                <td class="card-type">Last Trick</td>
+                <td class="team1-col" [class.has-points]="s.team1Breakdown.lastTrickBonus > 0">{{ s.team1Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
+                <td class="team2-col" [class.has-points]="s.team2Breakdown.lastTrickBonus > 0">{{ s.team2Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
+              </tr>
+              <tr class="total-row">
+                <td class="card-type">Total</td>
+                <td class="team1-col has-points">{{ s.team1Breakdown.total }}</td>
+                <td class="team2-col has-points">{{ s.team2Breakdown.total }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         @if (s.wasSweep) {
@@ -42,12 +111,14 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
         }
 
         <div class="totals">
-          <span class="total-points">{{ s.team1TotalMatchPoints }}</span>
+          <span class="total-points team1-text">{{ s.team1TotalMatchPoints }}</span>
           <span class="total-label">Match Score</span>
-          <span class="total-points">{{ s.team2TotalMatchPoints }}</span>
+          <span class="total-points team2-text">{{ s.team2TotalMatchPoints }}</span>
         </div>
 
-        <p class="countdown">Next deal in {{ countdown }}...</p>
+        <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
+          Continue
+        </button>
       </div>
     }
   `,
@@ -60,7 +131,8 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       background: hsl(var(--card));
       border: 1px solid hsl(var(--border));
       border-radius: 0.75rem;
-      min-width: 280px;
+      min-width: 320px;
+      max-width: 400px;
       animation: slideIn 0.3s ease;
     }
 
@@ -86,34 +158,46 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       margin-bottom: 1rem;
     }
 
-    .scores {
+    .scores-section {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       gap: 1.5rem;
       margin-bottom: 1rem;
+      width: 100%;
     }
 
-    .team-score {
+    .team-column {
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 80px;
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+    }
+
+    .team1 {
+      background: hsl(var(--team1) / 0.1);
+    }
+
+    .team2 {
+      background: hsl(var(--team2) / 0.1);
     }
 
     .team-label {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
       text-transform: uppercase;
+      margin-bottom: 0.25rem;
     }
 
     .card-points {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.5rem;
+      font-weight: 700;
       color: hsl(var(--foreground));
     }
 
     .earned {
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
     }
 
@@ -124,8 +208,70 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
 
     .divider {
       width: 1px;
-      height: 3rem;
       background: hsl(var(--border));
+    }
+
+    .breakdown-section {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    .breakdown-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      margin: 0 0 0.5rem 0;
+      text-align: center;
+    }
+
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .breakdown-table th,
+    .breakdown-table td {
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+    }
+
+    .breakdown-table th {
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .breakdown-table .card-type {
+      text-align: left;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .breakdown-table .team1-col {
+      color: hsl(var(--muted-foreground));
+    }
+
+    .breakdown-table .team2-col {
+      color: hsl(var(--muted-foreground));
+    }
+
+    .breakdown-table .has-points {
+      color: hsl(var(--foreground));
+      font-weight: 500;
+    }
+
+    .breakdown-table .last-trick-row {
+      border-top: 1px dashed hsl(var(--border));
+    }
+
+    .breakdown-table .total-row {
+      border-top: 1px solid hsl(var(--border));
+      font-weight: 600;
+    }
+
+    .breakdown-table .total-row .card-type {
+      color: hsl(var(--foreground));
     }
 
     .sweep-banner {
@@ -158,7 +304,14 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
     .total-points {
       font-size: 1.5rem;
       font-weight: 700;
-      color: hsl(var(--foreground));
+    }
+
+    .team1-text {
+      color: hsl(var(--team1));
+    }
+
+    .team2-text {
+      color: hsl(var(--team2));
     }
 
     .total-label {
@@ -167,14 +320,13 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       text-transform: uppercase;
     }
 
-    .countdown {
-      font-size: 0.75rem;
-      color: hsl(var(--muted-foreground));
-      margin: 0;
+    .continue-button {
+      width: 100%;
+      margin-top: 0.5rem;
     }
   `],
 })
-export class DealSummaryComponent implements OnInit, OnDestroy {
+export class DealSummaryComponent {
   readonly summary = input<{
     gameMode: GameMode;
     team1CardPoints: number;
@@ -185,26 +337,9 @@ export class DealSummaryComponent implements OnInit, OnDestroy {
     team2TotalMatchPoints: number;
     wasSweep: boolean;
     sweepingTeam: Team | null;
+    team1Breakdown: CardPointsBreakdownResponse;
+    team2Breakdown: CardPointsBreakdownResponse;
   } | null>(null);
 
   readonly dismissed = output<void>();
-
-  countdown = 5;
-  private intervalId: any;
-
-  ngOnInit(): void {
-    this.countdown = 5;
-    this.intervalId = setInterval(() => {
-      this.countdown--;
-      if (this.countdown <= 0) {
-        this.dismissed.emit();
-      }
-    }, 1000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-  }
 }

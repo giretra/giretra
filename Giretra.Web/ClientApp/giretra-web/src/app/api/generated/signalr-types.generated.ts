@@ -76,6 +76,17 @@ export interface TrickResponse {
   winner?: PlayerPosition;
 }
 
+export interface CardPointsBreakdownResponse {
+  jacks: number;
+  nines: number;
+  aces: number;
+  tens: number;
+  kings: number;
+  queens: number;
+  lastTrickBonus: number;
+  total: number;
+}
+
 // ============================================================================
 // Hub Events (Server -> Client)
 // ============================================================================
@@ -114,6 +125,8 @@ export interface DealEndedEvent {
   team2TotalMatchPoints: number;
   wasSweep: boolean;
   sweepingTeam?: Team;
+  team1Breakdown: CardPointsBreakdownResponse;
+  team2Breakdown: CardPointsBreakdownResponse;
 }
 
 export interface YourTurnEvent {

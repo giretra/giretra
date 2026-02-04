@@ -24,7 +24,7 @@ public interface INotificationService
     /// <summary>
     /// Notifies all clients that a deal has ended.
     /// </summary>
-    Task NotifyDealEndedAsync(string gameId, DealResult result, MatchState matchState);
+    Task NotifyDealEndedAsync(string gameId, DealResult result, HandState handState, MatchState matchState);
 
     /// <summary>
     /// Notifies all clients that a card was played.

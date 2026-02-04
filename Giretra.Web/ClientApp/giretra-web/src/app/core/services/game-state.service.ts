@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CardResponse,
+  CardPointsBreakdownResponse,
   GameMode,
   PlayerPosition,
   Team,
@@ -68,6 +69,8 @@ export class GameStateService {
     team2TotalMatchPoints: number;
     wasSweep: boolean;
     sweepingTeam: Team | null;
+    team1Breakdown: CardPointsBreakdownResponse;
+    team2Breakdown: CardPointsBreakdownResponse;
   } | null>(null);
 
   readonly showingDealSummary = this._showingDealSummary.asReadonly();
@@ -78,10 +81,27 @@ export class GameStateService {
   // ─────────────────────────────────────────────────────────────────────────
   private readonly _showingCompletedTrick = signal<boolean>(false);
   private readonly _completedTrickToShow = signal<TrickResponse | null>(null);
+  private readonly _isLastTrick = signal<boolean>(false);
   private _completedTrickTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly COMPLETED_TRICK_DELAY_MS = 3000;
 
+  // Pending deal summary to show after last trick is dismissed
+  private _pendingDealSummary: {
+    gameMode: GameMode;
+    team1CardPoints: number;
+    team2CardPoints: number;
+    team1MatchPointsEarned: number;
+    team2MatchPointsEarned: number;
+    team1TotalMatchPoints: number;
+    team2TotalMatchPoints: number;
+    wasSweep: boolean;
+    sweepingTeam: Team | null;
+    team1Breakdown: CardPointsBreakdownResponse;
+    team2Breakdown: CardPointsBreakdownResponse;
+  } | null = null;
+
   readonly showingCompletedTrick = this._showingCompletedTrick.asReadonly();
+  readonly isLastTrick = this._isLastTrick.asReadonly();
   readonly completedTrickToShow = this._completedTrickToShow.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -407,6 +427,8 @@ export class GameStateService {
     team2TotalMatchPoints: number;
     wasSweep: boolean;
     sweepingTeam: Team | null;
+    team1Breakdown: CardPointsBreakdownResponse;
+    team2Breakdown: CardPointsBreakdownResponse;
   }): void {
     this._dealSummary.set(summary);
     this._showingDealSummary.set(true);
@@ -430,8 +452,16 @@ export class GameStateService {
     }
     this._showingCompletedTrick.set(false);
     this._completedTrickToShow.set(null);
-    // Now refresh state to get the next trick
-    this.refreshState();
+    this._isLastTrick.set(false);
+
+    // If there's a pending deal summary (last trick case), show it now
+    if (this._pendingDealSummary) {
+      this.showDealSummary(this._pendingDealSummary);
+      this._pendingDealSummary = null;
+    } else {
+      // Now refresh state to get the next trick
+      this.refreshState();
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -524,23 +554,31 @@ export class GameStateService {
         winner: event.trick.winner ?? null,
       };
 
+      // Detect if this is the last trick (trick 8)
+      const isLastTrick = trick.trickNumber === 8;
+      this._isLastTrick.set(isLastTrick);
+
       // Store the completed trick and show it
       this._completedTrickToShow.set(trick);
       this._showingCompletedTrick.set(true);
 
-      // Auto-dismiss after delay
-      this._completedTrickTimeoutId = setTimeout(() => {
-        this._completedTrickTimeoutId = null;
-        this._showingCompletedTrick.set(false);
-        this._completedTrickToShow.set(null);
-        this.refreshState();
-      }, this.COMPLETED_TRICK_DELAY_MS);
+      // For non-last tricks, auto-dismiss after delay
+      // For last trick, wait for user to click (no timeout)
+      if (!isLastTrick) {
+        this._completedTrickTimeoutId = setTimeout(() => {
+          this._completedTrickTimeoutId = null;
+          this._showingCompletedTrick.set(false);
+          this._completedTrickToShow.set(null);
+          this.refreshState();
+        }, this.COMPLETED_TRICK_DELAY_MS);
+      }
     });
 
     // Deal ended
     this.hub.dealEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealEnded', event);
-      this.showDealSummary({
+
+      const summary = {
         gameMode: event.gameMode,
         team1CardPoints: event.team1CardPoints,
         team2CardPoints: event.team2CardPoints,
@@ -550,7 +588,16 @@ export class GameStateService {
         team2TotalMatchPoints: event.team2TotalMatchPoints,
         wasSweep: event.wasSweep,
         sweepingTeam: event.sweepingTeam ?? null,
-      });
+        team1Breakdown: event.team1Breakdown,
+        team2Breakdown: event.team2Breakdown,
+      };
+
+      // If last trick is still showing, store the summary to show after user dismisses it
+      if (this._isLastTrick() && this._showingCompletedTrick()) {
+        this._pendingDealSummary = summary;
+      } else {
+        this.showDealSummary(summary);
+      }
     });
 
     // Match ended

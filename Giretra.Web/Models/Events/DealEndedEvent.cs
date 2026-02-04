@@ -1,5 +1,6 @@
 using Giretra.Core.GameModes;
 using Giretra.Core.Players;
+using Giretra.Web.Models.Responses;
 
 namespace Giretra.Web.Models.Events;
 
@@ -57,4 +58,14 @@ public sealed class DealEndedEvent
     /// The sweeping team if a sweep occurred.
     /// </summary>
     public Team? SweepingTeam { get; init; }
+
+    /// <summary>
+    /// Breakdown of Team 1's card points by card type.
+    /// </summary>
+    public required CardPointsBreakdownResponse Team1Breakdown { get; init; }
+
+    /// <summary>
+    /// Breakdown of Team 2's card points by card type.
+    /// </summary>
+    public required CardPointsBreakdownResponse Team2Breakdown { get; init; }
 }

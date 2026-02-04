@@ -66,8 +66,9 @@ public interface IPlayerAgent
     /// Called when a deal ends, allowing the player to observe the result.
     /// </summary>
     /// <param name="result">The result of the completed deal.</param>
+    /// <param name="handState">The final state of the hand with all completed tricks.</param>
     /// <param name="matchState">The current state of the match after the deal.</param>
-    Task OnDealEndedAsync(DealResult result, MatchState matchState);
+    Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState);
 
     /// <summary>
     /// Called when any player plays a card, allowing observation of the play.

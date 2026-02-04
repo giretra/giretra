@@ -160,14 +160,14 @@ public sealed class GameManager
             deal.ResolvedMode, deal.AnnouncerTeam, deal.Multiplier);
 
         // Playing phase (8 tricks)
-        await PerformPlayingAsync();
+        var finalHandState = await PerformPlayingAsync();
 
         // Get the result and notify players
         var result = _matchState.CompletedDeals[^1];
         _logger.LogDebug("Deal {DealNumber} completed. Card points: Team1={Team1CardPoints}, Team2={Team2CardPoints}. Match points: Team1={Team1MatchPoints}, Team2={Team2MatchPoints}{SweepInfo}",
             dealNumber, result.Team1CardPoints, result.Team2CardPoints, result.Team1MatchPoints, result.Team2MatchPoints,
             result.WasSweep ? $" (Sweep by {result.SweepingTeam})" : "");
-        await NotifyAllPlayersAsync(p => p.OnDealEndedAsync(result, _matchState));
+        await NotifyAllPlayersAsync(p => p.OnDealEndedAsync(result, finalHandState, _matchState));
     }
 
     /// <summary>
@@ -252,7 +252,8 @@ public sealed class GameManager
     /// <summary>
     /// Performs the playing phase (8 tricks).
     /// </summary>
-    private async Task PerformPlayingAsync()
+    /// <returns>The final hand state with all completed tricks.</returns>
+    private async Task<HandState> PerformPlayingAsync()
     {
         _logger.LogDebug("Playing phase started. Game mode: {GameMode}", _matchState.CurrentDeal!.ResolvedMode);
         var deal = _matchState.CurrentDeal!;
@@ -327,6 +328,8 @@ public sealed class GameManager
 
         _logger.LogDebug("Playing phase complete. Final tricks: Team1={Team1Tricks}, Team2={Team2Tricks}",
             deal.Hand!.Team1TricksWon, deal.Hand.Team2TricksWon);
+
+        return deal.Hand;
     }
 
     /// <summary>

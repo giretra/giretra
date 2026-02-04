@@ -1,5 +1,6 @@
 using Giretra.Core.Cards;
 using Giretra.Core.GameModes;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
@@ -61,10 +62,13 @@ public sealed class NotificationService : INotificationService
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealStarted", ev);
     }
 
-    public async Task NotifyDealEndedAsync(string gameId, DealResult result, MatchState matchState)
+    public async Task NotifyDealEndedAsync(string gameId, DealResult result, HandState handState, MatchState matchState)
     {
         var session = _gameRepository.GetById(gameId);
         if (session == null) return;
+
+        // Compute card points breakdown for each team
+        var (team1Breakdown, team2Breakdown) = ComputeCardPointsBreakdown(handState);
 
         var ev = new DealEndedEvent
         {
@@ -77,10 +81,144 @@ public sealed class NotificationService : INotificationService
             Team1TotalMatchPoints = matchState.Team1MatchPoints,
             Team2TotalMatchPoints = matchState.Team2MatchPoints,
             WasSweep = result.WasSweep,
-            SweepingTeam = result.SweepingTeam
+            SweepingTeam = result.SweepingTeam,
+            Team1Breakdown = team1Breakdown,
+            Team2Breakdown = team2Breakdown
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealEnded", ev);
+    }
+
+    private static (CardPointsBreakdownResponse Team1, CardPointsBreakdownResponse Team2) ComputeCardPointsBreakdown(HandState handState)
+    {
+        var team1Points = new Dictionary<CardRank, int>
+        {
+            [CardRank.Jack] = 0,
+            [CardRank.Nine] = 0,
+            [CardRank.Ace] = 0,
+            [CardRank.Ten] = 0,
+            [CardRank.King] = 0,
+            [CardRank.Queen] = 0
+        };
+        var team2Points = new Dictionary<CardRank, int>
+        {
+            [CardRank.Jack] = 0,
+            [CardRank.Nine] = 0,
+            [CardRank.Ace] = 0,
+            [CardRank.Ten] = 0,
+            [CardRank.King] = 0,
+            [CardRank.Queen] = 0
+        };
+
+        int team1LastTrickBonus = 0;
+        int team2LastTrickBonus = 0;
+
+        for (int i = 0; i < handState.CompletedTricks.Count; i++)
+        {
+            var trick = handState.CompletedTricks[i];
+            var isLastTrick = i == 7;
+
+            // Determine winner of this trick
+            var winner = DetermineWinner(trick, handState.GameMode);
+            var winnerTeam = winner.GetTeam();
+
+            // Add card points by rank to the winning team
+            var targetPoints = winnerTeam == Team.Team1 ? team1Points : team2Points;
+
+            foreach (var playedCard in trick.PlayedCards)
+            {
+                var pointValue = playedCard.Card.GetPointValue(handState.GameMode);
+                if (pointValue > 0 && targetPoints.ContainsKey(playedCard.Card.Rank))
+                {
+                    targetPoints[playedCard.Card.Rank] += pointValue;
+                }
+            }
+
+            // Add last trick bonus
+            if (isLastTrick)
+            {
+                if (winnerTeam == Team.Team1)
+                    team1LastTrickBonus = 10;
+                else
+                    team2LastTrickBonus = 10;
+            }
+        }
+
+        var team1Total = team1Points.Values.Sum() + team1LastTrickBonus;
+        var team2Total = team2Points.Values.Sum() + team2LastTrickBonus;
+
+        return (
+            new CardPointsBreakdownResponse
+            {
+                Jacks = team1Points[CardRank.Jack],
+                Nines = team1Points[CardRank.Nine],
+                Aces = team1Points[CardRank.Ace],
+                Tens = team1Points[CardRank.Ten],
+                Kings = team1Points[CardRank.King],
+                Queens = team1Points[CardRank.Queen],
+                LastTrickBonus = team1LastTrickBonus,
+                Total = team1Total
+            },
+            new CardPointsBreakdownResponse
+            {
+                Jacks = team2Points[CardRank.Jack],
+                Nines = team2Points[CardRank.Nine],
+                Aces = team2Points[CardRank.Ace],
+                Tens = team2Points[CardRank.Ten],
+                Kings = team2Points[CardRank.King],
+                Queens = team2Points[CardRank.Queen],
+                LastTrickBonus = team2LastTrickBonus,
+                Total = team2Total
+            }
+        );
+    }
+
+    private static PlayerPosition DetermineWinner(TrickState trick, GameMode gameMode)
+    {
+        var trumpSuit = gameMode.GetTrumpSuit();
+        var leadSuit = trick.LeadSuit!.Value;
+
+        var winningCard = trick.PlayedCards[0];
+
+        foreach (var playedCard in trick.PlayedCards.Skip(1))
+        {
+            if (IsBetter(playedCard, winningCard, leadSuit, trumpSuit, gameMode))
+            {
+                winningCard = playedCard;
+            }
+        }
+
+        return winningCard.Player;
+    }
+
+    private static bool IsBetter(PlayedCard challenger, PlayedCard current, CardSuit leadSuit, CardSuit? trumpSuit, GameMode gameMode)
+    {
+        var challengerSuit = challenger.Card.Suit;
+        var currentSuit = current.Card.Suit;
+
+        // Trump beats non-trump
+        if (trumpSuit.HasValue)
+        {
+            if (challengerSuit == trumpSuit && currentSuit != trumpSuit)
+                return true;
+            if (currentSuit == trumpSuit && challengerSuit != trumpSuit)
+                return false;
+        }
+
+        // If different suits (and neither is trump, or no trump mode), lead suit wins
+        if (challengerSuit != currentSuit)
+        {
+            // In same-suit comparison or when one follows lead
+            if (currentSuit == leadSuit && challengerSuit != leadSuit)
+                return false;
+            if (challengerSuit == leadSuit && currentSuit != leadSuit)
+                return true;
+            // Neither is lead suit, current holder keeps it
+            return false;
+        }
+
+        // Same suit: compare strength
+        return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
     }
 
     public async Task NotifyCardPlayedAsync(string gameId, PlayerPosition player, Card card, HandState handState, MatchState matchState)

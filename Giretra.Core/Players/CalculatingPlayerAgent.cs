@@ -261,7 +261,7 @@ public class CalculatingPlayerAgent : IPlayerAgent
         return Task.CompletedTask;
     }
 
-    public Task OnDealEndedAsync(DealResult result, MatchState matchState)
+    public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         return Task.CompletedTask;
     }
