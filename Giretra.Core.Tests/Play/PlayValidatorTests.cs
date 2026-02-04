@@ -248,4 +248,30 @@ public class PlayValidatorTests
         Assert.Single(validPlays);
         Assert.Equal(new Card(CardRank.Jack, CardSuit.Spades), validPlays[0]);
     }
+
+    [Fact]
+    public void Colour_MustOvertrumpTeammateTrump_WhenCannotFollow()
+    {
+        // Scenario: Hearts are trump
+        // Left leads A♠, Top trumps with 10♥, Right follows with 7♠
+        // Bottom has no spades but has 8♥ and 9♥
+        // Bottom must overtrump: only 9♥ beats 10♥ (trump ranking: J > 9 > A > 10)
+        var player = Player.Create(PlayerPosition.Bottom, new[]
+        {
+            new Card(CardRank.Eight, CardSuit.Hearts),  // Lower trump (doesn't beat 10)
+            new Card(CardRank.Nine, CardSuit.Hearts),   // Higher trump (beats 10)
+            new Card(CardRank.Ace, CardSuit.Clubs)      // Non-trump, non-lead
+        });
+
+        var trick = TrickState.Create(PlayerPosition.Left, 1)
+            .PlayCard(new Card(CardRank.Ace, CardSuit.Spades))   // Left leads A♠
+            .PlayCard(new Card(CardRank.Ten, CardSuit.Hearts))   // Top trumps with 10♥
+            .PlayCard(new Card(CardRank.Seven, CardSuit.Spades)); // Right follows with 7♠
+
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.ColourHearts);
+
+        // Must overtrump: only 9♥ beats 10♥ in trump ranking
+        Assert.Single(validPlays);
+        Assert.Equal(new Card(CardRank.Nine, CardSuit.Hearts), validPlays[0]);
+    }
 }
