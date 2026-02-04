@@ -1,3 +1,5 @@
+using Giretra.Core.Players;
+
 namespace Giretra.Web.Models.Requests;
 
 /// <summary>
@@ -16,7 +18,7 @@ public sealed class CreateRoomRequest
     public required string CreatorName { get; init; }
 
     /// <summary>
-    /// If true, immediately fill the other 3 seats with AI players.
+    /// Positions to fill with AI players. Only Left, Top, and Right are valid (Bottom is reserved for creator).
     /// </summary>
-    public bool FillWithAi { get; init; }
+    public List<PlayerPosition>? AiPositions { get; init; }
 }

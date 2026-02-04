@@ -66,12 +66,17 @@ public sealed class RoomService : IRoomService
 
         room.PlayerSlots[PlayerPosition.Bottom] = creator;
 
-        // Fill other 3 seats with AI if requested
-        if (request.FillWithAi)
+        // Fill specified positions with AI
+        if (request.AiPositions != null)
         {
-            room.AiSlots.Add(PlayerPosition.Left);
-            room.AiSlots.Add(PlayerPosition.Top);
-            room.AiSlots.Add(PlayerPosition.Right);
+            foreach (var position in request.AiPositions)
+            {
+                // Only allow Left, Top, Right (Bottom is reserved for creator)
+                if (position != PlayerPosition.Bottom)
+                {
+                    room.AiSlots.Add(position);
+                }
+            }
         }
 
         _roomRepository.Add(room);

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService, RoomResponse } from '../../../../core/services/api.service';
 import { ClientSessionService } from '../../../../core/services/client-session.service';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 
 @Component({
   selector: 'app-create-room-form',
@@ -37,17 +38,38 @@ import { HlmButton } from '@spartan-ng/helm/button';
         />
       </div>
 
-      <div class="form-field checkbox-field">
-        <label class="checkbox-label">
-          <input
-            type="checkbox"
-            [(ngModel)]="fillWithAi"
-            name="fillWithAi"
-            [disabled]="submitting()"
-          />
-          <span>Fill other seats with AI</span>
-        </label>
-        <p class="hint">Start playing immediately against 3 AI opponents</p>
+      <div class="form-field ai-positions-field">
+        <label>Fill seats with AI <span class="optional">(optional)</span></label>
+        <div class="ai-positions-grid">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="aiLeft"
+              name="aiLeft"
+              [disabled]="submitting()"
+            />
+            <span>Left</span>
+          </label>
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="aiTop"
+              name="aiTop"
+              [disabled]="submitting()"
+            />
+            <span>Top (Partner)</span>
+          </label>
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="aiRight"
+              name="aiRight"
+              [disabled]="submitting()"
+            />
+            <span>Right</span>
+          </label>
+        </div>
+        <p class="hint">Select which positions should be AI opponents</p>
       </div>
 
       @if (error()) {
@@ -172,6 +194,35 @@ import { HlmButton } from '@spartan-ng/helm/button';
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
     }
+
+    .ai-positions-field {
+      gap: 0.5rem;
+    }
+
+    .ai-positions-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .ai-positions-grid .checkbox-label {
+      flex: 1;
+      min-width: 80px;
+      padding: 0.5rem 0.75rem;
+      background: hsl(var(--muted) / 0.3);
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.375rem;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .ai-positions-grid .checkbox-label:has(input:checked) {
+      background: hsl(var(--primary) / 0.1);
+      border-color: hsl(var(--primary));
+    }
+
+    .ai-positions-grid .checkbox-label:hover:not(:has(input:disabled)) {
+      background: hsl(var(--muted) / 0.5);
+    }
   `],
 })
 export class CreateRoomFormComponent {
@@ -184,9 +235,19 @@ export class CreateRoomFormComponent {
   readonly cancelled = output<void>();
 
   roomName = '';
-  fillWithAi = false;
+  aiLeft = false;
+  aiTop = false;
+  aiRight = false;
   readonly submitting = signal<boolean>(false);
   readonly error = signal<string>('');
+
+  private getAiPositions(): PlayerPosition[] {
+    const positions: PlayerPosition[] = [];
+    if (this.aiLeft) positions.push(PlayerPosition.Left);
+    if (this.aiTop) positions.push(PlayerPosition.Top);
+    if (this.aiRight) positions.push(PlayerPosition.Right);
+    return positions;
+  }
 
   onSubmit(): void {
     const name = this.roomName.trim() || null;
@@ -194,7 +255,7 @@ export class CreateRoomFormComponent {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.playerName(), this.fillWithAi).subscribe({
+    this.api.createRoom(name, this.playerName(), this.getAiPositions()).subscribe({
       next: (response) => {
         console.log('[CreateRoom] Response received:', {
           roomId: response.room.roomId,
