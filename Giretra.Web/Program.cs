@@ -37,8 +37,13 @@ public class Program
             };
         });
 
-        // Add SignalR
-        builder.Services.AddSignalR();
+        // Add SignalR with string enum serialization (matching REST API)
+        builder.Services.AddSignalR()
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.Converters.Add(
+                    new System.Text.Json.Serialization.JsonStringEnumConverter());
+            });
 
         // Add CORS for development
         builder.Services.AddCors(options =>
