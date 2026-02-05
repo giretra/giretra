@@ -110,6 +110,20 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
       background: hsl(var(--background));
       overflow: hidden;
     }
+
+    app-score-bar {
+      flex-shrink: 0;
+    }
+
+    app-table-surface {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    app-hand-area {
+      flex-shrink: 0;
+    }
   `],
 })
 export class TableComponent implements OnInit, OnDestroy {

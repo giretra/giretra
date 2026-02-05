@@ -156,9 +156,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
   `,
   styles: [`
     .table-surface {
-      flex: 1;
       display: flex;
       flex-direction: column;
+      height: 100%;
       padding: 0.5rem;
       min-height: 0;
       overflow: hidden;
