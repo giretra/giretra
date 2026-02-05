@@ -250,6 +250,34 @@ public class PlayValidatorTests
     }
 
     [Fact]
+    public void Colour_MustPlayHigherTrump_WhenFollowingTrumpSuit()
+    {
+        // Scenario: Spades are trump
+        // Top leads 8♠, Right plays 10♠
+        // Bottom has A♠, K♠, Q♠ + cards in other suits
+        // Trump ranking: J > 9 > A > 10 > K > Q > 8 > 7
+        // Only A♠ beats 10♠, so it's the only valid play
+        var player = Player.Create(PlayerPosition.Bottom, new[]
+        {
+            new Card(CardRank.Ace, CardSuit.Spades),    // Beats 10♠ (strength 6 > 5)
+            new Card(CardRank.King, CardSuit.Spades),   // Doesn't beat 10♠ (strength 4 < 5)
+            new Card(CardRank.Queen, CardSuit.Spades),  // Doesn't beat 10♠ (strength 3 < 5)
+            new Card(CardRank.Ace, CardSuit.Hearts),
+            new Card(CardRank.Seven, CardSuit.Clubs)
+        });
+
+        var trick = TrickState.Create(PlayerPosition.Top, 1)
+            .PlayCard(new Card(CardRank.Eight, CardSuit.Spades))  // Top leads 8♠
+            .PlayCard(new Card(CardRank.Ten, CardSuit.Spades));   // Right plays 10♠
+
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.ColourSpades);
+
+        // Must play higher trump: only A♠ beats 10♠ in trump ranking
+        Assert.Single(validPlays);
+        Assert.Equal(new Card(CardRank.Ace, CardSuit.Spades), validPlays[0]);
+    }
+
+    [Fact]
     public void Colour_MustOvertrumpTeammateTrump_WhenCannotFollow()
     {
         // Scenario: Hearts are trump

@@ -134,6 +134,16 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
     app-hand-area {
       flex-shrink: 0;
     }
+
+    .bid-dialog-open app-table-surface {
+      position: relative;
+      z-index: 52;
+    }
+
+    .bid-dialog-open app-hand-area {
+      position: relative;
+      z-index: 60;
+    }
   `],
 })
 export class TableComponent implements OnInit, OnDestroy {

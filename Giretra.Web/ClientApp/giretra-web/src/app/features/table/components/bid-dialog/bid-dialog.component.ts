@@ -59,7 +59,6 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
           (actionSelected)="onAction($event)"
         />
       </div>
-      </div>
     </div>
   `,
   styles: [`
