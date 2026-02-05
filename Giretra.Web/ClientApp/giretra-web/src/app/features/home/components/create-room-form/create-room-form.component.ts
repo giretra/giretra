@@ -39,7 +39,17 @@ import { PlayerPosition } from '../../../../api/generated/signalr-types.generate
       </div>
 
       <div class="form-field ai-positions-field">
-        <label>Fill seats with AI <span class="optional">(optional)</span></label>
+        <div class="ai-label-row">
+          <label>Fill seats with AI <span class="optional">(optional)</span></label>
+          <button
+            type="button"
+            class="fill-all-btn"
+            [disabled]="submitting()"
+            (click)="toggleAllAi()"
+          >
+            {{ allAi ? 'Clear all' : 'Fill all' }}
+          </button>
+        </div>
         <div class="ai-positions-grid">
           <label class="checkbox-label">
             <input
@@ -199,6 +209,34 @@ import { PlayerPosition } from '../../../../api/generated/signalr-types.generate
       gap: 0.5rem;
     }
 
+    .ai-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .fill-all-btn {
+      padding: 0.25rem 0.625rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: hsl(var(--primary));
+      background: hsl(var(--primary) / 0.1);
+      border: 1px solid hsl(var(--primary) / 0.3);
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .fill-all-btn:hover:not(:disabled) {
+      background: hsl(var(--primary) / 0.2);
+      border-color: hsl(var(--primary) / 0.5);
+    }
+
+    .fill-all-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .ai-positions-grid {
       display: flex;
       flex-wrap: wrap;
@@ -240,6 +278,17 @@ export class CreateRoomFormComponent {
   aiRight = false;
   readonly submitting = signal<boolean>(false);
   readonly error = signal<string>('');
+
+  get allAi(): boolean {
+    return this.aiLeft && this.aiTop && this.aiRight;
+  }
+
+  toggleAllAi(): void {
+    const fill = !this.allAi;
+    this.aiLeft = fill;
+    this.aiTop = fill;
+    this.aiRight = fill;
+  }
 
   private getAiPositions(): PlayerPosition[] {
     const positions: PlayerPosition[] = [];

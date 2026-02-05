@@ -134,6 +134,8 @@ import { HlmButton } from '@spartan-ng/helm/button';
       min-width: 320px;
       max-width: 400px;
       animation: slideIn 0.3s ease;
+      position: relative;
+      z-index: 10;
     }
 
     @keyframes slideIn {
