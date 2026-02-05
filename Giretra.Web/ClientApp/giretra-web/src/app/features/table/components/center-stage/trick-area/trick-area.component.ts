@@ -1,9 +1,8 @@
 import { Component, input, computed, output } from '@angular/core';
-import { GameMode, PlayerPosition, Team } from '../../../../../api/generated/signalr-types.generated';
+import { GameMode, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { TrickResponse } from '../../../../../core/services/api.service';
 import { toRelativePosition, RelativePosition } from '../../../../../core/utils/position-utils';
 import { CardComponent } from '../../../../../shared/components/card/card.component';
-import { TrickCounterComponent } from '../../../../../shared/components/trick-counter/trick-counter.component';
 import { Card } from '../../../../../core/models';
 
 interface PositionedCard {
@@ -15,20 +14,9 @@ interface PositionedCard {
 @Component({
   selector: 'app-trick-area',
   standalone: true,
-  imports: [CardComponent, TrickCounterComponent],
+  imports: [CardComponent],
   template: `
     <div class="trick-area-wrapper">
-      <!-- Trick counter at top -->
-      @if (showTrickCounter()) {
-        <div class="counter-container">
-          <app-trick-counter
-            [team1Tricks]="team1Tricks()"
-            [team2Tricks]="team2Tricks()"
-            [myTeam]="myTeam()"
-          />
-        </div>
-      }
-
       <!-- Card play area -->
       <div
         class="trick-area"
@@ -64,10 +52,6 @@ interface PositionedCard {
       flex-direction: column;
       align-items: center;
       gap: 0.75rem;
-    }
-
-    .counter-container {
-      flex-shrink: 0;
     }
 
     .trick-area {
@@ -142,18 +126,9 @@ export class TrickAreaComponent {
   readonly showingCompletedTrick = input<boolean>(false);
   readonly myPosition = input<PlayerPosition | null>(null);
   readonly gameMode = input<GameMode | null>(null);
-  readonly team1Tricks = input<number>(0);
-  readonly team2Tricks = input<number>(0);
-  readonly myTeam = input<Team | null>(null);
-
   readonly dismissCompletedTrick = output<void>();
 
   readonly positions: RelativePosition[] = ['top', 'left', 'right', 'bottom'];
-
-  /** Show trick counter when there are any completed tricks */
-  readonly showTrickCounter = computed(() => {
-    return this.team1Tricks() > 0 || this.team2Tricks() > 0;
-  });
 
   /** Show completed trick if available, otherwise current trick */
   readonly displayedTrick = computed(() => {

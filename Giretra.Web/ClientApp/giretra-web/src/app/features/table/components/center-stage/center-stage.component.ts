@@ -52,9 +52,6 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [showingCompletedTrick]="showingCompletedTrick()"
             [myPosition]="myPosition()"
             [gameMode]="gameMode()"
-            [team1Tricks]="team1Tricks()"
-            [team2Tricks]="team2Tricks()"
-            [myTeam]="myTeam()"
             (dismissCompletedTrick)="dismissCompletedTrick.emit()"
           />
         }
