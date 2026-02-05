@@ -1,0 +1,223 @@
+import { Component, input, output, computed } from '@angular/core';
+import { GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
+import { ValidAction, NegotiationAction } from '../../../../core/services/api.service';
+import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
+import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
+
+@Component({
+  selector: 'app-bid-dialog',
+  standalone: true,
+  imports: [BidButtonRowComponent, GameModeBadgeComponent],
+  template: `
+    <div class="overlay">
+      <div class="dialog">
+        <h2 class="dialog-title">Your Turn to Bid</h2>
+
+        <!-- Current bid -->
+        @if (currentBid(); as bid) {
+          <div class="current-bid">
+            <app-game-mode-badge [mode]="bid.mode" size="1.5rem" />
+            <span class="bid-by">by {{ bid.player }}</span>
+          </div>
+        } @else {
+          <p class="no-bid">No bid yet — you open</p>
+        }
+
+        <!-- Bid history timeline -->
+        @if (negotiationHistory().length > 0) {
+          <div class="bid-timeline">
+            @for (action of negotiationHistory(); track $index; let last = $last) {
+              <div class="timeline-item" [class.active]="last">
+                <span class="timeline-initial">{{ getInitial(action.player) }}</span>
+                <span class="timeline-action">{{ formatAction(action) }}</span>
+              </div>
+              @if (!last) {
+                <span class="timeline-arrow">\u203a</span>
+              }
+            }
+          </div>
+        }
+
+        <!-- Bid buttons -->
+        <app-bid-button-row
+          [validActions]="validActions()"
+          (actionSelected)="onAction($event)"
+        />
+      </div>
+    </div>
+  `,
+  styles: [`
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 100;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .dialog {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+      min-width: 320px;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      animation: scaleIn 0.25s ease;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .dialog-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      margin: 0;
+    }
+
+    .current-bid {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: hsl(var(--gold) / 0.08);
+      border: 1px solid hsl(var(--gold) / 0.2);
+      border-radius: 0.5rem;
+    }
+
+    .bid-by {
+      font-size: 0.875rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .no-bid {
+      color: hsl(var(--muted-foreground));
+      font-style: italic;
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    .bid-timeline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      max-width: 360px;
+    }
+
+    .timeline-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      background: hsl(var(--muted) / 0.5);
+    }
+
+    .timeline-item.active {
+      background: hsl(var(--primary) / 0.15);
+      border: 1px solid hsl(var(--primary) / 0.3);
+    }
+
+    .timeline-initial {
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      font-size: 0.625rem;
+      text-transform: uppercase;
+    }
+
+    .timeline-action {
+      color: hsl(var(--foreground));
+      font-weight: 500;
+    }
+
+    .timeline-arrow {
+      color: hsl(var(--muted-foreground));
+      font-size: 1rem;
+    }
+  `],
+})
+export class BidDialogComponent {
+  readonly validActions = input<ValidAction[]>([]);
+  readonly negotiationHistory = input<NegotiationAction[]>([]);
+  readonly activePlayer = input<PlayerPosition | null>(null);
+
+  readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
+
+  readonly currentBid = computed(() => {
+    const history = this.negotiationHistory();
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].actionType === 'Announce' && history[i].mode) {
+        return history[i];
+      }
+    }
+    return null;
+  });
+
+  getInitial(player: PlayerPosition): string {
+    return player.charAt(0).toUpperCase();
+  }
+
+  formatAction(action: NegotiationAction): string {
+    switch (action.actionType) {
+      case 'Accept':
+        return 'Accept';
+      case 'Double':
+        return '\u00d72';
+      case 'Redouble':
+        return '\u00d74';
+      case 'Announce':
+        return this.formatMode(action.mode);
+      default:
+        return action.actionType;
+    }
+  }
+
+  private formatMode(mode: GameMode | null): string {
+    if (!mode) return '?';
+    switch (mode) {
+      case GameMode.ColourClubs:
+        return '\u2663';
+      case GameMode.ColourDiamonds:
+        return '\u2666';
+      case GameMode.ColourHearts:
+        return '\u2665';
+      case GameMode.ColourSpades:
+        return '\u2660';
+      case GameMode.SansAs:
+        return 'SA';
+      case GameMode.ToutAs:
+        return 'TA';
+      default:
+        return mode;
+    }
+  }
+
+  onAction(action: { actionType: string; mode?: string | null }): void {
+    this.actionSelected.emit(action);
+  }
+}

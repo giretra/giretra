@@ -8,6 +8,7 @@ import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
+import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 
 @Component({
   selector: 'app-table',
@@ -17,6 +18,7 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
     TableSurfaceComponent,
     HandAreaComponent,
     MatchEndOverlayComponent,
+    BidDialogComponent,
   ],
   template: `
     <div class="table-container">
@@ -71,14 +73,21 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
         [isWatcher]="gameState.isWatcher()"
         [hand]="gameState.hand()"
         [validCards]="gameState.validCards()"
-        [validActions]="gameState.validActions()"
-        [pendingActionType]="gameState.pendingActionType()"
         [gameMode]="gameState.gameMode()"
         [activePlayer]="gameState.activePlayer()"
         [playerCardCounts]="gameState.playerCardCounts()"
         (playCard)="onPlayCard($event)"
-        (submitNegotiation)="onSubmitNegotiation($event)"
       />
+
+      <!-- Bid Dialog Overlay -->
+      @if (gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate') {
+        <app-bid-dialog
+          [validActions]="gameState.validActions()"
+          [negotiationHistory]="gameState.negotiationHistory()"
+          [activePlayer]="gameState.activePlayer()"
+          (actionSelected)="onSubmitNegotiation($event)"
+        />
+      }
 
       <!-- Match End Overlay -->
       @if (gameState.phase() === 'matchEnd') {

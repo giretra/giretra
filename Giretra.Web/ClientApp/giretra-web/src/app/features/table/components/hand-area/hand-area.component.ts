@@ -1,16 +1,14 @@
-import { Component, input, output, computed, OnInit, DoCheck } from '@angular/core';
-import { CardResponse, GameMode, PlayerPosition, PendingActionType } from '../../../../api/generated/signalr-types.generated';
-import { ValidAction } from '../../../../core/services/api.service';
+import { Component, input, output, OnInit, DoCheck } from '@angular/core';
+import { CardResponse, GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { GamePhase } from '../../../../core/services/game-state.service';
-import { cardEquals, Card } from '../../../../core/models';
+import { Card } from '../../../../core/models';
 import { CardFanComponent } from '../../../../shared/components/card-fan/card-fan.component';
-import { BidButtonRowComponent } from './bid-button-row/bid-button-row.component';
 import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
 
 @Component({
   selector: 'app-hand-area',
   standalone: true,
-  imports: [CardFanComponent, BidButtonRowComponent, WatcherBarComponent],
+  imports: [CardFanComponent, WatcherBarComponent],
   template: `
     <div class="hand-area">
       @if (isWatcher()) {
@@ -36,12 +34,6 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
               [gameMode]="gameMode()"
               [interactive]="false"
             />
-            @if (isMyTurn() && pendingActionType() === 'Negotiate') {
-              <app-bid-button-row
-                [validActions]="validActions()"
-                (actionSelected)="onNegotiationAction($event)"
-              />
-            }
           }
           @case ('playing') {
             <app-card-fan
@@ -156,28 +148,18 @@ export class HandAreaComponent implements OnInit, DoCheck {
   readonly isWatcher = input<boolean>(false);
   readonly hand = input<CardResponse[]>([]);
   readonly validCards = input<CardResponse[]>([]);
-  readonly validActions = input<ValidAction[]>([]);
-  readonly pendingActionType = input<PendingActionType | null>(null);
   readonly gameMode = input<GameMode | null>(null);
   readonly activePlayer = input<PlayerPosition | null>(null);
   readonly playerCardCounts = input<Record<PlayerPosition, number> | null>(null);
 
   readonly playCard = output<{ rank: string; suit: string }>();
-  readonly submitNegotiation = output<{ actionType: string; mode?: string | null }>();
-
   onCardSelected(card: Card): void {
     console.log('[HandArea] onCardSelected:', {
       card: `${card.rank} of ${card.suit}`,
       phase: this.phase(),
       isMyTurn: this.isMyTurn(),
-      pendingActionType: this.pendingActionType(),
     });
     this.playCard.emit({ rank: card.rank, suit: card.suit });
-  }
-
-  onNegotiationAction(action: { actionType: string; mode?: string | null }): void {
-    console.log('[HandArea] onNegotiationAction:', action);
-    this.submitNegotiation.emit(action);
   }
 
   private _lastLoggedState: string = '';
@@ -191,10 +173,8 @@ export class HandAreaComponent implements OnInit, DoCheck {
       phase: this.phase(),
       isMyTurn: this.isMyTurn(),
       isWatcher: this.isWatcher(),
-      pendingActionType: this.pendingActionType(),
       handCount: this.hand().length,
       validCardsCount: this.validCards().length,
-      validActionsCount: this.validActions().length,
     };
     const stateKey = JSON.stringify(state);
     if (stateKey !== this._lastLoggedState) {
