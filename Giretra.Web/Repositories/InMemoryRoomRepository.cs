@@ -42,4 +42,16 @@ public sealed class InMemoryRoomRepository : IRoomRepository
     {
         return _rooms.Values.FirstOrDefault(r => r.GetClient(clientId) != null);
     }
+
+    public (Room Room, ConnectedClient Client)? FindByConnectionId(string connectionId)
+    {
+        foreach (var room in _rooms.Values)
+        {
+            var client = room.AllClients.FirstOrDefault(c => c.ConnectionId == connectionId);
+            if (client != null)
+                return (room, client);
+        }
+
+        return null;
+    }
 }

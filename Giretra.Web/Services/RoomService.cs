@@ -173,23 +173,34 @@ public sealed class RoomService : IRoomService
         if (room == null)
             return false;
 
+        var removed = false;
+
         // Try to remove as player first
         if (room.RemovePlayer(clientId))
         {
-            _roomRepository.Update(room);
-            return true;
+            removed = true;
         }
-
-        // Try to remove as watcher
-        var watcher = room.Watchers.FirstOrDefault(w => w.ClientId == clientId);
-        if (watcher != null)
+        else
         {
-            room.Watchers.Remove(watcher);
-            _roomRepository.Update(room);
-            return true;
+            // Try to remove as watcher
+            var watcher = room.Watchers.FirstOrDefault(w => w.ClientId == clientId);
+            if (watcher != null)
+            {
+                room.Watchers.Remove(watcher);
+                removed = true;
+            }
         }
 
-        return false;
+        if (!removed)
+            return false;
+
+        // Remove the room if no one is left
+        if (room.IsEmpty)
+            _roomRepository.Remove(roomId);
+        else
+            _roomRepository.Update(room);
+
+        return true;
     }
 
     public (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId)
@@ -246,6 +257,16 @@ public sealed class RoomService : IRoomService
             client.LastActivityAt = DateTime.UtcNow;
             _roomRepository.Update(room);
         }
+    }
+
+    public void HandleDisconnect(string connectionId)
+    {
+        var result = _roomRepository.FindByConnectionId(connectionId);
+        if (result == null)
+            return;
+
+        var (room, client) = result.Value;
+        LeaveRoom(room.RoomId, client.ClientId);
     }
 
     private static string GenerateId(string prefix)

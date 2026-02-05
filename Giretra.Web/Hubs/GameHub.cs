@@ -41,7 +41,7 @@ public sealed class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Could implement cleanup here if needed
+        _roomService.HandleDisconnect(Context.ConnectionId);
         await base.OnDisconnectedAsync(exception);
     }
 }

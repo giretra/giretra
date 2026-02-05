@@ -69,6 +69,11 @@ public sealed class Room
     public bool IsFull => PlayerCount + AiSlots.Count == 4;
 
     /// <summary>
+    /// Gets whether the room has no human players and no watchers.
+    /// </summary>
+    public bool IsEmpty => PlayerCount == 0 && Watchers.Count == 0;
+
+    /// <summary>
     /// Gets all connected clients (players and watchers).
     /// </summary>
     public IEnumerable<ConnectedClient> AllClients =>

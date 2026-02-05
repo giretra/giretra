@@ -36,4 +36,9 @@ public interface IRoomRepository
     /// Finds a room containing a specific client.
     /// </summary>
     Room? FindByClientId(string clientId);
+
+    /// <summary>
+    /// Finds a room containing a client with the given SignalR connection ID.
+    /// </summary>
+    (Room Room, ConnectedClient Client)? FindByConnectionId(string connectionId);
 }

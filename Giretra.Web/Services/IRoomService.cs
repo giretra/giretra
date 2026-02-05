@@ -60,4 +60,10 @@ public interface IRoomService
     /// Updates a client's SignalR connection ID.
     /// </summary>
     void UpdateClientConnection(string clientId, string connectionId);
+
+    /// <summary>
+    /// Handles a client disconnecting by connection ID.
+    /// Removes the client from their room and deletes the room if empty.
+    /// </summary>
+    void HandleDisconnect(string connectionId);
 }
