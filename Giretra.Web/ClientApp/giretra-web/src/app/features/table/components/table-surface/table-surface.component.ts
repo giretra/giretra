@@ -237,7 +237,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
       display: flex;
       align-items: center;
       min-height: 0;
-      z-index: 1;
+      z-index: 2;
     }
 
     .middle-row .seat-position {
