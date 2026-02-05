@@ -1,15 +1,17 @@
 import { Component, input, output, computed } from '@angular/core';
-import { GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
+import { GameMode, PlayerPosition, CardSuit } from '../../../../api/generated/signalr-types.generated';
 import { ValidAction, NegotiationAction } from '../../../../core/services/api.service';
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
+import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-icon.component';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, SuitIconComponent],
   template: `
-    <div class="overlay">
+    <div class="backdrop"></div>
+    <div class="dialog-container">
       <div class="dialog">
         <h2 class="dialog-title">Your Turn to Bid</h2>
 
@@ -23,17 +25,30 @@ import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-
           <p class="no-bid">No bid yet — you open</p>
         }
 
-        <!-- Bid history timeline -->
+        <!-- Bid history -->
         @if (negotiationHistory().length > 0) {
-          <div class="bid-timeline">
-            @for (action of negotiationHistory(); track $index; let last = $last) {
-              <div class="timeline-item" [class.active]="last">
-                <span class="timeline-initial">{{ getInitial(action.player) }}</span>
-                <span class="timeline-action">{{ formatAction(action) }}</span>
+          <div class="history-list">
+            @for (action of negotiationHistory(); track $index) {
+              <div class="history-row" [class]="getActionClass(action)">
+                <span class="player-avatar">{{ getInitial(action.player) }}</span>
+                <span class="player-name">{{ action.player }}</span>
+                <span class="action-badge" [class]="getActionBadgeClass(action)">
+                  @if (action.actionType === 'Announce' && getAnnounceSuit(action.mode); as suit) {
+                    <app-suit-icon [suit]="suit" size="0.875rem" />
+                    <span>{{ formatModeName(action.mode) }}</span>
+                  } @else if (action.actionType === 'Announce') {
+                    <span>{{ formatModeName(action.mode) }}</span>
+                  } @else if (action.actionType === 'Double') {
+                    <span class="multiplier-symbol">×2</span>
+                    <span>Double</span>
+                  } @else if (action.actionType === 'Redouble') {
+                    <span class="multiplier-symbol">×4</span>
+                    <span>Redouble</span>
+                  } @else {
+                    <span>Accept</span>
+                  }
+                </span>
               </div>
-              @if (!last) {
-                <span class="timeline-arrow">\u203a</span>
-              }
             }
           </div>
         }
@@ -44,18 +59,20 @@ import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-
           (actionSelected)="onAction($event)"
         />
       </div>
+      </div>
     </div>
   `,
   styles: [`
-    .overlay {
+    :host {
+      display: contents;
+    }
+
+    .backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      z-index: 100;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 50;
+      pointer-events: none;
       animation: fadeIn 0.3s ease;
     }
 
@@ -64,7 +81,19 @@ import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-
       to { opacity: 1; }
     }
 
+    .dialog-container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 110;
+      pointer-events: none;
+    }
+
     .dialog {
+      pointer-events: auto;
       background: hsl(var(--card));
       border: 1px solid hsl(var(--border));
       border-radius: 1rem;
@@ -119,45 +148,85 @@ import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-
       font-size: 0.875rem;
     }
 
-    .bid-timeline {
+    /* History list */
+    .history-list {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 0.375rem;
+      width: 100%;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: 0.375rem;
+      background: hsl(var(--muted) / 0.3);
+    }
+
+    .player-avatar {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: hsl(var(--muted));
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      max-width: 360px;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      text-transform: uppercase;
+      flex-shrink: 0;
     }
 
-    .timeline-item {
+    .player-name {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      flex: 1;
+      text-align: left;
+    }
+
+    .action-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.2rem;
-      padding: 0.125rem 0.375rem;
-      border-radius: 0.25rem;
-      background: hsl(var(--muted) / 0.5);
+      gap: 0.25rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
     }
 
-    .timeline-item.active {
+    .action-badge.announce-badge {
+      background: hsl(var(--gold) / 0.15);
+      color: hsl(var(--gold));
+      border: 1px solid hsl(var(--gold) / 0.3);
+    }
+
+    .action-badge.accept-badge {
       background: hsl(var(--primary) / 0.15);
+      color: hsl(var(--primary));
       border: 1px solid hsl(var(--primary) / 0.3);
     }
 
-    .timeline-initial {
-      font-weight: 700;
-      color: hsl(var(--foreground));
-      font-size: 0.625rem;
-      text-transform: uppercase;
+    .action-badge.double-badge {
+      background: hsl(var(--destructive) / 0.15);
+      color: hsl(var(--destructive));
+      border: 1px solid hsl(var(--destructive) / 0.3);
     }
 
-    .timeline-action {
-      color: hsl(var(--foreground));
-      font-weight: 500;
+    .action-badge.redouble-badge {
+      background: hsl(var(--destructive) / 0.25);
+      color: hsl(0, 72%, 65%);
+      border: 1px solid hsl(var(--destructive) / 0.5);
     }
 
-    .timeline-arrow {
-      color: hsl(var(--muted-foreground));
-      font-size: 1rem;
+    .multiplier-symbol {
+      font-weight: 800;
+      font-size: 0.8125rem;
     }
   `],
 })
@@ -167,6 +236,13 @@ export class BidDialogComponent {
   readonly activePlayer = input<PlayerPosition | null>(null);
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
+
+  private readonly modeToSuit: Record<string, CardSuit> = {
+    [GameMode.ColourClubs]: CardSuit.Clubs,
+    [GameMode.ColourDiamonds]: CardSuit.Diamonds,
+    [GameMode.ColourHearts]: CardSuit.Hearts,
+    [GameMode.ColourSpades]: CardSuit.Spades,
+  };
 
   readonly currentBid = computed(() => {
     const history = this.negotiationHistory();
@@ -182,38 +258,34 @@ export class BidDialogComponent {
     return player.charAt(0).toUpperCase();
   }
 
-  formatAction(action: NegotiationAction): string {
-    switch (action.actionType) {
-      case 'Accept':
-        return 'Accept';
-      case 'Double':
-        return '\u00d72';
-      case 'Redouble':
-        return '\u00d74';
-      case 'Announce':
-        return this.formatMode(action.mode);
-      default:
-        return action.actionType;
+  getAnnounceSuit(mode: GameMode | null): CardSuit | null {
+    return mode ? (this.modeToSuit[mode] ?? null) : null;
+  }
+
+  formatModeName(mode: GameMode | null): string {
+    if (!mode) return '?';
+    switch (mode) {
+      case GameMode.ColourClubs: return 'Clubs';
+      case GameMode.ColourDiamonds: return 'Diamonds';
+      case GameMode.ColourHearts: return 'Hearts';
+      case GameMode.ColourSpades: return 'Spades';
+      case GameMode.SansAs: return 'Sans As';
+      case GameMode.ToutAs: return 'Tout As';
+      default: return mode;
     }
   }
 
-  private formatMode(mode: GameMode | null): string {
-    if (!mode) return '?';
-    switch (mode) {
-      case GameMode.ColourClubs:
-        return '\u2663';
-      case GameMode.ColourDiamonds:
-        return '\u2666';
-      case GameMode.ColourHearts:
-        return '\u2665';
-      case GameMode.ColourSpades:
-        return '\u2660';
-      case GameMode.SansAs:
-        return 'SA';
-      case GameMode.ToutAs:
-        return 'TA';
-      default:
-        return mode;
+  getActionClass(action: NegotiationAction): string {
+    return '';
+  }
+
+  getActionBadgeClass(action: NegotiationAction): string {
+    switch (action.actionType) {
+      case 'Announce': return 'announce-badge';
+      case 'Accept': return 'accept-badge';
+      case 'Double': return 'double-badge';
+      case 'Redouble': return 'redouble-badge';
+      default: return '';
     }
   }
 

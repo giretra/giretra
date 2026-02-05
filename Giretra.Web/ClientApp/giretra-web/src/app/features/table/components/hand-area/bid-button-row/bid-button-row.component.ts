@@ -57,9 +57,12 @@ interface BidButton {
               @if (btn.actionType === 'Accept') {
                 <i-lucide [img]="CheckIcon" [size]="16" [strokeWidth]="2.5"></i-lucide>
                 Accept
-              } @else if (btn.actionType === 'Double' || btn.actionType === 'Redouble') {
+              } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                {{ btn.label }}
+                <span>Double <span class="multiplier">×2</span></span>
+              } @else if (btn.actionType === 'Redouble') {
+                <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+                <span>Redouble <span class="multiplier">×4</span></span>
               } @else {
                 {{ btn.label }}
               }
@@ -144,6 +147,12 @@ interface BidButton {
 
     .double-btn:hover {
       background: hsl(0, 72%, 50%);
+    }
+
+    .multiplier {
+      font-weight: 800;
+      opacity: 0.7;
+      font-size: 0.75em;
     }
   `],
 })

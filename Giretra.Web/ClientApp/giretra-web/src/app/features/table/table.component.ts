@@ -21,7 +21,8 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
     BidDialogComponent,
   ],
   template: `
-    <div class="table-container">
+    <div class="table-container"
+         [class.bid-dialog-open]="gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate'">
       <!-- Zone A: Score Bar -->
       <app-score-bar
         [room]="gameState.currentRoom()"
