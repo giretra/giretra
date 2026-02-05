@@ -39,5 +39,5 @@ public sealed class BenchmarkConfig
     /// Whether to shuffle the deck at the start of each match.
     /// Required for valid statistics with deterministic agents.
     /// </summary>
-    public bool Shuffle { get; init; } = false;
+    public bool Shuffle { get; init; } = true;
 }

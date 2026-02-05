@@ -76,7 +76,7 @@ One suit is designated as trump. Listed lowest to highest:
 3. **Colour Hearts**
 4. **Colour Spades**
 
-**Card ranking in trump suit (strongest to weakest):** J, 9, A, 10, K, Q, 8, 7
+**Card ranking in trump suit (strongest to weakest):** J, 9, A, 10, K, Q, 8, 7. When in trump mode player must player higher card the cards in current trick if possible.
 
 **Card ranking in non-trump suits (strongest to weakest):** A, 10, K, Q, J, 9, 8, 7
 
