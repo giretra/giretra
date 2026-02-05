@@ -15,6 +15,7 @@ public class ScoringCalculatorTests
     [InlineData(150, 108, 15, 11)] // Announcer wins
     [InlineData(131, 127, 0, 0)]   // Rounds to tie
     [InlineData(129, 129, 0, 0)]   // Exact tie
+    [InlineData(209, 49, 26, 0)]   // Announcer dominates - gets all 26
     [InlineData(120, 138, 0, 26)]  // Announcer loses (< 129)
     public void ToutAs_Scoring_MatchesSpec(
         int announcerCardPoints,

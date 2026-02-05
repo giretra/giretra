@@ -153,6 +153,12 @@ public class ScoringCalculator
                 announcerMatchPoints = 0;
                 defenderMatchPoints = 0;
             }
+            else if (rawDefenderMatch < 6)
+            {
+                // Defender below 55 card points (rounds to < 6) - announcer takes all 26
+                announcerMatchPoints = 26;
+                defenderMatchPoints = 0;
+            }
             else
             {
                 // Cap at 20-6
