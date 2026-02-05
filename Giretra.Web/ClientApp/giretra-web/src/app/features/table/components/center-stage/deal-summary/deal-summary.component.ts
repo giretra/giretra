@@ -19,9 +19,10 @@ import { HlmButton } from '@spartan-ng/helm/button';
         <div class="scores-section">
           <div class="team-column team1">
             <span class="team-label">Team 1</span>
-            <span class="card-points">{{ s.team1CardPoints }} pts</span>
+            <span class="card-points">{{ s.team1CardPoints }}</span>
+            <span class="pts-label">pts</span>
             <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
-              +{{ s.team1MatchPointsEarned }} match pts
+              +{{ s.team1MatchPointsEarned }} match
             </span>
           </div>
 
@@ -29,9 +30,10 @@ import { HlmButton } from '@spartan-ng/helm/button';
 
           <div class="team-column team2">
             <span class="team-label">Team 2</span>
-            <span class="card-points">{{ s.team2CardPoints }} pts</span>
+            <span class="card-points">{{ s.team2CardPoints }}</span>
+            <span class="pts-label">pts</span>
             <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
-              +{{ s.team2MatchPointsEarned }} match pts
+              +{{ s.team2MatchPointsEarned }} match
             </span>
           </div>
         </div>
@@ -110,10 +112,17 @@ import { HlmButton } from '@spartan-ng/helm/button';
           </div>
         }
 
-        <div class="totals">
-          <span class="total-points team1-text">{{ s.team1TotalMatchPoints }}</span>
-          <span class="total-label">Match Score</span>
-          <span class="total-points team2-text">{{ s.team2TotalMatchPoints }}</span>
+        <!-- Match progress -->
+        <div class="match-progress">
+          <div class="progress-team team1-text">
+            <span class="progress-score">{{ s.team1TotalMatchPoints }}</span>
+            <span class="progress-target">/ 150</span>
+          </div>
+          <span class="progress-label">Match Score</span>
+          <div class="progress-team team2-text">
+            <span class="progress-score">{{ s.team2TotalMatchPoints }}</span>
+            <span class="progress-target">/ 150</span>
+          </div>
         </div>
 
         <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
@@ -133,15 +142,15 @@ import { HlmButton } from '@spartan-ng/helm/button';
       border-radius: 0.75rem;
       min-width: 320px;
       max-width: 400px;
-      animation: slideIn 0.3s ease;
+      animation: scaleIn 0.25s ease;
       position: relative;
       z-index: 10;
     }
 
-    @keyframes slideIn {
+    @keyframes scaleIn {
       from {
         opacity: 0;
-        transform: scale(0.95);
+        transform: scale(0.93);
       }
       to {
         opacity: 1;
@@ -189,18 +198,26 @@ import { HlmButton } from '@spartan-ng/helm/button';
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
       text-transform: uppercase;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.125rem;
     }
 
     .card-points {
       font-size: 1.5rem;
       font-weight: 700;
       color: hsl(var(--foreground));
+      line-height: 1;
+    }
+
+    .pts-label {
+      font-size: 0.625rem;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
     }
 
     .earned {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
+      margin-top: 0.25rem;
     }
 
     .earned.winner {
@@ -263,6 +280,10 @@ import { HlmButton } from '@spartan-ng/helm/button';
       font-weight: 500;
     }
 
+    .breakdown-table tbody tr:nth-child(even) {
+      background: hsl(var(--muted) / 0.2);
+    }
+
     .breakdown-table .last-trick-row {
       border-top: 1px dashed hsl(var(--border));
     }
@@ -277,46 +298,47 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
 
     .sweep-banner {
-      background: hsl(var(--accent));
-      color: hsl(var(--accent-foreground));
+      background: hsl(var(--gold));
+      color: hsl(220, 20%, 10%);
       padding: 0.375rem 1rem;
       border-radius: 0.25rem;
       font-weight: 700;
       font-size: 0.875rem;
       margin-bottom: 1rem;
-      animation: pulse 1s ease-in-out infinite;
     }
 
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-    }
-
-    .totals {
+    .match-progress {
       display: flex;
       align-items: center;
       gap: 1rem;
       margin-bottom: 1rem;
     }
 
-    .total-points {
+    .progress-team {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+
+    .progress-score {
       font-size: 1.5rem;
       font-weight: 700;
     }
 
-    .team1-text {
+    .progress-target {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .team1-text .progress-score {
       color: hsl(var(--team1));
     }
 
-    .team2-text {
+    .team2-text .progress-score {
       color: hsl(var(--team2));
     }
 
-    .total-label {
+    .progress-label {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
       text-transform: uppercase;

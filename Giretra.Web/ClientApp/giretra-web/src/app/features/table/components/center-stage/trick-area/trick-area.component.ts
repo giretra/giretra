@@ -11,6 +11,13 @@ interface PositionedCard {
   relativePosition: RelativePosition;
 }
 
+const ROTATION_MAP: Record<RelativePosition, number> = {
+  top: -3,
+  left: -6,
+  right: 5,
+  bottom: 2,
+};
+
 @Component({
   selector: 'app-trick-area',
   standalone: true,
@@ -25,14 +32,23 @@ interface PositionedCard {
       >
         <!-- Card positions -->
         @for (pos of positions; track pos) {
-          <div class="card-slot" [class]="pos">
+          <div
+            class="card-slot"
+            [class]="pos"
+            [style.transform]="getSlotTransform(pos)"
+          >
             @if (getCardAtPosition(pos); as posCard) {
-              <app-card
-                [card]="posCard.card"
-                [faceUp]="true"
-                [gameMode]="gameMode()"
-                [width]="76"
-              />
+              <div
+                class="card-throw"
+                [style.--rotation]="getRotation(posCard.relativePosition) + 'deg'"
+              >
+                <app-card
+                  [card]="posCard.card"
+                  [faceUp]="true"
+                  [gameMode]="gameMode()"
+                  [width]="80"
+                />
+              </div>
             }
           </div>
         }
@@ -56,8 +72,8 @@ interface PositionedCard {
 
     .trick-area {
       position: relative;
-      width: 230px;
-      height: 230px;
+      width: 240px;
+      height: 240px;
     }
 
     .trick-area.clickable {
@@ -95,6 +111,23 @@ interface PositionedCard {
       transform: translateY(-50%);
     }
 
+    .card-throw {
+      transform: rotate(var(--rotation));
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+      animation: throwIn 0.2s ease-out;
+    }
+
+    @keyframes throwIn {
+      from {
+        opacity: 0;
+        transform: rotate(var(--rotation)) scale(0.85);
+      }
+      to {
+        opacity: 1;
+        transform: rotate(var(--rotation)) scale(1);
+      }
+    }
+
     .continue-prompt {
       position: absolute;
       bottom: -24px;
@@ -114,8 +147,8 @@ interface PositionedCard {
     /* Responsive adjustments */
     @media (max-width: 480px) {
       .trick-area {
-        width: 180px;
-        height: 180px;
+        width: 190px;
+        height: 190px;
       }
     }
   `],
@@ -153,6 +186,18 @@ export class TrickAreaComponent {
 
   getCardAtPosition(pos: RelativePosition): PositionedCard | null {
     return this.positionedCards().find((pc) => pc.relativePosition === pos) ?? null;
+  }
+
+  getRotation(pos: RelativePosition): number {
+    return ROTATION_MAP[pos] ?? 0;
+  }
+
+  getSlotTransform(pos: RelativePosition): string {
+    if (pos === 'top') return 'translateX(-50%)';
+    if (pos === 'bottom') return 'translateX(-50%)';
+    if (pos === 'left') return 'translateY(-50%)';
+    if (pos === 'right') return 'translateY(-50%)';
+    return '';
   }
 
   onAreaClick(): void {

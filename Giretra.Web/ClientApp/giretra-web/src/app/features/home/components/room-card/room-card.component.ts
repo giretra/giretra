@@ -1,11 +1,12 @@
 import { Component, input, output, computed } from '@angular/core';
 import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { LucideAngularModule, LogIn, Eye } from 'lucide-angular';
 
 @Component({
   selector: 'app-room-card',
   standalone: true,
-  imports: [HlmButton],
+  imports: [HlmButton, LucideAngularModule],
   template: `
     <div class="room-card" [class.completed]="room().status === 'Completed'">
       <div class="room-header">
@@ -19,7 +20,8 @@ import { HlmButton } from '@spartan-ng/helm/button';
       </div>
 
       <div class="room-footer">
-        <div class="seat-dots">
+        <!-- Compass-style seat preview -->
+        <div class="compass-seats">
           @for (slot of room().playerSlots; track slot.position) {
             <span
               class="seat-dot"
@@ -35,9 +37,16 @@ import { HlmButton } from '@spartan-ng/helm/button';
             hlmBtn
             [variant]="canJoin() ? 'default' : 'secondary'"
             size="sm"
+            class="action-btn"
             (click)="handleAction()"
           >
-            {{ actionLabel() }}
+            @if (canJoin()) {
+              <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              Join
+            } @else {
+              <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              Watch
+            }
           </button>
         }
       </div>
@@ -52,11 +61,13 @@ import { HlmButton } from '@spartan-ng/helm/button';
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .room-card:hover {
       border-color: hsl(var(--primary));
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .room-card.completed {
@@ -120,7 +131,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
       align-items: center;
     }
 
-    .seat-dots {
+    .compass-seats {
       display: flex;
       gap: 0.375rem;
     }
@@ -139,12 +150,21 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
 
     .seat-dot.ai {
-      background: hsl(var(--accent));
-      border-color: hsl(var(--accent));
+      background: hsl(var(--gold));
+      border-color: hsl(var(--gold));
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
     }
   `],
 })
 export class RoomCardComponent {
+  readonly LogInIcon = LogIn;
+  readonly EyeIcon = Eye;
+
   readonly room = input.required<RoomResponse>();
 
   readonly joinClicked = output<void>();

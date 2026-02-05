@@ -5,26 +5,29 @@ import { MultiplierState } from '../../../../core/services/game-state.service';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { LucideAngularModule, LogOut } from 'lucide-angular';
 
 @Component({
   selector: 'app-score-bar',
   standalone: true,
-  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, HlmButton],
+  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, HlmButton, LucideAngularModule],
   template: `
     <div class="score-bar">
-      <!-- Top row -->
+      <!-- Main row -->
       <div class="score-row main-row">
         <!-- Team 1 Score -->
-        <div class="team-score" [class.my-team]="myTeam() === 'Team1'">
-          <span class="team-label">Team 1</span>
+        <div class="team-pill" [class.team1]="true" [class.my-team]="myTeam() === 'Team1'">
+          <span class="team-label">{{ team1Label() }}</span>
           <span class="match-points">{{ team1MatchPoints() }}</span>
         </div>
 
         <!-- Center info -->
         <div class="center-info">
           @if (gameMode()) {
-            <app-game-mode-badge [mode]="gameMode()" />
-            <app-multiplier-badge [multiplier]="multiplier()" />
+            <div class="mode-glow">
+              <app-game-mode-badge [mode]="gameMode()" />
+              <app-multiplier-badge [multiplier]="multiplier()" />
+            </div>
           }
           @if (dealNumber() > 0) {
             <span class="deal-number">Deal {{ dealNumber() }}</span>
@@ -34,12 +37,12 @@ import { HlmButton } from '@spartan-ng/helm/button';
         </div>
 
         <!-- Team 2 Score -->
-        <div class="team-score" [class.my-team]="myTeam() === 'Team2'">
-          <span class="team-label">Team 2</span>
+        <div class="team-pill" [class.team2]="true" [class.my-team]="myTeam() === 'Team2'">
+          <span class="team-label">{{ team2Label() }}</span>
           <span class="match-points">{{ team2MatchPoints() }}</span>
         </div>
 
-        <!-- Menu button -->
+        <!-- Leave button -->
         <button
           hlmBtn
           variant="ghost"
@@ -48,22 +51,32 @@ import { HlmButton } from '@spartan-ng/helm/button';
           (click)="leaveTable.emit()"
           title="Leave Table"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
+          <i-lucide [img]="LogOutIcon" [size]="18" [strokeWidth]="2"></i-lucide>
         </button>
       </div>
 
-      <!-- Bottom row (deal card points) -->
+      <!-- Deal card points progress -->
       @if (showDealPoints()) {
         <div class="score-row deal-row">
-          <div class="deal-points" [class.my-team]="myTeam() === 'Team1'">
-            {{ team1CardPoints() }} pts
+          <div class="progress-section" [class.my-team]="myTeam() === 'Team1'">
+            <div class="progress-bar">
+              <div
+                class="progress-fill team1-fill"
+                [style.width.%]="team1ProgressPercent()"
+              ></div>
+              <div class="threshold-marker" [style.left.%]="thresholdPercent()"></div>
+            </div>
+            <span class="points-label">{{ team1CardPoints() }}</span>
           </div>
-          <div class="deal-points" [class.my-team]="myTeam() === 'Team2'">
-            {{ team2CardPoints() }} pts
+          <div class="progress-section" [class.my-team]="myTeam() === 'Team2'">
+            <div class="progress-bar">
+              <div
+                class="progress-fill team2-fill"
+                [style.width.%]="team2ProgressPercent()"
+              ></div>
+              <div class="threshold-marker" [style.left.%]="thresholdPercent()"></div>
+            </div>
+            <span class="points-label">{{ team2CardPoints() }}</span>
           </div>
         </div>
       }
@@ -81,42 +94,57 @@ import { HlmButton } from '@spartan-ng/helm/button';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .main-row {
       min-height: 2.5rem;
     }
 
-    .deal-row {
-      margin-top: 0.25rem;
-      font-size: 0.75rem;
-      color: hsl(var(--muted-foreground));
-    }
-
-    .team-score {
+    .team-pill {
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 4rem;
+      min-width: 5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      background: hsl(var(--muted) / 0.5);
+      border: 1px solid hsl(var(--border));
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .team-pill.team1 {
+      border-color: hsl(var(--team1) / 0.4);
+    }
+
+    .team-pill.team2 {
+      border-color: hsl(var(--team2) / 0.4);
+    }
+
+    .team-pill.my-team {
+      background: hsl(var(--primary) / 0.1);
     }
 
     .team-label {
-      font-size: 0.625rem;
+      font-size: 0.6rem;
       text-transform: uppercase;
       color: hsl(var(--muted-foreground));
       letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .team-pill.team1 .match-points {
+      color: hsl(var(--team1));
+    }
+
+    .team-pill.team2 .match-points {
+      color: hsl(var(--team2));
     }
 
     .match-points {
       font-size: 1.25rem;
       font-weight: 700;
-      color: hsl(var(--foreground));
-    }
-
-    .my-team .match-points,
-    .my-team.deal-points {
-      color: hsl(var(--primary));
+      line-height: 1.2;
     }
 
     .center-info {
@@ -127,31 +155,84 @@ import { HlmButton } from '@spartan-ng/helm/button';
       justify-content: center;
     }
 
+    .mode-glow {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 0.375rem;
+      background: hsl(var(--gold) / 0.08);
+      border: 1px solid hsl(var(--gold) / 0.15);
+    }
+
     .deal-number,
     .room-name {
       font-size: 0.875rem;
       color: hsl(var(--muted-foreground));
     }
 
-    .deal-points {
-      flex: 1;
-      text-align: center;
-    }
-
-    .deal-points:first-child {
-      text-align: left;
-    }
-
-    .deal-points:last-child {
-      text-align: right;
-    }
-
     .menu-button {
       flex-shrink: 0;
+    }
+
+    /* Deal points progress */
+    .deal-row {
+      margin-top: 0.375rem;
+      gap: 1rem;
+    }
+
+    .progress-section {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 4px;
+      background: hsl(var(--muted));
+      border-radius: 2px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .team1-fill {
+      background: hsl(var(--team1));
+    }
+
+    .team2-fill {
+      background: hsl(var(--team2));
+    }
+
+    .threshold-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 10px;
+      background: hsl(var(--foreground) / 0.3);
+      border-radius: 1px;
+      transform: translateX(-50%);
+    }
+
+    .points-label {
+      font-size: 0.7rem;
+      color: hsl(var(--muted-foreground));
+      min-width: 2rem;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
   `],
 })
 export class ScoreBarComponent {
+  readonly LogOutIcon = LogOut;
+
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
   readonly team2MatchPoints = input<number>(0);
@@ -165,7 +246,40 @@ export class ScoreBarComponent {
   readonly leaveTable = output<void>();
 
   readonly showDealPoints = computed(() => {
-    // Show deal points when game is in progress
     return this.gameMode() !== null;
+  });
+
+  readonly team1Label = computed(() => {
+    return this.myTeam() === 'Team1' ? 'Your Team' : this.myTeam() === 'Team2' ? 'Opponents' : 'Team 1';
+  });
+
+  readonly team2Label = computed(() => {
+    return this.myTeam() === 'Team2' ? 'Your Team' : this.myTeam() === 'Team1' ? 'Opponents' : 'Team 2';
+  });
+
+  readonly totalPoints = computed(() => {
+    const mode = this.gameMode();
+    if (!mode) return 162;
+    if (mode === GameMode.ToutAs) return 258;
+    if (mode === GameMode.SansAs) return 130;
+    return 162;
+  });
+
+  readonly thresholdPercent = computed(() => {
+    const mode = this.gameMode();
+    if (!mode) return 50;
+    if (mode === GameMode.ToutAs) return (129 / 258) * 100;
+    if (mode === GameMode.SansAs) return (65 / 130) * 100;
+    return (82 / 162) * 100;
+  });
+
+  readonly team1ProgressPercent = computed(() => {
+    const total = this.totalPoints();
+    return Math.min((this.team1CardPoints() / total) * 100, 100);
+  });
+
+  readonly team2ProgressPercent = computed(() => {
+    const total = this.totalPoints();
+    return Math.min((this.team2CardPoints() / total) * 100, 100);
   });
 }

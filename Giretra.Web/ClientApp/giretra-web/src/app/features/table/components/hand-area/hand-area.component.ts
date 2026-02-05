@@ -59,7 +59,14 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
 
         <!-- Turn indicator -->
         @if (!isMyTurn() && phase() === 'playing' && activePlayer()) {
-          <p class="turn-indicator">{{ activePlayer() }} is thinking...</p>
+          <div class="turn-pill">
+            <span class="turn-text">{{ activePlayer() }} is thinking</span>
+            <span class="thinking-dots">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          </div>
         }
       }
     </div>
@@ -67,15 +74,24 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
   styles: [`
     .hand-area {
       background: hsl(var(--card));
-      border-top: 1px solid hsl(var(--border));
+      border-top: 2px solid transparent;
+      border-image: linear-gradient(
+        90deg,
+        transparent,
+        hsl(var(--border)),
+        transparent
+      ) 1;
       padding: 0.75rem 1rem;
-      height: 200px;
+      min-height: 160px;
+      max-height: 220px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+      position: relative;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
     }
 
     .waiting-message {
@@ -84,14 +100,53 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
       margin: 0;
     }
 
-    .turn-indicator {
+    .turn-pill {
       position: absolute;
       bottom: 0.5rem;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      background: hsl(var(--muted) / 0.8);
+      border-radius: 9999px;
+      border: 1px solid hsl(var(--border));
+    }
+
+    .turn-text {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
-      margin: 0;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 2px;
+    }
+
+    .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: hsl(var(--muted-foreground));
+      animation: dotBounce 1.4s ease-in-out infinite;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes dotBounce {
+      0%, 80%, 100% {
+        opacity: 0.3;
+      }
+      40% {
+        opacity: 1;
+      }
     }
   `],
 })
@@ -127,13 +182,11 @@ export class HandAreaComponent implements OnInit, DoCheck {
 
   private _lastLoggedState: string = '';
 
-  // Debug helper - log state on template evaluation
   ngOnInit(): void {
     console.log('[HandArea] Component initialized');
   }
 
   ngDoCheck(): void {
-    // Log state changes for debugging (only on change)
     const state = {
       phase: this.phase(),
       isMyTurn: this.isMyTurn(),

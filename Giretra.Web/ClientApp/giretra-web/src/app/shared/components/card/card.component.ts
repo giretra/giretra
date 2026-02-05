@@ -80,11 +80,11 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
     }
 
     .trump {
-      box-shadow: 0 0 8px 2px hsl(45, 90%, 55%);
+      box-shadow: 0 0 8px 2px hsl(var(--gold));
     }
 
     .trump.lifted {
-      box-shadow: 0 0 12px 3px hsl(45, 90%, 55%);
+      box-shadow: 0 0 12px 3px hsl(var(--gold));
     }
   `],
 })

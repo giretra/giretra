@@ -21,18 +21,19 @@ import { CardSuit } from '../../../../api/generated/signalr-types.generated';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.375rem 0.5rem;
+      padding: 0.375rem 0.625rem;
       background: hsl(var(--card));
       border: 1px solid hsl(var(--border));
       border-radius: 0.5rem;
-      animation: fadeIn 0.2s ease;
+      animation: scaleIn 0.15s ease;
       position: relative;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    @keyframes fadeIn {
+    @keyframes scaleIn {
       from {
         opacity: 0;
-        transform: scale(0.9);
+        transform: scale(0.85);
       }
       to {
         opacity: 1;

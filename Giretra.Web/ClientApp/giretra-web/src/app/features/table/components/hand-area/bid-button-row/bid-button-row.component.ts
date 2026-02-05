@@ -4,6 +4,7 @@ import { ValidAction } from '../../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
 import { CardSuit } from '../../../../../api/generated/signalr-types.generated';
+import { LucideAngularModule, Check, ChevronsUp } from 'lucide-angular';
 
 interface BidButton {
   label: string;
@@ -16,48 +17,72 @@ interface BidButton {
 @Component({
   selector: 'app-bid-button-row',
   standalone: true,
-  imports: [HlmButton, SuitIconComponent],
+  imports: [HlmButton, SuitIconComponent, LucideAngularModule],
   template: `
     <div class="bid-buttons">
-      <!-- Suit buttons row -->
-      <div class="button-row suits">
-        @for (btn of suitButtons(); track btn.label) {
-          <button
-            hlmBtn
-            [variant]="btn.variant"
-            class="bid-btn suit-btn"
-            (click)="selectAction(btn)"
-          >
-            @if (btn.suit) {
-              <app-suit-icon [suit]="btn.suit" size="1.25rem" />
-            } @else {
-              {{ btn.label }}
-            }
-          </button>
-        }
-      </div>
+      <!-- Announce section -->
+      @if (suitButtons().length > 0) {
+        <div class="section-label">Announce</div>
+        <div class="button-row suits">
+          @for (btn of suitButtons(); track btn.label) {
+            <button
+              hlmBtn
+              [variant]="btn.variant"
+              class="bid-btn suit-btn"
+              (click)="selectAction(btn)"
+            >
+              @if (btn.suit) {
+                <app-suit-icon [suit]="btn.suit" size="1.5rem" />
+              } @else {
+                {{ btn.label }}
+              }
+            </button>
+          }
+        </div>
+      }
 
-      <!-- Action buttons row -->
-      <div class="button-row actions">
-        @for (btn of actionButtons(); track btn.label) {
-          <button
-            hlmBtn
-            [variant]="btn.variant"
-            class="bid-btn"
-            (click)="selectAction(btn)"
-          >
-            {{ btn.label }}
-          </button>
-        }
-      </div>
+      <!-- Respond section -->
+      @if (actionButtons().length > 0) {
+        <div class="section-label">Respond</div>
+        <div class="button-row actions">
+          @for (btn of actionButtons(); track btn.label) {
+            <button
+              hlmBtn
+              [variant]="btn.variant"
+              class="bid-btn"
+              [class.accept-btn]="btn.actionType === 'Accept'"
+              [class.double-btn]="btn.actionType === 'Double' || btn.actionType === 'Redouble'"
+              (click)="selectAction(btn)"
+            >
+              @if (btn.actionType === 'Accept') {
+                <i-lucide [img]="CheckIcon" [size]="16" [strokeWidth]="2.5"></i-lucide>
+                Accept
+              } @else if (btn.actionType === 'Double' || btn.actionType === 'Redouble') {
+                <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+                {{ btn.label }}
+              } @else {
+                {{ btn.label }}
+              }
+            </button>
+          }
+        </div>
+      }
     </div>
   `,
   styles: [`
     .bid-buttons {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.375rem;
       padding: 0.25rem;
+    }
+
+    .section-label {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground));
+      text-align: center;
     }
 
     .button-row {
@@ -74,6 +99,9 @@ interface BidButton {
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.1);
       transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
     }
 
     .bid-btn:hover {
@@ -88,11 +116,41 @@ interface BidButton {
     }
 
     .suit-btn {
-      min-width: 2.5rem;
+      width: 3rem;
+      height: 3rem;
+      min-width: unset;
+      padding: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .accept-btn {
+      background: hsl(142, 50%, 35%);
+      color: white;
+      border-color: hsl(142, 50%, 40%);
+    }
+
+    .accept-btn:hover {
+      background: hsl(142, 50%, 40%);
+    }
+
+    .double-btn {
+      background: hsl(0, 72%, 45%);
+      color: white;
+      border-color: hsl(0, 72%, 50%);
+    }
+
+    .double-btn:hover {
+      background: hsl(0, 72%, 50%);
     }
   `],
 })
 export class BidButtonRowComponent {
+  readonly CheckIcon = Check;
+  readonly ChevronsUpIcon = ChevronsUp;
+
   readonly validActions = input<ValidAction[]>([]);
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();

@@ -13,6 +13,13 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
   imports: [PlayerSeatComponent, CenterStageComponent, SpeechBubbleComponent],
   template: `
     <div class="table-surface">
+      <!-- Felt noise overlay -->
+      <div class="felt-noise"></div>
+      <!-- Vignette -->
+      <div class="felt-vignette"></div>
+      <!-- Play zone ring -->
+      <div class="play-zone-ring"></div>
+
       <!-- Top player (across from me) -->
       <div class="seat-position top">
         @if (topSlot(); as slot) {
@@ -156,18 +163,68 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
   `,
   styles: [`
     .table-surface {
+      position: relative;
       display: flex;
       flex-direction: column;
       height: 100%;
       padding: 0.5rem;
       min-height: 0;
       overflow: hidden;
+      background: radial-gradient(
+        ellipse at 50% 50%,
+        hsl(var(--table-felt-light)),
+        hsl(var(--table-felt)) 70%
+      );
+      border-radius: 0.5rem;
+      box-shadow:
+        inset 0 0 60px rgba(0, 0, 0, 0.3),
+        inset 0 0 120px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Noise texture overlay */
+    .felt-noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      z-index: 0;
+    }
+
+    /* Vignette overlay */
+    .felt-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse at 50% 50%,
+        transparent 40%,
+        rgba(0, 0, 0, 0.25) 100%
+      );
+      z-index: 0;
+    }
+
+    /* Faint play zone ring in center */
+    .play-zone-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 260px;
+      height: 260px;
+      transform: translate(-50%, -50%);
+      border: 1px solid hsl(var(--foreground) / 0.06);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .seat-position {
+      position: relative;
       display: flex;
       justify-content: center;
       padding: 0.25rem;
+      z-index: 1;
     }
 
     .seat-position.top,
@@ -180,6 +237,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
       display: flex;
       align-items: center;
       min-height: 0;
+      z-index: 1;
     }
 
     .middle-row .seat-position {
@@ -193,6 +251,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
       justify-content: center;
       min-width: 0;
       padding: 0 0.5rem;
+      z-index: 2;
     }
 
     /* Seat with speech bubble container */
@@ -215,6 +274,13 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
     @media (max-width: 400px) {
       .bubble-position {
         display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .play-zone-ring {
+        width: 180px;
+        height: 180px;
       }
     }
   `],

@@ -25,6 +25,18 @@
     --input: 220 15% 20%;
     --ring: 142 50% 35%;
     --radius: 0.5rem;
+
+    /* Card table */
+    --table-felt: 153 30% 16%;
+    --table-felt-light: 153 25% 22%;
+    --table-rim: 30 40% 20%;
+
+    /* Team colors */
+    --team1: 210 70% 55%;
+    --team2: 142 50% 45%;
+
+    /* Accent gold */
+    --gold: 45 90% 55%;
   }
 
   *,

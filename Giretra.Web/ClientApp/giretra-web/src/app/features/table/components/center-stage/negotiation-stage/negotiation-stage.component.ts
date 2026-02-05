@@ -12,35 +12,35 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       <!-- Current bid -->
       @if (currentBid(); as bid) {
         <div class="current-bid">
-          <span class="bid-label">Current bid:</span>
-          <app-game-mode-badge [mode]="bid.mode" size="1.5rem" />
+          <app-game-mode-badge [mode]="bid.mode" size="1.75rem" />
           <span class="bid-by">by {{ bid.player }}</span>
         </div>
       } @else {
         <p class="no-bid">No bid yet</p>
       }
 
-      <!-- Bid history trail -->
+      <!-- Compact bid timeline -->
       @if (negotiationHistory().length > 0) {
-        <div class="bid-history">
+        <div class="bid-timeline">
           @for (action of negotiationHistory(); track $index; let last = $last) {
-            <span class="bid-item">
-              <span class="bid-player">{{ action.player }}:</span>
-              <span class="bid-action">{{ formatAction(action) }}</span>
-            </span>
+            <div class="timeline-item" [class.active]="last">
+              <span class="timeline-initial">{{ getInitial(action.player) }}</span>
+              <span class="timeline-action">{{ formatAction(action) }}</span>
+            </div>
             @if (!last) {
-              <span class="bid-arrow">\u2192</span>
+              <span class="timeline-arrow">\u203a</span>
             }
           }
         </div>
       }
 
-      <!-- Who's bidding -->
-      <p class="active-bidder">
-        @if (activePlayer()) {
+      <!-- Active bidder -->
+      @if (activePlayer()) {
+        <p class="active-bidder">
+          <span class="bidder-dot"></span>
           {{ activePlayer() }} is bidding...
-        }
-      </p>
+        </p>
+      }
     </div>
   `,
   styles: [`
@@ -57,11 +57,10 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 1.125rem;
-    }
-
-    .bid-label {
-      color: hsl(var(--muted-foreground));
+      padding: 0.5rem 1rem;
+      background: hsl(var(--gold) / 0.08);
+      border: 1px solid hsl(var(--gold) / 0.2);
+      border-radius: 0.5rem;
     }
 
     .bid-by {
@@ -75,49 +74,67 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       margin: 0;
     }
 
-    .bid-history {
+    .bid-timeline {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 0.375rem;
+      gap: 0.25rem;
       font-size: 0.75rem;
-      color: hsl(var(--muted-foreground));
-      max-width: 300px;
+      max-width: 320px;
     }
 
-    .bid-item {
+    .timeline-item {
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.2rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      background: hsl(var(--muted) / 0.5);
     }
 
-    .bid-player {
+    .timeline-item.active {
+      background: hsl(var(--primary) / 0.15);
+      border: 1px solid hsl(var(--primary) / 0.3);
+    }
+
+    .timeline-initial {
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      font-size: 0.625rem;
+      text-transform: uppercase;
+    }
+
+    .timeline-action {
+      color: hsl(var(--foreground));
       font-weight: 500;
     }
 
-    .bid-action {
-      color: hsl(var(--foreground));
-    }
-
-    .bid-arrow {
+    .timeline-arrow {
       color: hsl(var(--muted-foreground));
+      font-size: 1rem;
     }
 
     .active-bidder {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
       font-size: 0.875rem;
-      color: hsl(var(--accent));
+      color: hsl(var(--gold));
       margin: 0;
+    }
+
+    .bidder-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: hsl(var(--gold));
       animation: pulse 1.5s ease-in-out infinite;
     }
 
     @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.6;
-      }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
   `],
 })
@@ -129,7 +146,6 @@ export class NegotiationStageComponent {
 
   readonly currentBid = computed(() => {
     const history = this.negotiationHistory();
-    // Find the last Announce action
     for (let i = history.length - 1; i >= 0; i--) {
       if (history[i].actionType === 'Announce' && history[i].mode) {
         return history[i];
@@ -137,6 +153,10 @@ export class NegotiationStageComponent {
     }
     return null;
   });
+
+  getInitial(player: PlayerPosition): string {
+    return player.charAt(0).toUpperCase();
+  }
 
   formatAction(action: NegotiationAction): string {
     switch (action.actionType) {
@@ -165,9 +185,9 @@ export class NegotiationStageComponent {
       case GameMode.ColourSpades:
         return '\u2660';
       case GameMode.SansAs:
-        return 'Sans As';
+        return 'SA';
       case GameMode.ToutAs:
-        return 'Tout As';
+        return 'TA';
       default:
         return mode;
     }

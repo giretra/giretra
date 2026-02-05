@@ -9,6 +9,7 @@ import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
 import { NamePromptDialogComponent } from './components/name-prompt-dialog/name-prompt-dialog.component';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { LucideAngularModule, Plus } from 'lucide-angular';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
     CreateRoomFormComponent,
     NamePromptDialogComponent,
     HlmButton,
+    LucideAngularModule,
   ],
   template: `
     <!-- Name prompt dialog -->
@@ -30,7 +32,11 @@ import { HlmButton } from '@spartan-ng/helm/button';
     <div class="home-container">
       <!-- Header -->
       <header class="header">
-        <h1 class="logo">GIRETRA</h1>
+        <div class="logo-section">
+          <span class="suit-flair">\u2660</span>
+          <h1 class="logo">GIRETRA</h1>
+          <span class="suit-flair red">\u2665</span>
+        </div>
         <div class="user-info">
           @if (session.hasName()) {
             <span class="player-name">{{ session.playerName() }}</span>
@@ -58,7 +64,7 @@ import { HlmButton } from '@spartan-ng/helm/button';
               class="create-button"
               (click)="showCreateForm.set(true)"
             >
-              <span class="plus-icon">+</span>
+              <i-lucide [img]="PlusIcon" [size]="20" [strokeWidth]="2.5"></i-lucide>
               Create a new room
             </button>
           }
@@ -94,6 +100,21 @@ import { HlmButton } from '@spartan-ng/helm/button';
       padding: 1rem 0;
       border-bottom: 1px solid hsl(var(--border));
       margin-bottom: 2rem;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .suit-flair {
+      font-size: 1.25rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .suit-flair.red {
+      color: hsl(0, 65%, 55%);
     }
 
     .logo {
@@ -133,11 +154,11 @@ import { HlmButton } from '@spartan-ng/helm/button';
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      transition: all 0.15s ease;
     }
 
-    .plus-icon {
-      font-size: 1.25rem;
-      font-weight: 700;
+    .create-button:hover {
+      transform: translateY(-1px);
     }
 
     .rooms-section {
@@ -155,6 +176,8 @@ import { HlmButton } from '@spartan-ng/helm/button';
   `],
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  readonly PlusIcon = Plus;
+
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
   private readonly gameState = inject(GameStateService);
@@ -172,15 +195,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   private pendingWatchRoom: RoomResponse | null = null;
 
   ngOnInit(): void {
-    // Check if name is set
     if (!this.session.hasName()) {
       this.showNamePrompt.set(true);
     }
 
-    // Load rooms
     this.loadRooms();
 
-    // Poll for room updates every 5 seconds
     this.pollSubscription = interval(5000).subscribe(() => {
       this.loadRooms();
     });
@@ -207,7 +227,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.session.setPlayerName(name);
     this.showNamePrompt.set(false);
 
-    // Process any pending actions
     if (this.pendingJoinRoom) {
       this.joinRoom(this.pendingJoinRoom);
       this.pendingJoinRoom = null;
@@ -257,7 +276,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to join room', err);
-        // Could show a toast here
       },
     });
   }

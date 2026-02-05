@@ -1,19 +1,20 @@
 import { Component, input, output, computed } from '@angular/core';
 import { Team } from '../../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { LucideAngularModule, Trophy } from 'lucide-angular';
 
 @Component({
   selector: 'app-match-end-overlay',
   standalone: true,
-  imports: [HlmButton],
+  imports: [HlmButton, LucideAngularModule],
   template: `
     <div class="overlay">
       <div class="modal">
-        <div class="trophy">
-          @if (isWinner()) {
-            <span class="trophy-icon">&#127942;</span>
-          }
-        </div>
+        @if (isWinner()) {
+          <div class="trophy-container">
+            <i-lucide [img]="TrophyIcon" [size]="48" [strokeWidth]="1.5" class="trophy-icon winner"></i-lucide>
+          </div>
+        }
 
         <h1 class="title">
           @if (isWinner()) {
@@ -28,9 +29,9 @@ import { HlmButton } from '@spartan-ng/helm/button';
         </p>
 
         <div class="final-score">
-          <span class="score">{{ team1Points() }}</span>
+          <span class="score team1-score">{{ team1Points() }}</span>
           <span class="divider">-</span>
-          <span class="score">{{ team2Points() }}</span>
+          <span class="score team2-score">{{ team2Points() }}</span>
         </div>
 
         <p class="deals-played">{{ totalDeals() }} deals played</p>
@@ -70,12 +71,8 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .modal {
@@ -85,26 +82,30 @@ import { HlmButton } from '@spartan-ng/helm/button';
       padding: 2rem;
       text-align: center;
       min-width: 300px;
-      animation: slideUp 0.3s ease;
+      animation: scaleIn 0.3s ease;
     }
 
-    @keyframes slideUp {
+    @keyframes scaleIn {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: scale(0.9);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1);
       }
     }
 
-    .trophy {
-      margin-bottom: 0.5rem;
+    .trophy-container {
+      margin-bottom: 0.75rem;
     }
 
     .trophy-icon {
-      font-size: 3rem;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .trophy-icon.winner {
+      color: hsl(var(--gold));
     }
 
     .title {
@@ -131,7 +132,14 @@ import { HlmButton } from '@spartan-ng/helm/button';
     .score {
       font-size: 2.5rem;
       font-weight: 700;
-      color: hsl(var(--foreground));
+    }
+
+    .team1-score {
+      color: hsl(var(--team1));
+    }
+
+    .team2-score {
+      color: hsl(var(--team2));
     }
 
     .divider {
@@ -153,6 +161,8 @@ import { HlmButton } from '@spartan-ng/helm/button';
   `],
 })
 export class MatchEndOverlayComponent {
+  readonly TrophyIcon = Trophy;
+
   readonly winner = input<Team | null>(null);
   readonly myTeam = input<Team | null>(null);
   readonly team1Points = input<number>(0);

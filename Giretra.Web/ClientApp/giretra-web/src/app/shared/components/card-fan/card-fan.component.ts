@@ -12,14 +12,17 @@ import { CardComponent } from '../card/card.component';
       @for (card of cards(); track cardTrackBy(card, $index)) {
         <div
           class="card-wrapper"
+          [class.playable-card]="isPlayable(card)"
+          [class.dimmed-card]="isDimmed(card)"
           [style.z-index]="$index"
+          [style.transform]="getCardTransform($index)"
         >
           <app-card
             [card]="card"
             [faceUp]="true"
             [playable]="isPlayable(card)"
             [dimmed]="isDimmed(card)"
-            [lifted]="isLifted(card)"
+            [lifted]="false"
             [gameMode]="gameMode()"
             [width]="cardWidth()"
             (cardClicked)="onCardClicked($event)"
@@ -35,20 +38,32 @@ import { CardComponent } from '../card/card.component';
       align-items: flex-end;
       padding: 0.5rem;
       gap: 0;
+      position: relative;
     }
 
     .card-wrapper {
-      margin-left: -30px;
-      transition: transform 0.15s ease;
+      margin-left: -28px;
+      transform-origin: bottom center;
+      transition: transform 0.15s ease, filter 0.15s ease;
     }
 
     .card-wrapper:first-child {
       margin-left: 0;
     }
 
+    .card-wrapper.playable-card:hover {
+      transform: translateY(-16px) scale(1.05) !important;
+      z-index: 100 !important;
+    }
+
+    .card-wrapper.dimmed-card {
+      filter: grayscale(0.5);
+      opacity: 0.55;
+    }
+
     @media (min-width: 640px) {
       .card-wrapper {
-        margin-left: -26px;
+        margin-left: -24px;
       }
     }
   `],
@@ -62,11 +77,40 @@ export class CardFanComponent {
   readonly cardSelected = output<Card>();
 
   readonly cardWidth = computed(() => {
-    // Responsive card size
     const count = this.cards().length;
     if (count > 6) return 68;
     return 80;
   });
+
+  private readonly rotationStep = computed(() => {
+    const count = this.cards().length;
+    if (count <= 1) return 0;
+    // Spread of ~30 degrees total, distributed across cards
+    const maxSpread = Math.min(30, count * 5);
+    return maxSpread / (count - 1);
+  });
+
+  getCardTransform(index: number): string {
+    const count = this.cards().length;
+    if (count <= 1) return '';
+
+    const step = this.rotationStep();
+    const center = (count - 1) / 2;
+    const offset = index - center;
+    const rotation = offset * step;
+
+    // Arc: cosine curve for vertical offset
+    const maxLift = 12;
+    const normalizedOffset = offset / ((count - 1) / 2 || 1);
+    const lift = maxLift * (1 - Math.cos(normalizedOffset * (Math.PI / 2)));
+
+    // Playable cards get lifted
+    const card = this.cards()[index];
+    const isPlayable = this.isPlayable(card);
+    const playableLift = isPlayable ? -10 : 0;
+
+    return `rotate(${rotation}deg) translateY(${lift + playableLift}px)`;
+  }
 
   cardTrackBy(card: CardResponse, index: number): string {
     return `${card.rank}-${card.suit}`;
@@ -76,8 +120,7 @@ export class CardFanComponent {
     const interactive = this.interactive();
     if (!interactive) return false;
     const valid = this.validCards();
-    const playable = valid.some((vc) => cardEquals(vc, card));
-    return playable;
+    return valid.some((vc) => cardEquals(vc, card));
   }
 
   isDimmed(card: CardResponse): boolean {
