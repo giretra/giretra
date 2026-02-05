@@ -69,12 +69,13 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
       background: hsl(var(--card));
       border-top: 1px solid hsl(var(--border));
       padding: 0.75rem 1rem;
-      min-height: 120px;
+      height: 200px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
     }
 
     .waiting-message {
