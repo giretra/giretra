@@ -25,6 +25,8 @@ export enum PendingActionType {
   Cut = 'Cut',
   Negotiate = 'Negotiate',
   PlayCard = 'PlayCard',
+  ContinueDeal = 'ContinueDeal',
+  ContinueMatch = 'ContinueMatch',
 }
 
 export enum GameMode {

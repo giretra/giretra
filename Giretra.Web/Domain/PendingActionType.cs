@@ -18,5 +18,15 @@ public enum PendingActionType
     /// <summary>
     /// Waiting for card play.
     /// </summary>
-    PlayCard
+    PlayCard,
+
+    /// <summary>
+    /// Waiting for confirmation to continue to the next deal.
+    /// </summary>
+    ContinueDeal,
+
+    /// <summary>
+    /// Waiting for confirmation to continue after match ends.
+    /// </summary>
+    ContinueMatch
 }

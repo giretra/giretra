@@ -141,12 +141,18 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
         return Task.CompletedTask;
     }
 
-    public Task OnDealEndedAsync(DealResult result, MatchState matchState)
+    public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         AnsiConsole.Clear();
         var dealNum = matchState.CompletedDeals.Count;
         ScoreboardRenderer.RenderDealResult(result, dealNum);
 
+        return Task.CompletedTask;
+    }
+
+    public Task ConfirmContinueDealAsync(MatchState matchState)
+    {
+        // Wait for user to confirm they're ready for the next deal
         AnsiConsole.MarkupLine("[dim]Press any key to continue...[/]");
         Console.ReadKey(true);
 
@@ -157,6 +163,15 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
     {
         AnsiConsole.Clear();
         ScoreboardRenderer.RenderMatchResult(matchState);
+
+        return Task.CompletedTask;
+    }
+
+    public Task ConfirmContinueMatchAsync(MatchState matchState)
+    {
+        // Wait for user to confirm they're ready to continue after match ends
+        AnsiConsole.MarkupLine("[dim]Press any key to continue...[/]");
+        Console.ReadKey(true);
 
         return Task.CompletedTask;
     }

@@ -47,6 +47,16 @@ public interface IGameService
     bool SubmitCardPlay(string gameId, string clientId, Card card);
 
     /// <summary>
+    /// Submits confirmation to continue to the next deal.
+    /// </summary>
+    bool SubmitContinueDeal(string gameId, string clientId);
+
+    /// <summary>
+    /// Submits confirmation to continue after match ends.
+    /// </summary>
+    bool SubmitContinueMatch(string gameId, string clientId);
+
+    /// <summary>
     /// Gets the watcher-specific view for a game (hides player hands).
     /// </summary>
     WatcherStateResponse? GetWatcherState(string gameId);

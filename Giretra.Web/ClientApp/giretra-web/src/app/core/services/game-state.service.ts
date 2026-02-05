@@ -113,10 +113,12 @@ export class GameStateService {
     const gameState = this._gameState();
     const room = this._currentRoom();
     const showingSummary = this._showingDealSummary();
+    const showingCompletedTrick = this._showingCompletedTrick();
 
     console.log('[GameState] phase computed:', {
       gameStateIsComplete: gameState?.isComplete,
       showingSummary,
+      showingCompletedTrick,
       roomStatus: room?.status,
       gamePhase: gameState?.phase,
       hasGame: !!gameState,
@@ -125,8 +127,14 @@ export class GameStateService {
     // Match end takes precedence
     if (gameState?.isComplete) return 'matchEnd';
 
-    // Deal summary overlay
+    // Deal summary overlay (only if we have summary data to show)
     if (showingSummary) return 'dealSummary';
+
+    // If showing the last completed trick, stay in playing phase until dismissed
+    if (showingCompletedTrick) {
+      console.log('[GameState] → phase = playing (showing completed trick)');
+      return 'playing';
+    }
 
     // No game started yet
     if (!gameState || room?.status === 'Waiting') {
@@ -197,6 +205,12 @@ export class GameStateService {
         break;
       case 'PlayCard':
         result = PendingActionType.PlayCard;
+        break;
+      case 'ContinueDeal':
+        result = PendingActionType.ContinueDeal;
+        break;
+      case 'ContinueMatch':
+        result = PendingActionType.ContinueMatch;
         break;
       default:
         result = null;

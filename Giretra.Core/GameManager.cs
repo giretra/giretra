@@ -123,6 +123,10 @@ public sealed class GameManager
         // Notify all players that the match has ended
         await NotifyAllPlayersAsync(p => p.OnMatchEndedAsync(_matchState));
 
+        // Wait for players to confirm before returning from match
+        _logger.LogDebug("Waiting for player confirmation after match ends");
+        await NotifyAllPlayersAsync(p => p.ConfirmContinueMatchAsync(_matchState));
+
         return _matchState;
     }
 
@@ -168,6 +172,13 @@ public sealed class GameManager
             dealNumber, result.Team1CardPoints, result.Team2CardPoints, result.Team1MatchPoints, result.Team2MatchPoints,
             result.WasSweep ? $" (Sweep by {result.SweepingTeam})" : "");
         await NotifyAllPlayersAsync(p => p.OnDealEndedAsync(result, finalHandState, _matchState));
+
+        // Wait for players to confirm before starting next deal (only if match is not complete)
+        if (!_matchState.IsComplete)
+        {
+            _logger.LogDebug("Waiting for player confirmation before starting next deal");
+            await NotifyAllPlayersAsync(p => p.ConfirmContinueDealAsync(_matchState));
+        }
     }
 
     /// <summary>

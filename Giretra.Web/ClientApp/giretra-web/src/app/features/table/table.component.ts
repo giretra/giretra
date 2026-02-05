@@ -3,6 +3,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService } from '../../core/services/api.service';
+import { PendingActionType } from '../../api/generated/signalr-types.generated';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
@@ -235,7 +236,30 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onHideDealSummary(): void {
-    this.gameState.hideDealSummary();
+    const gameId = this.gameState.gameId();
+    const clientId = this.session.clientId();
+    const pendingAction = this.gameState.pendingActionType();
+
+    // If waiting for ContinueDeal confirmation, call the API
+    // The DealStarted SignalR event will hide the summary
+    if (pendingAction === PendingActionType.ContinueDeal && gameId && clientId) {
+      console.log('[Table] Submitting continue deal confirmation');
+      this.api.submitContinueDeal(gameId, clientId).subscribe({
+        next: () => {
+          console.log('[Table] Continue deal submitted successfully');
+          // Don't hide summary here - wait for DealStarted event
+        },
+        error: (err) => {
+          console.error('Failed to submit continue deal', err);
+          // On error, still hide the summary to not block the UI
+          this.gameState.hideDealSummary();
+        },
+      });
+    } else {
+      // No ContinueDeal action pending (e.g., watcher or AI game)
+      // Just hide the summary immediately
+      this.gameState.hideDealSummary();
+    }
   }
 
   onDismissCompletedTrick(): void {
@@ -243,9 +267,29 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   async onPlayAgain(): Promise<void> {
-    // For now, just restart the game
-    // In a real app, might need to handle re-lobby logic
-    this.onStartGame();
+    const gameId = this.gameState.gameId();
+    const clientId = this.session.clientId();
+    const pendingAction = this.gameState.pendingActionType();
+
+    // If waiting for ContinueMatch confirmation, call the API first
+    if (pendingAction === PendingActionType.ContinueMatch && gameId && clientId) {
+      console.log('[Table] Submitting continue match confirmation');
+      this.api.submitContinueMatch(gameId, clientId).subscribe({
+        next: () => {
+          console.log('[Table] Continue match submitted successfully');
+          // After confirming, start a new game
+          this.onStartGame();
+        },
+        error: (err) => {
+          console.error('Failed to submit continue match', err);
+          // On error, still try to start new game
+          this.onStartGame();
+        },
+      });
+    } else {
+      // No ContinueMatch action pending, just start new game
+      this.onStartGame();
+    }
   }
 
   async onLeaveTable(): Promise<void> {

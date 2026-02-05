@@ -94,7 +94,7 @@ export interface GameStateResponse {
   currentBid: GameMode | null;
   isComplete: boolean;
   winner: Team | null;
-  pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | null;
+  pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | 'ContinueDeal' | 'ContinueMatch' | null;
   pendingActionPlayer: PlayerPosition | null;
 }
 
@@ -102,7 +102,7 @@ export interface PlayerStateResponse {
   position: PlayerPosition;
   hand: CardResponse[];
   isYourTurn: boolean;
-  pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | null;
+  pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | 'ContinueDeal' | 'ContinueMatch' | null;
   validCards: CardResponse[] | null;
   validActions: ValidAction[] | null;
   gameState: GameStateResponse;
@@ -255,6 +255,22 @@ export class ApiService {
         clientId,
         rank,
         suit,
+      })
+      .pipe(catchError(this.handleError));
+  }
+
+  submitContinueDeal(gameId: string, clientId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/games/${gameId}/continue`, {
+        clientId,
+      })
+      .pipe(catchError(this.handleError));
+  }
+
+  submitContinueMatch(gameId: string, clientId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/games/${gameId}/continue-match`, {
+        clientId,
       })
       .pipe(catchError(this.handleError));
   }

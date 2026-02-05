@@ -167,4 +167,66 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         await _notifications.NotifyMatchEndedAsync(_session.GameId, matchState);
     }
+
+    public async Task ConfirmContinueDealAsync(MatchState matchState)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        _session.PendingAction = new PendingAction
+        {
+            ActionType = PendingActionType.ContinueDeal,
+            Player = Position,
+            ContinueDealTcs = tcs
+        };
+
+        // Notify the player to confirm continuation
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal);
+
+        // Wait for the confirmation with timeout
+        using var cts = new CancellationTokenSource(_timeout);
+        try
+        {
+            await tcs.Task.WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout - auto-continue
+            tcs.TrySetResult(true);
+        }
+        finally
+        {
+            _session.PendingAction = null;
+        }
+    }
+
+    public async Task ConfirmContinueMatchAsync(MatchState matchState)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        _session.PendingAction = new PendingAction
+        {
+            ActionType = PendingActionType.ContinueMatch,
+            Player = Position,
+            ContinueMatchTcs = tcs
+        };
+
+        // Notify the player to confirm continuation
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch);
+
+        // Wait for the confirmation with timeout
+        using var cts = new CancellationTokenSource(_timeout);
+        try
+        {
+            await tcs.Task.WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout - auto-continue
+            tcs.TrySetResult(true);
+        }
+        finally
+        {
+            _session.PendingAction = null;
+        }
+    }
 }

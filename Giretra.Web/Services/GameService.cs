@@ -261,6 +261,44 @@ public sealed class GameService : IGameService
         return true;
     }
 
+    public bool SubmitContinueDeal(string gameId, string clientId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var pending = session.PendingAction;
+        if (pending == null || pending.ActionType != PendingActionType.ContinueDeal)
+            return false;
+
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null || playerPosition.Value != pending.Player)
+            return false;
+
+        // Complete the pending action
+        pending.ContinueDealTcs?.TrySetResult(true);
+        return true;
+    }
+
+    public bool SubmitContinueMatch(string gameId, string clientId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var pending = session.PendingAction;
+        if (pending == null || pending.ActionType != PendingActionType.ContinueMatch)
+            return false;
+
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null || playerPosition.Value != pending.Player)
+            return false;
+
+        // Complete the pending action
+        pending.ContinueMatchTcs?.TrySetResult(true);
+        return true;
+    }
+
     public WatcherStateResponse? GetWatcherState(string gameId)
     {
         var session = _gameRepository.GetById(gameId);

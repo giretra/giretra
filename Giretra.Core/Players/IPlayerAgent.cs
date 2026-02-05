@@ -93,4 +93,18 @@ public interface IPlayerAgent
     /// </summary>
     /// <param name="matchState">The final state of the match.</param>
     Task OnMatchEndedAsync(MatchState matchState);
+
+    /// <summary>
+    /// Called after a deal ends to confirm the player is ready to continue to the next deal.
+    /// This is used to wait for user confirmation before starting the next deal.
+    /// </summary>
+    /// <param name="matchState">The current state of the match after the deal.</param>
+    Task ConfirmContinueDealAsync(MatchState matchState);
+
+    /// <summary>
+    /// Called after a match ends to confirm the player is ready to continue.
+    /// This is used to wait for user confirmation before returning from the match.
+    /// </summary>
+    /// <param name="matchState">The final state of the match.</param>
+    Task ConfirmContinueMatchAsync(MatchState matchState);
 }

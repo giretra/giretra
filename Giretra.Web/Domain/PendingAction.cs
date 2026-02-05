@@ -50,6 +50,16 @@ public sealed class PendingAction
     public IReadOnlyList<Card>? ValidCards { get; init; }
 
     /// <summary>
+    /// TaskCompletionSource for continue deal confirmation.
+    /// </summary>
+    public TaskCompletionSource<bool>? ContinueDealTcs { get; init; }
+
+    /// <summary>
+    /// TaskCompletionSource for continue match confirmation.
+    /// </summary>
+    public TaskCompletionSource<bool>? ContinueMatchTcs { get; init; }
+
+    /// <summary>
     /// Gets the timeout deadline (2 minutes from creation).
     /// </summary>
     public DateTime TimeoutAt => CreatedAt.AddMinutes(2);

@@ -188,6 +188,18 @@ public class BadPlayerAgent : IPlayerAgent
         return Task.CompletedTask;
     }
 
+    public Task ConfirmContinueDealAsync(MatchState matchState)
+    {
+        // AI agents auto-confirm immediately
+        return Task.CompletedTask;
+    }
+
+    public Task ConfirmContinueMatchAsync(MatchState matchState)
+    {
+        // AI agents auto-confirm immediately
+        return Task.CompletedTask;
+    }
+
     #region Strategic Calculations (copied from CalculatingPlayerAgent for evaluation)
 
     /// <summary>

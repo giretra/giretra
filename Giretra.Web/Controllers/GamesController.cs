@@ -134,4 +134,28 @@ public class GamesController : ControllerBase
 
         return Ok();
     }
+
+    /// <summary>
+    /// Submits confirmation to continue to the next deal.
+    /// </summary>
+    [HttpPost("{gameId}/continue")]
+    public ActionResult SubmitContinueDeal(string gameId, [FromBody] ContinueDealRequest request)
+    {
+        if (!_gameService.SubmitContinueDeal(gameId, request.ClientId))
+            return BadRequest("Invalid continue request. Either it's not your turn or the game is not waiting for confirmation.");
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Submits confirmation to continue after match ends.
+    /// </summary>
+    [HttpPost("{gameId}/continue-match")]
+    public ActionResult SubmitContinueMatch(string gameId, [FromBody] ContinueDealRequest request)
+    {
+        if (!_gameService.SubmitContinueMatch(gameId, request.ClientId))
+            return BadRequest("Invalid continue match request. Either it's not your turn or the game is not waiting for confirmation.");
+
+        return Ok();
+    }
 }
