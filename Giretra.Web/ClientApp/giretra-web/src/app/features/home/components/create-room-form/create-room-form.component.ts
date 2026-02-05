@@ -4,268 +4,412 @@ import { ApiService, RoomResponse } from '../../../../core/services/api.service'
 import { ClientSessionService } from '../../../../core/services/client-session.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
+import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
 
 @Component({
   selector: 'app-create-room-form',
   standalone: true,
-  imports: [FormsModule, HlmButton],
+  imports: [FormsModule, HlmButton, LucideAngularModule],
   template: `
-    <form class="create-form" (ngSubmit)="onSubmit()">
+    <div class="create-form">
       <div class="form-header">
-        <h3>Create a Room</h3>
+        <h3>New Table</h3>
         <button
           type="button"
-          hlmBtn
-          variant="ghost"
-          size="sm"
+          class="close-btn"
           (click)="cancelled.emit()"
-        >
-          Cancel
-        </button>
+        >&times;</button>
       </div>
 
-      <div class="form-field">
-        <label for="roomName">Room Name <span class="optional">(optional)</span></label>
-        <input
-          id="roomName"
-          type="text"
-          class="input"
-          [(ngModel)]="roomName"
-          name="roomName"
-          [placeholder]="playerName() + '_#00001'"
-          maxlength="50"
-          [disabled]="submitting()"
-        />
-      </div>
+      <form (ngSubmit)="onSubmit()">
+        <!-- Room name -->
+        <div class="field">
+          <label for="roomName" class="field-label">Table Name</label>
+          <input
+            id="roomName"
+            type="text"
+            class="text-input"
+            [(ngModel)]="roomName"
+            name="roomName"
+            [placeholder]="playerName() + '\u2019s table'"
+            maxlength="50"
+            [disabled]="submitting()"
+          />
+        </div>
 
-      <div class="form-field ai-positions-field">
-        <div class="ai-label-row">
-          <label>Fill seats with AI <span class="optional">(optional)</span></label>
+        <!-- AI seats -->
+        <div class="field">
+          <div class="ai-header">
+            <label class="field-label">AI Players</label>
+            <button
+              type="button"
+              class="toggle-all-btn"
+              [disabled]="submitting()"
+              (click)="toggleAllAi()"
+            >
+              {{ allAi ? 'Clear all' : 'Fill all' }}
+            </button>
+          </div>
+
+          <!-- Visual compass seat selector -->
+          <div class="seat-selector">
+            <!-- Top (Partner) -->
+            <div class="seat-row">
+              <button
+                type="button"
+                class="seat-btn"
+                [class.active]="aiTop"
+                [disabled]="submitting()"
+                (click)="aiTop = !aiTop"
+              >
+                @if (aiTop) {
+                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                } @else {
+                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                }
+                <span class="seat-label">Top</span>
+                <span class="seat-role">Partner</span>
+              </button>
+            </div>
+            <!-- Middle: Left + You + Right -->
+            <div class="seat-row middle">
+              <button
+                type="button"
+                class="seat-btn"
+                [class.active]="aiLeft"
+                [disabled]="submitting()"
+                (click)="aiLeft = !aiLeft"
+              >
+                @if (aiLeft) {
+                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                } @else {
+                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                }
+                <span class="seat-label">Left</span>
+              </button>
+              <div class="you-marker">You</div>
+              <button
+                type="button"
+                class="seat-btn"
+                [class.active]="aiRight"
+                [disabled]="submitting()"
+                (click)="aiRight = !aiRight"
+              >
+                @if (aiRight) {
+                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                } @else {
+                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                }
+                <span class="seat-label">Right</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="hint">Click seats to toggle AI opponents</p>
+        </div>
+
+        @if (error()) {
+          <p class="error-msg">{{ error() }}</p>
+        }
+
+        <div class="actions">
           <button
             type="button"
-            class="fill-all-btn"
+            class="cancel-btn"
+            (click)="cancelled.emit()"
             [disabled]="submitting()"
-            (click)="toggleAllAi()"
           >
-            {{ allAi ? 'Clear all' : 'Fill all' }}
+            Cancel
+          </button>
+          <button
+            type="submit"
+            hlmBtn
+            variant="default"
+            class="submit-btn"
+            [disabled]="submitting()"
+          >
+            @if (submitting()) {
+              Creating...
+            } @else {
+              Create Table
+            }
           </button>
         </div>
-        <div class="ai-positions-grid">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              [(ngModel)]="aiLeft"
-              name="aiLeft"
-              [disabled]="submitting()"
-            />
-            <span>Left</span>
-          </label>
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              [(ngModel)]="aiTop"
-              name="aiTop"
-              [disabled]="submitting()"
-            />
-            <span>Top (Partner)</span>
-          </label>
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              [(ngModel)]="aiRight"
-              name="aiRight"
-              [disabled]="submitting()"
-            />
-            <span>Right</span>
-          </label>
-        </div>
-        <p class="hint">Select which positions should be AI opponents</p>
-      </div>
-
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
-
-      <button
-        type="submit"
-        hlmBtn
-        variant="default"
-        class="submit-button"
-        [disabled]="submitting()"
-      >
-        @if (submitting()) {
-          Creating...
-        } @else {
-          Create Room
-        }
-      </button>
-    </form>
+      </form>
+    </div>
   `,
   styles: [`
     .create-form {
       background: hsl(var(--card));
       border: 1px solid hsl(var(--border));
-      border-radius: 0.5rem;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      animation: slideDown 0.2s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .form-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid hsl(var(--border));
     }
 
     .form-header h3 {
       margin: 0;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
+      color: hsl(var(--foreground));
     }
 
-    .form-field {
+    .close-btn {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.375rem;
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .close-btn:hover {
+      background: hsl(var(--muted) / 0.5);
+      color: hsl(var(--foreground));
+    }
+
+    form {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Fields */
+    .field {
       display: flex;
       flex-direction: column;
       gap: 0.375rem;
     }
 
-    .form-field label {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: hsl(var(--foreground));
-    }
-
-    .optional {
-      font-weight: 400;
+    .field-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
       color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    .input {
+    .text-input {
       width: 100%;
       padding: 0.5rem 0.75rem;
-      font-size: 1rem;
+      font-size: 0.9375rem;
       background: hsl(var(--input));
       border: 1px solid hsl(var(--border));
-      border-radius: 0.375rem;
+      border-radius: 0.5rem;
       color: hsl(var(--foreground));
       outline: none;
       transition: border-color 0.15s ease;
     }
 
-    .input:focus {
+    .text-input:focus {
       border-color: hsl(var(--primary));
     }
 
-    .input::placeholder {
+    .text-input::placeholder {
       color: hsl(var(--muted-foreground));
     }
 
-    .input:disabled {
+    .text-input:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
-    .error {
-      color: hsl(var(--destructive));
-      font-size: 0.875rem;
-      margin: 0;
-    }
-
-    .submit-button {
-      width: 100%;
-    }
-
-    .checkbox-field {
-      gap: 0.25rem;
-    }
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      cursor: pointer;
-    }
-
-    .checkbox-label input[type="checkbox"] {
-      width: 1rem;
-      height: 1rem;
-      accent-color: hsl(var(--primary));
-      cursor: pointer;
-    }
-
-    .checkbox-label input[type="checkbox"]:disabled {
-      cursor: not-allowed;
-    }
-
-    .hint {
-      margin: 0;
-      font-size: 0.75rem;
-      color: hsl(var(--muted-foreground));
-    }
-
-    .ai-positions-field {
-      gap: 0.5rem;
-    }
-
-    .ai-label-row {
+    /* AI header */
+    .ai-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .fill-all-btn {
-      padding: 0.25rem 0.625rem;
-      font-size: 0.75rem;
-      font-weight: 500;
+    .toggle-all-btn {
+      padding: 0.1875rem 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
       color: hsl(var(--primary));
       background: hsl(var(--primary) / 0.1);
-      border: 1px solid hsl(var(--primary) / 0.3);
-      border-radius: 0.375rem;
+      border: 1px solid hsl(var(--primary) / 0.25);
+      border-radius: 9999px;
       cursor: pointer;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition: all 0.15s ease;
     }
 
-    .fill-all-btn:hover:not(:disabled) {
+    .toggle-all-btn:hover:not(:disabled) {
       background: hsl(var(--primary) / 0.2);
-      border-color: hsl(var(--primary) / 0.5);
+      border-color: hsl(var(--primary) / 0.4);
     }
 
-    .fill-all-btn:disabled {
+    .toggle-all-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
-    .ai-positions-grid {
+    /* Seat selector */
+    .seat-selector {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.75rem 0;
+    }
+
+    .seat-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .seat-row.middle {
+      display: flex;
+      align-items: center;
       gap: 0.75rem;
     }
 
-    .ai-positions-grid .checkbox-label {
-      flex: 1;
-      min-width: 80px;
+    .seat-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.125rem;
       padding: 0.5rem 0.75rem;
-      background: hsl(var(--muted) / 0.3);
+      min-width: 4rem;
+      background: hsl(var(--muted) / 0.2);
+      border: 1.5px dashed hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .seat-btn:hover:not(:disabled) {
+      background: hsl(var(--muted) / 0.4);
+      border-color: hsl(var(--muted-foreground));
+    }
+
+    .seat-btn.active {
+      background: hsl(var(--gold) / 0.12);
+      border-style: solid;
+      border-color: hsl(var(--gold) / 0.5);
+      color: hsl(var(--gold));
+    }
+
+    .seat-btn.active:hover:not(:disabled) {
+      background: hsl(var(--gold) / 0.2);
+      border-color: hsl(var(--gold));
+    }
+
+    .seat-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .seat-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .seat-role {
+      font-size: 0.5625rem;
+      opacity: 0.7;
+    }
+
+    .you-marker {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background: hsl(var(--primary) / 0.15);
+      border: 2px solid hsl(var(--primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: hsl(var(--primary));
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.6875rem;
+      color: hsl(var(--muted-foreground));
+      text-align: center;
+    }
+
+    .error-msg {
+      color: hsl(var(--destructive));
+      font-size: 0.8125rem;
+      margin: 0;
+      text-align: center;
+    }
+
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .cancel-btn {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background: transparent;
       border: 1px solid hsl(var(--border));
-      border-radius: 0.375rem;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
 
-    .ai-positions-grid .checkbox-label:has(input:checked) {
-      background: hsl(var(--primary) / 0.1);
-      border-color: hsl(var(--primary));
+    .cancel-btn:hover:not(:disabled) {
+      background: hsl(var(--muted) / 0.3);
+      color: hsl(var(--foreground));
     }
 
-    .ai-positions-grid .checkbox-label:hover:not(:has(input:disabled)) {
-      background: hsl(var(--muted) / 0.5);
+    .cancel-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .submit-btn {
+      flex: 2;
     }
   `],
 })
 export class CreateRoomFormComponent {
   private readonly api = inject(ApiService);
   private readonly session = inject(ClientSessionService);
+
+  readonly BotIcon = Bot;
+  readonly UserPlusIcon = UserPlus;
 
   readonly playerName = input.required<string>();
 
@@ -306,24 +450,11 @@ export class CreateRoomFormComponent {
 
     this.api.createRoom(name, this.playerName(), this.getAiPositions()).subscribe({
       next: (response) => {
-        console.log('[CreateRoom] Response received:', {
-          roomId: response.room.roomId,
-          clientId: response.clientId,
-          position: response.position,
-          fullResponse: response,
-        });
-
-        // Store session info
         this.session.joinRoom(
           response.room.roomId,
           response.clientId,
           response.position
         );
-
-        console.log('[CreateRoom] Session updated:', {
-          storedClientId: this.session.clientId(),
-          storedRoomId: this.session.roomId(),
-        });
 
         this.submitting.set(false);
         this.roomCreated.emit(response.room);

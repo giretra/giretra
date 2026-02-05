@@ -1,4 +1,4 @@
-import { Component, output, signal } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HlmButton } from '@spartan-ng/helm/button';
 
@@ -9,16 +9,24 @@ import { HlmButton } from '@spartan-ng/helm/button';
   template: `
     <div class="overlay">
       <div class="dialog">
+        <!-- Decorative suits -->
+        <div class="decor-suits">
+          <span class="decor-suit spade">\u2660</span>
+          <span class="decor-suit heart">\u2665</span>
+          <span class="decor-suit diamond">\u2666</span>
+          <span class="decor-suit club">\u2663</span>
+        </div>
+
         <div class="dialog-header">
-          <h2>Welcome to Giretra</h2>
-          <p>Enter your name to get started</p>
+          <h2>Welcome to <span class="brand-name">Giretra</span></h2>
+          <p>Choose a name to sit at the table</p>
         </div>
 
         <form (ngSubmit)="onSubmit()">
-          <div class="form-field">
+          <div class="input-group">
             <input
               type="text"
-              class="input"
+              class="name-input"
               [(ngModel)]="name"
               name="name"
               placeholder="Your name"
@@ -32,10 +40,10 @@ import { HlmButton } from '@spartan-ng/helm/button';
             type="submit"
             hlmBtn
             variant="default"
-            class="submit-button"
+            class="submit-btn"
             [disabled]="!name.trim()"
           >
-            Continue
+            Take a seat
           </button>
         </form>
       </div>
@@ -45,33 +53,62 @@ import { HlmButton } from '@spartan-ng/helm/button';
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
       z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .dialog {
       background: hsl(var(--card));
       border: 1px solid hsl(var(--border));
-      border-radius: 0.75rem;
-      padding: 2rem;
+      border-radius: 1rem;
+      padding: 2rem 2rem 1.5rem;
       width: 100%;
-      max-width: 400px;
-      animation: slideUp 0.2s ease;
+      max-width: 380px;
+      animation: slideUp 0.25s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     @keyframes slideUp {
       from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(16px) scale(0.98);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
       }
+    }
+
+    /* Decorative suits */
+    .decor-suits {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .decor-suit {
+      font-size: 1.25rem;
+      opacity: 0.25;
+    }
+
+    .decor-suit.heart, .decor-suit.diamond {
+      color: hsl(0 65% 55%);
+    }
+
+    .decor-suit.spade, .decor-suit.club {
+      color: hsl(var(--foreground));
     }
 
     .dialog-header {
@@ -80,45 +117,54 @@ import { HlmButton } from '@spartan-ng/helm/button';
     }
 
     .dialog-header h2 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.5rem;
+      margin: 0 0 0.375rem 0;
+      font-size: 1.375rem;
       font-weight: 700;
+      color: hsl(var(--foreground));
+    }
+
+    .brand-name {
       color: hsl(var(--primary));
     }
 
     .dialog-header p {
       margin: 0;
+      font-size: 0.875rem;
       color: hsl(var(--muted-foreground));
     }
 
-    .form-field {
+    .input-group {
       margin-bottom: 1rem;
     }
 
-    .input {
+    .name-input {
       width: 100%;
       padding: 0.75rem 1rem;
       font-size: 1rem;
+      font-weight: 500;
       background: hsl(var(--input));
-      border: 1px solid hsl(var(--border));
-      border-radius: 0.5rem;
+      border: 1.5px solid hsl(var(--border));
+      border-radius: 0.625rem;
       color: hsl(var(--foreground));
       outline: none;
-      transition: border-color 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
       text-align: center;
     }
 
-    .input:focus {
+    .name-input:focus {
       border-color: hsl(var(--primary));
+      box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
     }
 
-    .input::placeholder {
+    .name-input::placeholder {
       color: hsl(var(--muted-foreground));
+      font-weight: 400;
     }
 
-    .submit-button {
+    .submit-btn {
       width: 100%;
       padding: 0.75rem;
+      font-weight: 600;
     }
   `],
 })
