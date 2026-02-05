@@ -40,6 +40,11 @@
     padding: 0;
   }
 
+  app-root {
+    display: block;
+    height: 100%;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));

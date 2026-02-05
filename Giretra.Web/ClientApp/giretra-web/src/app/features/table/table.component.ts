@@ -95,11 +95,17 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      height: 100%;
+    }
+
     .table-container {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      height: 100dvh;
+      height: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
       background: hsl(var(--background));
       overflow: hidden;
     }

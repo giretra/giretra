@@ -18,17 +18,20 @@ namespace Giretra.Web.Services;
 public sealed class GameService : IGameService
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IRoomRepository _roomRepository;
     private readonly INotificationService _notifications;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
     public GameService(
         IGameRepository gameRepository,
+        IRoomRepository roomRepository,
         INotificationService notifications,
         ILogger<GameService> logger,
         ILoggerFactory loggerFactory)
     {
         _gameRepository = gameRepository;
+        _roomRepository = roomRepository;
         _notifications = notifications;
         _logger = logger;
         _loggerFactory = loggerFactory;
@@ -97,6 +100,16 @@ public sealed class GameService : IGameService
                 await gameManager.PlayMatchAsync();
                 session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
+
+                // Reset room status to allow "Play Again"
+                var roomToReset = _roomRepository.GetById(room.RoomId);
+                if (roomToReset != null)
+                {
+                    roomToReset.Status = RoomStatus.Waiting;
+                    roomToReset.GameSessionId = null;
+                    _roomRepository.Update(roomToReset);
+                    _logger.LogInformation("Room {RoomId} reset to Waiting state", room.RoomId);
+                }
             }
             catch (Exception ex)
             {

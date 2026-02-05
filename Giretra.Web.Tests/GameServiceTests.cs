@@ -17,6 +17,7 @@ namespace Giretra.Web.Tests;
 public sealed class GameServiceTests
 {
     private readonly IGameRepository _gameRepository;
+    private readonly IRoomRepository _roomRepository;
     private readonly INotificationService _notifications;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -25,10 +26,11 @@ public sealed class GameServiceTests
     public GameServiceTests()
     {
         _gameRepository = new InMemoryGameRepository();
+        _roomRepository = new InMemoryRoomRepository();
         _notifications = Substitute.For<INotificationService>();
         _logger = Substitute.For<ILogger<GameService>>();
         _loggerFactory = Substitute.For<ILoggerFactory>();
-        _gameService = new GameService(_gameRepository, _notifications, _logger, _loggerFactory);
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, _logger, _loggerFactory);
     }
 
     #region CreateGame Tests
