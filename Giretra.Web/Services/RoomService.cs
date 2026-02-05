@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Giretra.Core.Players;
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Requests;
@@ -11,9 +12,12 @@ namespace Giretra.Web.Services;
 /// </summary>
 public sealed class RoomService : IRoomService
 {
+    private static readonly TimeSpan RoomCleanupDelay = TimeSpan.FromSeconds(20);
+
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
     private static int _roomCounter;
 
     public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications)
@@ -256,6 +260,9 @@ public sealed class RoomService : IRoomService
             client.ConnectionId = connectionId;
             client.LastActivityAt = DateTime.UtcNow;
             _roomRepository.Update(room);
+
+            // Cancel any pending cleanup for this client (reconnection)
+            CancelPendingRemoval(room.RoomId, clientId);
         }
     }
 
@@ -266,7 +273,51 @@ public sealed class RoomService : IRoomService
             return;
 
         var (room, client) = result.Value;
-        LeaveRoom(room.RoomId, client.ClientId);
+
+        // Clear connection but keep the client in the room for a grace period
+        client.ConnectionId = null;
+        _roomRepository.Update(room);
+
+        // Schedule delayed removal
+        ScheduleDelayedRemoval(room.RoomId, client.ClientId);
+    }
+
+    private void ScheduleDelayedRemoval(string roomId, string clientId)
+    {
+        var key = $"{roomId}_{clientId}";
+
+        // Cancel any existing timer for this client
+        CancelPendingRemoval(roomId, clientId);
+
+        var cts = new CancellationTokenSource();
+        _pendingRemovals[key] = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(RoomCleanupDelay, cts.Token);
+                _pendingRemovals.TryRemove(key, out _);
+                cts.Dispose();
+
+                // Client did not reconnect in time — actually remove them
+                LeaveRoom(roomId, clientId);
+            }
+            catch (OperationCanceledException)
+            {
+                // Client reconnected, removal cancelled
+            }
+        });
+    }
+
+    private void CancelPendingRemoval(string roomId, string clientId)
+    {
+        var key = $"{roomId}_{clientId}";
+        if (_pendingRemovals.TryRemove(key, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
     }
 
     private static string GenerateId(string prefix)
