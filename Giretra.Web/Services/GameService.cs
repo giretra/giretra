@@ -20,6 +20,7 @@ public sealed class GameService : IGameService
     private readonly IGameRepository _gameRepository;
     private readonly IRoomRepository _roomRepository;
     private readonly INotificationService _notifications;
+    private readonly AiPlayerRegistry _aiRegistry;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -27,12 +28,14 @@ public sealed class GameService : IGameService
         IGameRepository gameRepository,
         IRoomRepository roomRepository,
         INotificationService notifications,
+        AiPlayerRegistry aiRegistry,
         ILogger<GameService> logger,
         ILoggerFactory loggerFactory)
     {
         _gameRepository = gameRepository;
         _roomRepository = roomRepository;
         _notifications = notifications;
+        _aiRegistry = aiRegistry;
         _logger = logger;
         _loggerFactory = loggerFactory;
     }
@@ -59,7 +62,7 @@ public sealed class GameService : IGameService
             ClientPositions = clientPositions
         };
 
-        // Create player agents (WebApiPlayerAgent for humans, CalculatingPlayerAgent for AI)
+        // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI)
         var agents = new Dictionary<PlayerPosition, IPlayerAgent>();
         foreach (var position in Enum.GetValues<PlayerPosition>())
         {
@@ -73,10 +76,15 @@ public sealed class GameService : IGameService
                     session,
                     _notifications);
             }
+            else if (room.AiSlots.TryGetValue(position, out var aiType))
+            {
+                // AI player with specified type
+                agents[position] = _aiRegistry.CreateAgent(aiType, position);
+            }
             else
             {
-                // AI player
-                agents[position] = new CalculatingPlayerAgent(position);
+                // Unassigned slot — default AI
+                agents[position] = _aiRegistry.CreateAgent("CalculatingPlayer", position);
             }
         }
 

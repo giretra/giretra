@@ -1,5 +1,6 @@
 using Giretra.Benchmark.Benchmarking;
-using Giretra.Benchmark.Factories;
+using Giretra.Core.Players;
+using Giretra.Core.Players.Factories;
 using Giretra.Benchmark.Output;
 using Spectre.Console;
 

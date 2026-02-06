@@ -1,6 +1,4 @@
-using Giretra.Core.Players;
-
-namespace Giretra.Benchmark.Factories;
+namespace Giretra.Core.Players.Factories;
 
 /// <summary>
 /// Factory that creates RandomPlayerAgent instances with optional seeding for reproducibility.

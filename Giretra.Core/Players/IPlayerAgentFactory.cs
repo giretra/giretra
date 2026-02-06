@@ -1,6 +1,4 @@
-using Giretra.Core.Players;
-
-namespace Giretra.Benchmark.Factories;
+namespace Giretra.Core.Players;
 
 /// <summary>
 /// Factory interface for creating player agents.

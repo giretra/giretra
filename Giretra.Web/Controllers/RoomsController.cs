@@ -13,10 +13,12 @@ namespace Giretra.Web.Controllers;
 public class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
+    private readonly AiPlayerRegistry _aiRegistry;
 
-    public RoomsController(IRoomService roomService)
+    public RoomsController(IRoomService roomService, AiPlayerRegistry aiRegistry)
     {
         _roomService = roomService;
+        _aiRegistry = aiRegistry;
     }
 
     /// <summary>
@@ -115,5 +117,14 @@ public class RoomsController : ControllerBase
             return BadRequest(new { error = error ?? "Unable to start game" });
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Gets available AI player types.
+    /// </summary>
+    [HttpGet("/api/ai-types")]
+    public ActionResult<IReadOnlyList<string>> GetAiTypes()
+    {
+        return Ok(_aiRegistry.GetAvailableTypes());
     }
 }

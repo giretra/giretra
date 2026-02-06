@@ -35,7 +35,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Player1",
-            AiPositions = null
+            AiSeats = null
         };
 
         // Act
@@ -59,7 +59,12 @@ public sealed class RoomServiceTests
         {
             Name = "AI Room",
             CreatorName = "Human",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         };
 
         // Act
@@ -89,7 +94,7 @@ public sealed class RoomServiceTests
         {
             Name = "Stored Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         };
 
         // Act
@@ -113,7 +118,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Player1",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -142,8 +147,8 @@ public sealed class RoomServiceTests
     public void GetAllRooms_ReturnsAllRooms()
     {
         // Arrange
-        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P1", AiPositions = null });
-        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P2", AiPositions = null });
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P1", AiSeats = null });
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P2", AiSeats = null });
 
         // Act
         var response = _roomService.GetAllRooms();
@@ -166,7 +171,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         var joinRequest = new JoinRoomRequest
@@ -193,7 +198,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         var joinRequest = new JoinRoomRequest
@@ -218,7 +223,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         var joinRequest = new JoinRoomRequest
@@ -242,7 +247,12 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right] // Fills with AI
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ] // Fills with AI
         });
 
         var joinRequest = new JoinRoomRequest
@@ -275,7 +285,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act - Join 3 more players without specifying positions
@@ -300,7 +310,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         var watchRequest = new JoinRoomRequest
@@ -340,7 +350,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
 
@@ -361,7 +371,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" });
 
@@ -382,7 +392,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -404,7 +414,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -423,7 +433,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
 
@@ -457,7 +467,12 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var mockSession = new GameSession
@@ -487,7 +502,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
 
@@ -507,7 +522,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         // Remove the creator
         _roomService.LeaveRoom(createResponse.Room.RoomId, createResponse.ClientId);
@@ -539,7 +554,12 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var mockSession = new GameSession
@@ -568,7 +588,12 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var mockSession = new GameSession
@@ -599,7 +624,12 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var mockSession = new GameSession
@@ -630,7 +660,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -649,7 +679,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
         var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" });
 
@@ -669,7 +699,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -691,7 +721,7 @@ public sealed class RoomServiceTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act

@@ -29,7 +29,8 @@ public sealed class RoomToGameFlowTests
         var logger = Substitute.For<ILogger<GameService>>();
         var loggerFactory = Substitute.For<ILoggerFactory>();
 
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, logger, loggerFactory);
+        var aiRegistry = new AiPlayerRegistry();
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, logger, loggerFactory);
         _roomService = new RoomService(_roomRepository, _gameService, _notifications);
     }
 
@@ -43,7 +44,7 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Full Game Room",
             CreatorName = "Player1",
-            AiPositions = null
+            AiSeats = null
         });
 
         Assert.NotNull(createResponse);
@@ -88,7 +89,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "AI Game Room",
             CreatorName = "HumanPlayer",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         Assert.NotNull(createResponse);
@@ -114,7 +120,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -140,7 +151,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Spectated Game",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         // Add watcher before game starts
@@ -172,7 +188,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -192,7 +213,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -212,7 +238,7 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Creator",
-            AiPositions = null
+            AiSeats = null
         });
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" });
@@ -233,7 +259,7 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Mixed Room",
             CreatorName = "Human1",
-            AiPositions = null
+            AiSeats = null
         });
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
@@ -270,7 +296,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -296,7 +327,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -329,7 +365,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -358,7 +399,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -391,7 +437,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -417,7 +468,7 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player1",
-            AiPositions = null
+            AiSeats = null
         });
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
@@ -444,14 +495,14 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Room 1",
             CreatorName = "Player1",
-            AiPositions = null
+            AiSeats = null
         });
 
         var room2Response = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Room 2",
             CreatorName = "Player2",
-            AiPositions = null
+            AiSeats = null
         });
 
         // Act
@@ -474,7 +525,12 @@ public sealed class RoomToGameFlowTests
         {
             Name = "Test Room",
             CreatorName = "Player",
-            AiPositions = [PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right]
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
         });
 
         // Act
@@ -503,10 +559,10 @@ public sealed class RoomToGameFlowTests
             Status = RoomStatus.Waiting
         };
         // Mark all positions as AI slots (no human players)
-        room.AiSlots.Add(PlayerPosition.Bottom);
-        room.AiSlots.Add(PlayerPosition.Left);
-        room.AiSlots.Add(PlayerPosition.Top);
-        room.AiSlots.Add(PlayerPosition.Right);
+        room.AiSlots[PlayerPosition.Bottom] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Left] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Top] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Right] = "CalculatingPlayer";
         _roomRepository.Add(room);
 
         // Start the game - all players will be AI
@@ -542,10 +598,10 @@ public sealed class RoomToGameFlowTests
             CreatorClientId = "test_creator",
             Status = RoomStatus.Waiting
         };
-        room.AiSlots.Add(PlayerPosition.Bottom);
-        room.AiSlots.Add(PlayerPosition.Left);
-        room.AiSlots.Add(PlayerPosition.Top);
-        room.AiSlots.Add(PlayerPosition.Right);
+        room.AiSlots[PlayerPosition.Bottom] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Left] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Top] = "CalculatingPlayer";
+        room.AiSlots[PlayerPosition.Right] = "CalculatingPlayer";
         _roomRepository.Add(room);
 
         // Start first game

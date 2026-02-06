@@ -39,9 +39,9 @@ public sealed class Room
     };
 
     /// <summary>
-    /// Positions reserved for AI players.
+    /// Positions reserved for AI players, mapped to AI type name.
     /// </summary>
-    public HashSet<PlayerPosition> AiSlots { get; } = [];
+    public Dictionary<PlayerPosition, string> AiSlots { get; } = [];
 
     /// <summary>
     /// Watchers observing the room.
@@ -92,7 +92,7 @@ public sealed class Room
         // Find first empty slot (not occupied by human and not reserved for AI)
         foreach (var position in Enum.GetValues<PlayerPosition>())
         {
-            if (PlayerSlots[position] == null && !AiSlots.Contains(position))
+            if (PlayerSlots[position] == null && !AiSlots.ContainsKey(position))
             {
                 PlayerSlots[position] = client;
                 client.Position = position;
@@ -113,7 +113,7 @@ public sealed class Room
             return false;
 
         // Cannot join if slot is occupied by human or reserved for AI
-        if (PlayerSlots[position] != null || AiSlots.Contains(position))
+        if (PlayerSlots[position] != null || AiSlots.ContainsKey(position))
             return false;
 
         PlayerSlots[position] = client;

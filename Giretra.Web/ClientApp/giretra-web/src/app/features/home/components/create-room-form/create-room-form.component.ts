@@ -1,10 +1,12 @@
-import { Component, input, output, signal, inject } from '@angular/core';
+import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, RoomResponse } from '../../../../core/services/api.service';
+import { AiSeat, ApiService, RoomResponse } from '../../../../core/services/api.service';
 import { ClientSessionService } from '../../../../core/services/client-session.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
+
+const DEFAULT_AI_TYPE = 'CalculatingPlayer';
 
 @Component({
   selector: 'app-create-room-form',
@@ -55,53 +57,98 @@ import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
           <div class="seat-selector">
             <!-- Top (Partner) -->
             <div class="seat-row">
-              <button
-                type="button"
-                class="seat-btn"
-                [class.active]="aiTop"
-                [disabled]="submitting()"
-                (click)="aiTop = !aiTop"
-              >
-                @if (aiTop) {
-                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                } @else {
-                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              <div class="seat-group">
+                <button
+                  type="button"
+                  class="seat-btn"
+                  [class.active]="aiSeats.Top"
+                  [disabled]="submitting()"
+                  (click)="toggleSeat('Top')"
+                >
+                  @if (aiSeats.Top) {
+                    <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  } @else {
+                    <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  }
+                  <span class="seat-label">Top</span>
+                  <span class="seat-role">Partner</span>
+                </button>
+                @if (aiSeats.Top && aiTypes().length > 1) {
+                  <select
+                    class="ai-type-select"
+                    [disabled]="submitting()"
+                    [ngModel]="aiSeats.Top"
+                    (ngModelChange)="aiSeats.Top = $event"
+                    name="aiTypeTop"
+                  >
+                    @for (type of aiTypes(); track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
                 }
-                <span class="seat-label">Top</span>
-                <span class="seat-role">Partner</span>
-              </button>
+              </div>
             </div>
             <!-- Middle: Left + You + Right -->
             <div class="seat-row middle">
-              <button
-                type="button"
-                class="seat-btn"
-                [class.active]="aiLeft"
-                [disabled]="submitting()"
-                (click)="aiLeft = !aiLeft"
-              >
-                @if (aiLeft) {
-                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                } @else {
-                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              <div class="seat-group">
+                <button
+                  type="button"
+                  class="seat-btn"
+                  [class.active]="aiSeats.Left"
+                  [disabled]="submitting()"
+                  (click)="toggleSeat('Left')"
+                >
+                  @if (aiSeats.Left) {
+                    <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  } @else {
+                    <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  }
+                  <span class="seat-label">Left</span>
+                </button>
+                @if (aiSeats.Left && aiTypes().length > 1) {
+                  <select
+                    class="ai-type-select"
+                    [disabled]="submitting()"
+                    [ngModel]="aiSeats.Left"
+                    (ngModelChange)="aiSeats.Left = $event"
+                    name="aiTypeLeft"
+                  >
+                    @for (type of aiTypes(); track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
                 }
-                <span class="seat-label">Left</span>
-              </button>
+              </div>
               <div class="you-marker">You</div>
-              <button
-                type="button"
-                class="seat-btn"
-                [class.active]="aiRight"
-                [disabled]="submitting()"
-                (click)="aiRight = !aiRight"
-              >
-                @if (aiRight) {
-                  <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                } @else {
-                  <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              <div class="seat-group">
+                <button
+                  type="button"
+                  class="seat-btn"
+                  [class.active]="aiSeats.Right"
+                  [disabled]="submitting()"
+                  (click)="toggleSeat('Right')"
+                >
+                  @if (aiSeats.Right) {
+                    <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  } @else {
+                    <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  }
+                  <span class="seat-label">Right</span>
+                </button>
+                @if (aiSeats.Right && aiTypes().length > 1) {
+                  <select
+                    class="ai-type-select"
+                    [disabled]="submitting()"
+                    [ngModel]="aiSeats.Right"
+                    (ngModelChange)="aiSeats.Right = $event"
+                    name="aiTypeRight"
+                  >
+                    @for (type of aiTypes(); track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
                 }
-                <span class="seat-label">Right</span>
-              </button>
+              </div>
             </div>
           </div>
 
@@ -290,6 +337,13 @@ import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
       gap: 0.75rem;
     }
 
+    .seat-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
     .seat-btn {
       display: flex;
       flex-direction: column;
@@ -337,6 +391,29 @@ import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
     .seat-role {
       font-size: 0.5625rem;
       opacity: 0.7;
+    }
+
+    .ai-type-select {
+      width: 100%;
+      max-width: 6rem;
+      padding: 0.125rem 0.25rem;
+      font-size: 0.625rem;
+      background: hsl(var(--input));
+      border: 1px solid hsl(var(--gold) / 0.4);
+      border-radius: 0.25rem;
+      color: hsl(var(--gold));
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .ai-type-select:focus {
+      border-color: hsl(var(--gold));
+    }
+
+    .ai-type-select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .you-marker {
@@ -404,7 +481,7 @@ import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
     }
   `],
 })
-export class CreateRoomFormComponent {
+export class CreateRoomFormComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly session = inject(ClientSessionService);
 
@@ -417,29 +494,51 @@ export class CreateRoomFormComponent {
   readonly cancelled = output<void>();
 
   roomName = '';
-  aiLeft = false;
-  aiTop = false;
-  aiRight = false;
+  aiSeats: Record<'Left' | 'Top' | 'Right', string | null> = {
+    Left: null,
+    Top: null,
+    Right: null,
+  };
+  readonly aiTypes = signal<string[]>([DEFAULT_AI_TYPE]);
   readonly submitting = signal<boolean>(false);
   readonly error = signal<string>('');
 
+  ngOnInit(): void {
+    this.api.getAiTypes().subscribe({
+      next: (types) => {
+        if (types.length > 0) {
+          this.aiTypes.set(types);
+        }
+      },
+    });
+  }
+
   get allAi(): boolean {
-    return this.aiLeft && this.aiTop && this.aiRight;
+    return !!this.aiSeats.Left && !!this.aiSeats.Top && !!this.aiSeats.Right;
+  }
+
+  toggleSeat(seat: 'Left' | 'Top' | 'Right'): void {
+    if (this.aiSeats[seat]) {
+      this.aiSeats[seat] = null;
+    } else {
+      this.aiSeats[seat] = this.aiTypes()[0] || DEFAULT_AI_TYPE;
+    }
   }
 
   toggleAllAi(): void {
     const fill = !this.allAi;
-    this.aiLeft = fill;
-    this.aiTop = fill;
-    this.aiRight = fill;
+    const type = fill ? (this.aiTypes()[0] || DEFAULT_AI_TYPE) : null;
+    this.aiSeats.Left = type;
+    this.aiSeats.Top = type;
+    this.aiSeats.Right = type;
   }
 
-  private getAiPositions(): PlayerPosition[] {
-    const positions: PlayerPosition[] = [];
-    if (this.aiLeft) positions.push(PlayerPosition.Left);
-    if (this.aiTop) positions.push(PlayerPosition.Top);
-    if (this.aiRight) positions.push(PlayerPosition.Right);
-    return positions;
+  private getAiSeats(): AiSeat[] {
+    const seats: AiSeat[] = [];
+    if (this.aiSeats.Left) seats.push({ position: PlayerPosition.Left, aiType: this.aiSeats.Left });
+    if (this.aiSeats.Top) seats.push({ position: PlayerPosition.Top, aiType: this.aiSeats.Top });
+    if (this.aiSeats.Right) seats.push({ position: PlayerPosition.Right, aiType: this.aiSeats.Right });
+    return seats;
   }
 
   onSubmit(): void {
@@ -448,7 +547,7 @@ export class CreateRoomFormComponent {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.playerName(), this.getAiPositions()).subscribe({
+    this.api.createRoom(name, this.playerName(), this.getAiSeats()).subscribe({
       next: (response) => {
         this.session.joinRoom(
           response.room.roomId,

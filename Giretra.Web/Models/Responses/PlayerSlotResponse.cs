@@ -26,4 +26,9 @@ public sealed class PlayerSlotResponse
     /// Whether this slot is held by an AI player.
     /// </summary>
     public bool IsAi { get; init; }
+
+    /// <summary>
+    /// The AI agent type name (null if not AI).
+    /// </summary>
+    public string? AiType { get; init; }
 }

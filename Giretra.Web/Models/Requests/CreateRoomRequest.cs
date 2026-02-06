@@ -18,7 +18,8 @@ public sealed class CreateRoomRequest
     public required string CreatorName { get; init; }
 
     /// <summary>
-    /// Positions to fill with AI players. Only Left, Top, and Right are valid (Bottom is reserved for creator).
+    /// Seats to fill with AI players, each specifying position and AI type.
+    /// Only Left, Top, and Right are valid (Bottom is reserved for creator).
     /// </summary>
-    public List<PlayerPosition>? AiPositions { get; init; }
+    public List<AiSeatRequest>? AiSeats { get; init; }
 }

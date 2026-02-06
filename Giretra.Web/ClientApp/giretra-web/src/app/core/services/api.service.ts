@@ -21,6 +21,12 @@ export interface PlayerSlot {
   isOccupied: boolean;
   playerName: string | null;
   isAi: boolean;
+  aiType: string | null;
+}
+
+export interface AiSeat {
+  position: PlayerPosition;
+  aiType: string;
 }
 
 export interface RoomResponse {
@@ -147,9 +153,15 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createRoom(name: string | null, creatorName: string, aiPositions: PlayerPosition[] = []): Observable<CreateRoomResponse> {
+  createRoom(name: string | null, creatorName: string, aiSeats: AiSeat[] = []): Observable<CreateRoomResponse> {
     return this.http
-      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, creatorName, aiPositions })
+      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, creatorName, aiSeats })
+      .pipe(catchError(this.handleError));
+  }
+
+  getAiTypes(): Observable<string[]> {
+    return this.http
+      .get<string[]>(`${this.baseUrl}/api/ai-types`)
       .pipe(catchError(this.handleError));
   }
 

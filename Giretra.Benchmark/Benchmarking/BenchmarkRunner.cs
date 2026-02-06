@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using Giretra.Benchmark.Elo;
-using Giretra.Benchmark.Factories;
 using Giretra.Core;
 using Giretra.Core.Cards;
 using Giretra.Core.Players;
