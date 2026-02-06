@@ -41,9 +41,9 @@ public interface IRoomService
     JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request);
 
     /// <summary>
-    /// Leaves a room.
+    /// Leaves a room. Returns the removed player's name and position if they were a player.
     /// </summary>
-    bool LeaveRoom(string roomId, string clientId);
+    (bool Removed, string? PlayerName, PlayerPosition? Position) LeaveRoom(string roomId, string clientId);
 
     /// <summary>
     /// Starts the game in a room.

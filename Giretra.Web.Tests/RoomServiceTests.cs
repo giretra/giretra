@@ -358,7 +358,9 @@ public sealed class RoomServiceTests
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, joinResponse!.ClientId);
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.Removed);
+        Assert.Equal("P2", result.PlayerName);
+        Assert.NotNull(result.Position);
         var room = _roomService.GetRoom(createResponse.Room.RoomId);
         Assert.Equal(1, room!.PlayerCount);
     }
@@ -379,7 +381,9 @@ public sealed class RoomServiceTests
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, watchResponse!.ClientId);
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.Removed);
+        Assert.Null(result.PlayerName);
+        Assert.Null(result.Position);
         var room = _roomService.GetRoom(createResponse.Room.RoomId);
         Assert.Equal(0, room!.WatcherCount);
     }
@@ -399,7 +403,7 @@ public sealed class RoomServiceTests
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, "invalid_client");
 
         // Assert
-        Assert.False(result);
+        Assert.False(result.Removed);
     }
 
     #endregion

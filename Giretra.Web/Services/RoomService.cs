@@ -172,17 +172,23 @@ public sealed class RoomService : IRoomService
         };
     }
 
-    public bool LeaveRoom(string roomId, string clientId)
+    public (bool Removed, string? PlayerName, PlayerPosition? Position) LeaveRoom(string roomId, string clientId)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null)
-            return false;
+            return (false, null, null);
 
         var removed = false;
+        string? playerName = null;
+        PlayerPosition? position = null;
 
-        // Try to remove as player first
-        if (room.RemovePlayer(clientId))
+        // Try to remove as player first — capture info before removal
+        var player = room.GetPlayer(clientId);
+        if (player != null)
         {
+            playerName = player.DisplayName;
+            position = room.GetPlayerPosition(clientId);
+            room.RemovePlayer(clientId);
             removed = true;
         }
         else
@@ -197,7 +203,7 @@ public sealed class RoomService : IRoomService
         }
 
         if (!removed)
-            return false;
+            return (false, null, null);
 
         // Remove the room if no one is left
         if (room.IsEmpty)
@@ -205,7 +211,7 @@ public sealed class RoomService : IRoomService
         else
             _roomRepository.Update(room);
 
-        return true;
+        return (true, playerName, position);
     }
 
     public (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId)
@@ -302,7 +308,9 @@ public sealed class RoomService : IRoomService
                 cts.Dispose();
 
                 // Client did not reconnect in time — actually remove them
-                LeaveRoom(roomId, clientId);
+                var (removed, playerName, position) = LeaveRoom(roomId, clientId);
+                if (removed && playerName != null && position.HasValue)
+                    await _notifications.NotifyPlayerLeftAsync(roomId, playerName, position.Value);
             }
             catch (OperationCanceledException)
             {

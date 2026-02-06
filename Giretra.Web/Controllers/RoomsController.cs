@@ -13,11 +13,13 @@ namespace Giretra.Web.Controllers;
 public class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
+    private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
 
-    public RoomsController(IRoomService roomService, AiPlayerRegistry aiRegistry)
+    public RoomsController(IRoomService roomService, INotificationService notifications, AiPlayerRegistry aiRegistry)
     {
         _roomService = roomService;
+        _notifications = notifications;
         _aiRegistry = aiRegistry;
     }
 
@@ -72,11 +74,14 @@ public class RoomsController : ControllerBase
     /// Joins a room as a player.
     /// </summary>
     [HttpPost("{roomId}/join")]
-    public ActionResult<JoinRoomResponse> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
+    public async Task<ActionResult<JoinRoomResponse>> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var response = _roomService.JoinRoom(roomId, request);
         if (response == null)
             return BadRequest("Unable to join room. Room may be full or game already started.");
+
+        if (response.Position.HasValue)
+            await _notifications.NotifyPlayerJoinedAsync(roomId, request.DisplayName, response.Position.Value);
 
         return Ok(response);
     }
@@ -98,10 +103,14 @@ public class RoomsController : ControllerBase
     /// Leaves a room.
     /// </summary>
     [HttpPost("{roomId}/leave")]
-    public ActionResult LeaveRoom(string roomId, [FromBody] LeaveRoomRequest request)
+    public async Task<ActionResult> LeaveRoom(string roomId, [FromBody] LeaveRoomRequest request)
     {
-        if (!_roomService.LeaveRoom(roomId, request.ClientId))
+        var (removed, playerName, position) = _roomService.LeaveRoom(roomId, request.ClientId);
+        if (!removed)
             return NotFound();
+
+        if (playerName != null && position.HasValue)
+            await _notifications.NotifyPlayerLeftAsync(roomId, playerName, position.Value);
 
         return NoContent();
     }
