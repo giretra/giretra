@@ -25,13 +25,13 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
           <p class="no-bid">No bid yet — you open</p>
         }
 
-        <!-- Bid history -->
-        @if (negotiationHistory().length > 0) {
+        <!-- Bid history (newest first) -->
+        @if (reversedHistory().length > 0) {
           <div class="history-list">
-            @for (action of negotiationHistory(); track $index) {
-              <div class="history-row" [class]="getActionClass(action)">
-                <span class="player-avatar">{{ getInitial(action.player) }}</span>
-                <span class="player-name">{{ action.player }}</span>
+            @for (action of reversedHistory(); track $index) {
+              <div class="history-row" [class.latest]="$index === 0" [style.opacity]="$index === 0 ? 1 : Math.max(0.4, 1 - $index * 0.15)">
+                <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ getInitial(action.player) }}</span>
+                <span class="player-name" [class.latest-name]="$index === 0">{{ action.player }}</span>
                 <span class="action-badge" [class]="getActionBadgeClass(action)">
                   @if (action.actionType === 'Announce' && getAnnounceSuit(action.mode); as suit) {
                     <app-suit-icon [suit]="suit" size="0.875rem" />
@@ -164,6 +164,13 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
       padding: 0.375rem 0.625rem;
       border-radius: 0.375rem;
       background: hsl(var(--muted) / 0.3);
+      transition: opacity 0.15s ease;
+    }
+
+    .history-row.latest {
+      background: hsl(var(--foreground) / 0.08);
+      border: 1px solid hsl(var(--foreground) / 0.12);
+      padding: 0.5rem 0.75rem;
     }
 
     .player-avatar {
@@ -181,11 +188,22 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
       flex-shrink: 0;
     }
 
+    .player-avatar.latest-avatar {
+      background: hsl(var(--gold) / 0.2);
+      color: hsl(var(--gold));
+      box-shadow: 0 0 6px hsl(var(--gold) / 0.15);
+    }
+
     .player-name {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
       flex: 1;
       text-align: left;
+    }
+
+    .player-name.latest-name {
+      color: hsl(var(--foreground));
+      font-weight: 600;
     }
 
     .action-badge {
@@ -230,6 +248,7 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
   `],
 })
 export class BidDialogComponent {
+  readonly Math = Math;
   readonly validActions = input<ValidAction[]>([]);
   readonly negotiationHistory = input<NegotiationAction[]>([]);
   readonly activePlayer = input<PlayerPosition | null>(null);
@@ -252,6 +271,8 @@ export class BidDialogComponent {
     }
     return null;
   });
+
+  readonly reversedHistory = computed(() => [...this.negotiationHistory()].reverse());
 
   getInitial(player: PlayerPosition): string {
     return player.charAt(0).toUpperCase();

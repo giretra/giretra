@@ -1,12 +1,22 @@
-import { Component, input, output } from '@angular/core';
-import { CardPointsBreakdownResponse, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
+import { Component, input, output, computed } from '@angular/core';
+import { CardPointsBreakdownResponse, CardSuit, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
+import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
 import { HlmButton } from '@spartan-ng/helm/button';
+
+interface BreakdownRow {
+  label: string;
+  perCardValue: number;
+  team1Points: number;
+  team2Points: number;
+  isTrump: boolean;
+  trumpSuit?: CardSuit;
+}
 
 @Component({
   selector: 'app-deal-summary',
   standalone: true,
-  imports: [GameModeBadgeComponent, HlmButton],
+  imports: [GameModeBadgeComponent, SuitIconComponent, HlmButton],
   template: `
     @if (summary(); as s) {
       <div class="deal-summary">
@@ -45,60 +55,36 @@ import { HlmButton } from '@spartan-ng/helm/button';
             <thead>
               <tr>
                 <th class="card-type">Card</th>
+                <th class="value-col">ea.</th>
                 <th class="team1-col">Team 1</th>
                 <th class="team2-col">Team 2</th>
               </tr>
             </thead>
             <tbody>
-              @if (s.team1Breakdown.jacks > 0 || s.team2Breakdown.jacks > 0) {
-                <tr>
-                  <td class="card-type">Jacks</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.jacks > 0">{{ s.team1Breakdown.jacks }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.jacks > 0">{{ s.team2Breakdown.jacks }}</td>
-                </tr>
-              }
-              @if (s.team1Breakdown.nines > 0 || s.team2Breakdown.nines > 0) {
-                <tr>
-                  <td class="card-type">Nines</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.nines > 0">{{ s.team1Breakdown.nines }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.nines > 0">{{ s.team2Breakdown.nines }}</td>
-                </tr>
-              }
-              @if (s.team1Breakdown.aces > 0 || s.team2Breakdown.aces > 0) {
-                <tr>
-                  <td class="card-type">Aces</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.aces > 0">{{ s.team1Breakdown.aces }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.aces > 0">{{ s.team2Breakdown.aces }}</td>
-                </tr>
-              }
-              @if (s.team1Breakdown.tens > 0 || s.team2Breakdown.tens > 0) {
-                <tr>
-                  <td class="card-type">Tens</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.tens > 0">{{ s.team1Breakdown.tens }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.tens > 0">{{ s.team2Breakdown.tens }}</td>
-                </tr>
-              }
-              @if (s.team1Breakdown.kings > 0 || s.team2Breakdown.kings > 0) {
-                <tr>
-                  <td class="card-type">Kings</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.kings > 0">{{ s.team1Breakdown.kings }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.kings > 0">{{ s.team2Breakdown.kings }}</td>
-                </tr>
-              }
-              @if (s.team1Breakdown.queens > 0 || s.team2Breakdown.queens > 0) {
-                <tr>
-                  <td class="card-type">Queens</td>
-                  <td class="team1-col" [class.has-points]="s.team1Breakdown.queens > 0">{{ s.team1Breakdown.queens }}</td>
-                  <td class="team2-col" [class.has-points]="s.team2Breakdown.queens > 0">{{ s.team2Breakdown.queens }}</td>
+              @for (row of breakdownRows(); track row.label + row.perCardValue) {
+                <tr [class.trump-row]="row.isTrump">
+                  <td class="card-type">
+                    @if (row.isTrump && row.trumpSuit) {
+                      <span class="trump-label">
+                        <app-suit-icon [suit]="row.trumpSuit" size="0.75rem" />
+                        <span>{{ row.label }}</span>
+                      </span>
+                    } @else {
+                      {{ row.label }}
+                    }
+                  </td>
+                  <td class="value-col">{{ row.perCardValue }}</td>
+                  <td class="team1-col" [class.has-points]="row.team1Points > 0">{{ row.team1Points }}</td>
+                  <td class="team2-col" [class.has-points]="row.team2Points > 0">{{ row.team2Points }}</td>
                 </tr>
               }
               <tr class="last-trick-row">
-                <td class="card-type">Last Trick</td>
+                <td class="card-type" colspan="2">Last Trick</td>
                 <td class="team1-col" [class.has-points]="s.team1Breakdown.lastTrickBonus > 0">{{ s.team1Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
                 <td class="team2-col" [class.has-points]="s.team2Breakdown.lastTrickBonus > 0">{{ s.team2Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
               </tr>
               <tr class="total-row">
-                <td class="card-type">Total</td>
+                <td class="card-type" colspan="2">Total</td>
                 <td class="team1-col has-points">{{ s.team1Breakdown.total }}</td>
                 <td class="team2-col has-points">{{ s.team2Breakdown.total }}</td>
               </tr>
@@ -267,6 +253,17 @@ import { HlmButton } from '@spartan-ng/helm/button';
       color: hsl(var(--muted-foreground));
     }
 
+    .breakdown-table .value-col {
+      font-size: 0.625rem;
+      color: hsl(var(--muted-foreground) / 0.6);
+      text-align: center;
+      width: 2rem;
+    }
+
+    .breakdown-table th.value-col {
+      font-size: 0.625rem;
+    }
+
     .breakdown-table .team1-col {
       color: hsl(var(--muted-foreground));
     }
@@ -282,6 +279,24 @@ import { HlmButton } from '@spartan-ng/helm/button';
 
     .breakdown-table tbody tr:nth-child(even) {
       background: hsl(var(--muted) / 0.2);
+    }
+
+    .breakdown-table .trump-row {
+      background: hsl(var(--gold) / 0.06);
+    }
+
+    .breakdown-table .trump-row .card-type {
+      color: hsl(var(--gold));
+    }
+
+    .breakdown-table .trump-row .value-col {
+      color: hsl(var(--gold) / 0.7);
+    }
+
+    .trump-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
     }
 
     .breakdown-table .last-trick-row {
@@ -366,4 +381,86 @@ export class DealSummaryComponent {
   } | null>(null);
 
   readonly dismissed = output<void>();
+
+  private static readonly modeToSuit: Record<string, CardSuit> = {
+    [GameMode.ColourClubs]: CardSuit.Clubs,
+    [GameMode.ColourDiamonds]: CardSuit.Diamonds,
+    [GameMode.ColourHearts]: CardSuit.Hearts,
+    [GameMode.ColourSpades]: CardSuit.Spades,
+  };
+
+  private isColourMode(mode: GameMode): boolean {
+    return mode in DealSummaryComponent.modeToSuit;
+  }
+
+  readonly breakdownRows = computed((): BreakdownRow[] => {
+    const s = this.summary();
+    if (!s) return [];
+
+    const mode = s.gameMode;
+    const t1 = s.team1Breakdown;
+    const t2 = s.team2Breakdown;
+    const rows: BreakdownRow[] = [];
+
+    if (this.isColourMode(mode)) {
+      const trumpSuit = DealSummaryComponent.modeToSuit[mode];
+
+      // Split jacks: trump J = 20pts, non-trump J = 2pts each
+      const t1TrumpJ = t1.jacks >= 20 ? 20 : 0;
+      const t2TrumpJ = t2.jacks >= 20 ? 20 : 0;
+      const t1OtherJ = t1.jacks - t1TrumpJ;
+      const t2OtherJ = t2.jacks - t2TrumpJ;
+
+      // Split nines: trump 9 = 14pts, non-trump 9 = 0pts
+      const t1Trump9 = t1.nines > 0 ? 14 : 0;
+      const t2Trump9 = t2.nines > 0 ? 14 : 0;
+
+      // Ordered by strongest: Trump J(20), Trump 9(14), A(11), 10(10), K(4), Q(3), other J(2)
+      if (t1TrumpJ > 0 || t2TrumpJ > 0)
+        rows.push({ label: 'Jack', perCardValue: 20, team1Points: t1TrumpJ, team2Points: t2TrumpJ, isTrump: true, trumpSuit });
+      if (t1Trump9 > 0 || t2Trump9 > 0)
+        rows.push({ label: 'Nine', perCardValue: 14, team1Points: t1Trump9, team2Points: t2Trump9, isTrump: true, trumpSuit });
+      if (t1.aces > 0 || t2.aces > 0)
+        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+      if (t1.tens > 0 || t2.tens > 0)
+        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+      if (t1.kings > 0 || t2.kings > 0)
+        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+      if (t1.queens > 0 || t2.queens > 0)
+        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+      if (t1OtherJ > 0 || t2OtherJ > 0)
+        rows.push({ label: 'Jacks', perCardValue: 2, team1Points: t1OtherJ, team2Points: t2OtherJ, isTrump: false });
+      // Non-trump nines = 0pts, skip
+
+    } else if (mode === GameMode.ToutAs) {
+      // All trump ranking: J(20) > 9(14) > A(11) > 10(10) > K(4) > Q(3)
+      if (t1.jacks > 0 || t2.jacks > 0)
+        rows.push({ label: 'Jacks', perCardValue: 20, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
+      if (t1.nines > 0 || t2.nines > 0)
+        rows.push({ label: 'Nines', perCardValue: 14, team1Points: t1.nines, team2Points: t2.nines, isTrump: false });
+      if (t1.aces > 0 || t2.aces > 0)
+        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+      if (t1.tens > 0 || t2.tens > 0)
+        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+      if (t1.kings > 0 || t2.kings > 0)
+        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+      if (t1.queens > 0 || t2.queens > 0)
+        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+
+    } else {
+      // SansAs: A(11) > 10(10) > K(4) > Q(3) > J(2) > 9(0, skip)
+      if (t1.aces > 0 || t2.aces > 0)
+        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+      if (t1.tens > 0 || t2.tens > 0)
+        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+      if (t1.kings > 0 || t2.kings > 0)
+        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+      if (t1.queens > 0 || t2.queens > 0)
+        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+      if (t1.jacks > 0 || t2.jacks > 0)
+        rows.push({ label: 'Jacks', perCardValue: 2, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
+    }
+
+    return rows;
+  });
 }
