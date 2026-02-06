@@ -46,4 +46,9 @@ public sealed class RoomResponse
     /// When the room was created.
     /// </summary>
     public required DateTime CreatedAt { get; init; }
+
+    /// <summary>
+    /// Turn timer duration in seconds.
+    /// </summary>
+    public required int TurnTimerSeconds { get; init; }
 }

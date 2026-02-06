@@ -105,6 +105,12 @@ export class GameStateService {
   readonly completedTrickToShow = this._completedTrickToShow.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Turn Timer State
+  // ─────────────────────────────────────────────────────────────────────────
+  private readonly _turnTimeoutAt = signal<Date | null>(null);
+  readonly turnTimeoutAt = this._turnTimeoutAt.asReadonly();
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Computed Signals: Derived State
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -376,6 +382,7 @@ export class GameStateService {
     this._isCreator.set(false);
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
+    this._turnTimeoutAt.set(null);
   }
 
   /**
@@ -400,6 +407,11 @@ export class GameStateService {
         if (watcherState) {
           this._gameState.set(watcherState.gameState);
           this._playerCardCounts.set(watcherState.playerCardCounts);
+          this._turnTimeoutAt.set(
+            watcherState.gameState.pendingActionTimeoutAt
+              ? new Date(watcherState.gameState.pendingActionTimeoutAt)
+              : null
+          );
         }
       } else if (clientId) {
         const playerState = await this.api.getPlayerState(gameId, clientId).toPromise();
@@ -407,6 +419,11 @@ export class GameStateService {
         if (playerState) {
           this._playerState.set(playerState);
           this._gameState.set(playerState.gameState);
+          this._turnTimeoutAt.set(
+            playerState.gameState.pendingActionTimeoutAt
+              ? new Date(playerState.gameState.pendingActionTimeoutAt)
+              : null
+          );
         }
       }
     } catch (e) {
@@ -528,6 +545,7 @@ export class GameStateService {
     // Deal started
     this.hub.dealStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealStarted', event);
+      this._turnTimeoutAt.set(null);
       this.hideDealSummary();
       this.refreshState();
     });
@@ -535,24 +553,28 @@ export class GameStateService {
     // Your turn
     this.hub.yourTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: yourTurn', event);
+      this._turnTimeoutAt.set(new Date(event.timeoutAt));
       this.refreshState();
     });
 
     // Player turn (broadcast)
     this.hub.playerTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: playerTurn', event);
+      this._turnTimeoutAt.set(new Date(event.timeoutAt));
       this.refreshState();
     });
 
     // Card played
     this.hub.cardPlayed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: cardPlayed', event);
+      this._turnTimeoutAt.set(null);
       this.refreshState();
     });
 
     // Trick completed - show cards briefly before clearing
     this.hub.trickCompleted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: trickCompleted', event);
+      this._turnTimeoutAt.set(null);
 
       // Clear any existing timeout
       if (this._completedTrickTimeoutId) {
@@ -591,6 +613,7 @@ export class GameStateService {
     // Deal ended
     this.hub.dealEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealEnded', event);
+      this._turnTimeoutAt.set(null);
 
       const summary = {
         gameMode: event.gameMode,
@@ -617,6 +640,7 @@ export class GameStateService {
     // Match ended
     this.hub.matchEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: matchEnded', event);
+      this._turnTimeoutAt.set(null);
       this.refreshState();
     });
   }

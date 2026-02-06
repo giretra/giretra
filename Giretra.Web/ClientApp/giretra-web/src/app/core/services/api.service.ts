@@ -38,6 +38,7 @@ export interface RoomResponse {
   playerSlots: PlayerSlot[];
   gameId: string | null;
   createdAt: string;
+  turnTimerSeconds: number;
 }
 
 export interface RoomListResponse {
@@ -102,6 +103,7 @@ export interface GameStateResponse {
   winner: Team | null;
   pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | 'ContinueDeal' | 'ContinueMatch' | null;
   pendingActionPlayer: PlayerPosition | null;
+  pendingActionTimeoutAt: string | null;
 }
 
 export interface PlayerStateResponse {
@@ -153,9 +155,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createRoom(name: string | null, creatorName: string, aiSeats: AiSeat[] = []): Observable<CreateRoomResponse> {
+  createRoom(name: string | null, creatorName: string, aiSeats: AiSeat[] = [], turnTimerSeconds?: number): Observable<CreateRoomResponse> {
     return this.http
-      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, creatorName, aiSeats })
+      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, creatorName, aiSeats, turnTimerSeconds })
       .pipe(catchError(this.handleError));
   }
 

@@ -58,6 +58,7 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       @if (isDealer()) {
         <div class="dealer-chip" title="Dealer">D</div>
       }
+
     </div>
   `,
   styles: [`

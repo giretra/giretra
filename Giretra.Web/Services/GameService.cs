@@ -74,7 +74,8 @@ public sealed class GameService : IGameService
                     position,
                     client.ClientId,
                     session,
-                    _notifications);
+                    _notifications,
+                    TimeSpan.FromSeconds(room.TurnTimerSeconds));
             }
             else if (room.AiSlots.TryGetValue(position, out var aiType))
             {
@@ -405,7 +406,8 @@ public sealed class GameService : IGameService
             IsComplete = matchState.IsComplete,
             Winner = matchState.Winner,
             PendingActionType = session.PendingAction?.ActionType,
-            PendingActionPlayer = session.PendingAction?.Player
+            PendingActionPlayer = session.PendingAction?.Player,
+            PendingActionTimeoutAt = session.PendingAction?.TimeoutAt
         };
     }
 

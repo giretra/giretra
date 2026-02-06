@@ -43,11 +43,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         {
             ActionType = PendingActionType.Cut,
             Player = Position,
-            CutTcs = tcs
+            CutTcs = tcs,
+            TimeoutDuration = _timeout
         };
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut, _session.PendingAction.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -80,11 +81,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             ActionType = PendingActionType.Negotiate,
             Player = Position,
             NegotiationTcs = tcs,
-            ValidNegotiationActions = validActions
+            ValidNegotiationActions = validActions,
+            TimeoutDuration = _timeout
         };
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate, _session.PendingAction.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -118,11 +120,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             ActionType = PendingActionType.PlayCard,
             Player = Position,
             PlayCardTcs = tcs,
-            ValidCards = validPlays
+            ValidCards = validPlays,
+            TimeoutDuration = _timeout
         };
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard, _session.PendingAction.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -176,11 +179,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         {
             ActionType = PendingActionType.ContinueDeal,
             Player = Position,
-            ContinueDealTcs = tcs
+            ContinueDealTcs = tcs,
+            TimeoutDuration = _timeout
         };
 
         // Notify the player to confirm continuation
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal, _session.PendingAction.TimeoutAt);
 
         // Wait for the confirmation with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -207,11 +211,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         {
             ActionType = PendingActionType.ContinueMatch,
             Player = Position,
-            ContinueMatchTcs = tcs
+            ContinueMatchTcs = tcs,
+            TimeoutDuration = _timeout
         };
 
         // Notify the player to confirm continuation
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, _session.PendingAction.TimeoutAt);
 
         // Wait for the confirmation with timeout
         using var cts = new CancellationTokenSource(_timeout);

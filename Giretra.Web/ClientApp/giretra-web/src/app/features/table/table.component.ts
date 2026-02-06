@@ -34,6 +34,8 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
         [gameMode]="gameState.gameMode()"
         [multiplier]="gameState.multiplier()"
         [myTeam]="gameState.myTeam()"
+        [isMyTurn]="gameState.isMyTurn()"
+        [turnTimeoutAt]="gameState.turnTimeoutAt()"
         (leaveTable)="onLeaveTable()"
       />
 

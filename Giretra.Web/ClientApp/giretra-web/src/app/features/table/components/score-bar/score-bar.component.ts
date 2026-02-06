@@ -4,13 +4,14 @@ import { RoomResponse } from '../../../../core/services/api.service';
 import { MultiplierState } from '../../../../core/services/game-state.service';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
+import { TurnTimerComponent } from '../../../../shared/components/turn-timer/turn-timer.component';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, LogOut } from 'lucide-angular';
 
 @Component({
   selector: 'app-score-bar',
   standalone: true,
-  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, HlmButton, LucideAngularModule],
+  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, TurnTimerComponent, HlmButton, LucideAngularModule],
   template: `
     <div class="score-bar">
       <!-- Main row -->
@@ -29,7 +30,12 @@ import { LucideAngularModule, LogOut } from 'lucide-angular';
               <app-multiplier-badge [multiplier]="multiplier()" />
             </div>
           }
-          @if (dealNumber() > 0) {
+          @if (isMyTurn() && turnTimeoutAt()) {
+            <div class="your-turn-indicator">
+              <span class="your-turn-label">Your turn</span>
+              <app-turn-timer [deadline]="turnTimeoutAt()" />
+            </div>
+          } @else if (dealNumber() > 0) {
             <span class="deal-number">Deal {{ dealNumber() }}</span>
           } @else {
             <span class="room-name">{{ room()?.name }}</span>
@@ -171,6 +177,30 @@ import { LucideAngularModule, LogOut } from 'lucide-angular';
       color: hsl(var(--muted-foreground));
     }
 
+    .your-turn-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.1875rem 0.625rem;
+      border-radius: 9999px;
+      background: hsl(var(--primary) / 0.12);
+      border: 1px solid hsl(var(--primary) / 0.3);
+      animation: turnFadeIn 0.3s ease;
+    }
+
+    .your-turn-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: hsl(var(--primary));
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    @keyframes turnFadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
     .menu-button {
       flex-shrink: 0;
     }
@@ -242,6 +272,8 @@ export class ScoreBarComponent {
   readonly gameMode = input<GameMode | null>(null);
   readonly multiplier = input<MultiplierState>('Normal');
   readonly myTeam = input<Team | null>(null);
+  readonly isMyTurn = input<boolean>(false);
+  readonly turnTimeoutAt = input<Date | null>(null);
 
   readonly leaveTable = output<void>();
 

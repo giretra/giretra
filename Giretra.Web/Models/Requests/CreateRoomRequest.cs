@@ -22,4 +22,9 @@ public sealed class CreateRoomRequest
     /// Only Left, Top, and Right are valid (Bottom is reserved for creator).
     /// </summary>
     public List<AiSeatRequest>? AiSeats { get; init; }
+
+    /// <summary>
+    /// Turn timer duration in seconds. Defaults to 120, range 10–300.
+    /// </summary>
+    public int? TurnTimerSeconds { get; init; }
 }

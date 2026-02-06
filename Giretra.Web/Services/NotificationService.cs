@@ -27,13 +27,14 @@ public sealed class NotificationService : INotificationService
         _gameRepository = gameRepository;
     }
 
-    public async Task NotifyYourTurnAsync(string gameId, string clientId, PlayerPosition position, PendingActionType actionType)
+    public async Task NotifyYourTurnAsync(string gameId, string clientId, PlayerPosition position, PendingActionType actionType, DateTime timeoutAt)
     {
         var ev = new YourTurnEvent
         {
             GameId = gameId,
             Position = position,
-            ActionType = actionType
+            ActionType = actionType,
+            TimeoutAt = timeoutAt
         };
 
         // Send to the specific client
@@ -43,7 +44,7 @@ public sealed class NotificationService : INotificationService
         var session = _gameRepository.GetById(gameId);
         if (session != null)
         {
-            await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("PlayerTurn", new { GameId = gameId, Position = position, ActionType = actionType });
+            await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("PlayerTurn", new { GameId = gameId, Position = position, ActionType = actionType, TimeoutAt = timeoutAt });
         }
     }
 

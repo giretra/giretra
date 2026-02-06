@@ -65,7 +65,8 @@ public sealed class RoomService : IRoomService
         {
             RoomId = roomId,
             Name = roomName,
-            CreatorClientId = clientId
+            CreatorClientId = clientId,
+            TurnTimerSeconds = Math.Clamp(request.TurnTimerSeconds ?? 120, 10, 300)
         };
 
         room.PlayerSlots[PlayerPosition.Bottom] = creator;
@@ -351,7 +352,8 @@ public sealed class RoomService : IRoomService
                 })
                 .ToList(),
             GameId = room.GameSessionId,
-            CreatedAt = room.CreatedAt
+            CreatedAt = room.CreatedAt,
+            TurnTimerSeconds = room.TurnTimerSeconds
         };
     }
 }

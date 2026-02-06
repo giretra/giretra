@@ -109,4 +109,9 @@ public sealed class GameStateResponse
     /// Player who must act (if any).
     /// </summary>
     public PlayerPosition? PendingActionPlayer { get; init; }
+
+    /// <summary>
+    /// When the pending action will time out (if any).
+    /// </summary>
+    public DateTime? PendingActionTimeoutAt { get; init; }
 }

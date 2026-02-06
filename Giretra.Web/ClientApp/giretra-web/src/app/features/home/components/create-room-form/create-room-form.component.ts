@@ -155,6 +155,24 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
           <p class="hint">Click seats to toggle AI opponents</p>
         </div>
 
+        <!-- Turn timer -->
+        <div class="field">
+          <label class="field-label">Turn Timer</label>
+          <div class="timer-presets">
+            @for (preset of timerPresets; track preset.value) {
+              <button
+                type="button"
+                class="timer-btn"
+                [class.active]="selectedTimer === preset.value"
+                [disabled]="submitting()"
+                (click)="selectedTimer = preset.value"
+              >
+                {{ preset.label }}
+              </button>
+            }
+          </div>
+        </div>
+
         @if (error()) {
           <p class="error-msg">{{ error() }}</p>
         }
@@ -479,6 +497,45 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
     .submit-btn {
       flex: 2;
     }
+
+    /* Timer presets */
+    .timer-presets {
+      display: flex;
+      gap: 0.375rem;
+    }
+
+    .timer-btn {
+      flex: 1;
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: hsl(var(--muted) / 0.2);
+      border: 1.5px solid hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .timer-btn:hover:not(:disabled) {
+      background: hsl(var(--muted) / 0.4);
+      border-color: hsl(var(--muted-foreground));
+    }
+
+    .timer-btn.active {
+      background: hsl(var(--primary) / 0.15);
+      border-color: hsl(var(--primary));
+      color: hsl(var(--primary));
+    }
+
+    .timer-btn.active:hover:not(:disabled) {
+      background: hsl(var(--primary) / 0.25);
+    }
+
+    .timer-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   `],
 })
 export class CreateRoomFormComponent implements OnInit {
@@ -494,6 +551,13 @@ export class CreateRoomFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   roomName = '';
+  selectedTimer = 120;
+  readonly timerPresets = [
+    { label: '30s', value: 30 },
+    { label: '1min', value: 60 },
+    { label: '2min', value: 120 },
+    { label: '5min', value: 300 },
+  ];
   aiSeats: Record<'Left' | 'Top' | 'Right', string | null> = {
     Left: null,
     Top: null,
@@ -547,7 +611,7 @@ export class CreateRoomFormComponent implements OnInit {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.playerName(), this.getAiSeats()).subscribe({
+    this.api.createRoom(name, this.playerName(), this.getAiSeats(), this.selectedTimer).subscribe({
       next: (response) => {
         this.session.joinRoom(
           response.room.roomId,

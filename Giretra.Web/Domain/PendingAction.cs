@@ -60,9 +60,14 @@ public sealed class PendingAction
     public TaskCompletionSource<bool>? ContinueMatchTcs { get; init; }
 
     /// <summary>
-    /// Gets the timeout deadline (2 minutes from creation).
+    /// The timeout duration for this action.
     /// </summary>
-    public DateTime TimeoutAt => CreatedAt.AddMinutes(2);
+    public required TimeSpan TimeoutDuration { get; init; }
+
+    /// <summary>
+    /// Gets the timeout deadline.
+    /// </summary>
+    public DateTime TimeoutAt => CreatedAt + TimeoutDuration;
 
     /// <summary>
     /// Gets whether this action has timed out.

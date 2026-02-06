@@ -54,6 +54,11 @@ public sealed class Room
     public string? GameSessionId { get; set; }
 
     /// <summary>
+    /// Turn timer duration in seconds (10–300).
+    /// </summary>
+    public int TurnTimerSeconds { get; init; } = 120;
+
+    /// <summary>
     /// When the room was created.
     /// </summary>
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;

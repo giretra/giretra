@@ -14,7 +14,7 @@ public interface INotificationService
     /// <summary>
     /// Notifies a player that it's their turn.
     /// </summary>
-    Task NotifyYourTurnAsync(string gameId, string clientId, PlayerPosition position, PendingActionType actionType);
+    Task NotifyYourTurnAsync(string gameId, string clientId, PlayerPosition position, PendingActionType actionType, DateTime timeoutAt);
 
     /// <summary>
     /// Notifies all clients that a deal has started.

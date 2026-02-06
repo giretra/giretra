@@ -22,4 +22,9 @@ public sealed class YourTurnEvent
     /// The type of action required.
     /// </summary>
     public required PendingActionType ActionType { get; init; }
+
+    /// <summary>
+    /// When this action will time out.
+    /// </summary>
+    public required DateTime TimeoutAt { get; init; }
 }

@@ -71,7 +71,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
-              />
+                />
             </div>
           }
         </div>
@@ -118,7 +118,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
-              />
+                />
               @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
                 <div class="bubble-position right">
                   <app-speech-bubble

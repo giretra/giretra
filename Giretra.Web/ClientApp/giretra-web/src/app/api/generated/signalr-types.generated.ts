@@ -135,12 +135,14 @@ export interface YourTurnEvent {
   gameId: string;
   position: PlayerPosition;
   actionType: PendingActionType;
+  timeoutAt: string;
 }
 
 export interface PlayerTurnEvent {
   gameId: string;
   position: PlayerPosition;
   actionType: PendingActionType;
+  timeoutAt: string;
 }
 
 export interface CardPlayedEvent {

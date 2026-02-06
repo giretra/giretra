@@ -311,7 +311,8 @@ public sealed class GameServiceTests
         {
             ActionType = PendingActionType.Cut,
             Player = PlayerPosition.Bottom,
-            CutTcs = new TaskCompletionSource<(int, bool)>()
+            CutTcs = new TaskCompletionSource<(int, bool)>(),
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act - Invalid position (out of range)
@@ -347,7 +348,8 @@ public sealed class GameServiceTests
         session.PendingAction = new PendingAction
         {
             ActionType = PendingActionType.PlayCard,
-            Player = PlayerPosition.Bottom
+            Player = PlayerPosition.Bottom,
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act
@@ -369,7 +371,8 @@ public sealed class GameServiceTests
         {
             ActionType = PendingActionType.Cut,
             Player = PlayerPosition.Bottom,
-            CutTcs = new TaskCompletionSource<(int, bool)>()
+            CutTcs = new TaskCompletionSource<(int, bool)>(),
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act
@@ -397,7 +400,8 @@ public sealed class GameServiceTests
             ActionType = PendingActionType.Negotiate,
             Player = PlayerPosition.Bottom,
             NegotiationTcs = new TaskCompletionSource<NegotiationAction>(),
-            ValidNegotiationActions = validActions
+            ValidNegotiationActions = validActions,
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act
@@ -421,7 +425,8 @@ public sealed class GameServiceTests
             ActionType = PendingActionType.Negotiate,
             Player = PlayerPosition.Bottom,
             NegotiationTcs = new TaskCompletionSource<NegotiationAction>(),
-            ValidNegotiationActions = validActions
+            ValidNegotiationActions = validActions,
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act - Try to announce when only accept is valid
@@ -464,7 +469,8 @@ public sealed class GameServiceTests
             ActionType = PendingActionType.PlayCard,
             Player = PlayerPosition.Bottom,
             PlayCardTcs = new TaskCompletionSource<Card>(),
-            ValidCards = [validCard]
+            ValidCards = [validCard],
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act
@@ -489,7 +495,8 @@ public sealed class GameServiceTests
             ActionType = PendingActionType.PlayCard,
             Player = PlayerPosition.Bottom,
             PlayCardTcs = new TaskCompletionSource<Card>(),
-            ValidCards = [validCard]
+            ValidCards = [validCard],
+            TimeoutDuration = TimeSpan.FromMinutes(2)
         };
 
         // Act
@@ -602,7 +609,8 @@ public sealed class GameServiceTests
             {
                 ActionType = PendingActionType.Cut,
                 Player = PlayerPosition.Bottom,
-                CutTcs = new TaskCompletionSource<(int, bool)>()
+                CutTcs = new TaskCompletionSource<(int, bool)>(),
+                TimeoutDuration = TimeSpan.FromMinutes(2)
             };
         }
 
