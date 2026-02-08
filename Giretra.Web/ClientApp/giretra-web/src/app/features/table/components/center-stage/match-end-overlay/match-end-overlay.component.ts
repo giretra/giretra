@@ -1,5 +1,6 @@
 import { Component, input, output, computed } from '@angular/core';
 import { Team } from '../../../../../api/generated/signalr-types.generated';
+import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Trophy } from 'lucide-angular';
 
@@ -25,13 +26,19 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
         </h1>
 
         <p class="winner-text">
-          {{ winner() }} Wins
+          {{ winnerLabel() }} Wins
         </p>
 
         <div class="final-score">
-          <span class="score team1-score">{{ team1Points() }}</span>
+          <div class="score-column">
+            <span class="score-label">{{ team1Label() }}</span>
+            <span class="score team1-score">{{ team1Points() }}</span>
+          </div>
           <span class="divider">-</span>
-          <span class="score team2-score">{{ team2Points() }}</span>
+          <div class="score-column">
+            <span class="score-label">{{ team2Label() }}</span>
+            <span class="score team2-score">{{ team2Points() }}</span>
+          </div>
         </div>
 
         <p class="deals-played">{{ totalDeals() }} deals played</p>
@@ -129,6 +136,19 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
       margin-bottom: 0.5rem;
     }
 
+    .score-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .score-label {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      color: hsl(var(--muted-foreground));
+      letter-spacing: 0.05em;
+    }
+
     .score {
       font-size: 2.5rem;
       font-weight: 700;
@@ -178,4 +198,13 @@ export class MatchEndOverlayComponent {
     const mt = this.myTeam();
     return w && mt && w === mt;
   });
+
+  readonly winnerLabel = computed(() => {
+    const w = this.winner();
+    if (!w) return '';
+    return getTeamLabel(w as 'Team1' | 'Team2', this.myTeam());
+  });
+
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
 }

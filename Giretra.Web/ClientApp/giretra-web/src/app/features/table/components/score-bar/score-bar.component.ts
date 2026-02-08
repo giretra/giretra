@@ -1,6 +1,7 @@
 import { Component, input, output, computed } from '@angular/core';
 import { GameMode, Team } from '../../../../api/generated/signalr-types.generated';
 import { RoomResponse } from '../../../../core/services/api.service';
+import { getTeamLabel } from '../../../../core/utils';
 import { MultiplierState } from '../../../../core/services/game-state.service';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
@@ -281,13 +282,8 @@ export class ScoreBarComponent {
     return this.gameMode() !== null;
   });
 
-  readonly team1Label = computed(() => {
-    return this.myTeam() === 'Team1' ? 'Your Team' : this.myTeam() === 'Team2' ? 'Opponents' : 'Team 1';
-  });
-
-  readonly team2Label = computed(() => {
-    return this.myTeam() === 'Team2' ? 'Your Team' : this.myTeam() === 'Team1' ? 'Opponents' : 'Team 2';
-  });
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
 
   readonly totalPoints = computed(() => {
     const mode = this.gameMode();

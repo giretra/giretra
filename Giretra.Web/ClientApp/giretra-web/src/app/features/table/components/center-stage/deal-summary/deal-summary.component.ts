@@ -1,5 +1,6 @@
 import { Component, input, output, computed } from '@angular/core';
 import { CardPointsBreakdownResponse, CardSuit, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
+import { getTeamLabel } from '../../../../../core/utils';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
 import { HlmButton } from '@spartan-ng/helm/button';
@@ -28,7 +29,7 @@ interface BreakdownRow {
 
         <div class="scores-section">
           <div class="team-column team1">
-            <span class="team-label">Team 1</span>
+            <span class="team-label">{{ team1Label() }}</span>
             <span class="card-points">{{ s.team1CardPoints }}</span>
             <span class="pts-label">pts</span>
             <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
@@ -39,7 +40,7 @@ interface BreakdownRow {
           <div class="divider"></div>
 
           <div class="team-column team2">
-            <span class="team-label">Team 2</span>
+            <span class="team-label">{{ team2Label() }}</span>
             <span class="card-points">{{ s.team2CardPoints }}</span>
             <span class="pts-label">pts</span>
             <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
@@ -56,8 +57,8 @@ interface BreakdownRow {
               <tr>
                 <th class="card-type">Card</th>
                 <th class="value-col">ea.</th>
-                <th class="team1-col">Team 1</th>
-                <th class="team2-col">Team 2</th>
+                <th class="team1-col">{{ team1Label() }}</th>
+                <th class="team2-col">{{ team2Label() }}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,7 +95,7 @@ interface BreakdownRow {
 
         @if (s.wasSweep) {
           <div class="sweep-banner">
-            SWEEP by {{ s.sweepingTeam }}!
+            SWEEP by {{ sweepLabel() }}!
           </div>
         }
 
@@ -366,6 +367,8 @@ interface BreakdownRow {
   `],
 })
 export class DealSummaryComponent {
+  readonly myTeam = input<Team | null>(null);
+
   readonly summary = input<{
     gameMode: GameMode;
     team1CardPoints: number;
@@ -381,6 +384,14 @@ export class DealSummaryComponent {
   } | null>(null);
 
   readonly dismissed = output<void>();
+
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
+  readonly sweepLabel = computed(() => {
+    const s = this.summary();
+    if (!s?.sweepingTeam) return '';
+    return getTeamLabel(s.sweepingTeam as 'Team1' | 'Team2', this.myTeam());
+  });
 
   private static readonly modeToSuit: Record<string, CardSuit> = {
     [GameMode.ColourClubs]: CardSuit.Clubs,

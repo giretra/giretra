@@ -58,6 +58,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
         @case ('dealSummary') {
           <app-deal-summary
             [summary]="dealSummary()"
+            [myTeam]="myTeam()"
             (dismissed)="hideDealSummary.emit()"
           />
         }
