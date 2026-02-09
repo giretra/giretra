@@ -4,17 +4,45 @@
 
 ---
 
+## Domain Layout
+
+| Service | Local | Production |
+|---------|-------|------------|
+| Angular SPA | `http://localhost:4200` | `https://play.giretra.com` |
+| .NET API | `http://localhost:5000` | `https://api.giretra.com` |
+| Keycloak | `http://localhost:8080` | `https://auth.giretra.com` |
+
+---
+
 ## Redirect URIs
 
-All three providers need a redirect URI pointing to your Keycloak instance. Use these values during setup:
+All three providers need redirect URIs pointing to your Keycloak instance. Add **both** local and production URIs to each provider.
 
-| Provider | Redirect URI |
-|----------|-------------|
-| Google   | `http://localhost:8080/realms/giretra/broker/google/endpoint` |
-| Facebook | `http://localhost:8080/realms/giretra/broker/facebook/endpoint` |
-| GitHub   | `http://localhost:8080/realms/giretra/broker/github/endpoint` |
+### Social provider redirect URIs (provider → Keycloak)
 
-> For production, replace `localhost:8080` with your Keycloak domain (e.g. `auth.giretra.mg`).
+| Provider | Local | Production |
+|----------|-------|------------|
+| Google   | `http://localhost:8080/realms/giretra/broker/google/endpoint` | `https://auth.giretra.com/realms/giretra/broker/google/endpoint` |
+| Facebook | `http://localhost:8080/realms/giretra/broker/facebook/endpoint` | `https://auth.giretra.com/realms/giretra/broker/facebook/endpoint` |
+| GitHub   | `http://localhost:8080/realms/giretra/broker/github/endpoint` | `https://auth.giretra.com/realms/giretra/broker/github/endpoint` |
+
+> **GitHub limitation**: GitHub OAuth Apps only support a single callback URL. Register **two separate OAuth apps** (one for local, one for production), or use the production URL and tunnel locally with `ngrok`.
+
+### Keycloak client redirect URIs (Keycloak → app)
+
+**Client `giretra-web`** (public SPA):
+
+| Setting | Values |
+|---------|--------|
+| Valid Redirect URIs | `http://localhost:4200/*`, `https://play.giretra.com/*` |
+| Web Origins | `http://localhost:4200`, `https://play.giretra.com` |
+| Post Logout Redirect URIs | `http://localhost:4200`, `https://play.giretra.com` |
+
+**Client `giretra-api`** (confidential backend):
+
+| Setting | Values |
+|---------|--------|
+| Valid Redirect URIs | `http://localhost:5000/*`, `https://api.giretra.com/*` |
 
 ---
 
@@ -29,13 +57,17 @@ All three providers need a redirect URI pointing to your Keycloak instance. Use 
    - User type: **External**
    - App name: `Giretra`
    - User support email: your email
-   - Authorized domains: `localhost` (add your production domain later)
+   - Authorized domains: `localhost`, `giretra.com`
    - Scopes: add `email`, `profile`, `openid`
    - Save and continue through test users
 5. Back on Credentials, click **Create Credentials** > **OAuth client ID**
 6. Application type: **Web application**
 7. Name: `Giretra`
-8. Authorized redirect URIs: add `http://localhost:8080/realms/giretra/broker/google/endpoint`
+8. Authorized redirect URIs — add both:
+   ```
+   http://localhost:8080/realms/giretra/broker/google/endpoint
+   https://auth.giretra.com/realms/giretra/broker/google/endpoint
+   ```
 9. Click **Create**
 10. Copy the **Client ID** and **Client Secret**
 
@@ -68,7 +100,11 @@ GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxx
 1. In your app dashboard, find **Facebook Login** and click **Set Up**
 2. Select **Web** platform
 3. Skip the quickstart, go to **Facebook Login** > **Settings** in the left sidebar
-4. Under **Valid OAuth Redirect URIs**, add: `http://localhost:8080/realms/giretra/broker/facebook/endpoint`
+4. Under **Valid OAuth Redirect URIs**, add both:
+   ```
+   http://localhost:8080/realms/giretra/broker/facebook/endpoint
+   https://auth.giretra.com/realms/giretra/broker/facebook/endpoint
+   ```
 5. Save Changes
 
 ### Get your credentials
@@ -98,12 +134,14 @@ FACEBOOK_APP_SECRET=abcdef0123456789abcdef0123456789
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click **OAuth Apps** > **New OAuth App**
 3. Fill in:
-   - Application name: `Giretra`
-   - Homepage URL: `http://localhost:4200`
-   - Authorization callback URL: `http://localhost:8080/realms/giretra/broker/github/endpoint`
+   - Application name: `Giretra (local)` (or `Giretra` for production)
+   - Homepage URL: `http://localhost:4200` (or `https://play.giretra.com`)
+   - Authorization callback URL: `http://localhost:8080/realms/giretra/broker/github/endpoint` (or `https://auth.giretra.com/realms/giretra/broker/github/endpoint`)
 4. Click **Register application**
 5. Copy the **Client ID**
 6. Click **Generate a new client secret** and copy it immediately (shown only once)
+
+> **Note**: GitHub only allows one callback URL per OAuth App. Create **two apps** — one for local development, one for production — with separate credentials in your `.env` files.
 
 ### Save to `.env`
 
@@ -116,13 +154,21 @@ GITHUB_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ## Configure Keycloak
 
-After filling in your `.env` and starting the containers (`docker compose up -d`), configure each provider in Keycloak.
+After filling in your `.env` and starting the containers, configure each provider in Keycloak.
+
+```bash
+# Create the network (once) and start
+docker network create tetezana
+docker compose up -d
+```
 
 ### Access the admin console
 
-1. Open `http://localhost:8080/admin`
+1. Open Keycloak admin via your reverse proxy (e.g. `https://auth.giretra.com/admin` or `http://localhost:8080/admin` if proxied locally)
 2. Log in with `admin` / your `KEYCLOAK_ADMIN_PASSWORD`
 3. Select the `giretra` realm (create it first if using manual setup instead of realm import)
+
+> **Note:** Keycloak is not exposed on the host. It is only reachable through the `tetezana` docker network. Your reverse proxy must forward to `giretra-keycloak:8080`.
 
 ### Add Google identity provider
 
@@ -188,7 +234,7 @@ No custom authentication flow is needed.
 
 ## Verify the setup
 
-1. Open `http://localhost:8080/realms/giretra/account` in an incognito window
+1. Open the Keycloak account page via your proxy (e.g. `https://auth.giretra.com/realms/giretra/account`) in an incognito window
 2. You should see login buttons for Google, Facebook, and GitHub below the standard login form
 3. Click each one to test the OAuth flow end to end
 
@@ -198,8 +244,9 @@ No custom authentication flow is needed.
 
 | Problem | Solution |
 |---------|----------|
-| "redirect_uri_mismatch" from Google | Check the redirect URI in Google Console matches exactly: `http://localhost:8080/realms/giretra/broker/google/endpoint` |
+| "redirect_uri_mismatch" from Google | Check both redirect URIs are registered in Google Console (local + production) |
 | Facebook login fails for non-test users | Switch the Facebook app from Development to Live mode |
 | GitHub secret lost | Generate a new client secret from GitHub Developer Settings (old one is invalidated) |
-| "Invalid parameter: redirect_uri" from Facebook | Ensure the Valid OAuth Redirect URI in Facebook Login Settings matches exactly |
+| "Invalid parameter: redirect_uri" from Facebook | Ensure both redirect URIs are listed in Facebook Login Settings |
 | Keycloak shows "Identity provider not found" | Verify the alias matches (`google`, `facebook`, `github`) and the realm is `giretra` |
+| Works locally but not in production | Verify production redirect URIs are added to all providers and Keycloak `KC_HOSTNAME` is set to `auth.giretra.com` |

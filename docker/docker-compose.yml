@@ -8,13 +8,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U giretra_admin"]
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - tetezana
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
@@ -27,8 +27,10 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-      KC_HOSTNAME: localhost
+      KC_HOSTNAME: ${KC_HOSTNAME:-localhost}
       KC_HTTP_PORT: 8080
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: true
 
       # Social identity providers
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -39,11 +41,17 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - tetezana
 
 volumes:
   pgdata:
+
+networks:
+  tetezana:
+    external: true

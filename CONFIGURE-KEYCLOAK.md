@@ -7,17 +7,27 @@
 ## Architecture
 
 ```
-┌─────────────┐     ┌─────────────────┐     ┌──────────────┐
-│  Browser     │────▶│  Giretra.Web    │────▶│  PostgreSQL   │
-│  (Angular)   │     │  :5000          │     │  :5432        │
-└──────┬───────┘     └─────────────────┘     │               │
-       │                                     │  DB: giretra   │
-       │             ┌─────────────────┐     │  DB: keycloak  │
-       └────────────▶│  Keycloak       │────▶│               │
-                     │  :8080          │     └──────────────┘
-                     └─────────────────┘
+                         ┌── tetezana network ─────────────────────────┐
+                         │                                             │
+┌─────────────┐     ┌────┴────────────┐                                │
+│  Browser     │────▶│  Reverse Proxy  │    ┌──────────────┐           │
+│  (Angular)   │     │  (SSL)          │───▶│  Keycloak     │           │
+└──────────────┘     │                 │    │  :8080        │           │
+                     │  nginx/caddy    │    └──────┬────────┘           │
+                     └────┬────────────┘           │                   │
+                          │               ┌────────▼───────┐           │
+                          └──────────────▶│  PostgreSQL     │           │
+                       ┌─────────────────┐│  :5432          │           │
+                       │  Giretra.Web    ││                 │           │
+                       │  :5000          ││  DB: giretra    │           │
+                       └────────┬────────┘│  DB: keycloak   │           │
+                                └────────▶│                 │           │
+                                          └─────────────────┘           │
+                         └──────────────────────────────────────────────┘
 ```
 
+- All containers on the external **`tetezana`** docker network
+- **Reverse proxy** (nginx/caddy) handles SSL termination — Keycloak is not exposed to the host
 - One PostgreSQL container, **two databases**: `giretra` (app) and `keycloak` (Keycloak internal)
 - Keycloak manages its own schema in its own database — no cross-contamination
 - The app syncs relevant user fields from Keycloak tokens into `users` table (see DATA-DESIGN-PLAN.md)
@@ -73,43 +83,48 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U giretra_admin"]
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - tetezana
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
     container_name: giretra-keycloak
     command: start-dev --import-realm
     environment:
-      # Admin console
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-
-      # Database — same PostgreSQL, different database
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
-
-      # Hostname
-      KC_HOSTNAME: localhost
+      KC_HOSTNAME: ${KC_HOSTNAME:-localhost}
       KC_HTTP_PORT: 8080
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: true
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - tetezana
 
 volumes:
   pgdata:
+
+networks:
+  tetezana:
+    external: true
 ```
+
+> **Network:** Both services join the external `tetezana` network. Your reverse proxy (handling SSL) must also be on this network to reach Keycloak at `giretra-keycloak:8080`. No ports are published to the host — all traffic goes through the proxy.
 
 ---
 
@@ -145,6 +160,9 @@ POSTGRES_PASSWORD=change_me_super
 KEYCLOAK_ADMIN_PASSWORD=change_me_admin
 KEYCLOAK_DB_PASSWORD=change_me_keycloak
 GIRETRA_DB_PASSWORD=change_me_giretra
+
+# Keycloak public hostname (local: localhost, prod: auth.giretra.com)
+KC_HOSTNAME=localhost
 
 # Social providers
 GOOGLE_CLIENT_ID=
@@ -309,20 +327,26 @@ For production, replace `localhost:8080` with your Keycloak domain (e.g. `auth.g
 ## Startup Sequence
 
 ```bash
-# 1. Copy and fill in secrets
+# 1. Create the external network (once, shared with your reverse proxy)
+docker network create tetezana
+
+# 2. Copy and fill in secrets
 cp .env.example .env
 # Edit .env with real passwords and social provider credentials
 
-# 2. Start infrastructure
+# 3. Start infrastructure
 docker compose up -d
 
-# 3. Wait for Keycloak to be ready
+# 4. Wait for Keycloak to be ready
 docker compose logs -f keycloak  # look for "Keycloak started"
 
-# 4. If not using realm import, configure manually at:
-#    http://localhost:8080/admin (admin / your password)
+# 5. Configure your reverse proxy to forward to giretra-keycloak:8080
+#    (Keycloak is not exposed on the host — only reachable via tetezana network)
 
-# 5. Start the app
+# 6. If not using realm import, configure manually at:
+#    http://localhost:8080/admin via proxy (admin / your password)
+
+# 7. Start the app
 dotnet run --project Giretra.Web
 ```
 
@@ -333,9 +357,10 @@ dotnet run --project Giretra.Web
 | Topic | Dev | Production |
 |-------|-----|------------|
 | Keycloak command | `start-dev` | `start` (requires HTTPS) |
-| HTTPS | Not needed | Required — terminate TLS at reverse proxy or configure KC_HTTPS_* |
-| Hostname | `localhost` | `KC_HOSTNAME=auth.yourdomain.com` |
-| Redirect URIs | `localhost:4200` | Your production domain |
+| HTTPS | Reverse proxy on `tetezana` network | Same — TLS terminated at proxy |
+| Hostname (`KC_HOSTNAME`) | `localhost` | `auth.giretra.com` |
+| Redirect URIs | `localhost:4200` | `play.giretra.com` |
 | Facebook app mode | Development | Live (requires App Review for `email` permission) |
 | DB passwords | `.env` file | Secrets manager (Vault, AWS SSM, etc.) |
-| Admin console | Exposed | Restrict access via network rules or disable with `KC_FEATURES_DISABLED=admin2` |
+| Admin console | Via proxy | Restrict access via network rules or disable with `KC_FEATURES_DISABLED=admin2` |
+| Proxy headers | `KC_PROXY_HEADERS=xforwarded` | Same — proxy must send `X-Forwarded-*` headers |
