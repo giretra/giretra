@@ -1,0 +1,27 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+
+namespace Giretra.Model.Entities;
+
+[Index(nameof(AgentType), IsUnique = true)]
+public class Bot
+{
+    [Key]
+    public Guid Id { get; set; }
+
+    [Required, MaxLength(100)]
+    public string AgentType { get; set; } = null!;
+
+    [Required, MaxLength(100)]
+    public string DisplayName { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public short Difficulty { get; set; }
+
+    public bool IsActive { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public Player? Player { get; set; }
+}
