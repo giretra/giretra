@@ -1,6 +1,7 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
-import { ClientSession, DEFAULT_SESSION } from '../models';
+import { ClientSession } from '../models';
+import { AuthService } from './auth.service';
 
 const STORAGE_KEY = 'giretra_session';
 
@@ -8,22 +9,23 @@ const STORAGE_KEY = 'giretra_session';
   providedIn: 'root',
 })
 export class ClientSessionService {
+  private readonly auth = inject(AuthService);
+
   // Core session signals
   private readonly _clientId = signal<string | null>(null);
-  private readonly _playerName = signal<string | null>(null);
   private readonly _roomId = signal<string | null>(null);
   private readonly _position = signal<PlayerPosition | null>(null);
   private readonly _isWatcher = signal<boolean>(false);
 
   // Public readonly signals
   readonly clientId = this._clientId.asReadonly();
-  readonly playerName = this._playerName.asReadonly();
+  readonly playerName = computed(() => this.auth.user()?.displayName ?? null);
   readonly roomId = this._roomId.asReadonly();
   readonly position = this._position.asReadonly();
   readonly isWatcher = this._isWatcher.asReadonly();
 
   // Computed signals
-  readonly hasName = computed(() => !!this._playerName());
+  readonly hasName = computed(() => !!this.auth.user());
   readonly isInRoom = computed(() => !!this._roomId());
   readonly isPlayer = computed(() => !!this._position() && !this._isWatcher());
 
@@ -35,20 +37,13 @@ export class ClientSessionService {
     effect(() => {
       const session: ClientSession = {
         clientId: this._clientId(),
-        playerName: this._playerName(),
+        playerName: this.playerName(),
         roomId: this._roomId(),
         position: this._position(),
         isWatcher: this._isWatcher(),
       };
       this.saveToStorage(session);
     });
-  }
-
-  /**
-   * Set the player's display name
-   */
-  setPlayerName(name: string): void {
-    this._playerName.set(name.trim() || null);
   }
 
   /**
@@ -93,7 +88,6 @@ export class ClientSessionService {
    */
   clear(): void {
     this._clientId.set(null);
-    this._playerName.set(null);
     this._roomId.set(null);
     this._position.set(null);
     this._isWatcher.set(false);
@@ -105,7 +99,7 @@ export class ClientSessionService {
   getSession(): ClientSession {
     return {
       clientId: this._clientId(),
-      playerName: this._playerName(),
+      playerName: this.playerName(),
       roomId: this._roomId(),
       position: this._position(),
       isWatcher: this._isWatcher(),
@@ -118,7 +112,6 @@ export class ClientSessionService {
       if (stored) {
         const session: ClientSession = JSON.parse(stored);
         this._clientId.set(session.clientId ?? null);
-        this._playerName.set(session.playerName ?? null);
         this._roomId.set(session.roomId ?? null);
         this._position.set(session.position ?? null);
         this._isWatcher.set(session.isWatcher ?? false);

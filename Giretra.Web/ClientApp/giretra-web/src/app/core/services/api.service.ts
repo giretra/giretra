@@ -155,9 +155,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createRoom(name: string | null, creatorName: string, aiSeats: AiSeat[] = [], turnTimerSeconds?: number): Observable<CreateRoomResponse> {
+  createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number): Observable<CreateRoomResponse> {
     return this.http
-      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, creatorName, aiSeats, turnTimerSeconds })
+      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, aiSeats, turnTimerSeconds })
       .pipe(catchError(this.handleError));
   }
 
@@ -175,22 +175,18 @@ export class ApiService {
 
   joinRoom(
     roomId: string,
-    displayName: string,
     preferredPosition?: PlayerPosition
   ): Observable<JoinRoomResponse> {
     return this.http
       .post<JoinRoomResponse>(`${this.baseUrl}/api/rooms/${roomId}/join`, {
-        displayName,
         preferredPosition,
       })
       .pipe(catchError(this.handleError));
   }
 
-  watchRoom(roomId: string, displayName: string): Observable<JoinRoomResponse> {
+  watchRoom(roomId: string): Observable<JoinRoomResponse> {
     return this.http
-      .post<JoinRoomResponse>(`${this.baseUrl}/api/rooms/${roomId}/watch`, {
-        displayName,
-      })
+      .post<JoinRoomResponse>(`${this.baseUrl}/api/rooms/${roomId}/watch`, {})
       .pipe(catchError(this.handleError));
   }
 

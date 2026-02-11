@@ -1,9 +1,16 @@
-import { ApplicationConfig, InjectionToken, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  APP_INITIALIZER,
+  ApplicationConfig,
+  InjectionToken,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
+import { AuthService } from './core/services/auth.service';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
 import {
   LUCIDE_ICONS,
   LucideIconProvider,
@@ -38,11 +45,21 @@ const usedIcons = {
   ChevronsUp,
 };
 
+function initializeKeycloak(auth: AuthService) {
+  return () => auth.init();
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeKeycloak,
+      deps: [AuthService],
+      multi: true,
+    },
     { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(usedIcons) },
   ],

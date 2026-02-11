@@ -8,9 +8,9 @@ namespace Giretra.Web.Models.Requests;
 public sealed class JoinRoomRequest
 {
     /// <summary>
-    /// Display name for the joining player.
+    /// Display name for the joining player. Ignored when authenticated (display name comes from JWT).
     /// </summary>
-    public required string DisplayName { get; init; }
+    public string? DisplayName { get; init; }
 
     /// <summary>
     /// Optional preferred position.

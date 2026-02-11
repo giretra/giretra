@@ -46,16 +46,16 @@ public sealed class RoomToGameFlowTests
             Name = "Full Game Room",
             CreatorName = "Player1",
             AiSeats = null
-        });
+        }, "Player1");
 
         Assert.NotNull(createResponse);
         Assert.Equal(PlayerPosition.Bottom, createResponse.Position);
         Assert.Equal(RoomStatus.Waiting, createResponse.Room.Status);
 
         // Step 2: Three more players join
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" });
-        var player3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" });
-        var player4 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" });
+        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2");
+        var player3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" }, "Player3");
+        var player4 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" }, "Player4");
 
         Assert.NotNull(player2);
         Assert.NotNull(player3);
@@ -96,7 +96,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "HumanPlayer");
 
         Assert.NotNull(createResponse);
 
@@ -127,7 +127,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
 
@@ -158,10 +158,10 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         // Add watcher before game starts
-        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Spectator" });
+        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Spectator" }, "Spectator");
         Assert.NotNull(watchResponse);
 
         // Start game
@@ -195,12 +195,12 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
 
         // Act - Try to join after game started
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" });
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" }, "LatePlayer");
 
         // Assert
         Assert.Null(joinResponse);
@@ -220,7 +220,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
 
@@ -240,9 +240,9 @@ public sealed class RoomToGameFlowTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" });
+        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2");
 
         // Act
         var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, player2!.ClientId);
@@ -261,13 +261,13 @@ public sealed class RoomToGameFlowTests
             Name = "Mixed Room",
             CreatorName = "Human1",
             AiSeats = null
-        });
+        }, "Human1");
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Human2",
             PreferredPosition = PlayerPosition.Top
-        });
+        }, "Human2");
 
         // Start game (2 positions will be AI)
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
@@ -303,7 +303,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
@@ -334,7 +334,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
@@ -372,7 +372,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
@@ -406,7 +406,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
@@ -444,7 +444,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
 
@@ -470,13 +470,13 @@ public sealed class RoomToGameFlowTests
             Name = "Test Room",
             CreatorName = "Player1",
             AiSeats = null
-        });
+        }, "Player1");
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Player2",
             PreferredPosition = PlayerPosition.Left
-        });
+        }, "Player2");
 
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
 
@@ -497,14 +497,14 @@ public sealed class RoomToGameFlowTests
             Name = "Room 1",
             CreatorName = "Player1",
             AiSeats = null
-        });
+        }, "Player1");
 
         var room2Response = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Room 2",
             CreatorName = "Player2",
             AiSeats = null
-        });
+        }, "Player2");
 
         // Act
         var foundRoom = _roomService.GetRoomForClient(room2Response.ClientId);
@@ -532,7 +532,7 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Player");
 
         // Act
         var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);

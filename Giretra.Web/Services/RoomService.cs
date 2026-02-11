@@ -43,7 +43,7 @@ public sealed class RoomService : IRoomService
         return room != null ? MapToResponse(room) : null;
     }
 
-    public JoinRoomResponse CreateRoom(CreateRoomRequest request)
+    public JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName)
     {
         var roomId = GenerateId("room");
         var clientId = GenerateId("client");
@@ -51,14 +51,14 @@ public sealed class RoomService : IRoomService
         var creator = new ConnectedClient
         {
             ClientId = clientId,
-            DisplayName = request.CreatorName,
+            DisplayName = displayName,
             IsPlayer = true,
             Position = PlayerPosition.Bottom
         };
 
         // Generate room name if not provided
         var roomName = string.IsNullOrWhiteSpace(request.Name)
-            ? GenerateRoomName(request.CreatorName)
+            ? GenerateRoomName(displayName)
             : request.Name;
 
         var room = new Room
@@ -107,7 +107,7 @@ public sealed class RoomService : IRoomService
         return _roomRepository.Remove(roomId);
     }
 
-    public JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request)
+    public JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null || room.Status != RoomStatus.Waiting)
@@ -117,7 +117,7 @@ public sealed class RoomService : IRoomService
         var client = new ConnectedClient
         {
             ClientId = clientId,
-            DisplayName = request.DisplayName,
+            DisplayName = displayName,
             IsPlayer = true
         };
 
@@ -147,7 +147,7 @@ public sealed class RoomService : IRoomService
         };
     }
 
-    public JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request)
+    public JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request, string displayName)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null)
@@ -157,7 +157,7 @@ public sealed class RoomService : IRoomService
         var client = new ConnectedClient
         {
             ClientId = clientId,
-            DisplayName = request.DisplayName,
+            DisplayName = displayName,
             IsPlayer = false
         };
 

@@ -1,7 +1,11 @@
 using Giretra.Model;
+using Giretra.Web.Auth;
 using Giretra.Web.Hubs;
+using Giretra.Web.Middleware;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 
 namespace Giretra.Web;
@@ -83,8 +87,37 @@ public class Program
             builder.Services.AddSingleton<IGameService, GameService>();
             builder.Services.AddSingleton<IRoomService, RoomService>();
 
+            // Authentication
+            var keycloakSection = builder.Configuration.GetSection("Keycloak");
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = keycloakSection["Authority"];
+                    options.Audience = keycloakSection["Audience"];
+                    options.RequireHttpsMetadata = keycloakSection.GetValue<bool>("RequireHttpsMetadata");
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            // Extract access_token from query string for SignalR
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
+            builder.Services.AddAuthorization();
+            builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
+
             // Database
             builder.Services.AddGiretraDb();
+
+            // User sync
+            builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
             // Persistence
             builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
@@ -107,6 +140,8 @@ public class Program
             }
 
             app.UseCors();
+            app.UseAuthentication();
+            app.UseMiddleware<UserSyncMiddleware>();
             app.UseAuthorization();
 
             app.MapControllers();

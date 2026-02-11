@@ -39,7 +39,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request);
+        var response = _roomService.CreateRoom(request, "Player1");
 
         // Assert
         Assert.NotNull(response);
@@ -68,7 +68,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request);
+        var response = _roomService.CreateRoom(request, "Human");
 
         // Assert
         Assert.NotNull(response.Room);
@@ -98,7 +98,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request);
+        var response = _roomService.CreateRoom(request, "Creator");
 
         // Assert
         var storedRoom = _roomRepository.GetById(response.Room.RoomId);
@@ -119,7 +119,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Player1",
             AiSeats = null
-        });
+        }, "Player1");
 
         // Act
         var room = _roomService.GetRoom(createResponse.Room.RoomId);
@@ -147,8 +147,8 @@ public sealed class RoomServiceTests
     public void GetAllRooms_ReturnsAllRooms()
     {
         // Arrange
-        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P1", AiSeats = null });
-        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P2", AiSeats = null });
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P1", AiSeats = null }, "P1");
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P2", AiSeats = null }, "P2");
 
         // Act
         var response = _roomService.GetAllRooms();
@@ -172,7 +172,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         var joinRequest = new JoinRoomRequest
         {
@@ -180,7 +180,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest);
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2");
 
         // Assert
         Assert.NotNull(joinResponse);
@@ -199,7 +199,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         var joinRequest = new JoinRoomRequest
         {
@@ -208,7 +208,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest);
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2");
 
         // Assert
         Assert.NotNull(joinResponse);
@@ -224,7 +224,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         var joinRequest = new JoinRoomRequest
         {
@@ -233,7 +233,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest);
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2");
 
         // Assert
         Assert.Null(joinResponse);
@@ -253,7 +253,7 @@ public sealed class RoomServiceTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ] // Fills with AI
-        });
+        }, "Creator");
 
         var joinRequest = new JoinRoomRequest
         {
@@ -261,7 +261,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest);
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player5");
 
         // Assert
         Assert.Null(joinResponse);
@@ -271,7 +271,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_WhenRoomNotFound_ReturnsNull()
     {
         // Act
-        var joinResponse = _roomService.JoinRoom("nonexistent", new JoinRoomRequest { DisplayName = "Player" });
+        var joinResponse = _roomService.JoinRoom("nonexistent", new JoinRoomRequest { DisplayName = "Player" }, "Player");
 
         // Assert
         Assert.Null(joinResponse);
@@ -286,12 +286,12 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act - Join 3 more players without specifying positions
-        var join1 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
-        var join2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P3" });
-        var join3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P4" });
+        var join1 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2");
+        var join2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P3" }, "P3");
+        var join3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P4" }, "P4");
 
         // Assert - All should get different positions
         var positions = new[] { createResponse.Position, join1!.Position, join2!.Position, join3!.Position };
@@ -311,7 +311,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         var watchRequest = new JoinRoomRequest
         {
@@ -319,7 +319,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, watchRequest);
+        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, watchRequest, "Spectator");
 
         // Assert
         Assert.NotNull(watchResponse);
@@ -332,7 +332,7 @@ public sealed class RoomServiceTests
     public void WatchRoom_WhenRoomNotFound_ReturnsNull()
     {
         // Act
-        var response = _roomService.WatchRoom("nonexistent", new JoinRoomRequest { DisplayName = "Watcher" });
+        var response = _roomService.WatchRoom("nonexistent", new JoinRoomRequest { DisplayName = "Watcher" }, "Watcher");
 
         // Assert
         Assert.Null(response);
@@ -351,8 +351,8 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
+        }, "Creator");
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2");
 
         // Act
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, joinResponse!.ClientId);
@@ -374,8 +374,8 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
-        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" });
+        }, "Creator");
+        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" }, "Watcher");
 
         // Act
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, watchResponse!.ClientId);
@@ -397,7 +397,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, "invalid_client");
@@ -419,7 +419,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act
         var result = _roomService.DeleteRoom(createResponse.Room.RoomId, createResponse.ClientId);
@@ -438,8 +438,8 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
+        }, "Creator");
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2");
 
         // Act
         var result = _roomService.DeleteRoom(createResponse.Room.RoomId, joinResponse!.ClientId);
@@ -477,7 +477,7 @@ public sealed class RoomServiceTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         var mockSession = new GameSession
         {
@@ -507,8 +507,8 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" });
+        }, "Creator");
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2");
 
         // Act
         var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, joinResponse!.ClientId);
@@ -527,7 +527,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
         // Remove the creator
         _roomService.LeaveRoom(createResponse.Room.RoomId, createResponse.ClientId);
 
@@ -564,7 +564,7 @@ public sealed class RoomServiceTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         var mockSession = new GameSession
         {
@@ -598,7 +598,7 @@ public sealed class RoomServiceTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         var mockSession = new GameSession
         {
@@ -634,7 +634,7 @@ public sealed class RoomServiceTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        });
+        }, "Creator");
 
         var mockSession = new GameSession
         {
@@ -665,7 +665,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act
         var room = _roomService.GetRoomForClient(createResponse.ClientId);
@@ -684,8 +684,8 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
-        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" });
+        }, "Creator");
+        var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Watcher" }, "Watcher");
 
         // Act
         var room = _roomService.GetRoomForClient(watchResponse!.ClientId);
@@ -704,7 +704,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act
         var room = _roomService.GetRoomForClient("invalid_client");
@@ -726,7 +726,7 @@ public sealed class RoomServiceTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        });
+        }, "Creator");
 
         // Act
         _roomService.UpdateClientConnection(createResponse.ClientId, "connection_abc");

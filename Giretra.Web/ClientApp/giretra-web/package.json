@@ -39,6 +39,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "keycloak-js": "^26.2.3",
     "lucide-angular": "^0.563.0",
     "ngx-sonner": ">=3.0.0",
     "postcss": "^8.5.6",

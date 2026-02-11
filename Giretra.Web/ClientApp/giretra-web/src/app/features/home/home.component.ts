@@ -3,11 +3,10 @@ import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { ApiService, RoomResponse } from '../../core/services/api.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
+import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
-import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { NamePromptDialogComponent } from './components/name-prompt-dialog/name-prompt-dialog.component';
 import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
 
 @Component({
@@ -16,17 +15,9 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
   imports: [
     RoomListComponent,
     CreateRoomFormComponent,
-    NamePromptDialogComponent,
     LucideAngularModule,
   ],
   template: `
-    <!-- Name prompt dialog -->
-    @if (showNamePrompt()) {
-      <app-name-prompt-dialog
-        (nameSubmitted)="onNameSubmitted($event)"
-      />
-    }
-
     <div class="home-shell">
       <!-- Hero header with felt texture -->
       <header class="hero">
@@ -46,11 +37,11 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
 
           <!-- User greeting / name area -->
           <div class="user-area">
-            @if (session.hasName()) {
+            @if (auth.user(); as user) {
               <div class="user-pill">
-                <span class="user-avatar">{{ session.playerName()!.charAt(0).toUpperCase() }}</span>
-                <span class="user-name">{{ session.playerName() }}</span>
-                <button class="change-name-btn" (click)="changeName()" title="Change name">
+                <span class="user-avatar">{{ user.displayName.charAt(0).toUpperCase() }}</span>
+                <span class="user-name">{{ user.displayName }}</span>
+                <button class="change-name-btn" (click)="logout()" title="Logout">
                   <i-lucide [img]="LogOutIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
               </div>
@@ -66,7 +57,6 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
           <section class="panel create-panel">
             @if (showCreateForm()) {
               <app-create-room-form
-                [playerName]="session.playerName() ?? ''"
                 (roomCreated)="onRoomCreated($event)"
                 (cancelled)="showCreateForm.set(false)"
               />
@@ -154,6 +144,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
+  readonly auth = inject(AuthService);
   private readonly gameState = inject(GameStateService);
   private readonly router = inject(Router);
 
@@ -162,17 +153,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly rooms = signal<RoomResponse[]>([]);
   readonly loading = signal<boolean>(true);
   readonly showCreateForm = signal<boolean>(false);
-  readonly showNamePrompt = signal<boolean>(false);
-
-  // Track pending actions
-  private pendingJoinRoom: RoomResponse | null = null;
-  private pendingWatchRoom: RoomResponse | null = null;
 
   ngOnInit(): void {
-    if (!this.session.hasName()) {
-      this.showNamePrompt.set(true);
-    }
-
     this.loadRooms();
 
     this.pollSubscription = interval(5000).subscribe(() => {
@@ -197,21 +179,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  onNameSubmitted(name: string): void {
-    this.session.setPlayerName(name);
-    this.showNamePrompt.set(false);
-
-    if (this.pendingJoinRoom) {
-      this.joinRoom(this.pendingJoinRoom);
-      this.pendingJoinRoom = null;
-    } else if (this.pendingWatchRoom) {
-      this.watchRoom(this.pendingWatchRoom);
-      this.pendingWatchRoom = null;
-    }
-  }
-
-  changeName(): void {
-    this.showNamePrompt.set(true);
+  logout(): void {
+    this.auth.logout();
   }
 
   onRoomCreated(room: RoomResponse): void {
@@ -220,28 +189,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onJoinRoom(room: RoomResponse): void {
-    if (!this.session.hasName()) {
-      this.pendingJoinRoom = room;
-      this.showNamePrompt.set(true);
-      return;
-    }
-    this.joinRoom(room);
-  }
-
-  onWatchRoom(room: RoomResponse): void {
-    if (!this.session.hasName()) {
-      this.pendingWatchRoom = room;
-      this.showNamePrompt.set(true);
-      return;
-    }
-    this.watchRoom(room);
-  }
-
-  private joinRoom(room: RoomResponse): void {
-    const playerName = this.session.playerName();
-    if (!playerName) return;
-
-    this.api.joinRoom(room.roomId, playerName).subscribe({
+    this.api.joinRoom(room.roomId).subscribe({
       next: (response) => {
         if (response.position) {
           this.session.joinRoom(room.roomId, response.clientId, response.position);
@@ -254,11 +202,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private watchRoom(room: RoomResponse): void {
-    const playerName = this.session.playerName();
-    if (!playerName) return;
-
-    this.api.watchRoom(room.roomId, playerName).subscribe({
+  onWatchRoom(room: RoomResponse): void {
+    this.api.watchRoom(room.roomId).subscribe({
       next: (response) => {
         this.session.watchRoom(room.roomId, response.clientId);
         this.navigateToTable(response.room, false);

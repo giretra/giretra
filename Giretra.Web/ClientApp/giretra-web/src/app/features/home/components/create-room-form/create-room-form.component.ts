@@ -1,7 +1,8 @@
-import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { Component, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AiSeat, ApiService, RoomResponse } from '../../../../core/services/api.service';
 import { ClientSessionService } from '../../../../core/services/client-session.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
@@ -33,7 +34,7 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
             class="text-input"
             [(ngModel)]="roomName"
             name="roomName"
-            [placeholder]="playerName() + '\u2019s table'"
+            [placeholder]="displayName() + '\u2019s table'"
             maxlength="50"
             [disabled]="submitting()"
           />
@@ -541,11 +542,12 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
 export class CreateRoomFormComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly session = inject(ClientSessionService);
+  private readonly auth = inject(AuthService);
 
   readonly BotIcon = Bot;
   readonly UserPlusIcon = UserPlus;
 
-  readonly playerName = input.required<string>();
+  readonly displayName = () => this.auth.user()?.displayName ?? '';
 
   readonly roomCreated = output<RoomResponse>();
   readonly cancelled = output<void>();
@@ -611,7 +613,7 @@ export class CreateRoomFormComponent implements OnInit {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.playerName(), this.getAiSeats(), this.selectedTimer).subscribe({
+    this.api.createRoom(name, this.getAiSeats(), this.selectedTimer).subscribe({
       next: (response) => {
         this.session.joinRoom(
           response.room.roomId,

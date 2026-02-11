@@ -1,0 +1,123 @@
+{
+  "realm": "giretra",
+  "enabled": true,
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "rememberMe": true,
+  "sslRequired": "none",
+  "defaultDefaultClientScopes": [
+    "openid",
+    "profile",
+    "email",
+    "roles"
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "normal",
+        "description": "Default role for registered users",
+        "composite": false
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role with full access",
+        "composite": false
+      }
+    ]
+  },
+  "defaultRoles": ["normal"],
+  "clients": [
+    {
+      "clientId": "giretra-web",
+      "name": "Giretra Web App",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "giretra-web",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "giretra-api",
+      "name": "Giretra API",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "${GIRETRA_API_CLIENT_SECRET}"
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
+        "defaultScope": "openid profile email"
+      }
+    },
+    {
+      "alias": "facebook",
+      "providerId": "facebook",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${FACEBOOK_APP_ID}",
+        "clientSecret": "${FACEBOOK_APP_SECRET}",
+        "defaultScope": "openid email public_profile"
+      }
+    },
+    {
+      "alias": "github",
+      "providerId": "github",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${GITHUB_CLIENT_ID}",
+        "clientSecret": "${GITHUB_CLIENT_SECRET}",
+        "defaultScope": "user:email"
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
   LogLevel,
 } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
+import { AuthService } from '../core/services/auth.service';
 import {
   CardPlayedEvent,
   DealEndedEvent,
@@ -25,6 +26,7 @@ import {
 })
 export class GameHubService implements OnDestroy {
   private readonly ngZone = inject(NgZone);
+  private readonly auth = inject(AuthService);
   private hubConnection: HubConnection | null = null;
 
   // Event subjects
@@ -47,7 +49,7 @@ export class GameHubService implements OnDestroy {
 
     console.log('[Hub] Connecting to', hubUrl);
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl(hubUrl)
+      .withUrl(hubUrl, { accessTokenFactory: () => this.auth.getToken() })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();

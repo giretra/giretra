@@ -1,4 +1,5 @@
 using Giretra.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Giretra.Web.Hubs;
@@ -6,6 +7,7 @@ namespace Giretra.Web.Hubs;
 /// <summary>
 /// SignalR hub for real-time game communication.
 /// </summary>
+[Authorize]
 public sealed class GameHub : Hub
 {
     private readonly IRoomService _roomService;

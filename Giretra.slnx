@@ -1,11 +1,13 @@
 <Solution>
   <Folder Name="/Éléments de solution/">
     <File Path="CLAUDE.md" />
+    <File Path="docker/.env.example" />
+    <File Path="docker/docker-compose.yml" />
     <File Path="SPEC.md" />
   </Folder>
   <Project Path="Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
   <Project Path="Giretra.Core/Giretra.Core.csproj" />
-  <Project Path="Giretra.Model/Giretra.Model.csproj" Id="b96c1b71-00fb-474d-82a4-26c3085d5243" />
+  <Project Path="Giretra.Model/Giretra.Model.csproj" />
   <Project Path="Giretra.Web.Tests/Giretra.Web.Tests.csproj" />
   <Project Path="Giretra.Web/Giretra.Web.csproj" />
   <Project Path="Giretra/Giretra.csproj" />

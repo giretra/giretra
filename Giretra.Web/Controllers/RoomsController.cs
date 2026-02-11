@@ -1,6 +1,8 @@
+using Giretra.Model.Entities;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Giretra.Web.Controllers;
@@ -10,6 +12,7 @@ namespace Giretra.Web.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
@@ -51,7 +54,8 @@ public class RoomsController : ControllerBase
     [HttpPost]
     public ActionResult<JoinRoomResponse> CreateRoom([FromBody] CreateRoomRequest request)
     {
-        var response = _roomService.CreateRoom(request);
+        var user = GetAuthenticatedUser();
+        var response = _roomService.CreateRoom(request, user.DisplayName);
         return CreatedAtAction(nameof(GetRoom), new { roomId = response.Room.RoomId }, response);
     }
 
@@ -76,12 +80,13 @@ public class RoomsController : ControllerBase
     [HttpPost("{roomId}/join")]
     public async Task<ActionResult<JoinRoomResponse>> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
-        var response = _roomService.JoinRoom(roomId, request);
+        var user = GetAuthenticatedUser();
+        var response = _roomService.JoinRoom(roomId, request, user.DisplayName);
         if (response == null)
             return BadRequest("Unable to join room. Room may be full or game already started.");
 
         if (response.Position.HasValue)
-            await _notifications.NotifyPlayerJoinedAsync(roomId, request.DisplayName, response.Position.Value);
+            await _notifications.NotifyPlayerJoinedAsync(roomId, user.DisplayName, response.Position.Value);
 
         return Ok(response);
     }
@@ -92,7 +97,8 @@ public class RoomsController : ControllerBase
     [HttpPost("{roomId}/watch")]
     public ActionResult<JoinRoomResponse> WatchRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
-        var response = _roomService.WatchRoom(roomId, request);
+        var user = GetAuthenticatedUser();
+        var response = _roomService.WatchRoom(roomId, request, user.DisplayName);
         if (response == null)
             return NotFound();
 
@@ -136,4 +142,6 @@ public class RoomsController : ControllerBase
     {
         return Ok(_aiRegistry.GetAvailableTypes());
     }
+
+    private User GetAuthenticatedUser() => (User)HttpContext.Items["GiretraUser"]!;
 }

@@ -23,7 +23,7 @@ public interface IRoomService
     /// <summary>
     /// Creates a new room.
     /// </summary>
-    JoinRoomResponse CreateRoom(CreateRoomRequest request);
+    JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName);
 
     /// <summary>
     /// Deletes a room.
@@ -33,12 +33,12 @@ public interface IRoomService
     /// <summary>
     /// Joins a room as a player.
     /// </summary>
-    JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request);
+    JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName);
 
     /// <summary>
     /// Joins a room as a watcher.
     /// </summary>
-    JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request);
+    JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request, string displayName);
 
     /// <summary>
     /// Leaves a room. Returns the removed player's name and position if they were a player.

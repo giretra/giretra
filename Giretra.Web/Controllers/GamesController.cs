@@ -3,6 +3,7 @@ using Giretra.Core.Negotiation;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Giretra.Web.Controllers;
@@ -12,6 +13,7 @@ namespace Giretra.Web.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class GamesController : ControllerBase
 {
     private readonly IGameService _gameService;

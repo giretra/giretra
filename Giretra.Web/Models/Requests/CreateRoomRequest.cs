@@ -13,9 +13,9 @@ public sealed class CreateRoomRequest
     public string? Name { get; init; }
 
     /// <summary>
-    /// Display name for the creator.
+    /// Display name for the creator. Ignored when authenticated (display name comes from JWT).
     /// </summary>
-    public required string CreatorName { get; init; }
+    public string? CreatorName { get; init; }
 
     /// <summary>
     /// Seats to fill with AI players, each specifying position and AI type.
