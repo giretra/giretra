@@ -30,7 +30,8 @@ public sealed class RoomToGameFlowTests
         var loggerFactory = Substitute.For<ILoggerFactory>();
 
         var aiRegistry = new AiPlayerRegistry();
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, logger, loggerFactory);
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, logger, loggerFactory);
         _roomService = new RoomService(_roomRepository, _gameService, _notifications);
     }
 

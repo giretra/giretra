@@ -21,6 +21,7 @@ public sealed class GameService : IGameService
     private readonly IRoomRepository _roomRepository;
     private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -29,6 +30,7 @@ public sealed class GameService : IGameService
         IRoomRepository roomRepository,
         INotificationService notifications,
         AiPlayerRegistry aiRegistry,
+        IServiceProvider serviceProvider,
         ILogger<GameService> logger,
         ILoggerFactory loggerFactory)
     {
@@ -36,6 +38,7 @@ public sealed class GameService : IGameService
         _roomRepository = roomRepository;
         _notifications = notifications;
         _aiRegistry = aiRegistry;
+        _serviceProvider = serviceProvider;
         _logger = logger;
         _loggerFactory = loggerFactory;
     }
@@ -89,6 +92,14 @@ public sealed class GameService : IGameService
             }
         }
 
+        // Wrap agents with recording decorator
+        var recorder = new ActionRecorder();
+        session.ActionRecorder = recorder;
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            agents[position] = new RecordingPlayerAgent(agents[position], recorder);
+        }
+
         // Set agents on the session
         session.PlayerAgents = agents;
 
@@ -109,6 +120,9 @@ public sealed class GameService : IGameService
                 await gameManager.PlayMatchAsync();
                 session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
+
+                // Persist match to database
+                await PersistMatchAsync(session);
 
                 // Reset room status to allow "Play Again"
                 var roomToReset = _roomRepository.GetById(room.RoomId);
@@ -484,5 +498,19 @@ public sealed class GameService : IGameService
 
         // Same suit: compare strength
         return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
+    }
+
+    private async Task PersistMatchAsync(GameSession session)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var persistence = scope.ServiceProvider.GetRequiredService<IMatchPersistenceService>();
+            await persistence.PersistCompletedMatchAsync(session);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist match for game {GameId}", session.GameId);
+        }
     }
 }

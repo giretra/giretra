@@ -31,7 +31,8 @@ public sealed class GameServiceTests
         _logger = Substitute.For<ILogger<GameService>>();
         _loggerFactory = Substitute.For<ILoggerFactory>();
         var aiRegistry = new AiPlayerRegistry();
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, _logger, _loggerFactory);
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, _logger, _loggerFactory);
     }
 
     #region CreateGame Tests

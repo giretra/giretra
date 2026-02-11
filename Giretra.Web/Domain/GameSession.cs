@@ -1,6 +1,7 @@
 using Giretra.Core;
 using Giretra.Core.Players;
 using Giretra.Core.State;
+using Giretra.Web.Players;
 
 namespace Giretra.Web.Domain;
 
@@ -48,6 +49,11 @@ public sealed class GameSession
     /// Cancellation token source for stopping the game.
     /// </summary>
     public CancellationTokenSource CancellationTokenSource { get; } = new();
+
+    /// <summary>
+    /// Records all player actions for persistence.
+    /// </summary>
+    public ActionRecorder? ActionRecorder { get; set; }
 
     /// <summary>
     /// When the game started.

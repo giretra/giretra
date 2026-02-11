@@ -1,3 +1,4 @@
+using Giretra.Model;
 using Giretra.Web.Hubs;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
@@ -81,6 +82,12 @@ public class Program
             builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IGameService, GameService>();
             builder.Services.AddSingleton<IRoomService, RoomService>();
+
+            // Database
+            builder.Services.AddGiretraDb();
+
+            // Persistence
+            builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
 
             var app = builder.Build();
 
