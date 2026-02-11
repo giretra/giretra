@@ -7,11 +7,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddGiretraDb(this IServiceCollection services)
     {
-        var connectionString = Environment.GetEnvironmentVariable("GIRETRA_CONNECTION_STRING")
-            ?? throw new InvalidOperationException(
-                "The GIRETRA_CONNECTION_STRING environment variable is not set.");
-
-        return services.AddGiretraDb(connectionString);
+        return services.AddGiretraDb(ConnectionStringBuilder.FromEnvironment());
     }
 
     public static IServiceCollection AddGiretraDb(this IServiceCollection services, string connectionString)

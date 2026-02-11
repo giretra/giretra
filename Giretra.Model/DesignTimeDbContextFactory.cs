@@ -7,11 +7,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<GiretraDbC
 {
     public GiretraDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("GIRETRA_CONNECTION_STRING")
-            ?? throw new InvalidOperationException(
-                "The GIRETRA_CONNECTION_STRING environment variable is not set. " +
-                "Set it before running EF Core commands, e.g.: " +
-                "export GIRETRA_CONNECTION_STRING=\"Host=localhost;Database=giretra;Username=postgres;Password=secret\"");
+        var connectionString = ConnectionStringBuilder.FromEnvironment();
 
         var optionsBuilder = new DbContextOptionsBuilder<GiretraDbContext>();
         optionsBuilder.UseNpgsql(connectionString)

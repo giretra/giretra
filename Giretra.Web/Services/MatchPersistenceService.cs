@@ -1,27 +1,36 @@
 using Giretra.Model;
 using Giretra.Web.Domain;
-using Giretra.Web.Players;
 using Giretra.Web.Repositories;
 using ModelEntities = Giretra.Model.Entities;
 using ModelEnums = Giretra.Model.Enums;
 
 namespace Giretra.Web.Services;
 
-public sealed class MatchPersistenceService(
-    GiretraDbContext dbContext,
-    IRoomRepository roomRepository,
-    ILogger<MatchPersistenceService> logger) : IMatchPersistenceService
+public sealed class MatchPersistenceService : IMatchPersistenceService
 {
+    private readonly GiretraDbContext _dbContext;
+    private readonly IRoomRepository _roomRepository;
+    private readonly ILogger<MatchPersistenceService> _logger;
+
+    public MatchPersistenceService(GiretraDbContext dbContext,
+        IRoomRepository roomRepository,
+        ILogger<MatchPersistenceService> logger)
+    {
+        _dbContext = dbContext;
+        _roomRepository = roomRepository;
+        _logger = logger;
+    }
+
     public async Task PersistCompletedMatchAsync(GameSession session)
     {
         var matchState = session.MatchState;
         if (matchState == null)
         {
-            logger.LogWarning("Cannot persist game {GameId}: no match state", session.GameId);
+            _logger.LogWarning("Cannot persist game {GameId}: no match state", session.GameId);
             return;
         }
 
-        var room = roomRepository.GetById(session.RoomId);
+        var room = _roomRepository.GetById(session.RoomId);
         var roomName = room?.Name ?? session.RoomId;
 
         var matchId = Guid.NewGuid();
@@ -51,7 +60,7 @@ public sealed class MatchPersistenceService(
             CreatedAt = now
         };
 
-        dbContext.Matches.Add(match);
+        _dbContext.Matches.Add(match);
 
         // Create Deal entities from CompletedDeals
         var recordedDeals = session.ActionRecorder?.GetDeals() ?? [];
@@ -90,7 +99,7 @@ public sealed class MatchPersistenceService(
                 CompletedAt = now
             };
 
-            dbContext.Deals.Add(deal);
+            _dbContext.Deals.Add(deal);
 
             // Create DealAction entities from recorded actions
             if (recordedDeal != null)
@@ -122,14 +131,14 @@ public sealed class MatchPersistenceService(
                             : null
                     };
 
-                    dbContext.DealActions.Add(dealAction);
+                    _dbContext.DealActions.Add(dealAction);
                 }
             }
         }
 
-        await dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
-        logger.LogInformation(
+        _logger.LogInformation(
             "Persisted match {MatchId} for game {GameId}: {DealCount} deals, {ActionCount} actions",
             matchId, session.GameId, matchState.CompletedDeals.Count,
             recordedDeals.Sum(d => d.Actions.Count));
