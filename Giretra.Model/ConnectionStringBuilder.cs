@@ -1,3 +1,5 @@
+using Npgsql;
+
 namespace Giretra.Model;
 
 public static class ConnectionStringBuilder
@@ -27,6 +29,14 @@ public static class ConnectionStringBuilder
         var password = Environment.GetEnvironmentVariable("Giretra_Db_Password")
             ?? throw new InvalidOperationException("Giretra_Db_Password environment variable is not set.");
 
-        return $"Host={host};Port={port};Database={name};Username={user};Password={password}";
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = host,
+            Port = int.Parse(port),
+            Database = name,
+            Username = user,
+            Password = password
+        };
+        return builder.ConnectionString;
     }
 }

@@ -12,7 +12,7 @@ namespace Giretra.Web;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -123,6 +123,13 @@ public class Program
             builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
 
             var app = builder.Build();
+
+            // Auto-create database schema
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
+                await db.Database.EnsureCreatedAsync();
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

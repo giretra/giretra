@@ -35,6 +35,16 @@ public sealed class UserSyncService : IUserSyncService
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
 
+        // If not found by KeycloakId, check by email to handle re-created Keycloak accounts
+        if (user == null && email != null)
+        {
+            user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user != null)
+            {
+                user.KeycloakId = keycloakId;
+            }
+        }
+
         if (user == null)
         {
             user = new User
