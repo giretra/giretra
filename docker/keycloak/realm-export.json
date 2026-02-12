@@ -4,7 +4,7 @@
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "rememberMe": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "defaultDefaultClientScopes": [
     "openid",
     "profile",
