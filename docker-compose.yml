@@ -1,0 +1,23 @@
+services:
+  web:
+    image: giretra-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: giretra-web
+    restart: always
+    environment:
+      - ConnectionStrings__GiretraDb=Host=postgres;Port=5432;Database=giretra;Username=giretra_app;Password=${GIRETRA_DB_PASSWORD}
+      - Keycloak__Authority=${KC_AUTHORITY:-https://auth.giretra.com/realms/giretra}
+      - Keycloak__Audience=giretra-web
+      - TZ=Indian/Antananarivo
+    env_file:
+      - docker/.env
+    ports:
+      - 8080:8080
+    networks:
+      - tetezana
+
+networks:
+  tetezana:
+    external: true

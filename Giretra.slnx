@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/Éléments de solution/">
     <File Path="CLAUDE.md" />
+    <File Path="Dockerfile" />
+    <File Path="docker-compose.yml" />
+    <File Path="docker-compose.infra.yml" />
     <File Path="docker/.env.example" />
     <File Path="docker/docker-compose.yml" />
     <File Path="SPEC.md" />
