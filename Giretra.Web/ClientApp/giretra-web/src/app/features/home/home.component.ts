@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { ApiService, RoomResponse } from '../../core/services/api.service';
+import { JoinRoomEvent } from './components/room-list/room-list.component';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
@@ -188,11 +189,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.navigateToTable(room, true);
   }
 
-  onJoinRoom(room: RoomResponse): void {
-    this.api.joinRoom(room.roomId).subscribe({
+  onJoinRoom(event: JoinRoomEvent): void {
+    this.api.joinRoom(event.room.roomId, event.position).subscribe({
       next: (response) => {
         if (response.position) {
-          this.session.joinRoom(room.roomId, response.clientId, response.position);
+          this.session.joinRoom(event.room.roomId, response.clientId, response.position);
           this.navigateToTable(response.room, false);
         }
       },

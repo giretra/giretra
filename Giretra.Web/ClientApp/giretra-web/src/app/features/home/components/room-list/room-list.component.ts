@@ -1,7 +1,13 @@
 import { Component, input, output } from '@angular/core';
 import { RoomResponse } from '../../../../core/services/api.service';
+import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { RoomCardComponent } from '../room-card/room-card.component';
 import { LucideAngularModule, Layers } from 'lucide-angular';
+
+export interface JoinRoomEvent {
+  room: RoomResponse;
+  position: PlayerPosition;
+}
 
 @Component({
   selector: 'app-room-list',
@@ -26,7 +32,7 @@ import { LucideAngularModule, Layers } from 'lucide-angular';
         @for (room of rooms(); track room.roomId) {
           <app-room-card
             [room]="room"
-            (joinClicked)="joinRoom.emit(room)"
+            (joinClicked)="joinRoom.emit({ room: room, position: $event })"
             (watchClicked)="watchRoom.emit(room)"
           />
         }
@@ -103,6 +109,6 @@ export class RoomListComponent {
   readonly rooms = input<RoomResponse[]>([]);
   readonly loading = input<boolean>(false);
 
-  readonly joinRoom = output<RoomResponse>();
+  readonly joinRoom = output<JoinRoomEvent>();
   readonly watchRoom = output<RoomResponse>();
 }

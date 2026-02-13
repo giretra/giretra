@@ -158,7 +158,7 @@ public class Program
             app.MapHub<GameHub>("/hubs/game");
             app.MapFallbackToFile("index.html");
 
-            app.Run();
+            await app.RunAsync();
         }
         catch (Exception ex)
         {

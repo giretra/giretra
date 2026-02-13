@@ -26,6 +26,7 @@ import {
   Trophy,
   Check,
   ChevronsUp,
+  X,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -43,6 +44,7 @@ const usedIcons = {
   Trophy,
   Check,
   ChevronsUp,
+  X,
 };
 
 function initializeKeycloak(auth: AuthService) {

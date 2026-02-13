@@ -1,7 +1,8 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, signal, effect } from '@angular/core';
 import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
+import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, LogIn, Eye, Bot } from 'lucide-angular';
+import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
 
 @Component({
   selector: 'app-room-card',
@@ -23,74 +24,187 @@ import { LucideAngularModule, LogIn, Eye, Bot } from 'lucide-angular';
 
         <!-- Middle: compass seat preview -->
         <div class="card-middle">
-          <div class="compass">
-            <!-- Top seat (North) -->
-            <div class="compass-seat north" [class.occupied]="getNorth().isOccupied" [class.ai]="getNorth().isAi">
-              @if (getNorth().isOccupied) {
-                @if (getNorth().isAi) {
-                  <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                } @else {
-                  <span class="seat-letter">{{ getInitial(getNorth()) }}</span>
-                }
-              }
+          @if (selecting()) {
+            <!-- Seat picker mode -->
+            <div class="seat-picker">
+              <div class="picker-header">
+                <span class="picker-title">Choose your seat</span>
+                <button class="picker-cancel" (click)="cancelSelection()">
+                  <i-lucide [img]="XIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                </button>
+              </div>
+              <div class="picker-compass">
+                <!-- Top seat (North) -->
+                <div class="picker-row">
+                  <button
+                    class="picker-seat"
+                    [class.occupied]="getNorth().isOccupied"
+                    [class.ai]="getNorth().isAi"
+                    [class.team1]="!getNorth().isOccupied"
+                    [disabled]="getNorth().isOccupied"
+                    (click)="selectSeat(PositionTop)"
+                  >
+                    @if (getNorth().isOccupied) {
+                      @if (getNorth().isAi) {
+                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                        <span class="picker-label">AI</span>
+                      } @else {
+                        <span class="picker-initial">{{ getInitial(getNorth()) }}</span>
+                        <span class="picker-label">{{ getNorth().playerName }}</span>
+                      }
+                    } @else {
+                      <span class="picker-pos">Top</span>
+                      <span class="picker-team team1">Your Team</span>
+                    }
+                  </button>
+                </div>
+                <!-- Middle row: West + center + East -->
+                <div class="picker-row middle">
+                  <button
+                    class="picker-seat"
+                    [class.occupied]="getWest().isOccupied"
+                    [class.ai]="getWest().isAi"
+                    [class.team2]="!getWest().isOccupied"
+                    [disabled]="getWest().isOccupied"
+                    (click)="selectSeat(PositionLeft)"
+                  >
+                    @if (getWest().isOccupied) {
+                      @if (getWest().isAi) {
+                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                        <span class="picker-label">AI</span>
+                      } @else {
+                        <span class="picker-initial">{{ getInitial(getWest()) }}</span>
+                        <span class="picker-label">{{ getWest().playerName }}</span>
+                      }
+                    } @else {
+                      <span class="picker-pos">Left</span>
+                      <span class="picker-team team2">Opponents</span>
+                    }
+                  </button>
+                  <div class="picker-center">
+                    <span class="picker-you">You</span>
+                  </div>
+                  <button
+                    class="picker-seat"
+                    [class.occupied]="getEast().isOccupied"
+                    [class.ai]="getEast().isAi"
+                    [class.team2]="!getEast().isOccupied"
+                    [disabled]="getEast().isOccupied"
+                    (click)="selectSeat(PositionRight)"
+                  >
+                    @if (getEast().isOccupied) {
+                      @if (getEast().isAi) {
+                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                        <span class="picker-label">AI</span>
+                      } @else {
+                        <span class="picker-initial">{{ getInitial(getEast()) }}</span>
+                        <span class="picker-label">{{ getEast().playerName }}</span>
+                      }
+                    } @else {
+                      <span class="picker-pos">Right</span>
+                      <span class="picker-team team2">Opponents</span>
+                    }
+                  </button>
+                </div>
+                <!-- Bottom seat (South) -->
+                <div class="picker-row">
+                  <button
+                    class="picker-seat"
+                    [class.occupied]="getSouth().isOccupied"
+                    [class.ai]="getSouth().isAi"
+                    [class.team1]="!getSouth().isOccupied"
+                    [disabled]="getSouth().isOccupied"
+                    (click)="selectSeat(PositionBottom)"
+                  >
+                    @if (getSouth().isOccupied) {
+                      @if (getSouth().isAi) {
+                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                        <span class="picker-label">AI</span>
+                      } @else {
+                        <span class="picker-initial">{{ getInitial(getSouth()) }}</span>
+                        <span class="picker-label">{{ getSouth().playerName }}</span>
+                      }
+                    } @else {
+                      <span class="picker-pos">Bottom</span>
+                      <span class="picker-team team1">Your Team</span>
+                    }
+                  </button>
+                </div>
+              </div>
             </div>
-            <!-- Middle row: West, center, East -->
-            <div class="compass-row">
-              <div class="compass-seat west" [class.occupied]="getWest().isOccupied" [class.ai]="getWest().isAi">
-                @if (getWest().isOccupied) {
-                  @if (getWest().isAi) {
+          } @else {
+            <!-- Normal compass preview -->
+            <div class="compass">
+              <!-- Top seat (North) -->
+              <div class="compass-seat north" [class.occupied]="getNorth().isOccupied" [class.ai]="getNorth().isAi">
+                @if (getNorth().isOccupied) {
+                  @if (getNorth().isAi) {
                     <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                   } @else {
-                    <span class="seat-letter">{{ getInitial(getWest()) }}</span>
+                    <span class="seat-letter">{{ getInitial(getNorth()) }}</span>
                   }
                 }
               </div>
-              <div class="compass-center">
-                <span class="player-count">{{ room().playerCount }}/4</span>
+              <!-- Middle row: West, center, East -->
+              <div class="compass-row">
+                <div class="compass-seat west" [class.occupied]="getWest().isOccupied" [class.ai]="getWest().isAi">
+                  @if (getWest().isOccupied) {
+                    @if (getWest().isAi) {
+                      <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
+                    } @else {
+                      <span class="seat-letter">{{ getInitial(getWest()) }}</span>
+                    }
+                  }
+                </div>
+                <div class="compass-center">
+                  <span class="player-count">{{ room().playerCount }}/4</span>
+                </div>
+                <div class="compass-seat east" [class.occupied]="getEast().isOccupied" [class.ai]="getEast().isAi">
+                  @if (getEast().isOccupied) {
+                    @if (getEast().isAi) {
+                      <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
+                    } @else {
+                      <span class="seat-letter">{{ getInitial(getEast()) }}</span>
+                    }
+                  }
+                </div>
               </div>
-              <div class="compass-seat east" [class.occupied]="getEast().isOccupied" [class.ai]="getEast().isAi">
-                @if (getEast().isOccupied) {
-                  @if (getEast().isAi) {
+              <!-- Bottom seat (South) -->
+              <div class="compass-seat south" [class.occupied]="getSouth().isOccupied" [class.ai]="getSouth().isAi">
+                @if (getSouth().isOccupied) {
+                  @if (getSouth().isAi) {
                     <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                   } @else {
-                    <span class="seat-letter">{{ getInitial(getEast()) }}</span>
+                    <span class="seat-letter">{{ getInitial(getSouth()) }}</span>
                   }
                 }
               </div>
             </div>
-            <!-- Bottom seat (South) -->
-            <div class="compass-seat south" [class.occupied]="getSouth().isOccupied" [class.ai]="getSouth().isAi">
-              @if (getSouth().isOccupied) {
-                @if (getSouth().isAi) {
-                  <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                } @else {
-                  <span class="seat-letter">{{ getInitial(getSouth()) }}</span>
-                }
-              }
-            </div>
-          </div>
+          }
         </div>
 
         <!-- Bottom: action -->
         <div class="card-bottom">
-          @if (room().status !== 'Completed') {
-            <button
-              hlmBtn
-              [variant]="canJoin() ? 'default' : 'secondary'"
-              size="sm"
-              class="action-btn"
-              (click)="handleAction()"
-            >
-              @if (canJoin()) {
-                <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                Join
-              } @else {
-                <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                Watch
-              }
-            </button>
-          } @else {
-            <span class="finished-label">Finished</span>
+          @if (!selecting()) {
+            @if (room().status !== 'Completed') {
+              <button
+                hlmBtn
+                [variant]="canJoin() ? 'default' : 'secondary'"
+                size="sm"
+                class="action-btn"
+                (click)="handleAction()"
+              >
+                @if (canJoin()) {
+                  <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  Join
+                } @else {
+                  <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  Watch
+                }
+              </button>
+            } @else {
+              <span class="finished-label">Finished</span>
+            }
           }
         </div>
       </div>
@@ -257,6 +371,7 @@ import { LucideAngularModule, LogIn, Eye, Bot } from 'lucide-angular';
       display: flex;
       justify-content: flex-end;
       align-items: center;
+      min-height: 2rem;
     }
 
     .action-btn {
@@ -271,17 +386,205 @@ import { LucideAngularModule, LogIn, Eye, Bot } from 'lucide-angular';
       color: hsl(var(--muted-foreground));
       font-style: italic;
     }
+
+    /* ─── Seat Picker ─── */
+    .seat-picker {
+      width: 100%;
+      animation: slideDown 0.2s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .picker-title {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .picker-cancel {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 0.375rem;
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .picker-cancel:hover {
+      background: hsl(var(--muted) / 0.5);
+      color: hsl(var(--foreground));
+    }
+
+    .picker-compass {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .picker-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .picker-row.middle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .picker-seat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.125rem;
+      padding: 0.375rem 0.5rem;
+      min-width: 4rem;
+      min-height: 2.75rem;
+      background: hsl(var(--muted) / 0.15);
+      border: 1.5px dashed hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .picker-seat:not(:disabled):hover {
+      transform: translateY(-1px);
+    }
+
+    .picker-seat.team1:not(:disabled):hover {
+      border-color: hsl(var(--team1));
+      border-style: solid;
+      background: hsl(var(--team1) / 0.1);
+      box-shadow: 0 0 12px hsl(var(--team1) / 0.2);
+    }
+
+    .picker-seat.team2:not(:disabled):hover {
+      border-color: hsl(var(--team2));
+      border-style: solid;
+      background: hsl(var(--team2) / 0.1);
+      box-shadow: 0 0 12px hsl(var(--team2) / 0.2);
+    }
+
+    .picker-seat.occupied {
+      border-style: solid;
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary) / 0.1);
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .picker-seat.ai {
+      border-color: hsl(var(--gold));
+      background: hsl(var(--gold) / 0.1);
+    }
+
+    .picker-seat.ai i-lucide {
+      color: hsl(var(--gold));
+    }
+
+    .picker-seat:disabled {
+      cursor: default;
+    }
+
+    .picker-pos {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .picker-team {
+      font-size: 0.5625rem;
+      font-weight: 500;
+    }
+
+    .picker-team.team1 {
+      color: hsl(var(--team1));
+    }
+
+    .picker-team.team2 {
+      color: hsl(var(--team2));
+    }
+
+    .picker-initial {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: hsl(var(--primary));
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .picker-label {
+      font-size: 0.5625rem;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      max-width: 3.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .picker-center {
+      width: 2.5rem;
+      height: 2.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .picker-you {
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
   `],
 })
 export class RoomCardComponent {
   readonly LogInIcon = LogIn;
   readonly EyeIcon = Eye;
   readonly BotIcon = Bot;
+  readonly XIcon = X;
+
+  readonly PositionBottom = PlayerPosition.Bottom;
+  readonly PositionLeft = PlayerPosition.Left;
+  readonly PositionTop = PlayerPosition.Top;
+  readonly PositionRight = PlayerPosition.Right;
 
   readonly room = input.required<RoomResponse>();
 
-  readonly joinClicked = output<void>();
+  readonly joinClicked = output<PlayerPosition>();
   readonly watchClicked = output<void>();
+
+  readonly selecting = signal(false);
 
   readonly canJoin = computed(() => {
     const r = this.room();
@@ -291,6 +594,19 @@ export class RoomCardComponent {
   readonly statusClass = computed(() => {
     return this.room().status.toLowerCase();
   });
+
+  private readonly availableSeats = computed(() => {
+    return this.room().playerSlots.filter(s => !s.isOccupied);
+  });
+
+  constructor() {
+    // Auto-cancel selection if room becomes full (e.g. via poll update)
+    effect(() => {
+      if (this.selecting() && this.availableSeats().length === 0) {
+        this.selecting.set(false);
+      }
+    });
+  }
 
   // Compass position helpers — slots are ordered Bottom, Left, Top, Right
   private getSlot(index: number): PlayerSlot {
@@ -314,9 +630,24 @@ export class RoomCardComponent {
 
   handleAction(): void {
     if (this.canJoin()) {
-      this.joinClicked.emit();
+      const available = this.availableSeats();
+      if (available.length === 1) {
+        // Only 1 seat left — skip picker, join directly
+        this.joinClicked.emit(available[0].position);
+      } else {
+        this.selecting.set(true);
+      }
     } else {
       this.watchClicked.emit();
     }
+  }
+
+  selectSeat(position: PlayerPosition): void {
+    this.selecting.set(false);
+    this.joinClicked.emit(position);
+  }
+
+  cancelSelection(): void {
+    this.selecting.set(false);
   }
 }
