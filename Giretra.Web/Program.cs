@@ -146,6 +146,9 @@ public class Program
                 });
             }
 
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
             app.UseCors();
             app.UseAuthentication();
             app.UseMiddleware<UserSyncMiddleware>();
@@ -153,6 +156,7 @@ public class Program
 
             app.MapControllers();
             app.MapHub<GameHub>("/hubs/game");
+            app.MapFallbackToFile("index.html");
 
             app.Run();
         }
