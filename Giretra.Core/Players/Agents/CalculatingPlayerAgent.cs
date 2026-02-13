@@ -5,7 +5,7 @@ using Giretra.Core.Play;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
-namespace Giretra.Core.Players;
+namespace Giretra.Core.Players.Agents;
 
 /// <summary>
 /// A calculating player that tracks played cards to identify master cards

@@ -5,7 +5,7 @@ using Giretra.Core.Play;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
-namespace Giretra.Core.Players;
+namespace Giretra.Core.Players.Agents;
 
 /// <summary>
 /// A deliberately bad player that makes the worst possible decisions.

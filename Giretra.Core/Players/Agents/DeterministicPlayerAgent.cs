@@ -5,7 +5,7 @@ using Giretra.Core.Play;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
-namespace Giretra.Core.Players;
+namespace Giretra.Core.Players.Agents;
 
 /// <summary>
 /// A strong, fully deterministic AI player (no Random) that uses card counting with void inference,

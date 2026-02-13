@@ -3,7 +3,7 @@ using Giretra.Core.Negotiation;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
-namespace Giretra.Core.Players;
+namespace Giretra.Core.Players.Agents;
 
 /// <summary>
 /// A player that makes random valid choices at each decision point.

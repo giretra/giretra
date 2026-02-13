@@ -1,4 +1,4 @@
-namespace Giretra.Core.Players.Factories;
+namespace Giretra.Core.Players.Agents;
 
 /// <summary>
 /// Factory that creates BadPlayerAgent instances.
