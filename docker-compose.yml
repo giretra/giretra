@@ -13,8 +13,6 @@ services:
       - TZ=Indian/Antananarivo
     env_file:
       - docker/.env
-    ports:
-      - 8080:8080
     networks:
       - tetezana
 
