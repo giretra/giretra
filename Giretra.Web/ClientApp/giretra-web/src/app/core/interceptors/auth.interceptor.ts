@@ -6,7 +6,10 @@ import { environment } from '../../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Only intercept requests to our API
-  if (!req.url.startsWith(environment.apiBaseUrl)) {
+  const isApiRequest = environment.apiBaseUrl
+    ? req.url.startsWith(environment.apiBaseUrl)
+    : !req.url.startsWith('http');
+  if (!isApiRequest) {
     return next(req);
   }
 
