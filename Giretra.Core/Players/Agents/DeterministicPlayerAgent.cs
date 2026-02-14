@@ -246,26 +246,6 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     #region Query Helpers
 
-    private bool IsMasterCard(Card card, GameMode mode)
-    {
-        int cardStrength = card.GetStrength(mode);
-        foreach (var rank in Enum.GetValues<CardRank>())
-        {
-            var potentialCard = new Card(rank, card.Suit);
-            if (potentialCard.Equals(card)) continue;
-            if (_playedCards.Contains(potentialCard)) continue;
-
-            if (potentialCard.GetStrength(mode) > cardStrength)
-                return false;
-        }
-        return true;
-    }
-
-    private List<Card> GetMasterCards(IReadOnlyList<Card> cards, GameMode mode)
-    {
-        return cards.Where(c => IsMasterCard(c, mode)).ToList();
-    }
-
     private int CountRemainingTrumps(GameMode mode)
     {
         var trumpSuit = mode.GetTrumpSuit();
@@ -516,7 +496,6 @@ public class DeterministicPlayerAgent : IPlayerAgent
         double redoubleThreshold = 75 - aggressiveness * 10;
         int doubleGuaranteedMin = aggressiveness > 0.5 ? 2 : 3;
         int redoubleGuaranteedMin = aggressiveness > 0.5 ? 3 : 4;
-        double defenseThreshold = 38 - aggressiveness * 8;
 
         // Check for redouble
         var redoubleAction = validActions.OfType<RedoubleAction>().FirstOrDefault();
@@ -584,25 +563,32 @@ public class DeterministicPlayerAgent : IPlayerAgent
             {
                 var bidMode = currentBid.Value;
 
-                // Accepting Clubs or SansAs by opponent triggers auto-double
+                // Accepting Clubs or SansAs by opponent triggers auto-double —
+                // treat this like voluntarily doubling: require a strong hand
                 if (bidMode.AcceptCausesAutoDouble() &&
                     negotiationState.CurrentBidder.HasValue &&
                     negotiationState.CurrentBidder.Value.GetTeam() != _myTeam &&
                     !negotiationState.DoubledModes.ContainsKey(bidMode))
                 {
-                    double ourStrength = modeEvals[bidMode].Score;
-                    if (ourStrength < defenseThreshold)
-                    {
-                        // Try to escape-announce
-                        var escapeAnnounce = announceActions
-                            .Where(a => modeEvals[a.Mode].Score >= competeThreshold - 7)
-                            .OrderByDescending(a => modeEvals[a.Mode].Score)
-                            .FirstOrDefault();
+                    var eval = modeEvals[bidMode];
+                    double autoDoubleThreshold = doubleThreshold - 5; // ~60, nearly as strict as a deliberate double
 
-                        if (escapeAnnounce != null)
-                            return escapeAnnounce;
+                    if (eval.Score >= autoDoubleThreshold && eval.GuaranteedTricks >= doubleGuaranteedMin - 1)
+                    {
+                        // Strong enough to welcome the auto-double
+                        return acceptAction;
                     }
-                    // Accept anyway (no escape possible, or defense is adequate)
+
+                    // Hand not strong enough — try to escape-announce into a better mode
+                    var escapeAnnounce = announceActions
+                        .Where(a => modeEvals[a.Mode].Score >= competeThreshold - 10)
+                        .OrderByDescending(a => modeEvals[a.Mode].Score)
+                        .FirstOrDefault();
+
+                    if (escapeAnnounce != null)
+                        return escapeAnnounce;
+
+                    // No escape possible — accept as last resort
                 }
             }
 
@@ -664,7 +650,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         }
 
         // 1. Cash master cards (guaranteed winners)
-        var masterCards = GetMasterCards(validPlays, mode);
+        var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
+            .Where(c => validPlays.Contains(c)).ToList();
         if (masterCards.Count > 0)
         {
             // Prefer high-point masters in partner's preferred suit
@@ -807,8 +794,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // Following suit - use positional play
         return seatPosition switch
         {
-            1 => ChooseSecondSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
-            2 => ChooseThirdSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
+            1 => ChooseSecondSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
+            2 => ChooseThirdSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             3 => ChooseFourthSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             _ => ChooseFourthSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame)
         };
@@ -818,6 +805,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     /// 2nd seat strategy.
     /// </summary>
     private Card ChooseSecondSeat(
+        IReadOnlyList<Card> hand,
         IReadOnlyList<Card> validPlays,
         TrickState trick,
         GameMode mode,
@@ -858,7 +846,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 .OrderByDescending(c => c.GetPointValue(mode))
                 .ToList();
 
-            if (highValueCards.Count > 0 && winningCard.HasValue && IsMasterCard(winningCard.Value, mode))
+            if (highValueCards.Count > 0 && winningCard.HasValue && PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
                 return highValueCards[0]; // Load points on teammate's master
 
             return ChooseLeastValuableCard(validPlays, mode);
@@ -871,6 +859,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     /// 3rd seat strategy.
     /// </summary>
     private Card ChooseThirdSeat(
+        IReadOnlyList<Card> hand,
         IReadOnlyList<Card> validPlays,
         TrickState trick,
         GameMode mode,
@@ -892,7 +881,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
             }
 
             // 4th is opponent - load points only if teammate's card is master
-            if (IsMasterCard(winningCard.Value, mode))
+            if (PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
                 return ChooseMostValuableCard(validPlays, mode);
 
             // Teammate winning but opponent can still overtake - hedge with medium
