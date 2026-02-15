@@ -1,6 +1,7 @@
 {
   "realm": "giretra",
   "enabled": true,
+  "loginTheme": "giretra",
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "rememberMe": true,

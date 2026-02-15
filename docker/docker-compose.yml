@@ -45,6 +45,7 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
     volumes:
       - ./keycloak:/opt/keycloak/data/import
+      - ./keycloak/themes/giretra:/opt/keycloak/themes/giretra
     expose:
       - "8080"
     depends_on:

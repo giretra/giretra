@@ -1,0 +1,663 @@
+/* ── Giretra Keycloak Theme ─────────────────────────────────────
+   Matches the Angular app's dark card-table aesthetic.
+   Variables mirror Giretra.Web/ClientApp/giretra-web/src/styles.css
+   ────────────────────────────────────────────────────────────── */
+
+/* ── CSS Variables ──────────────────────────────────────────── */
+:root {
+    --background: 220 20% 10%;
+    --foreground: 210 40% 96%;
+    --card: 220 20% 14%;
+    --card-foreground: 210 40% 96%;
+    --primary: 142 50% 35%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 210 40% 96%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 220 20% 10%;
+    --muted: 220 15% 25%;
+    --muted-foreground: 215 16% 57%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 142 50% 35%;
+    --radius: 0.5rem;
+
+    --table-felt: 153 30% 16%;
+    --table-felt-light: 153 25% 22%;
+    --table-rim: 30 40% 20%;
+    --gold: 45 90% 55%;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+.giretra-html {
+    height: 100%;
+}
+
+.giretra-body {
+    height: 100%;
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Felt gradient background */
+    background:
+        radial-gradient(
+            ellipse at center,
+            hsl(var(--table-felt-light)) 0%,
+            hsl(var(--table-felt)) 70%
+        );
+    background-attachment: fixed;
+}
+
+/* Vignette overlay */
+.giretra-body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 40%,
+        rgba(0, 0, 0, 0.4) 100%
+    );
+    z-index: 0;
+}
+
+/* ── Layout Container ───────────────────────────────────────── */
+.giretra-login {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+}
+
+/* ── Brand Header ───────────────────────────────────────────── */
+.giretra-brand {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.giretra-suits {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.suit-spade,
+.suit-club {
+    color: hsl(var(--foreground));
+}
+
+.suit-heart,
+.suit-diamond {
+    color: hsl(0 70% 55%);
+}
+
+.giretra-logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: hsl(var(--foreground));
+    margin: 0;
+    line-height: 1.2;
+}
+
+.giretra-tagline {
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: hsl(var(--gold));
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+}
+
+/* ── Card Panel ─────────────────────────────────────────────── */
+.giretra-form-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Form Header ────────────────────────────────────────────── */
+.giretra-form-header {
+    margin-bottom: 1.5rem;
+}
+
+.giretra-page-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+    margin: 0;
+}
+
+.giretra-attempted-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.giretra-restart-link {
+    color: hsl(var(--muted-foreground));
+    transition: color 0.15s ease;
+}
+
+.giretra-restart-link:hover {
+    color: hsl(var(--primary));
+}
+
+/* ── Alerts ─────────────────────────────────────────────────── */
+.giretra-alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid transparent;
+}
+
+.giretra-alert-error {
+    background: hsl(var(--destructive) / 0.12);
+    border-color: hsl(var(--destructive) / 0.3);
+    color: hsl(0 80% 70%);
+}
+
+.giretra-alert-warning {
+    background: hsl(var(--gold) / 0.12);
+    border-color: hsl(var(--gold) / 0.3);
+    color: hsl(var(--gold));
+}
+
+.giretra-alert-success {
+    background: hsl(var(--primary) / 0.12);
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(142 50% 60%);
+}
+
+.giretra-alert-info {
+    background: hsl(210 70% 50% / 0.12);
+    border-color: hsl(210 70% 50% / 0.3);
+    color: hsl(210 70% 70%);
+}
+
+/* ── Form Groups ────────────────────────────────────────────── */
+.giretra-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.giretra-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.giretra-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    margin-bottom: 0.375rem;
+}
+
+.giretra-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.giretra-forgot-link {
+    font-size: 0.75rem;
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.giretra-forgot-link:hover {
+    color: hsl(142 50% 50%);
+}
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.giretra-input {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: hsl(var(--foreground));
+    background: hsl(var(--input));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+}
+
+.giretra-input::placeholder {
+    color: hsl(var(--muted-foreground));
+}
+
+.giretra-input:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.25);
+}
+
+.giretra-input[aria-invalid="true"] {
+    border-color: hsl(var(--destructive));
+}
+
+.giretra-input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.25);
+}
+
+.giretra-input-error {
+    display: block;
+    font-size: 0.75rem;
+    color: hsl(0 80% 70%);
+    margin-top: 0.375rem;
+}
+
+/* ── Password Toggle ────────────────────────────────────────── */
+.giretra-password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.giretra-password-toggle:hover {
+    color: hsl(var(--foreground));
+}
+
+/* ── Options Row (Remember Me) ──────────────────────────────── */
+.giretra-options-row {
+    margin-bottom: 1.25rem;
+}
+
+.giretra-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.giretra-check-input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: hsl(var(--primary));
+    cursor: pointer;
+}
+
+.giretra-check-label {
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.giretra-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-weight: 600;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    outline: none;
+    text-decoration: none;
+}
+
+.giretra-btn:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+}
+
+.giretra-btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+}
+
+.giretra-btn-primary:hover {
+    background: hsl(142 50% 40%);
+}
+
+.giretra-btn-primary:active {
+    background: hsl(142 50% 30%);
+}
+
+.giretra-btn-default {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border: 1px solid hsl(var(--border));
+}
+
+.giretra-btn-default:hover {
+    background: hsl(var(--muted));
+}
+
+.giretra-btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+.giretra-btn-block {
+    display: flex;
+    width: 100%;
+}
+
+/* ── Divider ────────────────────────────────────────────────── */
+.giretra-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    text-transform: lowercase;
+}
+
+.giretra-divider::before,
+.giretra-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: hsl(var(--border));
+}
+
+/* ── Social Providers ───────────────────────────────────────── */
+.giretra-social-section {
+    margin-top: 0;
+}
+
+.giretra-social-list,
+.giretra-social-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.giretra-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    background: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.giretra-social-btn:hover {
+    background: hsl(var(--muted));
+    border-color: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Provider-specific hover accents */
+.giretra-social-btn[data-provider="google"]:hover {
+    border-color: hsl(210 80% 55% / 0.4);
+}
+
+.giretra-social-btn[data-provider="facebook"]:hover {
+    border-color: hsl(220 80% 55% / 0.4);
+}
+
+.giretra-social-btn[data-provider="github"]:hover {
+    border-color: hsl(var(--foreground) / 0.3);
+}
+
+.giretra-social-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.giretra-social-icon-fallback {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--muted));
+    border-radius: 50%;
+}
+
+.giretra-social-name {
+    font-weight: 500;
+}
+
+/* ── Info Area ──────────────────────────────────────────────── */
+.giretra-info {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.giretra-info a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+.giretra-info a:hover {
+    color: hsl(142 50% 50%);
+}
+
+/* ── Try Another Way ────────────────────────────────────────── */
+#try-another-way {
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+#try-another-way:hover {
+    color: hsl(142 50% 50%);
+}
+
+/* ── Registration Link ──────────────────────────────────────── */
+#kc-registration {
+    text-align: center;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+}
+
+#kc-registration a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+#kc-registration a:hover {
+    color: hsl(142 50% 50%);
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.giretra-footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground) / 0.6);
+}
+
+/* ── Select Auth List (2FA, WebAuthn, etc.) ─────────────────── */
+.giretra-select-auth-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.giretra-select-auth-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.giretra-select-auth-list-item:hover {
+    background: hsl(var(--muted));
+    border-color: hsl(var(--muted-foreground) / 0.3);
+}
+
+.giretra-select-auth-list-item-icon {
+    font-size: 1.5rem;
+    color: hsl(var(--primary));
+    flex-shrink: 0;
+}
+
+.giretra-select-auth-list-item-body {
+    flex: 1;
+}
+
+.giretra-select-auth-list-item-heading {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+}
+
+.giretra-select-auth-list-item-description {
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    margin-top: 0.125rem;
+}
+
+.giretra-select-auth-list-item-arrow {
+    color: hsl(var(--muted-foreground));
+    font-size: 1rem;
+}
+
+/* ── Locale Selector ────────────────────────────────────────── */
+.giretra-locale-main {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.giretra-locale-main select,
+.giretra-locale-main a {
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* ── Required Fields Indicator ──────────────────────────────── */
+.required-output {
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 0.75rem;
+}
+
+/* ── Generic Links ──────────────────────────────────────────── */
+a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: hsl(142 50% 50%);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .giretra-login {
+        padding: 1.5rem 1rem;
+    }
+
+    .giretra-brand {
+        margin-bottom: 1.5rem;
+    }
+
+    .giretra-logo {
+        font-size: 1.75rem;
+    }
+
+    .giretra-suits {
+        font-size: 1.25rem;
+        gap: 0.5rem;
+    }
+
+    .giretra-tagline {
+        font-size: 0.75rem;
+    }
+
+    .giretra-form-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 640px) {
+    .giretra-logo {
+        font-size: 3rem;
+    }
+
+    .giretra-suits {
+        font-size: 1.75rem;
+        gap: 1rem;
+    }
+
+    .giretra-form-card {
+        padding: 2.5rem;
+    }
+}
