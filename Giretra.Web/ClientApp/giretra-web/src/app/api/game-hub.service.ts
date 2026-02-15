@@ -15,8 +15,10 @@ import {
   GameStartedEvent,
   MatchEndedEvent,
   PlayerJoinedEvent,
+  PlayerKickedEvent,
   PlayerLeftEvent,
   PlayerTurnEvent,
+  SeatModeChangedEvent,
   TrickCompletedEvent,
   YourTurnEvent,
 } from './generated/signalr-types.generated';
@@ -40,6 +42,8 @@ export class GameHubService implements OnDestroy {
   readonly cardPlayed$ = new Subject<CardPlayedEvent>();
   readonly trickCompleted$ = new Subject<TrickCompletedEvent>();
   readonly matchEnded$ = new Subject<MatchEndedEvent>();
+  readonly playerKicked$ = new Subject<PlayerKickedEvent>();
+  readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
@@ -97,6 +101,8 @@ export class GameHubService implements OnDestroy {
     this.cardPlayed$.complete();
     this.trickCompleted$.complete();
     this.matchEnded$.complete();
+    this.playerKicked$.complete();
+    this.seatModeChanged$.complete();
   }
 
   private registerEventHandlers(): void {
@@ -150,6 +156,16 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.MatchEnded, (event: MatchEndedEvent) => {
       console.log('[Hub] MatchEnded', event);
       this.ngZone.run(() => this.matchEnded$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.PlayerKicked, (event: PlayerKickedEvent) => {
+      console.log('[Hub] PlayerKicked', event);
+      this.ngZone.run(() => this.playerKicked$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.SeatModeChanged, (event: SeatModeChangedEvent) => {
+      console.log('[Hub] SeatModeChanged', event);
+      this.ngZone.run(() => this.seatModeChanged$.next(event));
     });
   }
 }

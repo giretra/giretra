@@ -2,7 +2,8 @@ import { Component, input, output, computed, signal, effect } from '@angular/cor
 import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
+import { SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
+import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
 
 @Component({
   selector: 'app-room-card',
@@ -40,8 +41,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                     class="picker-seat"
                     [class.occupied]="getNorth().isOccupied"
                     [class.ai]="getNorth().isAi"
-                    [class.team1]="!getNorth().isOccupied"
-                    [disabled]="getNorth().isOccupied"
+                    [class.invite-only]="!getNorth().isOccupied && isInviteOnly(getNorth())"
+                    [class.team1]="!getNorth().isOccupied && !isInviteOnly(getNorth())"
+                    [disabled]="getNorth().isOccupied || isInviteOnly(getNorth())"
                     (click)="selectSeat(PositionTop)"
                   >
                     @if (getNorth().isOccupied) {
@@ -52,6 +54,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                         <span class="picker-initial">{{ getInitial(getNorth()) }}</span>
                         <span class="picker-label">{{ getNorth().playerName }}</span>
                       }
+                    } @else if (isInviteOnly(getNorth())) {
+                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
+                      <span class="picker-label">Invite only</span>
                     } @else {
                       <span class="picker-pos">Top</span>
                       <span class="picker-team team1">Your Team</span>
@@ -64,8 +69,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                     class="picker-seat"
                     [class.occupied]="getWest().isOccupied"
                     [class.ai]="getWest().isAi"
-                    [class.team2]="!getWest().isOccupied"
-                    [disabled]="getWest().isOccupied"
+                    [class.invite-only]="!getWest().isOccupied && isInviteOnly(getWest())"
+                    [class.team2]="!getWest().isOccupied && !isInviteOnly(getWest())"
+                    [disabled]="getWest().isOccupied || isInviteOnly(getWest())"
                     (click)="selectSeat(PositionLeft)"
                   >
                     @if (getWest().isOccupied) {
@@ -76,6 +82,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                         <span class="picker-initial">{{ getInitial(getWest()) }}</span>
                         <span class="picker-label">{{ getWest().playerName }}</span>
                       }
+                    } @else if (isInviteOnly(getWest())) {
+                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
+                      <span class="picker-label">Invite only</span>
                     } @else {
                       <span class="picker-pos">Left</span>
                       <span class="picker-team team2">Opponents</span>
@@ -88,8 +97,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                     class="picker-seat"
                     [class.occupied]="getEast().isOccupied"
                     [class.ai]="getEast().isAi"
-                    [class.team2]="!getEast().isOccupied"
-                    [disabled]="getEast().isOccupied"
+                    [class.invite-only]="!getEast().isOccupied && isInviteOnly(getEast())"
+                    [class.team2]="!getEast().isOccupied && !isInviteOnly(getEast())"
+                    [disabled]="getEast().isOccupied || isInviteOnly(getEast())"
                     (click)="selectSeat(PositionRight)"
                   >
                     @if (getEast().isOccupied) {
@@ -100,6 +110,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                         <span class="picker-initial">{{ getInitial(getEast()) }}</span>
                         <span class="picker-label">{{ getEast().playerName }}</span>
                       }
+                    } @else if (isInviteOnly(getEast())) {
+                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
+                      <span class="picker-label">Invite only</span>
                     } @else {
                       <span class="picker-pos">Right</span>
                       <span class="picker-team team2">Opponents</span>
@@ -112,8 +125,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                     class="picker-seat"
                     [class.occupied]="getSouth().isOccupied"
                     [class.ai]="getSouth().isAi"
-                    [class.team1]="!getSouth().isOccupied"
-                    [disabled]="getSouth().isOccupied"
+                    [class.invite-only]="!getSouth().isOccupied && isInviteOnly(getSouth())"
+                    [class.team1]="!getSouth().isOccupied && !isInviteOnly(getSouth())"
+                    [disabled]="getSouth().isOccupied || isInviteOnly(getSouth())"
                     (click)="selectSeat(PositionBottom)"
                   >
                     @if (getSouth().isOccupied) {
@@ -124,6 +138,9 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
                         <span class="picker-initial">{{ getInitial(getSouth()) }}</span>
                         <span class="picker-label">{{ getSouth().playerName }}</span>
                       }
+                    } @else if (isInviteOnly(getSouth())) {
+                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
+                      <span class="picker-label">Invite only</span>
                     } @else {
                       <span class="picker-pos">Bottom</span>
                       <span class="picker-team team1">Your Team</span>
@@ -136,47 +153,55 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
             <!-- Normal compass preview -->
             <div class="compass">
               <!-- Top seat (North) -->
-              <div class="compass-seat north" [class.occupied]="getNorth().isOccupied" [class.ai]="getNorth().isAi">
+              <div class="compass-seat north" [class.occupied]="getNorth().isOccupied" [class.ai]="getNorth().isAi" [class.invite-only]="!getNorth().isOccupied && isInviteOnly(getNorth())">
                 @if (getNorth().isOccupied) {
                   @if (getNorth().isAi) {
                     <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                   } @else {
                     <span class="seat-letter">{{ getInitial(getNorth()) }}</span>
                   }
+                } @else if (isInviteOnly(getNorth())) {
+                  <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
                 }
               </div>
               <!-- Middle row: West, center, East -->
               <div class="compass-row">
-                <div class="compass-seat west" [class.occupied]="getWest().isOccupied" [class.ai]="getWest().isAi">
+                <div class="compass-seat west" [class.occupied]="getWest().isOccupied" [class.ai]="getWest().isAi" [class.invite-only]="!getWest().isOccupied && isInviteOnly(getWest())">
                   @if (getWest().isOccupied) {
                     @if (getWest().isAi) {
                       <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                     } @else {
                       <span class="seat-letter">{{ getInitial(getWest()) }}</span>
                     }
+                  } @else if (isInviteOnly(getWest())) {
+                    <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
                   }
                 </div>
                 <div class="compass-center">
                   <span class="player-count">{{ room().playerCount }}/4</span>
                 </div>
-                <div class="compass-seat east" [class.occupied]="getEast().isOccupied" [class.ai]="getEast().isAi">
+                <div class="compass-seat east" [class.occupied]="getEast().isOccupied" [class.ai]="getEast().isAi" [class.invite-only]="!getEast().isOccupied && isInviteOnly(getEast())">
                   @if (getEast().isOccupied) {
                     @if (getEast().isAi) {
                       <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                     } @else {
                       <span class="seat-letter">{{ getInitial(getEast()) }}</span>
                     }
+                  } @else if (isInviteOnly(getEast())) {
+                    <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
                   }
                 </div>
               </div>
               <!-- Bottom seat (South) -->
-              <div class="compass-seat south" [class.occupied]="getSouth().isOccupied" [class.ai]="getSouth().isAi">
+              <div class="compass-seat south" [class.occupied]="getSouth().isOccupied" [class.ai]="getSouth().isAi" [class.invite-only]="!getSouth().isOccupied && isInviteOnly(getSouth())">
                 @if (getSouth().isOccupied) {
                   @if (getSouth().isAi) {
                     <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
                   } @else {
                     <span class="seat-letter">{{ getInitial(getSouth()) }}</span>
                   }
+                } @else if (isInviteOnly(getSouth())) {
+                  <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
                 }
               </div>
             </div>
@@ -344,6 +369,15 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
       color: hsl(var(--gold));
     }
 
+    .compass-seat.invite-only {
+      border-color: hsl(var(--gold) / 0.5);
+      background: hsl(var(--gold) / 0.08);
+    }
+
+    .lock-icon {
+      color: hsl(var(--gold) / 0.6);
+    }
+
     .seat-letter {
       font-size: 0.5625rem;
       font-weight: 700;
@@ -505,6 +539,13 @@ import { LucideAngularModule, LogIn, Eye, Bot, X } from 'lucide-angular';
       background: hsl(var(--gold) / 0.1);
     }
 
+    .picker-seat.invite-only {
+      border-color: hsl(var(--gold) / 0.4);
+      background: hsl(var(--gold) / 0.05);
+      cursor: default;
+      opacity: 0.7;
+    }
+
     .picker-seat.ai i-lucide {
       color: hsl(var(--gold));
     }
@@ -573,6 +614,7 @@ export class RoomCardComponent {
   readonly EyeIcon = Eye;
   readonly BotIcon = Bot;
   readonly XIcon = X;
+  readonly LockIcon = Lock;
 
   readonly PositionBottom = PlayerPosition.Bottom;
   readonly PositionLeft = PlayerPosition.Left;
@@ -588,7 +630,9 @@ export class RoomCardComponent {
 
   readonly canJoin = computed(() => {
     const r = this.room();
-    return r.status === 'Waiting' && r.playerCount < 4;
+    if (r.status !== 'Waiting') return false;
+    // Only count public, unoccupied seats as joinable
+    return r.playerSlots.some(s => !s.isOccupied && s.accessMode === SeatAccessMode.Public);
   });
 
   readonly statusClass = computed(() => {
@@ -596,7 +640,7 @@ export class RoomCardComponent {
   });
 
   private readonly availableSeats = computed(() => {
-    return this.room().playerSlots.filter(s => !s.isOccupied);
+    return this.room().playerSlots.filter(s => !s.isOccupied && s.accessMode === SeatAccessMode.Public);
   });
 
   constructor() {
@@ -620,6 +664,10 @@ export class RoomCardComponent {
 
   getInitial(slot: PlayerSlot): string {
     return slot.playerName ? slot.playerName.charAt(0).toUpperCase() : '?';
+  }
+
+  isInviteOnly(slot: PlayerSlot): boolean {
+    return slot.accessMode === SeatAccessMode.InviteOnly;
   }
 
   getSlotTitle(slot: PlayerSlot): string {

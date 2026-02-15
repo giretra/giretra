@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ClientSessionService } from './core/services/client-session.service';
 
-// Guard to ensure user has a clientId before accessing table
+// Guard to ensure user has a clientId or invite token before accessing table
 export const hasClientIdGuard = () => {
   const session = inject(ClientSessionService);
   const router = inject(Router);
@@ -12,7 +12,14 @@ export const hasClientIdGuard = () => {
     return true;
   }
 
-  // Redirect to home if no client session
+  // Allow access if invite query param is present (user will auto-join)
+  const currentNav = router.getCurrentNavigation();
+  const inviteToken = currentNav?.extractedUrl?.queryParamMap?.get('invite');
+  if (inviteToken) {
+    return true;
+  }
+
+  // Redirect to home if no client session and no invite
   return router.createUrlTree(['/']);
 };
 

@@ -9,6 +9,7 @@ import {
   CardSuit,
   GameMode,
   PlayerPosition,
+  SeatAccessMode,
   Team,
 } from '../../api/generated/signalr-types.generated';
 
@@ -22,6 +23,8 @@ export interface PlayerSlot {
   playerName: string | null;
   isAi: boolean;
   aiType: string | null;
+  accessMode: SeatAccessMode;
+  hasInvite: boolean;
 }
 
 export interface AiSeat {
@@ -39,6 +42,13 @@ export interface RoomResponse {
   gameId: string | null;
   createdAt: string;
   turnTimerSeconds: number;
+  isOwner: boolean;
+}
+
+export interface InviteTokenResponse {
+  position: PlayerPosition;
+  token: string;
+  inviteUrl: string;
 }
 
 export interface RoomListResponse {
@@ -167,19 +177,21 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  deleteRoom(roomId: string, clientId: string): Observable<void> {
+  deleteRoom(roomId: string): Observable<void> {
     return this.http
-      .delete<void>(`${this.baseUrl}/api/rooms/${roomId}?clientId=${clientId}`)
+      .delete<void>(`${this.baseUrl}/api/rooms/${roomId}`)
       .pipe(catchError(this.handleError));
   }
 
   joinRoom(
     roomId: string,
-    preferredPosition?: PlayerPosition
+    preferredPosition?: PlayerPosition,
+    inviteToken?: string
   ): Observable<JoinRoomResponse> {
     return this.http
       .post<JoinRoomResponse>(`${this.baseUrl}/api/rooms/${roomId}/join`, {
         preferredPosition,
+        inviteToken,
       })
       .pipe(catchError(this.handleError));
   }
@@ -199,6 +211,28 @@ export class ApiService {
   startGame(roomId: string, clientId: string): Observable<StartGameResponse> {
     return this.http
       .post<StartGameResponse>(`${this.baseUrl}/api/rooms/${roomId}/start`, { clientId })
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Seat Management
+  // ─────────────────────────────────────────────────────────────────────────
+
+  setSeatMode(roomId: string, position: PlayerPosition, accessMode: SeatAccessMode): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/rooms/${roomId}/seats/${position}/mode`, { position, accessMode })
+      .pipe(catchError(this.handleError));
+  }
+
+  generateInvite(roomId: string, position: PlayerPosition): Observable<InviteTokenResponse> {
+    return this.http
+      .post<InviteTokenResponse>(`${this.baseUrl}/api/rooms/${roomId}/seats/${position}/invite`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  kickPlayer(roomId: string, position: PlayerPosition): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/rooms/${roomId}/seats/${position}/kick`, {})
       .pipe(catchError(this.handleError));
   }
 

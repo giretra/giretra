@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { GameMode, PlayerPosition, Team } from '../../../../api/generated/signalr-types.generated';
+import { GameMode, PlayerPosition, SeatAccessMode, Team } from '../../../../api/generated/signalr-types.generated';
 import { RoomResponse, NegotiationAction, TrickResponse } from '../../../../core/services/api.service';
 import { GamePhase } from '../../../../core/services/game-state.service';
 import { WaitingStageComponent } from './waiting-stage/waiting-stage.component';
@@ -27,6 +27,9 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [isCreator]="isCreator()"
             [isWatcher]="isWatcher()"
             (startGame)="startGame.emit()"
+            (setSeatMode)="setSeatMode.emit($event)"
+            (generateInvite)="generateInvite.emit($event)"
+            (kickPlayer)="kickPlayer.emit($event)"
           />
         }
         @case ('cut') {
@@ -100,4 +103,7 @@ export class CenterStageComponent {
   readonly submitCut = output<void>();
   readonly hideDealSummary = output<void>();
   readonly dismissCompletedTrick = output<void>();
+  readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();
+  readonly generateInvite = output<PlayerPosition>();
+  readonly kickPlayer = output<PlayerPosition>();
 }

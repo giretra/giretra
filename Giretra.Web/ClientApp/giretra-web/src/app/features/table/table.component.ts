@@ -1,9 +1,9 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, effect } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService } from '../../core/services/api.service';
-import { PendingActionType } from '../../api/generated/signalr-types.generated';
+import { PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
@@ -67,6 +67,9 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
         (submitCut)="onSubmitCut()"
         (hideDealSummary)="onHideDealSummary()"
         (dismissCompletedTrick)="onDismissCompletedTrick()"
+        (setSeatMode)="onSetSeatMode($event)"
+        (generateInvite)="onGenerateInvite($event)"
+        (kickPlayer)="onKickPlayer($event)"
       />
 
       <!-- Zone C: Hand / Action Area -->
@@ -155,20 +158,47 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
+  constructor() {
+    // Watch for kick — navigate home
+    effect(() => {
+      if (this.gameState.wasKicked()) {
+        this.gameState.leaveRoom();
+        this.session.leaveRoom();
+        this.router.navigate(['/']);
+      }
+    });
+  }
+
   ngOnInit(): void {
-    // Ensure we have room data loaded
     const roomId = this.route.snapshot.paramMap.get('roomId');
+    const inviteToken = this.route.snapshot.queryParamMap.get('invite');
+
     if (roomId && !this.gameState.currentRoom()) {
-      // Fetch room and initialize
-      this.api.getRoom(roomId).subscribe({
-        next: async (room) => {
-          const isCreator = room.playerSlots[0]?.playerName === this.session.playerName();
-          await this.gameState.enterRoom(room, isCreator);
-        },
-        error: () => {
-          this.router.navigate(['/']);
-        },
-      });
+      if (inviteToken && !this.session.clientId()) {
+        // Invite flow: join via invite token
+        this.api.joinRoom(roomId, undefined, inviteToken).subscribe({
+          next: async (response) => {
+            if (response.position) {
+              this.session.joinRoom(roomId, response.clientId, response.position);
+            }
+            await this.gameState.enterRoom(response.room, false);
+          },
+          error: () => {
+            this.router.navigate(['/']);
+          },
+        });
+      } else {
+        // Normal flow: fetch room and initialize
+        this.api.getRoom(roomId).subscribe({
+          next: async (room) => {
+            const isCreator = room.isOwner;
+            await this.gameState.enterRoom(room, isCreator);
+          },
+          error: () => {
+            this.router.navigate(['/']);
+          },
+        });
+      }
     }
   }
 
@@ -325,6 +355,39 @@ export class TableComponent implements OnInit, OnDestroy {
     } else {
       // No ContinueMatch action pending, just start new game
       this.onStartGame();
+    }
+  }
+
+  onSetSeatMode(event: { position: PlayerPosition; accessMode: SeatAccessMode }): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    if (roomId) {
+      this.api.setSeatMode(roomId, event.position, event.accessMode).subscribe({
+        error: (err) => console.error('Failed to set seat mode', err),
+      });
+    }
+  }
+
+  onGenerateInvite(position: PlayerPosition): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    if (roomId) {
+      this.api.generateInvite(roomId, position).subscribe({
+        next: (response) => {
+          navigator.clipboard.writeText(response.inviteUrl).then(
+            () => console.log('[Table] Invite URL copied to clipboard'),
+            () => console.warn('[Table] Failed to copy invite URL')
+          );
+        },
+        error: (err) => console.error('Failed to generate invite', err),
+      });
+    }
+  }
+
+  onKickPlayer(position: PlayerPosition): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    if (roomId) {
+      this.api.kickPlayer(roomId, position).subscribe({
+        error: (err) => console.error('Failed to kick player', err),
+      });
     }
   }
 

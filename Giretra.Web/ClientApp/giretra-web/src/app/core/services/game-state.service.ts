@@ -44,6 +44,10 @@ export class GameStateService {
   readonly gameId = this._gameId.asReadonly();
   readonly isCreator = this._isCreator.asReadonly();
 
+  // Kick state
+  private readonly _wasKicked = signal<boolean>(false);
+  readonly wasKicked = this._wasKicked.asReadonly();
+
   // ─────────────────────────────────────────────────────────────────────────
   // Game State Signals (from server)
   // ─────────────────────────────────────────────────────────────────────────
@@ -338,7 +342,7 @@ export class GameStateService {
   async enterRoom(room: RoomResponse, isCreator: boolean): Promise<void> {
     console.log('[GameState] enterRoom', { room, isCreator });
     this._currentRoom.set(room);
-    this._isCreator.set(isCreator);
+    this._isCreator.set(room.isOwner ?? isCreator);
     this._gameId.set(room.gameId);
 
     // Connect to SignalR hub
@@ -380,6 +384,7 @@ export class GameStateService {
     this._playerState.set(null);
     this._playerCardCounts.set(null);
     this._isCreator.set(false);
+    this._wasKicked.set(false);
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
     this._turnTimeoutAt.set(null);
@@ -642,6 +647,34 @@ export class GameStateService {
       console.log('[GameState] Hub event: matchEnded', event);
       this._turnTimeoutAt.set(null);
       this.refreshState();
+    });
+
+    // Player kicked
+    this.hub.playerKicked$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: playerKicked', event);
+      const room = this._currentRoom();
+      if (room && room.roomId === event.roomId) {
+        // If I was kicked (my position matches)
+        const myPos = this.session.position();
+        if (myPos && myPos === event.position) {
+          this._wasKicked.set(true);
+        }
+        // Always refresh room data
+        this.api.getRoom(event.roomId).subscribe((r) => {
+          this._currentRoom.set(r);
+        });
+      }
+    });
+
+    // Seat mode changed
+    this.hub.seatModeChanged$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: seatModeChanged', event);
+      const room = this._currentRoom();
+      if (room && room.roomId === event.roomId) {
+        this.api.getRoom(event.roomId).subscribe((r) => {
+          this._currentRoom.set(r);
+        });
+      }
     });
   }
 }

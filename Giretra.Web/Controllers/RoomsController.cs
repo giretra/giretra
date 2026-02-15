@@ -1,3 +1,4 @@
+using Giretra.Core.Players;
 using Giretra.Model.Entities;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Models.Responses;
@@ -32,7 +33,8 @@ public class RoomsController : ControllerBase
     [HttpGet]
     public ActionResult<RoomListResponse> GetRooms()
     {
-        return Ok(_roomService.GetAllRooms());
+        var user = GetAuthenticatedUser();
+        return Ok(_roomService.GetAllRooms(user.Id));
     }
 
     /// <summary>
@@ -41,7 +43,8 @@ public class RoomsController : ControllerBase
     [HttpGet("{roomId}")]
     public ActionResult<RoomResponse> GetRoom(string roomId)
     {
-        var room = _roomService.GetRoom(roomId);
+        var user = GetAuthenticatedUser();
+        var room = _roomService.GetRoom(roomId, user.Id);
         if (room == null)
             return NotFound();
 
@@ -55,7 +58,7 @@ public class RoomsController : ControllerBase
     public ActionResult<JoinRoomResponse> CreateRoom([FromBody] CreateRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.CreateRoom(request, user.DisplayName);
+        var response = _roomService.CreateRoom(request, user.DisplayName, user.Id);
         return CreatedAtAction(nameof(GetRoom), new { roomId = response.Room.RoomId }, response);
     }
 
@@ -63,12 +66,10 @@ public class RoomsController : ControllerBase
     /// Deletes a room.
     /// </summary>
     [HttpDelete("{roomId}")]
-    public ActionResult DeleteRoom(string roomId, [FromQuery] string clientId)
+    public ActionResult DeleteRoom(string roomId)
     {
-        if (string.IsNullOrEmpty(clientId))
-            return BadRequest("clientId is required");
-
-        if (!_roomService.DeleteRoom(roomId, clientId))
+        var user = GetAuthenticatedUser();
+        if (!_roomService.DeleteRoom(roomId, user.Id))
             return NotFound();
 
         return NoContent();
@@ -81,9 +82,9 @@ public class RoomsController : ControllerBase
     public async Task<ActionResult<JoinRoomResponse>> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.JoinRoom(roomId, request, user.DisplayName);
+        var response = _roomService.JoinRoom(roomId, request, user.DisplayName, user.Id);
         if (response == null)
-            return BadRequest("Unable to join room. Room may be full or game already started.");
+            return BadRequest("Unable to join room. Room may be full, game already started, or seat is invite-only.");
 
         if (response.Position.HasValue)
             await _notifications.NotifyPlayerJoinedAsync(roomId, user.DisplayName, response.Position.Value);
@@ -127,11 +128,60 @@ public class RoomsController : ControllerBase
     [HttpPost("{roomId}/start")]
     public ActionResult<StartGameResponse> StartGame(string roomId, [FromBody] StartGameRequest request)
     {
-        var (response, error) = _roomService.StartGame(roomId, request.ClientId);
+        var user = GetAuthenticatedUser();
+        var (response, error) = _roomService.StartGame(roomId, user.Id);
         if (response == null)
             return BadRequest(new { error = error ?? "Unable to start game" });
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Sets the access mode for a seat.
+    /// </summary>
+    [HttpPost("{roomId}/seats/{position}/mode")]
+    public async Task<ActionResult> SetSeatMode(string roomId, PlayerPosition position, [FromBody] SetSeatModeRequest request)
+    {
+        var user = GetAuthenticatedUser();
+        var (success, error) = _roomService.SetSeatMode(roomId, user.Id, position, request.AccessMode);
+        if (!success)
+            return BadRequest(new { error });
+
+        await _notifications.NotifySeatModeChangedAsync(roomId, position, request.AccessMode);
+        return Ok();
+    }
+
+    /// <summary>
+    /// Generates an invite token for a seat.
+    /// </summary>
+    [HttpPost("{roomId}/seats/{position}/invite")]
+    public async Task<ActionResult<InviteTokenResponse>> GenerateInvite(string roomId, PlayerPosition position)
+    {
+        var user = GetAuthenticatedUser();
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var response = _roomService.GenerateInviteToken(roomId, user.Id, position, baseUrl);
+        if (response == null)
+            return BadRequest(new { error = "Unable to generate invite. Check that you are the room owner and the room is waiting." });
+
+        await _notifications.NotifySeatModeChangedAsync(roomId, position, Domain.SeatAccessMode.InviteOnly);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Kicks a player from a seat.
+    /// </summary>
+    [HttpPost("{roomId}/seats/{position}/kick")]
+    public async Task<ActionResult> KickPlayer(string roomId, PlayerPosition position)
+    {
+        var user = GetAuthenticatedUser();
+        var (success, error, kickedPosition, playerName) = _roomService.KickPlayer(roomId, user.Id, position);
+        if (!success)
+            return BadRequest(new { error });
+
+        if (kickedPosition.HasValue && playerName != null)
+            await _notifications.NotifyPlayerKickedAsync(roomId, playerName, kickedPosition.Value);
+
+        return Ok();
     }
 
     /// <summary>

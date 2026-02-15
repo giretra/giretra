@@ -1,5 +1,5 @@
 import { Component, input, output, computed } from '@angular/core';
-import { GameMode, PlayerPosition, Team } from '../../../../api/generated/signalr-types.generated';
+import { GameMode, PlayerPosition, SeatAccessMode, Team } from '../../../../api/generated/signalr-types.generated';
 import { RoomResponse, NegotiationAction, TrickResponse } from '../../../../core/services/api.service';
 import { GamePhase } from '../../../../core/services/game-state.service';
 import { getRelativePositions } from '../../../../core/utils/position-utils';
@@ -102,6 +102,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
             (submitCut)="submitCut.emit()"
             (hideDealSummary)="hideDealSummary.emit()"
             (dismissCompletedTrick)="dismissCompletedTrick.emit()"
+            (setSeatMode)="setSeatMode.emit($event)"
+            (generateInvite)="generateInvite.emit($event)"
+            (kickPlayer)="kickPlayer.emit($event)"
           />
         </div>
 
@@ -313,6 +316,9 @@ export class TableSurfaceComponent {
   readonly submitCut = output<void>();
   readonly hideDealSummary = output<void>();
   readonly dismissCompletedTrick = output<void>();
+  readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();
+  readonly generateInvite = output<PlayerPosition>();
+  readonly kickPlayer = output<PlayerPosition>();
 
   // Get slots relative to my position (for proper table layout)
   readonly relativePositions = computed(() => {

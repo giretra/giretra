@@ -51,4 +51,9 @@ public sealed class RoomResponse
     /// Turn timer duration in seconds.
     /// </summary>
     public required int TurnTimerSeconds { get; init; }
+
+    /// <summary>
+    /// Whether the requesting user is the room owner.
+    /// </summary>
+    public bool IsOwner { get; init; }
 }

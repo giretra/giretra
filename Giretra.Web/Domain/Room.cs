@@ -23,6 +23,11 @@ public sealed class Room
     public required string CreatorClientId { get; init; }
 
     /// <summary>
+    /// Persistent user identity of the room owner (survives reconnections).
+    /// </summary>
+    public required Guid OwnerUserId { get; init; }
+
+    /// <summary>
     /// Current status of the room.
     /// </summary>
     public RoomStatus Status { get; set; } = RoomStatus.Waiting;
@@ -42,6 +47,17 @@ public sealed class Room
     /// Positions reserved for AI players, mapped to AI type name.
     /// </summary>
     public Dictionary<PlayerPosition, string> AiSlots { get; } = [];
+
+    /// <summary>
+    /// Per-seat access configuration (public/invite-only, kick list).
+    /// </summary>
+    public Dictionary<PlayerPosition, SeatConfig> SeatConfigs { get; } = new()
+    {
+        [PlayerPosition.Bottom] = new SeatConfig(),
+        [PlayerPosition.Left] = new SeatConfig(),
+        [PlayerPosition.Top] = new SeatConfig(),
+        [PlayerPosition.Right] = new SeatConfig()
+    };
 
     /// <summary>
     /// Watchers observing the room.
@@ -169,4 +185,9 @@ public sealed class Room
             .Select(kvp => (PlayerPosition?)kvp.Key)
             .FirstOrDefault();
     }
+
+    /// <summary>
+    /// Checks if the given user is the room owner.
+    /// </summary>
+    public bool IsOwner(Guid userId) => OwnerUserId == userId;
 }

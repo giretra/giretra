@@ -13,27 +13,27 @@ public interface IRoomService
     /// <summary>
     /// Gets all rooms.
     /// </summary>
-    RoomListResponse GetAllRooms();
+    RoomListResponse GetAllRooms(Guid? requestingUserId = null);
 
     /// <summary>
     /// Gets a room by ID.
     /// </summary>
-    RoomResponse? GetRoom(string roomId);
+    RoomResponse? GetRoom(string roomId, Guid? requestingUserId = null);
 
     /// <summary>
     /// Creates a new room.
     /// </summary>
-    JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName);
+    JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName, Guid userId);
 
     /// <summary>
     /// Deletes a room.
     /// </summary>
-    bool DeleteRoom(string roomId, string clientId);
+    bool DeleteRoom(string roomId, Guid userId);
 
     /// <summary>
     /// Joins a room as a player.
     /// </summary>
-    JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName);
+    JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId);
 
     /// <summary>
     /// Joins a room as a watcher.
@@ -49,7 +49,7 @@ public interface IRoomService
     /// Starts the game in a room.
     /// </summary>
     /// <returns>A tuple containing the response (or null on failure) and an error message.</returns>
-    (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId);
+    (StartGameResponse? Response, string? Error) StartGame(string roomId, Guid userId);
 
     /// <summary>
     /// Gets the room a client is in.
@@ -66,4 +66,19 @@ public interface IRoomService
     /// Removes the client from their room and deletes the room if empty.
     /// </summary>
     void HandleDisconnect(string connectionId);
+
+    /// <summary>
+    /// Sets the access mode for a seat. Owner-only, Waiting-only.
+    /// </summary>
+    (bool Success, string? Error) SetSeatMode(string roomId, Guid userId, PlayerPosition position, SeatAccessMode mode);
+
+    /// <summary>
+    /// Generates an invite token for a seat. Auto-sets seat to InviteOnly.
+    /// </summary>
+    InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position, string baseUrl);
+
+    /// <summary>
+    /// Kicks a player from a seat. Owner-only, Waiting-only.
+    /// </summary>
+    (bool Success, string? Error, PlayerPosition? Position, string? PlayerName) KickPlayer(string roomId, Guid userId, PlayerPosition position);
 }

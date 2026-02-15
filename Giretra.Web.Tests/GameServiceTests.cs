@@ -550,7 +550,8 @@ public sealed class GameServiceTests
         {
             RoomId = "room_test",
             Name = "Test Room",
-            CreatorClientId = client.ClientId
+            CreatorClientId = client.ClientId,
+            OwnerUserId = Guid.NewGuid()
         };
 
         room.PlayerSlots[PlayerPosition.Bottom] = client;
@@ -580,7 +581,8 @@ public sealed class GameServiceTests
         {
             RoomId = "room_test",
             Name = "Test Room",
-            CreatorClientId = client1.ClientId
+            CreatorClientId = client1.ClientId,
+            OwnerUserId = Guid.NewGuid()
         };
 
         room.PlayerSlots[PlayerPosition.Bottom] = client1;

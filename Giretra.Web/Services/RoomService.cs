@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using Giretra.Core.Players;
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Requests;
@@ -27,9 +28,9 @@ public sealed class RoomService : IRoomService
         _notifications = notifications;
     }
 
-    public RoomListResponse GetAllRooms()
+    public RoomListResponse GetAllRooms(Guid? requestingUserId = null)
     {
-        var rooms = _roomRepository.GetAll().Select(MapToResponse).ToList();
+        var rooms = _roomRepository.GetAll().Select(r => MapToResponse(r, requestingUserId)).ToList();
         return new RoomListResponse
         {
             Rooms = rooms,
@@ -37,19 +38,20 @@ public sealed class RoomService : IRoomService
         };
     }
 
-    public RoomResponse? GetRoom(string roomId)
+    public RoomResponse? GetRoom(string roomId, Guid? requestingUserId = null)
     {
         var room = _roomRepository.GetById(roomId);
-        return room != null ? MapToResponse(room) : null;
+        return room != null ? MapToResponse(room, requestingUserId) : null;
     }
 
-    public JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName)
+    public JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName, Guid userId)
     {
         var roomId = GenerateId("room");
         var clientId = GenerateId("client");
 
         var creator = new ConnectedClient
         {
+            UserId = userId,
             ClientId = clientId,
             DisplayName = displayName,
             IsPlayer = true,
@@ -66,6 +68,7 @@ public sealed class RoomService : IRoomService
             RoomId = roomId,
             Name = roomName,
             CreatorClientId = clientId,
+            OwnerUserId = userId,
             TurnTimerSeconds = Math.Clamp(request.TurnTimerSeconds ?? 120, 10, 300)
         };
 
@@ -90,24 +93,24 @@ public sealed class RoomService : IRoomService
         {
             ClientId = clientId,
             Position = PlayerPosition.Bottom,
-            Room = MapToResponse(room)
+            Room = MapToResponse(room, userId)
         };
     }
 
-    public bool DeleteRoom(string roomId, string clientId)
+    public bool DeleteRoom(string roomId, Guid userId)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null)
             return false;
 
-        // Only creator can delete, and only if game hasn't started
-        if (room.CreatorClientId != clientId || room.Status != RoomStatus.Waiting)
+        // Only owner can delete, and only if game hasn't started
+        if (!room.IsOwner(userId) || room.Status != RoomStatus.Waiting)
             return false;
 
         return _roomRepository.Remove(roomId);
     }
 
-    public JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName)
+    public JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null || room.Status != RoomStatus.Waiting)
@@ -116,6 +119,7 @@ public sealed class RoomService : IRoomService
         var clientId = GenerateId("client");
         var client = new ConnectedClient
         {
+            UserId = userId,
             ClientId = clientId,
             DisplayName = displayName,
             IsPlayer = true
@@ -124,14 +128,87 @@ public sealed class RoomService : IRoomService
         bool success;
         PlayerPosition? position;
 
-        if (request.PreferredPosition.HasValue)
+        if (!string.IsNullOrEmpty(request.InviteToken))
         {
-            success = room.TryAddPlayerAtPosition(client, request.PreferredPosition.Value);
+            // Invite token flow
+            if (request.PreferredPosition.HasValue)
+            {
+                // Validate token against specific seat
+                var seatConfig = room.SeatConfigs[request.PreferredPosition.Value];
+                if (seatConfig.InviteToken != request.InviteToken)
+                    return null;
+                if (seatConfig.KickedUserIds.Contains(userId))
+                    return null;
+
+                success = room.TryAddPlayerAtPosition(client, request.PreferredPosition.Value);
+                position = success ? request.PreferredPosition : null;
+
+                if (success)
+                    seatConfig.InviteToken = null; // Consume token
+            }
+            else
+            {
+                // Scan all seats for matching token
+                success = false;
+                position = null;
+
+                foreach (var pos in Enum.GetValues<PlayerPosition>())
+                {
+                    var seatConfig = room.SeatConfigs[pos];
+                    if (seatConfig.InviteToken == request.InviteToken
+                        && !seatConfig.KickedUserIds.Contains(userId)
+                        && room.PlayerSlots[pos] == null
+                        && !room.AiSlots.ContainsKey(pos))
+                    {
+                        success = room.TryAddPlayerAtPosition(client, pos);
+                        if (success)
+                        {
+                            position = pos;
+                            seatConfig.InviteToken = null; // Consume token
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else if (request.PreferredPosition.HasValue)
+        {
+            var targetPos = request.PreferredPosition.Value;
+            var seatConfig = room.SeatConfigs[targetPos];
+
+            // Reject if kicked from this seat
+            if (seatConfig.KickedUserIds.Contains(userId))
+                return null;
+
+            // Reject if invite-only and no token
+            if (seatConfig.AccessMode == SeatAccessMode.InviteOnly)
+                return null;
+
+            success = room.TryAddPlayerAtPosition(client, targetPos);
             position = success ? request.PreferredPosition : null;
         }
         else
         {
-            success = room.TryAddPlayer(client, out position);
+            // Find first available public seat that user isn't kicked from
+            success = false;
+            position = null;
+
+            foreach (var pos in Enum.GetValues<PlayerPosition>())
+            {
+                var seatConfig = room.SeatConfigs[pos];
+                if (room.PlayerSlots[pos] == null
+                    && !room.AiSlots.ContainsKey(pos)
+                    && seatConfig.AccessMode == SeatAccessMode.Public
+                    && !seatConfig.KickedUserIds.Contains(userId))
+                {
+                    success = room.TryAddPlayerAtPosition(client, pos);
+                    if (success)
+                    {
+                        position = pos;
+                        break;
+                    }
+                }
+            }
         }
 
         if (!success)
@@ -143,7 +220,7 @@ public sealed class RoomService : IRoomService
         {
             ClientId = clientId,
             Position = position,
-            Room = MapToResponse(room)
+            Room = MapToResponse(room, userId)
         };
     }
 
@@ -214,7 +291,7 @@ public sealed class RoomService : IRoomService
         return (true, playerName, position);
     }
 
-    public (StartGameResponse? Response, string? Error) StartGame(string roomId, string clientId)
+    public (StartGameResponse? Response, string? Error) StartGame(string roomId, Guid userId)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null)
@@ -223,9 +300,9 @@ public sealed class RoomService : IRoomService
         if (room.Status != RoomStatus.Waiting)
             return (null, $"Room is not in waiting state (current: {room.Status})");
 
-        // Only creator can start the game
-        if (room.CreatorClientId != clientId)
-            return (null, $"Only the room creator can start the game. Expected clientId starting with '{room.CreatorClientId[..Math.Min(12, room.CreatorClientId.Length)]}...', got '{clientId[..Math.Min(12, clientId.Length)]}...'");
+        // Only owner can start the game
+        if (!room.IsOwner(userId))
+            return (null, "Only the room owner can start the game");
 
         // Need at least 1 human player
         if (room.PlayerCount == 0)
@@ -248,6 +325,95 @@ public sealed class RoomService : IRoomService
             GameId = gameSession.GameId,
             RoomId = roomId
         }, null);
+    }
+
+    public (bool Success, string? Error) SetSeatMode(string roomId, Guid userId, PlayerPosition position, SeatAccessMode mode)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null)
+            return (false, "Room not found");
+
+        if (!room.IsOwner(userId))
+            return (false, "Only the room owner can change seat modes");
+
+        if (room.Status != RoomStatus.Waiting)
+            return (false, "Can only change seat modes while waiting");
+
+        if (position == PlayerPosition.Bottom)
+            return (false, "Cannot change the owner's seat mode");
+
+        var seatConfig = room.SeatConfigs[position];
+        seatConfig.AccessMode = mode;
+
+        // Clear invite token if switching to Public
+        if (mode == SeatAccessMode.Public)
+            seatConfig.InviteToken = null;
+
+        _roomRepository.Update(room);
+        return (true, null);
+    }
+
+    public InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position, string baseUrl)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null || !room.IsOwner(userId) || room.Status != RoomStatus.Waiting)
+            return null;
+
+        if (position == PlayerPosition.Bottom)
+            return null;
+
+        var seatConfig = room.SeatConfigs[position];
+
+        // Auto-set to InviteOnly
+        seatConfig.AccessMode = SeatAccessMode.InviteOnly;
+
+        // Generate 16-char hex token
+        var tokenBytes = RandomNumberGenerator.GetBytes(8);
+        var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
+        seatConfig.InviteToken = token;
+
+        _roomRepository.Update(room);
+
+        var inviteUrl = $"{baseUrl.TrimEnd('/')}/table/{roomId}?invite={token}";
+
+        return new InviteTokenResponse
+        {
+            Position = position,
+            Token = token,
+            InviteUrl = inviteUrl
+        };
+    }
+
+    public (bool Success, string? Error, PlayerPosition? Position, string? PlayerName) KickPlayer(string roomId, Guid userId, PlayerPosition position)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null)
+            return (false, "Room not found", null, null);
+
+        if (!room.IsOwner(userId))
+            return (false, "Only the room owner can kick players", null, null);
+
+        if (room.Status != RoomStatus.Waiting)
+            return (false, "Can only kick players while waiting", null, null);
+
+        if (position == PlayerPosition.Bottom)
+            return (false, "Cannot kick yourself", null, null);
+
+        var player = room.PlayerSlots[position];
+        if (player == null)
+            return (false, "No player in that seat", null, null);
+
+        var playerName = player.DisplayName;
+
+        // Add to kick list if they have a persistent user ID
+        if (player.UserId.HasValue)
+            room.SeatConfigs[position].KickedUserIds.Add(player.UserId.Value);
+
+        // Remove from slot
+        room.PlayerSlots[position] = null;
+        _roomRepository.Update(room);
+
+        return (true, null, position, playerName);
     }
 
     public Room? GetRoomForClient(string clientId)
@@ -340,8 +506,10 @@ public sealed class RoomService : IRoomService
         return $"{creatorName}_#{roomNumber:D5}";
     }
 
-    private static RoomResponse MapToResponse(Room room)
+    private static RoomResponse MapToResponse(Room room, Guid? requestingUserId = null)
     {
+        var isOwner = requestingUserId.HasValue && room.IsOwner(requestingUserId.Value);
+
         return new RoomResponse
         {
             RoomId = room.RoomId,
@@ -350,18 +518,25 @@ public sealed class RoomService : IRoomService
             PlayerCount = room.PlayerCount,
             WatcherCount = room.Watchers.Count,
             PlayerSlots = Enum.GetValues<PlayerPosition>()
-                .Select(pos => new PlayerSlotResponse
+                .Select(pos =>
                 {
-                    Position = pos,
-                    IsOccupied = room.PlayerSlots[pos] != null || room.AiSlots.ContainsKey(pos),
-                    PlayerName = room.PlayerSlots[pos]?.DisplayName,
-                    IsAi = room.AiSlots.ContainsKey(pos),
-                    AiType = room.AiSlots.GetValueOrDefault(pos)
+                    var seatConfig = room.SeatConfigs[pos];
+                    return new PlayerSlotResponse
+                    {
+                        Position = pos,
+                        IsOccupied = room.PlayerSlots[pos] != null || room.AiSlots.ContainsKey(pos),
+                        PlayerName = room.PlayerSlots[pos]?.DisplayName,
+                        IsAi = room.AiSlots.ContainsKey(pos),
+                        AiType = room.AiSlots.GetValueOrDefault(pos),
+                        AccessMode = seatConfig.AccessMode,
+                        HasInvite = isOwner && seatConfig.InviteToken != null
+                    };
                 })
                 .ToList(),
             GameId = room.GameSessionId,
             CreatedAt = room.CreatedAt,
-            TurnTimerSeconds = room.TurnTimerSeconds
+            TurnTimerSeconds = room.TurnTimerSeconds,
+            IsOwner = isOwner
         };
     }
 }

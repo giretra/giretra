@@ -56,6 +56,11 @@ export enum CardSuit {
   Spades = 'Spades',
 }
 
+export enum SeatAccessMode {
+  Public = 'Public',
+  InviteOnly = 'InviteOnly',
+}
+
 // ============================================================================
 // Shared Types
 // ============================================================================
@@ -167,6 +172,18 @@ export interface MatchEndedEvent {
   totalDeals: number;
 }
 
+export interface PlayerKickedEvent {
+  roomId: string;
+  playerName: string;
+  position: PlayerPosition;
+}
+
+export interface SeatModeChangedEvent {
+  roomId: string;
+  position: PlayerPosition;
+  accessMode: SeatAccessMode;
+}
+
 // ============================================================================
 // Hub Methods (Client -> Server)
 // ============================================================================
@@ -191,6 +208,8 @@ export interface GameHubEvents {
   onCardPlayed(callback: (event: CardPlayedEvent) => void): void;
   onTrickCompleted(callback: (event: TrickCompletedEvent) => void): void;
   onMatchEnded(callback: (event: MatchEndedEvent) => void): void;
+  onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
+  onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
 }
 
 // ============================================================================
@@ -208,6 +227,8 @@ export const GameHubEventNames = {
   CardPlayed: 'CardPlayed',
   TrickCompleted: 'TrickCompleted',
   MatchEnded: 'MatchEnded',
+  PlayerKicked: 'PlayerKicked',
+  SeatModeChanged: 'SeatModeChanged',
 } as const;
 
 export type GameHubEventName = (typeof GameHubEventNames)[keyof typeof GameHubEventNames];

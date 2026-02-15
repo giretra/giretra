@@ -1,4 +1,5 @@
 using Giretra.Core.Players;
+using Giretra.Web.Domain;
 
 namespace Giretra.Web.Models.Responses;
 
@@ -31,4 +32,14 @@ public sealed class PlayerSlotResponse
     /// The AI agent type name (null if not AI).
     /// </summary>
     public string? AiType { get; init; }
+
+    /// <summary>
+    /// Access mode for this seat (Public or InviteOnly).
+    /// </summary>
+    public SeatAccessMode AccessMode { get; init; }
+
+    /// <summary>
+    /// Whether this seat has an active invite token (only visible to owner).
+    /// </summary>
+    public bool HasInvite { get; init; }
 }

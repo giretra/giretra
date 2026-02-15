@@ -1,7 +1,8 @@
 import { Component, input, output, computed } from '@angular/core';
-import { RoomResponse } from '../../../../../core/services/api.service';
+import { RoomResponse, PlayerSlot } from '../../../../../core/services/api.service';
+import { PlayerPosition, SeatAccessMode } from '../../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, Users } from 'lucide-angular';
+import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-angular';
 
 @Component({
   selector: 'app-waiting-stage',
@@ -16,9 +17,40 @@ import { LucideAngularModule, Users } from 'lucide-angular';
       <!-- Seat indicator circles -->
       <div class="seat-indicators">
         @for (slot of seatSlots(); track slot.position) {
-          <div class="seat-circle" [class.filled]="slot.isOccupied" [title]="slot.position">
-            @if (slot.isOccupied) {
-              <span class="seat-initial">{{ slot.initial }}</span>
+          <div class="seat-wrapper">
+            <div class="seat-circle" [class.filled]="slot.isOccupied" [class.invite-only]="slot.accessMode === 'InviteOnly' && !slot.isOccupied" [title]="slot.position">
+              @if (slot.isOccupied) {
+                <span class="seat-initial">{{ slot.initial }}</span>
+              } @else if (slot.accessMode === 'InviteOnly') {
+                <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-badge"></i-lucide>
+              }
+            </div>
+
+            <!-- Owner controls for non-Bottom seats -->
+            @if (isCreator() && !isWatcher() && slot.position !== 'Bottom') {
+              <div class="seat-controls">
+                @if (slot.isOccupied && !slot.isAi) {
+                  <!-- Kick button -->
+                  <button class="control-btn kick-btn" title="Kick player" (click)="onKickPlayer(slot.position)">
+                    <i-lucide [img]="UserXIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+                  </button>
+                } @else if (!slot.isOccupied && !slot.isAi) {
+                  <!-- Lock/unlock toggle -->
+                  <button class="control-btn mode-btn" [title]="slot.accessMode === 'InviteOnly' ? 'Set to Public' : 'Set to Invite-Only'" (click)="onToggleSeatMode(slot.position, slot.accessMode)">
+                    @if (slot.accessMode === 'InviteOnly') {
+                      <i-lucide [img]="UnlockIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+                    } @else {
+                      <i-lucide [img]="LockIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+                    }
+                  </button>
+                  <!-- Invite link button (visible when invite-only) -->
+                  @if (slot.accessMode === 'InviteOnly') {
+                    <button class="control-btn invite-btn" title="Copy invite link" (click)="onGenerateInvite(slot.position)">
+                      <i-lucide [img]="LinkIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+                    </button>
+                  }
+                }
+              </div>
             }
           </div>
         }
@@ -70,6 +102,13 @@ import { LucideAngularModule, Users } from 'lucide-angular';
       margin-bottom: 0.75rem;
     }
 
+    .seat-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
     .seat-circle {
       width: 2.5rem;
       height: 2.5rem;
@@ -87,11 +126,55 @@ import { LucideAngularModule, Users } from 'lucide-angular';
       background: hsl(var(--primary) / 0.15);
     }
 
+    .seat-circle.invite-only {
+      border-color: hsl(var(--gold) / 0.6);
+      background: hsl(var(--gold) / 0.08);
+    }
+
     .seat-initial {
       font-size: 0.875rem;
       font-weight: 600;
       color: hsl(var(--primary));
       text-transform: uppercase;
+    }
+
+    .lock-badge {
+      color: hsl(var(--gold) / 0.7);
+    }
+
+    .seat-controls {
+      display: flex;
+      gap: 0.125rem;
+    }
+
+    .control-btn {
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 0.25rem;
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      padding: 0;
+    }
+
+    .control-btn:hover {
+      background: hsl(var(--muted) / 0.5);
+      color: hsl(var(--foreground));
+    }
+
+    .kick-btn:hover {
+      background: hsl(var(--destructive) / 0.15);
+      color: hsl(var(--destructive));
+    }
+
+    .invite-btn:hover {
+      background: hsl(var(--gold) / 0.15);
+      color: hsl(var(--gold));
     }
 
     .count {
@@ -144,12 +227,19 @@ import { LucideAngularModule, Users } from 'lucide-angular';
 })
 export class WaitingStageComponent {
   readonly UsersIcon = Users;
+  readonly LockIcon = Lock;
+  readonly UnlockIcon = Unlock;
+  readonly LinkIcon = Link;
+  readonly UserXIcon = UserX;
 
   readonly room = input<RoomResponse | null>(null);
   readonly isCreator = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
 
   readonly startGame = output<void>();
+  readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();
+  readonly generateInvite = output<PlayerPosition>();
+  readonly kickPlayer = output<PlayerPosition>();
 
   readonly playerCount = computed(() => this.room()?.playerCount ?? 0);
 
@@ -163,7 +253,25 @@ export class WaitingStageComponent {
     return room.playerSlots.map((slot) => ({
       position: slot.position,
       isOccupied: slot.isOccupied,
+      isAi: slot.isAi,
       initial: slot.playerName ? slot.playerName.charAt(0).toUpperCase() : '',
+      accessMode: slot.accessMode,
+      hasInvite: slot.hasInvite,
     }));
   });
+
+  onToggleSeatMode(position: PlayerPosition, currentMode: SeatAccessMode): void {
+    const newMode = currentMode === SeatAccessMode.InviteOnly
+      ? SeatAccessMode.Public
+      : SeatAccessMode.InviteOnly;
+    this.setSeatMode.emit({ position, accessMode: newMode });
+  }
+
+  onGenerateInvite(position: PlayerPosition): void {
+    this.generateInvite.emit(position);
+  }
+
+  onKickPlayer(position: PlayerPosition): void {
+    this.kickPlayer.emit(position);
+  }
 }

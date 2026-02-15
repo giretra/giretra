@@ -55,4 +55,14 @@ public interface INotificationService
     /// Notifies all clients in a room that the game started.
     /// </summary>
     Task NotifyGameStartedAsync(string roomId, string gameId);
+
+    /// <summary>
+    /// Notifies all clients in a room that a player was kicked.
+    /// </summary>
+    Task NotifyPlayerKickedAsync(string roomId, string playerName, PlayerPosition position);
+
+    /// <summary>
+    /// Notifies all clients in a room that a seat's access mode changed.
+    /// </summary>
+    Task NotifySeatModeChangedAsync(string roomId, PlayerPosition position, Domain.SeatAccessMode accessMode);
 }

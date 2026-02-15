@@ -8,6 +8,11 @@ namespace Giretra.Web.Domain;
 public sealed class ConnectedClient
 {
     /// <summary>
+    /// Persistent user identity (survives reconnections).
+    /// </summary>
+    public Guid? UserId { get; init; }
+
+    /// <summary>
     /// Unique identifier for this client connection.
     /// </summary>
     public required string ClientId { get; init; }

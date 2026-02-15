@@ -21,6 +21,11 @@ public sealed class RoomToGameFlowTests
     private readonly GameService _gameService;
     private readonly RoomService _roomService;
 
+    private static readonly Guid CreatorUserId = Guid.NewGuid();
+    private static readonly Guid Player2UserId = Guid.NewGuid();
+    private static readonly Guid Player3UserId = Guid.NewGuid();
+    private static readonly Guid Player4UserId = Guid.NewGuid();
+
     public RoomToGameFlowTests()
     {
         _roomRepository = new InMemoryRoomRepository();
@@ -46,16 +51,16 @@ public sealed class RoomToGameFlowTests
             Name = "Full Game Room",
             CreatorName = "Player1",
             AiSeats = null
-        }, "Player1");
+        }, "Player1", CreatorUserId);
 
         Assert.NotNull(createResponse);
         Assert.Equal(PlayerPosition.Bottom, createResponse.Position);
         Assert.Equal(RoomStatus.Waiting, createResponse.Room.Status);
 
         // Step 2: Three more players join
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2");
-        var player3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" }, "Player3");
-        var player4 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" }, "Player4");
+        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
+        var player3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" }, "Player3", Player3UserId);
+        var player4 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" }, "Player4", Player4UserId);
 
         Assert.NotNull(player2);
         Assert.NotNull(player3);
@@ -65,7 +70,7 @@ public sealed class RoomToGameFlowTests
         Assert.Equal(4, room!.PlayerCount);
 
         // Step 3: Creator starts the game
-        var (startResponse, error) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, error) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         Assert.NotNull(startResponse);
         Assert.Null(error);
@@ -96,12 +101,12 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "HumanPlayer");
+        }, "HumanPlayer", CreatorUserId);
 
         Assert.NotNull(createResponse);
 
         // Step 2: Start game immediately (no need to wait for players)
-        var (startResponse, error) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, error) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         Assert.NotNull(startResponse);
         Assert.Null(error);
@@ -127,9 +132,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Wait for game to initialize
         await Task.Delay(200);
@@ -158,14 +163,14 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
         // Add watcher before game starts
         var watchResponse = _roomService.WatchRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Spectator" }, "Spectator");
         Assert.NotNull(watchResponse);
 
         // Start game
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
         Assert.NotNull(startResponse);
 
         // Wait for game to initialize
@@ -195,12 +200,12 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Creator");
+        }, "Creator", CreatorUserId);
 
-        _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Act - Try to join after game started
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" }, "LatePlayer");
+        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" }, "LatePlayer", Guid.NewGuid());
 
         // Assert
         Assert.Null(joinResponse);
@@ -220,12 +225,12 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Creator");
+        }, "Creator", CreatorUserId);
 
-        _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Act
-        var result = _roomService.DeleteRoom(createResponse.Room.RoomId, createResponse.ClientId);
+        var result = _roomService.DeleteRoom(createResponse.Room.RoomId, CreatorUserId);
 
         // Assert
         Assert.False(result);
@@ -240,16 +245,16 @@ public sealed class RoomToGameFlowTests
             Name = "Test Room",
             CreatorName = "Creator",
             AiSeats = null
-        }, "Creator");
+        }, "Creator", CreatorUserId);
 
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2");
+        _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
 
         // Act
-        var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, player2!.ClientId);
+        var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, Player2UserId);
 
         // Assert
         Assert.Null(response);
-        Assert.Contains("Only the room creator", error);
+        Assert.Contains("Only the room owner", error);
     }
 
     [Fact]
@@ -261,16 +266,16 @@ public sealed class RoomToGameFlowTests
             Name = "Mixed Room",
             CreatorName = "Human1",
             AiSeats = null
-        }, "Human1");
+        }, "Human1", CreatorUserId);
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Human2",
             PreferredPosition = PlayerPosition.Top
-        }, "Human2");
+        }, "Human2", Player2UserId);
 
         // Start game (2 positions will be AI)
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Assert
         var game = _gameService.GetGame(startResponse!.GameId);
@@ -303,9 +308,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
 
         // Wait for a cut pending action
@@ -334,9 +339,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
 
         // Wait for a negotiation pending action for our player
@@ -372,9 +377,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
 
         // Wait for a card play pending action for our player
@@ -406,9 +411,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
         var game = _gameService.GetGame(startResponse!.GameId)!;
 
         // Wait for any pending action for our player
@@ -444,9 +449,9 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         await Task.Delay(100);
 
@@ -470,15 +475,15 @@ public sealed class RoomToGameFlowTests
             Name = "Test Room",
             CreatorName = "Player1",
             AiSeats = null
-        }, "Player1");
+        }, "Player1", CreatorUserId);
 
         var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Player2",
             PreferredPosition = PlayerPosition.Left
-        }, "Player2");
+        }, "Player2", Player2UserId);
 
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Act
         var game = _gameService.GetGame(startResponse!.GameId)!;
@@ -497,14 +502,14 @@ public sealed class RoomToGameFlowTests
             Name = "Room 1",
             CreatorName = "Player1",
             AiSeats = null
-        }, "Player1");
+        }, "Player1", Guid.NewGuid());
 
         var room2Response = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Room 2",
             CreatorName = "Player2",
             AiSeats = null
-        }, "Player2");
+        }, "Player2", Guid.NewGuid());
 
         // Act
         var foundRoom = _roomService.GetRoomForClient(room2Response.ClientId);
@@ -532,10 +537,10 @@ public sealed class RoomToGameFlowTests
                 new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
                 new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
             ]
-        }, "Player");
+        }, "Player", CreatorUserId);
 
         // Act
-        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, createResponse.ClientId);
+        var (startResponse, _) = _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Assert
         _notifications.Received(1).NotifyGameStartedAsync(
@@ -551,22 +556,20 @@ public sealed class RoomToGameFlowTests
     public async Task PlayAgain_RoomResetsToWaitingAfterMatchEnds()
     {
         // Arrange - Create room directly with NO human clients (all AI)
-        // This bypasses the RoomService which always adds a human creator
         var room = new Room
         {
             RoomId = "room_test_playagain",
             Name = "All AI Room",
             CreatorClientId = "test_creator",
+            OwnerUserId = CreatorUserId,
             Status = RoomStatus.Waiting
         };
-        // Mark all positions as AI slots (no human players)
         room.AiSlots[PlayerPosition.Bottom] = "CalculatingPlayer";
         room.AiSlots[PlayerPosition.Left] = "CalculatingPlayer";
         room.AiSlots[PlayerPosition.Top] = "CalculatingPlayer";
         room.AiSlots[PlayerPosition.Right] = "CalculatingPlayer";
         _roomRepository.Add(room);
 
-        // Start the game - all players will be AI
         var session = _gameService.CreateGame(room);
         Assert.NotNull(session);
 
@@ -574,14 +577,11 @@ public sealed class RoomToGameFlowTests
         room.GameSessionId = session.GameId;
         _roomRepository.Update(room);
 
-        // Verify room is in Playing state
         var roomDuringGame = _roomRepository.GetById(room.RoomId);
         Assert.Equal(RoomStatus.Playing, roomDuringGame!.Status);
 
-        // Act - Wait for the game to complete (all AI, should be fast)
         await WaitForGameCompletion(session, TimeSpan.FromSeconds(120));
 
-        // Assert - Room should be reset to Waiting state by the GameService
         var roomAfterGame = _roomRepository.GetById(room.RoomId);
         Assert.NotNull(roomAfterGame);
         Assert.Equal(RoomStatus.Waiting, roomAfterGame.Status);
@@ -597,6 +597,7 @@ public sealed class RoomToGameFlowTests
             RoomId = "room_test_playagain2",
             Name = "All AI Replay Room",
             CreatorClientId = "test_creator",
+            OwnerUserId = CreatorUserId,
             Status = RoomStatus.Waiting
         };
         room.AiSlots[PlayerPosition.Bottom] = "CalculatingPlayer";
@@ -605,7 +606,6 @@ public sealed class RoomToGameFlowTests
         room.AiSlots[PlayerPosition.Right] = "CalculatingPlayer";
         _roomRepository.Add(room);
 
-        // Start first game
         var firstSession = _gameService.CreateGame(room);
         Assert.NotNull(firstSession);
 
@@ -613,14 +613,11 @@ public sealed class RoomToGameFlowTests
         room.GameSessionId = firstSession.GameId;
         _roomRepository.Update(room);
 
-        // Wait for first game to complete
         await WaitForGameCompletion(firstSession, TimeSpan.FromSeconds(120));
 
-        // Verify room was reset
         var roomAfterFirst = _roomRepository.GetById(room.RoomId);
         Assert.Equal(RoomStatus.Waiting, roomAfterFirst!.Status);
 
-        // Act - Start a second game (simulating "Play Again")
         var secondSession = _gameService.CreateGame(room);
         Assert.NotNull(secondSession);
 
@@ -628,10 +625,8 @@ public sealed class RoomToGameFlowTests
         room.GameSessionId = secondSession.GameId;
         _roomRepository.Update(room);
 
-        // Assert - Games have different IDs
         Assert.NotEqual(firstSession.GameId, secondSession.GameId);
 
-        // Room should be in Playing state again
         var roomDuringSecond = _roomRepository.GetById(room.RoomId);
         Assert.Equal(RoomStatus.Playing, roomDuringSecond!.Status);
         Assert.Equal(secondSession.GameId, roomDuringSecond.GameSessionId);

@@ -16,4 +16,9 @@ public sealed class JoinRoomRequest
     /// Optional preferred position.
     /// </summary>
     public PlayerPosition? PreferredPosition { get; init; }
+
+    /// <summary>
+    /// Optional invite token for joining invite-only seats.
+    /// </summary>
+    public string? InviteToken { get; init; }
 }
