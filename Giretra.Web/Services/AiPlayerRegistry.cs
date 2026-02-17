@@ -24,9 +24,10 @@ public sealed class AiPlayerRegistry
     }
 
     /// <summary>
-    /// Gets the list of available AI type names.
+    /// Gets the list of available AI types with display names.
     /// </summary>
-    public IReadOnlyList<string> GetAvailableTypes() => _factories.Keys.ToList();
+    public IReadOnlyList<AiTypeInfo> GetAvailableTypes() =>
+        _factories.Values.Select(f => new AiTypeInfo(f.AgentName, f.DisplayName)).ToList();
 
     /// <summary>
     /// Creates an AI player agent of the specified type for the given position.
@@ -42,4 +43,9 @@ public sealed class AiPlayerRegistry
         // Fallback to CalculatingPlayer
         return _factories["CalculatingPlayer"].Create(position);
     }
+
+    public string GetDisplayName(string aiType) =>
+        _factories.TryGetValue(aiType, out var factory) ? factory.DisplayName : aiType;
 }
+
+public record AiTypeInfo(string Name, string DisplayName);

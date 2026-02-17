@@ -34,6 +34,11 @@ public sealed class PlayerSlotResponse
     public string? AiType { get; init; }
 
     /// <summary>
+    /// User-friendly display name for the AI agent type (null if not AI).
+    /// </summary>
+    public string? AiDisplayName { get; init; }
+
+    /// <summary>
     /// Access mode for this seat (Public or InviteOnly).
     /// </summary>
     public SeatAccessMode AccessMode { get; init; }

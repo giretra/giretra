@@ -11,6 +11,11 @@ public interface IPlayerAgentFactory
     string AgentName { get; }
 
     /// <summary>
+    /// Gets a user-friendly display name for the agent type.
+    /// </summary>
+    string DisplayName => AgentName;
+
+    /// <summary>
     /// Creates a new player agent for the specified position.
     /// </summary>
     IPlayerAgent Create(PlayerPosition position);

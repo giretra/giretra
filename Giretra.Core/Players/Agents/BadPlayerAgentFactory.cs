@@ -8,6 +8,7 @@ namespace Giretra.Core.Players.Factories;
 public sealed class BadPlayerAgentFactory : IPlayerAgentFactory
 {
     public string AgentName => "BadPlayer";
+    public string DisplayName => "Beginner";
 
     public IPlayerAgent Create(PlayerPosition position)
     {

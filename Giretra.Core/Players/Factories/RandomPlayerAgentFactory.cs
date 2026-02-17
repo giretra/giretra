@@ -11,6 +11,7 @@ public sealed class RandomPlayerAgentFactory : IPlayerAgentFactory
     private int _counter;
 
     public string AgentName => "RandomPlayer";
+    public string DisplayName => "Random";
 
     /// <summary>
     /// Creates a factory with optional base seed for reproducibility.

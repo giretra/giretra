@@ -18,14 +18,16 @@ public sealed class RoomService : IRoomService
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
+    private readonly AiPlayerRegistry _aiRegistry;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
     private static int _roomCounter;
 
-    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications)
+    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry)
     {
         _roomRepository = roomRepository;
         _gameService = gameService;
         _notifications = notifications;
+        _aiRegistry = aiRegistry;
     }
 
     public RoomListResponse GetAllRooms(Guid? requestingUserId = null)
@@ -518,7 +520,7 @@ public sealed class RoomService : IRoomService
         return $"{creatorName}_#{roomNumber:D5}";
     }
 
-    private static RoomResponse MapToResponse(Room room, Guid? requestingUserId = null)
+    private RoomResponse MapToResponse(Room room, Guid? requestingUserId = null)
     {
         var isOwner = requestingUserId.HasValue && room.IsOwner(requestingUserId.Value);
 
@@ -540,6 +542,7 @@ public sealed class RoomService : IRoomService
                         PlayerName = room.PlayerSlots[pos]?.DisplayName,
                         IsAi = room.AiSlots.ContainsKey(pos),
                         AiType = room.AiSlots.GetValueOrDefault(pos),
+                        AiDisplayName = room.AiSlots.TryGetValue(pos, out var aiType) ? _aiRegistry.GetDisplayName(aiType) : null,
                         AccessMode = seatConfig.AccessMode,
                         HasInvite = isOwner && seatConfig.InviteToken != null
                     };

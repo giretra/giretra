@@ -1,13 +1,13 @@
 import { Component, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AiSeat, ApiService, RoomResponse } from '../../../../core/services/api.service';
+import { AiSeat, AiTypeInfo, ApiService, RoomResponse } from '../../../../core/services/api.service';
 import { ClientSessionService } from '../../../../core/services/client-session.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Bot, UserPlus, Lock } from 'lucide-angular';
 
-const DEFAULT_AI_TYPE = 'CalculatingPlayer';
+const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
 @Component({
   selector: 'app-create-room-form',
@@ -82,8 +82,8 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
                     (ngModelChange)="aiSeats.Top = $event"
                     name="aiTypeTop"
                   >
-                    @for (type of aiTypes(); track type) {
-                      <option [value]="type">{{ type }}</option>
+                    @for (type of aiTypes(); track type.name) {
+                      <option [value]="type.name">{{ type.displayName }}</option>
                     }
                   </select>
                 }
@@ -114,8 +114,8 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
                     (ngModelChange)="aiSeats.Left = $event"
                     name="aiTypeLeft"
                   >
-                    @for (type of aiTypes(); track type) {
-                      <option [value]="type">{{ type }}</option>
+                    @for (type of aiTypes(); track type.name) {
+                      <option [value]="type.name">{{ type.displayName }}</option>
                     }
                   </select>
                 }
@@ -144,8 +144,8 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
                     (ngModelChange)="aiSeats.Right = $event"
                     name="aiTypeRight"
                   >
-                    @for (type of aiTypes(); track type) {
-                      <option [value]="type">{{ type }}</option>
+                    @for (type of aiTypes(); track type.name) {
+                      <option [value]="type.name">{{ type.displayName }}</option>
                     }
                   </select>
                 }
@@ -653,7 +653,7 @@ export class CreateRoomFormComponent implements OnInit {
     Top: null,
     Right: null,
   };
-  readonly aiTypes = signal<string[]>([DEFAULT_AI_TYPE]);
+  readonly aiTypes = signal<AiTypeInfo[]>([{ name: DEFAULT_AI_TYPE, displayName: 'Deterministic' }]);
   readonly submitting = signal<boolean>(false);
   readonly error = signal<string>('');
 
@@ -675,13 +675,13 @@ export class CreateRoomFormComponent implements OnInit {
     if (this.aiSeats[seat]) {
       this.aiSeats[seat] = null;
     } else {
-      this.aiSeats[seat] = this.aiTypes()[0] || DEFAULT_AI_TYPE;
+      this.aiSeats[seat] = this.aiTypes()[0]?.name || DEFAULT_AI_TYPE;
     }
   }
 
   toggleAllAi(): void {
     const fill = !this.allAi;
-    const type = fill ? (this.aiTypes()[0] || DEFAULT_AI_TYPE) : null;
+    const type = fill ? (this.aiTypes()[0]?.name || DEFAULT_AI_TYPE) : null;
     this.aiSeats.Left = type;
     this.aiSeats.Top = type;
     this.aiSeats.Right = type;

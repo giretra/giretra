@@ -188,7 +188,7 @@ public class RoomsController : ControllerBase
     /// Gets available AI player types.
     /// </summary>
     [HttpGet("/api/ai-types")]
-    public ActionResult<IReadOnlyList<string>> GetAiTypes()
+    public ActionResult<IReadOnlyList<AiTypeInfo>> GetAiTypes()
     {
         return Ok(_aiRegistry.GetAvailableTypes());
     }

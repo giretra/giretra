@@ -26,7 +26,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
           <div class="seat-with-bubble">
             <app-player-seat
               [position]="slot.position"
-              [playerName]="slot.playerName"
+              [playerName]="slot.aiDisplayName ?? slot.playerName"
               [isOccupied]="slot.isOccupied"
               [isAi]="slot.isAi"
               [isActiveTurn]="activePlayer() === slot.position"
@@ -64,7 +64,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
               }
               <app-player-seat
                 [position]="slot.position"
-                [playerName]="slot.playerName"
+                [playerName]="slot.aiDisplayName ?? slot.playerName"
                 [isOccupied]="slot.isOccupied"
                 [isAi]="slot.isAi"
                 [isActiveTurn]="activePlayer() === slot.position"
@@ -114,7 +114,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
             <div class="seat-with-bubble horizontal">
               <app-player-seat
                 [position]="slot.position"
-                [playerName]="slot.playerName"
+                [playerName]="slot.aiDisplayName ?? slot.playerName"
                 [isOccupied]="slot.isOccupied"
                 [isAi]="slot.isAi"
                 [isActiveTurn]="activePlayer() === slot.position"
@@ -151,7 +151,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
             }
             <app-player-seat
               [position]="slot.position"
-              [playerName]="slot.playerName"
+              [playerName]="slot.aiDisplayName ?? slot.playerName"
               [isOccupied]="slot.isOccupied"
               [isAi]="slot.isAi"
               [isActiveTurn]="activePlayer() === slot.position"

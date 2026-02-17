@@ -8,6 +8,7 @@ namespace Giretra.Core.Players.Factories;
 public sealed class CalculatingPlayerAgentFactory : IPlayerAgentFactory
 {
     public string AgentName => "CalculatingPlayer";
+    public string DisplayName => "Calculating";
 
     public IPlayerAgent Create(PlayerPosition position)
     {

@@ -24,8 +24,14 @@ export interface PlayerSlot {
   playerName: string | null;
   isAi: boolean;
   aiType: string | null;
+  aiDisplayName: string | null;
   accessMode: SeatAccessMode;
   hasInvite: boolean;
+}
+
+export interface AiTypeInfo {
+  name: string;
+  displayName: string;
 }
 
 export interface AiSeat {
@@ -266,9 +272,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  getAiTypes(): Observable<string[]> {
+  getAiTypes(): Observable<AiTypeInfo[]> {
     return this.http
-      .get<string[]>(`${this.baseUrl}/api/ai-types`)
+      .get<AiTypeInfo[]>(`${this.baseUrl}/api/ai-types`)
       .pipe(catchError(this.handleError));
   }
 

@@ -49,7 +49,7 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
                     @if (getNorth().isOccupied) {
                       @if (getNorth().isAi) {
                         <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">AI</span>
+                        <span class="picker-label">{{ getNorth().aiDisplayName ?? 'AI' }}</span>
                       } @else {
                         <span class="picker-initial">{{ getInitial(getNorth()) }}</span>
                         <span class="picker-label">{{ getNorth().playerName }}</span>
@@ -77,7 +77,7 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
                     @if (getWest().isOccupied) {
                       @if (getWest().isAi) {
                         <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">AI</span>
+                        <span class="picker-label">{{ getWest().aiDisplayName ?? 'AI' }}</span>
                       } @else {
                         <span class="picker-initial">{{ getInitial(getWest()) }}</span>
                         <span class="picker-label">{{ getWest().playerName }}</span>
@@ -105,7 +105,7 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
                     @if (getEast().isOccupied) {
                       @if (getEast().isAi) {
                         <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">AI</span>
+                        <span class="picker-label">{{ getEast().aiDisplayName ?? 'AI' }}</span>
                       } @else {
                         <span class="picker-initial">{{ getInitial(getEast()) }}</span>
                         <span class="picker-label">{{ getEast().playerName }}</span>
@@ -133,7 +133,7 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
                     @if (getSouth().isOccupied) {
                       @if (getSouth().isAi) {
                         <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">AI</span>
+                        <span class="picker-label">{{ getSouth().aiDisplayName ?? 'AI' }}</span>
                       } @else {
                         <span class="picker-initial">{{ getInitial(getSouth()) }}</span>
                         <span class="picker-label">{{ getSouth().playerName }}</span>

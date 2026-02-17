@@ -26,7 +26,7 @@ public sealed class RoomServiceTests
         _roomRepository = new InMemoryRoomRepository();
         _gameService = Substitute.For<IGameService>();
         _notifications = Substitute.For<INotificationService>();
-        _roomService = new RoomService(_roomRepository, _gameService, _notifications);
+        _roomService = new RoomService(_roomRepository, _gameService, _notifications, new AiPlayerRegistry());
     }
 
     #region CreateRoom Tests
