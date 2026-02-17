@@ -165,9 +165,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number): Observable<CreateRoomResponse> {
+  createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number, inviteOnly = false): Observable<CreateRoomResponse> {
     return this.http
-      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, aiSeats, turnTimerSeconds })
+      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, aiSeats, turnTimerSeconds, inviteOnly })
       .pipe(catchError(this.handleError));
   }
 

@@ -27,4 +27,9 @@ public sealed class CreateRoomRequest
     /// Turn timer duration in seconds. Defaults to 120, range 10–300.
     /// </summary>
     public int? TurnTimerSeconds { get; init; }
+
+    /// <summary>
+    /// When true, all non-AI human seats are set to InviteOnly on creation.
+    /// </summary>
+    public bool InviteOnly { get; init; }
 }

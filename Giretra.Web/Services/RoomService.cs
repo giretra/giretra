@@ -87,6 +87,18 @@ public sealed class RoomService : IRoomService
             }
         }
 
+        // Set non-AI, non-Bottom seats to InviteOnly if requested
+        if (request.InviteOnly)
+        {
+            foreach (var position in new[] { PlayerPosition.Left, PlayerPosition.Top, PlayerPosition.Right })
+            {
+                if (!room.AiSlots.ContainsKey(position))
+                {
+                    room.SeatConfigs[position].AccessMode = SeatAccessMode.InviteOnly;
+                }
+            }
+        }
+
         _roomRepository.Add(room);
 
         return new JoinRoomResponse

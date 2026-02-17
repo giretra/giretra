@@ -25,6 +25,7 @@ public class Program
 
         try
         {
+            LoadDotEnv();
             Log.Information("Starting Giretra.Web");
             var builder = WebApplication.CreateBuilder(args);
 
@@ -167,6 +168,49 @@ public class Program
         finally
         {
             Log.CloseAndFlush();
+        }
+    }
+
+    private static void LoadDotEnv()
+    {
+        // Walk up from cwd to find .env (handles launch from subdirectory)
+        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        string? path = null;
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, ".env");
+            if (File.Exists(candidate)) { path = candidate; break; }
+            dir = dir.Parent;
+        }
+        if (path is null)
+            return;
+
+        foreach (var (lineNumber, line) in File.ReadAllLines(path).Select((l, i) => (i + 1, l)))
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith('#'))
+                continue;
+
+            var separatorIndex = line.IndexOf('=');
+            if (separatorIndex < 0)
+                throw new InvalidOperationException(
+                    $".env parse error at line {lineNumber}: missing '=' separator in \"{line}\"");
+
+            var key = line[..separatorIndex].Trim();
+            if (key.Length == 0)
+                throw new InvalidOperationException(
+                    $".env parse error at line {lineNumber}: empty variable name");
+
+            var value = line[(separatorIndex + 1)..].Trim();
+
+            // Strip matching quotes
+            if (value.Length >= 2 &&
+                ((value[0] == '"' && value[^1] == '"') ||
+                 (value[0] == '\'' && value[^1] == '\'')))
+            {
+                value = value[1..^1];
+            }
+
+            Environment.SetEnvironmentVariable(key, value);
         }
     }
 }

@@ -5,7 +5,7 @@ import { ClientSessionService } from '../../../../core/services/client-session.s
 import { AuthService } from '../../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
-import { LucideAngularModule, Bot, UserPlus } from 'lucide-angular';
+import { LucideAngularModule, Bot, UserPlus, Lock } from 'lucide-angular';
 
 const DEFAULT_AI_TYPE = 'CalculatingPlayer';
 
@@ -172,6 +172,24 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
               </button>
             }
           </div>
+        </div>
+
+        <!-- Invite only -->
+        <div class="field">
+          <button
+            type="button"
+            class="invite-only-toggle"
+            [class.active]="inviteOnly"
+            [disabled]="submitting()"
+            (click)="inviteOnly = !inviteOnly"
+          >
+            <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+            <span>Invite Only</span>
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </button>
+          <p class="hint">Only players with an invite link can join</p>
         </div>
 
         @if (error()) {
@@ -537,6 +555,74 @@ const DEFAULT_AI_TYPE = 'CalculatingPlayer';
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* Invite only toggle */
+    .invite-only-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: hsl(var(--muted) / 0.2);
+      border: 1.5px solid hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .invite-only-toggle:hover:not(:disabled) {
+      background: hsl(var(--muted) / 0.4);
+      border-color: hsl(var(--muted-foreground));
+    }
+
+    .invite-only-toggle.active {
+      background: hsl(var(--gold) / 0.12);
+      border-color: hsl(var(--gold) / 0.5);
+      color: hsl(var(--gold));
+    }
+
+    .invite-only-toggle.active:hover:not(:disabled) {
+      background: hsl(var(--gold) / 0.2);
+      border-color: hsl(var(--gold));
+    }
+
+    .invite-only-toggle:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .toggle-track {
+      margin-left: auto;
+      width: 2rem;
+      height: 1.125rem;
+      border-radius: 9999px;
+      background: hsl(var(--muted));
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .invite-only-toggle.active .toggle-track {
+      background: hsl(var(--gold));
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 0.125rem;
+      left: 0.125rem;
+      width: 0.875rem;
+      height: 0.875rem;
+      border-radius: 50%;
+      background: hsl(var(--foreground));
+      transition: transform 0.15s ease;
+    }
+
+    .invite-only-toggle.active .toggle-thumb {
+      transform: translateX(0.875rem);
+      background: hsl(var(--background));
+    }
   `],
 })
 export class CreateRoomFormComponent implements OnInit {
@@ -546,6 +632,7 @@ export class CreateRoomFormComponent implements OnInit {
 
   readonly BotIcon = Bot;
   readonly UserPlusIcon = UserPlus;
+  readonly LockIcon = Lock;
 
   readonly displayName = () => this.auth.user()?.displayName ?? '';
 
@@ -553,6 +640,7 @@ export class CreateRoomFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   roomName = '';
+  inviteOnly = false;
   selectedTimer = 120;
   readonly timerPresets = [
     { label: '30s', value: 30 },
@@ -613,7 +701,7 @@ export class CreateRoomFormComponent implements OnInit {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.getAiSeats(), this.selectedTimer).subscribe({
+    this.api.createRoom(name, this.getAiSeats(), this.selectedTimer, this.inviteOnly).subscribe({
       next: (response) => {
         this.session.joinRoom(
           response.room.roomId,
