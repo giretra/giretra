@@ -675,13 +675,13 @@ export class CreateRoomFormComponent implements OnInit {
     if (this.aiSeats[seat]) {
       this.aiSeats[seat] = null;
     } else {
-      this.aiSeats[seat] = this.aiTypes()[0]?.name || DEFAULT_AI_TYPE;
+      this.aiSeats[seat] = DEFAULT_AI_TYPE;
     }
   }
 
   toggleAllAi(): void {
     const fill = !this.allAi;
-    const type = fill ? (this.aiTypes()[0]?.name || DEFAULT_AI_TYPE) : null;
+    const type = fill ? DEFAULT_AI_TYPE : null;
     this.aiSeats.Left = type;
     this.aiSeats.Top = type;
     this.aiSeats.Right = type;

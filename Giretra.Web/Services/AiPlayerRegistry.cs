@@ -14,9 +14,9 @@ public sealed class AiPlayerRegistry
     {
         var factories = new IPlayerAgentFactory[]
         {
+            new DeterministicPlayerAgentFactory(),
             new CalculatingPlayerAgentFactory(),
             new RandomPlayerAgentFactory(),
-            new DeterministicPlayerAgentFactory(),
             new BadPlayerAgentFactory()
         };
 
