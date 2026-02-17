@@ -227,10 +227,8 @@ export class TableComponent implements OnInit, OnDestroy {
           // Immediately refresh state after game starts (don't wait for SignalR)
           await this.gameState.refreshState();
         },
-        error: (err) => {
-          console.error('Failed to start game', err.message || err);
-          // Show alert with error message for debugging
-          alert(`Failed to start game: ${err.message || 'Unknown error'}`);
+        error: () => {
+          // Toast shown by ApiService
         },
       });
     } else {

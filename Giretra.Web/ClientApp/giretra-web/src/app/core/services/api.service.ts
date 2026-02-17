@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { HotToastService } from '@ngxpert/hot-toast';
 import { API_BASE_URL } from '../../app.config';
 import {
   CardRank,
@@ -148,6 +149,7 @@ export interface ApiError {
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly toast = inject(HotToastService);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Rooms
@@ -323,7 +325,7 @@ export class ApiService {
   // Error Handling
   // ─────────────────────────────────────────────────────────────────────────
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     let message = 'An error occurred';
 
     if (error.error && typeof error.error === 'object') {
@@ -340,7 +342,7 @@ export class ApiService {
     }
 
     console.error('API Error:', error);
-    console.error('Error message:', message);
+    this.toast.error(message);
     return throwError(() => new Error(message));
-  }
+  };
 }

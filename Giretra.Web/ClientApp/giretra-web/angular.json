@@ -57,6 +57,7 @@
               }
             ],
             "styles": [
+              "node_modules/@ngxpert/hot-toast/src/styles/styles.css",
               "src/styles.css"
             ]
           },
