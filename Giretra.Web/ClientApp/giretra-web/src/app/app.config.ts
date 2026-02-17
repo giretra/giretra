@@ -32,6 +32,17 @@ import {
   Unlock,
   Link,
   UserX,
+  Settings,
+  Search,
+  UserMinus,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Upload,
+  Trash2,
+  EyeOff,
+  Shield,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -54,6 +65,17 @@ const usedIcons = {
   Unlock,
   Link,
   UserX,
+  Settings,
+  Search,
+  UserMinus,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Upload,
+  Trash2,
+  EyeOff,
+  Shield,
 };
 
 function initializeKeycloak(auth: AuthService) {

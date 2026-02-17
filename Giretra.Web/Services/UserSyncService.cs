@@ -61,7 +61,6 @@ public sealed class UserSyncService : IUserSyncService
         else
         {
             user.Username = username;
-            user.DisplayName = displayName;
             user.Email = email;
             user.Role = role;
             user.LastLoginAt = DateTimeOffset.UtcNow;

@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings } from 'lucide-angular';
 
 @Component({
   selector: 'app-home',
@@ -42,7 +42,13 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
               <div class="user-pill">
                 <span class="user-avatar">{{ user.displayName.charAt(0).toUpperCase() }}</span>
                 <span class="user-name">{{ user.displayName }}</span>
-                <button class="change-name-btn" (click)="logout()" title="Logout">
+                <button class="pill-btn settings-btn" (click)="goToSettings()" title="Settings">
+                  <i-lucide [img]="SettingsIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  @if (pendingFriendCount() > 0) {
+                    <span class="badge-dot"></span>
+                  }
+                </button>
+                <button class="pill-btn" (click)="logout()" title="Logout">
                   <i-lucide [img]="LogOutIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
               </div>
@@ -112,8 +118,9 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
     .user-pill { display:flex; align-items:center; gap:0.5rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.25rem 0.5rem 0.25rem 0.25rem; }
     .user-avatar { width:2rem; height:2rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
     .user-name { font-size:0.875rem; font-weight:600; color:hsl(var(--foreground)); }
-    .change-name-btn { display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .change-name-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
+    .pill-btn { position:relative; display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
+    .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
+    .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
     .main { flex:1; padding:1.5rem 1rem; }
     .main-inner { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
@@ -142,6 +149,7 @@ import { LucideAngularModule, Plus, LogOut } from 'lucide-angular';
 export class HomeComponent implements OnInit, OnDestroy {
   readonly PlusIcon = Plus;
   readonly LogOutIcon = LogOut;
+  readonly SettingsIcon = Settings;
 
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
@@ -150,21 +158,29 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   private pollSubscription: Subscription | null = null;
+  private friendPollSubscription: Subscription | null = null;
 
   readonly rooms = signal<RoomResponse[]>([]);
   readonly loading = signal<boolean>(true);
   readonly showCreateForm = signal<boolean>(false);
+  readonly pendingFriendCount = signal<number>(0);
 
   ngOnInit(): void {
     this.loadRooms();
+    this.loadPendingFriendCount();
 
     this.pollSubscription = interval(5000).subscribe(() => {
       this.loadRooms();
+    });
+
+    this.friendPollSubscription = interval(30000).subscribe(() => {
+      this.loadPendingFriendCount();
     });
   }
 
   ngOnDestroy(): void {
     this.pollSubscription?.unsubscribe();
+    this.friendPollSubscription?.unsubscribe();
   }
 
   private loadRooms(): void {
@@ -178,6 +194,16 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
     });
+  }
+
+  private loadPendingFriendCount(): void {
+    this.api.getPendingFriendCount().subscribe({
+      next: (res) => this.pendingFriendCount.set(res.count),
+    });
+  }
+
+  goToSettings(): void {
+    this.router.navigate(['/settings']);
   }
 
   logout(): void {

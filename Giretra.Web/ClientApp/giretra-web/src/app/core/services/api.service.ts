@@ -140,6 +140,99 @@ export interface ApiError {
 }
 
 // ============================================================================
+// Settings Response Types
+// ============================================================================
+
+export interface ProfileResponse {
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  eloRating: number;
+  eloIsPublic: boolean;
+  gamesPlayed: number;
+  gamesWon: number;
+  winStreak: number;
+  bestWinStreak: number;
+  createdAt: string;
+}
+
+export interface FriendResponse {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  friendsSince: string;
+}
+
+export interface FriendRequestResponse {
+  friendshipId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  sentAt: string;
+}
+
+export interface FriendsListResponse {
+  friends: FriendResponse[];
+  pendingReceived: FriendRequestResponse[];
+  pendingSent: FriendRequestResponse[];
+}
+
+export interface BlockedUserResponse {
+  blockId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  blockedAt: string;
+}
+
+export interface MatchHistoryPlayerResponse {
+  displayName: string;
+  position: PlayerPosition;
+  team: Team;
+  isWinner: boolean;
+}
+
+export interface MatchHistoryItemResponse {
+  matchId: string;
+  roomName: string;
+  team1FinalScore: number;
+  team2FinalScore: number;
+  team: Team;
+  position: PlayerPosition;
+  isWinner: boolean;
+  eloChange: number | null;
+  totalDeals: number;
+  wasAbandoned: boolean;
+  durationSeconds: number | null;
+  playedAt: string;
+  players: MatchHistoryPlayerResponse[];
+}
+
+export interface MatchHistoryListResponse {
+  matches: MatchHistoryItemResponse[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface UserSearchResultResponse {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface UserSearchResponse {
+  results: UserSearchResultResponse[];
+}
+
+export interface PendingCountResponse {
+  count: number;
+}
+
+// ============================================================================
 // API Service
 // ============================================================================
 
@@ -318,6 +411,108 @@ export class ApiService {
       .post<void>(`${this.baseUrl}/api/games/${gameId}/continue-match`, {
         clientId,
       })
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Settings
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getProfile(): Observable<ProfileResponse> {
+    return this.http
+      .get<ProfileResponse>(`${this.baseUrl}/api/settings/profile`)
+      .pipe(catchError(this.handleError));
+  }
+
+  updateDisplayName(displayName: string): Observable<void> {
+    return this.http
+      .put<void>(`${this.baseUrl}/api/settings/profile/display-name`, { displayName })
+      .pipe(catchError(this.handleError));
+  }
+
+  uploadAvatar(file: File): Observable<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http
+      .post<{ avatarUrl: string }>(`${this.baseUrl}/api/settings/profile/avatar`, formData)
+      .pipe(catchError(this.handleError));
+  }
+
+  deleteAvatar(): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/settings/profile/avatar`)
+      .pipe(catchError(this.handleError));
+  }
+
+  updateEloVisibility(isPublic: boolean): Observable<void> {
+    return this.http
+      .put<void>(`${this.baseUrl}/api/settings/profile/elo-visibility`, { isPublic })
+      .pipe(catchError(this.handleError));
+  }
+
+  getFriends(): Observable<FriendsListResponse> {
+    return this.http
+      .get<FriendsListResponse>(`${this.baseUrl}/api/settings/friends`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getPendingFriendCount(): Observable<PendingCountResponse> {
+    return this.http
+      .get<PendingCountResponse>(`${this.baseUrl}/api/settings/friends/pending-count`)
+      .pipe(catchError(this.handleError));
+  }
+
+  sendFriendRequest(username: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/settings/friends/request`, { username })
+      .pipe(catchError(this.handleError));
+  }
+
+  acceptFriendRequest(friendshipId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/settings/friends/${friendshipId}/accept`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  declineFriendRequest(friendshipId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/settings/friends/${friendshipId}/decline`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  removeFriend(userId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/settings/friends/${userId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  searchUsers(query: string): Observable<UserSearchResponse> {
+    return this.http
+      .get<UserSearchResponse>(`${this.baseUrl}/api/settings/friends/search`, { params: { q: query } })
+      .pipe(catchError(this.handleError));
+  }
+
+  getBlockedUsers(): Observable<BlockedUserResponse[]> {
+    return this.http
+      .get<BlockedUserResponse[]>(`${this.baseUrl}/api/settings/blocked`)
+      .pipe(catchError(this.handleError));
+  }
+
+  blockUser(username: string, reason?: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/settings/blocked`, { username, reason })
+      .pipe(catchError(this.handleError));
+  }
+
+  unblockUser(blockId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/settings/blocked/${blockId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getMatchHistory(page: number = 1, pageSize: number = 20): Observable<MatchHistoryListResponse> {
+    return this.http
+      .get<MatchHistoryListResponse>(`${this.baseUrl}/api/settings/matches`, { params: { page, pageSize } })
       .pipe(catchError(this.handleError));
   }
 

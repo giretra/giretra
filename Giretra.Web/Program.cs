@@ -123,6 +123,12 @@ public class Program
             // Persistence
             builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
 
+            // Settings
+            builder.Services.AddScoped<IProfileService, ProfileService>();
+            builder.Services.AddScoped<IFriendService, FriendService>();
+            builder.Services.AddScoped<IBlockService, BlockService>();
+            builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
+
             var app = builder.Build();
 
             // Auto-create database schema

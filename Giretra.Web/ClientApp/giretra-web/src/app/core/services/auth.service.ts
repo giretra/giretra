@@ -66,6 +66,11 @@ export class AuthService {
     this.keycloak?.logout({ redirectUri: window.location.origin });
   }
 
+  updateLocalDisplayName(newName: string): void {
+    const current = this._user();
+    if (current) this._user.set({ ...current, displayName: newName });
+  }
+
   private updateUser(): void {
     if (!this.keycloak?.tokenParsed) return;
 
