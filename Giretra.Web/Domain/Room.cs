@@ -70,9 +70,9 @@ public sealed class Room
     public string? GameSessionId { get; set; }
 
     /// <summary>
-    /// Turn timer duration in seconds (10–300).
+    /// Turn timer duration in seconds (5–60).
     /// </summary>
-    public int TurnTimerSeconds { get; init; } = 120;
+    public int TurnTimerSeconds { get; init; } = 20;
 
     /// <summary>
     /// When the room was created.

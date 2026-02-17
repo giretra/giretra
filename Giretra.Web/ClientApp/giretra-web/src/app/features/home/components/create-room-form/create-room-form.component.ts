@@ -641,12 +641,12 @@ export class CreateRoomFormComponent implements OnInit {
 
   roomName = '';
   inviteOnly = false;
-  selectedTimer = 120;
+  selectedTimer = 20;
   readonly timerPresets = [
-    { label: '30s', value: 30 },
+    { label: '5s', value: 5 },
+    { label: '10s', value: 10 },
+    { label: '20s', value: 20 },
     { label: '1min', value: 60 },
-    { label: '2min', value: 120 },
-    { label: '5min', value: 300 },
   ];
   aiSeats: Record<'Left' | 'Top' | 'Right', string | null> = {
     Left: null,

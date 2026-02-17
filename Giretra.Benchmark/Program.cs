@@ -1,5 +1,4 @@
 using Giretra.Benchmark.Benchmarking;
-using Giretra.Core.Players;
 using Giretra.Core.Players.Factories;
 using Giretra.Benchmark.Output;
 using Spectre.Console;
@@ -14,7 +13,7 @@ if (config is null)
 
 // Create factories: DeterministicPlayer (Team1) vs CalculatingPlayer (Team2)
 var team1Factory = new DeterministicPlayerAgentFactory();
-var team2Factory = new CalculatingPlayerAgentFactory();
+var team2Factory = new RandomPlayerAgentFactory();
 
 // Create runner and renderer
 var runner = new BenchmarkRunner(team1Factory, team2Factory, config);

@@ -69,7 +69,7 @@ public sealed class RoomService : IRoomService
             Name = roomName,
             CreatorClientId = clientId,
             OwnerUserId = userId,
-            TurnTimerSeconds = Math.Clamp(request.TurnTimerSeconds ?? 120, 10, 300)
+            TurnTimerSeconds = Math.Clamp(request.TurnTimerSeconds ?? 20, 5, 60)
         };
 
         room.PlayerSlots[PlayerPosition.Bottom] = creator;
