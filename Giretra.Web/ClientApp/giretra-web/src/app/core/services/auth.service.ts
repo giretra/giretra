@@ -1,6 +1,7 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import Keycloak from 'keycloak-js';
 import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 
 export interface AuthUser {
   keycloakId: string;
@@ -14,6 +15,7 @@ export interface AuthUser {
   providedIn: 'root',
 })
 export class AuthService {
+  private readonly api = inject(ApiService);
   private keycloak: Keycloak | null = null;
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -41,6 +43,7 @@ export class AuthService {
 
     if (authenticated) {
       this.updateUser();
+      this.fetchDisplayName();
       this.startTokenRefresh();
     }
   }
@@ -71,6 +74,18 @@ export class AuthService {
     if (current) this._user.set({ ...current, displayName: newName });
   }
 
+  private fetchDisplayName(): void {
+    this.api.getMe().subscribe({
+      next: (me) => {
+        const current = this._user();
+        if (current) this._user.set({ ...current, displayName: me.displayName });
+      },
+      error: () => {
+        // Fallback: keep the Keycloak token display name
+      },
+    });
+  }
+
   private updateUser(): void {
     if (!this.keycloak?.tokenParsed) return;
 
@@ -92,7 +107,20 @@ export class AuthService {
     this.refreshInterval = setInterval(async () => {
       try {
         await this.keycloak?.updateToken(30);
-        this.updateUser();
+        // Only refresh non-displayName fields from the token
+        if (this.keycloak?.tokenParsed) {
+          const current = this._user();
+          const token = this.keycloak.tokenParsed;
+          if (current) {
+            this._user.set({
+              ...current,
+              keycloakId: token['sub'] ?? '',
+              username: (token['preferred_username'] as string) ?? '',
+              email: token['email'] as string | undefined,
+              roles: (token['realm_access'] as { roles?: string[] })?.roles ?? [],
+            });
+          }
+        }
       } catch {
         // Token refresh failed
         console.warn('[Auth] Token refresh failed');

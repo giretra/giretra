@@ -48,7 +48,7 @@ public sealed class ProfileService : IProfileService
         return new ProfileResponse
         {
             Username = user.Username,
-            DisplayName = user.DisplayName,
+            DisplayName = user.EffectiveDisplayName,
             AvatarUrl = user.AvatarUrl,
             EloRating = user.Player.EloRating,
             EloIsPublic = user.Player.EloIsPublic,
@@ -71,7 +71,7 @@ public sealed class ProfileService : IProfileService
         if (user == null)
             return (false, "User not found.");
 
-        user.DisplayName = trimmed;
+        user.CustomDisplayName = trimmed;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
 

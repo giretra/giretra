@@ -31,7 +31,7 @@ public sealed class FriendService : IFriendService
                 {
                     UserId = other.Id,
                     Username = other.Username,
-                    DisplayName = other.DisplayName,
+                    DisplayName = other.EffectiveDisplayName,
                     AvatarUrl = other.AvatarUrl,
                     FriendsSince = f.UpdatedAt
                 };
@@ -46,7 +46,7 @@ public sealed class FriendService : IFriendService
                 FriendshipId = f.Id,
                 UserId = f.Requester.Id,
                 Username = f.Requester.Username,
-                DisplayName = f.Requester.DisplayName,
+                DisplayName = f.Requester.EffectiveDisplayName,
                 AvatarUrl = f.Requester.AvatarUrl,
                 SentAt = f.CreatedAt
             })
@@ -60,7 +60,7 @@ public sealed class FriendService : IFriendService
                 FriendshipId = f.Id,
                 UserId = f.Addressee.Id,
                 Username = f.Addressee.Username,
-                DisplayName = f.Addressee.DisplayName,
+                DisplayName = f.Addressee.EffectiveDisplayName,
                 AvatarUrl = f.Addressee.AvatarUrl,
                 SentAt = f.CreatedAt
             })
@@ -217,7 +217,7 @@ public sealed class FriendService : IFriendService
             {
                 UserId = u.Id,
                 Username = u.Username,
-                DisplayName = u.DisplayName,
+                DisplayName = u.CustomDisplayName ?? u.DisplayName,
                 AvatarUrl = u.AvatarUrl
             })
             .ToListAsync();

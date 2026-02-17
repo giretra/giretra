@@ -20,6 +20,12 @@ public class User
     [Required, MaxLength(100)]
     public string DisplayName { get; set; } = null!;
 
+    [MaxLength(100)]
+    public string? CustomDisplayName { get; set; }
+
+    [NotMapped]
+    public string EffectiveDisplayName => CustomDisplayName ?? DisplayName;
+
     [MaxLength(255)]
     public string? Email { get; set; }
 

@@ -43,7 +43,7 @@ public sealed class LeaderboardService : ILeaderboardService
             }
             else if (p.EloIsPublic)
             {
-                displayName = p.User?.DisplayName ?? "Unknown";
+                displayName = p.User?.EffectiveDisplayName ?? "Unknown";
                 avatarUrl = p.User?.AvatarUrl;
                 isBot = false;
             }

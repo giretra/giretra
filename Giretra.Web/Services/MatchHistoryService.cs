@@ -59,7 +59,7 @@ public sealed class MatchHistoryService : IMatchHistoryService
                 .OrderBy(p => p.Position)
                 .Select(p =>
                 {
-                    var displayName = p.Player.User?.DisplayName
+                    var displayName = p.Player.User?.EffectiveDisplayName
                         ?? p.Player.Bot?.DisplayName
                         ?? "Unknown";
                     return new MatchHistoryPlayerResponse

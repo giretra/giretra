@@ -30,6 +30,17 @@ public class SettingsController : ControllerBase
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Current User
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [HttpGet("/api/me")]
+    public ActionResult GetMe()
+    {
+        var user = GetAuthenticatedUser();
+        return Ok(new { displayName = user.EffectiveDisplayName });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Profile
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -58,7 +58,7 @@ public class RoomsController : ControllerBase
     public ActionResult<JoinRoomResponse> CreateRoom([FromBody] CreateRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.CreateRoom(request, user.DisplayName, user.Id);
+        var response = _roomService.CreateRoom(request, user.EffectiveDisplayName, user.Id);
         return CreatedAtAction(nameof(GetRoom), new { roomId = response.Room.RoomId }, response);
     }
 
@@ -82,12 +82,12 @@ public class RoomsController : ControllerBase
     public async Task<ActionResult<JoinRoomResponse>> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.JoinRoom(roomId, request, user.DisplayName, user.Id);
+        var response = _roomService.JoinRoom(roomId, request, user.EffectiveDisplayName, user.Id);
         if (response == null)
             return BadRequest("Unable to join room. Room may be full, game already started, or seat is invite-only.");
 
         if (response.Position.HasValue)
-            await _notifications.NotifyPlayerJoinedAsync(roomId, user.DisplayName, response.Position.Value);
+            await _notifications.NotifyPlayerJoinedAsync(roomId, user.EffectiveDisplayName, response.Position.Value);
 
         return Ok(response);
     }
@@ -99,7 +99,7 @@ public class RoomsController : ControllerBase
     public ActionResult<JoinRoomResponse> WatchRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.WatchRoom(roomId, request, user.DisplayName);
+        var response = _roomService.WatchRoom(roomId, request, user.EffectiveDisplayName);
         if (response == null)
             return NotFound();
 
