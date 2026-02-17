@@ -238,6 +238,21 @@ export interface PendingCountResponse {
   count: number;
 }
 
+export interface LeaderboardEntryResponse {
+  rank: number;
+  displayName: string;
+  avatarUrl: string | null;
+  rating: number;
+  gamesPlayed: number;
+  winRate: number;
+  isBot: boolean;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntryResponse[];
+  totalCount: number;
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -519,6 +534,16 @@ export class ApiService {
   getMatchHistory(page: number = 1, pageSize: number = 20): Observable<MatchHistoryListResponse> {
     return this.http
       .get<MatchHistoryListResponse>(`${this.baseUrl}/api/settings/matches`, { params: { page, pageSize } })
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Leaderboard
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getLeaderboard(): Observable<LeaderboardResponse> {
+    return this.http
+      .get<LeaderboardResponse>(`${this.baseUrl}/api/leaderboard`)
       .pipe(catchError(this.handleError));
   }
 

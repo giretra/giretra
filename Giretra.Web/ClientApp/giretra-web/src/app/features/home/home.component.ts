@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angular';
 
 @Component({
   selector: 'app-home',
@@ -42,6 +42,9 @@ import { LucideAngularModule, Plus, LogOut, Settings } from 'lucide-angular';
               <div class="user-pill">
                 <span class="user-avatar">{{ user.displayName.charAt(0).toUpperCase() }}</span>
                 <span class="user-name">{{ user.displayName }}</span>
+                <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
+                  <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                </button>
                 <button class="pill-btn settings-btn" (click)="goToSettings()" title="Settings">
                   <i-lucide [img]="SettingsIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                   @if (pendingFriendCount() > 0) {
@@ -150,6 +153,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly PlusIcon = Plus;
   readonly LogOutIcon = LogOut;
   readonly SettingsIcon = Settings;
+  readonly TrophyIcon = Trophy;
 
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
@@ -200,6 +204,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.api.getPendingFriendCount().subscribe({
       next: (res) => this.pendingFriendCount.set(res.count),
     });
+  }
+
+  goToLeaderboard(): void {
+    this.router.navigate(['/leaderboard']);
   }
 
   goToSettings(): void {

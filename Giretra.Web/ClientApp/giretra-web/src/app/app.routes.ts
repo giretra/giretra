@@ -41,6 +41,11 @@ export const routes: Routes = [
       import('./features/settings/settings.component').then((m) => m.SettingsComponent),
   },
   {
+    path: 'leaderboard',
+    loadComponent: () =>
+      import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
