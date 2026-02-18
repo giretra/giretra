@@ -60,9 +60,19 @@ interface BidButton {
               } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>Double <span class="multiplier">×2</span></span>
+                @if (getModeHintSuit(btn.mode); as suit) {
+                  <app-suit-icon [suit]="suit" size="1rem" />
+                } @else if (getModeHintText(btn.mode); as text) {
+                  <span class="mode-hint">{{ text }}</span>
+                }
               } @else if (btn.actionType === 'Redouble') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>Redouble <span class="multiplier">×4</span></span>
+                @if (getModeHintSuit(btn.mode); as suit) {
+                  <app-suit-icon [suit]="suit" size="1rem" />
+                } @else if (getModeHintText(btn.mode); as text) {
+                  <span class="mode-hint">{{ text }}</span>
+                }
               } @else {
                 {{ btn.label }}
               }
@@ -153,6 +163,13 @@ interface BidButton {
       font-weight: 800;
       opacity: 0.7;
       font-size: 0.75em;
+    }
+
+    .mode-hint {
+      font-size: 0.6875rem;
+      opacity: 0.8;
+      font-weight: 600;
+      padding-left: 0.125rem;
     }
   `],
 })
@@ -259,6 +276,16 @@ export class BidButtonRowComponent {
 
     return buttons;
   });
+
+  getModeHintSuit(mode: GameMode | null): CardSuit | null {
+    return mode ? this.modeToSuit[mode] ?? null : null;
+  }
+
+  getModeHintText(mode: GameMode | null): string | null {
+    if (mode === GameMode.SansAs) return 'Sans As';
+    if (mode === GameMode.ToutAs) return 'Tout As';
+    return null;
+  }
 
   selectAction(btn: BidButton): void {
     this.actionSelected.emit({
