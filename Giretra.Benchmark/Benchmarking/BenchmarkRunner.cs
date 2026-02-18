@@ -67,10 +67,10 @@ public sealed class BenchmarkRunner
             // Alternate first dealer between matches
             var firstDealer = (PlayerPosition)(i % 4);
 
-            // Create deck provider (shuffled or standard)
+            // Create deck provider (shuffled with seeded random, or default shuffled)
             Func<Deck> deckProvider = deckRandom is not null
-                ? () => CreateShuffledDeck(deckRandom)
-                : Deck.CreateStandard;
+                ? () => Deck.CreateShuffled(deckRandom)
+                : Deck.CreateShuffled;
 
             var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
             var matchState = await gameManager.PlayMatchAsync();
@@ -142,20 +142,4 @@ public sealed class BenchmarkRunner
         };
     }
 
-    /// <summary>
-    /// Creates a shuffled deck using Fisher-Yates shuffle.
-    /// </summary>
-    private static Deck CreateShuffledDeck(Random random)
-    {
-        var cards = Deck.CreateStandard().Cards.ToArray();
-
-        // Fisher-Yates shuffle
-        for (int i = cards.Length - 1; i > 0; i--)
-        {
-            int j = random.Next(i + 1);
-            (cards[i], cards[j]) = (cards[j], cards[i]);
-        }
-
-        return Deck.FromCards(cards);
-    }
 }

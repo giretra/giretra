@@ -4,7 +4,6 @@ namespace Giretra.Core.Cards;
 
 /// <summary>
 /// Represents an immutable deck of cards.
-/// The deck is never shuffled - only cut between deals.
 /// </summary>
 public sealed class Deck
 {
@@ -42,6 +41,29 @@ public sealed class Deck
         }
 
         return new Deck(cards.ToImmutable());
+    }
+
+    /// <summary>
+    /// Creates a new shuffled 32-card deck using Fisher-Yates shuffle.
+    /// Uses <see cref="Random.Shared"/> for randomness.
+    /// </summary>
+    public static Deck CreateShuffled() => CreateShuffled(Random.Shared);
+
+    /// <summary>
+    /// Creates a new shuffled 32-card deck using Fisher-Yates shuffle
+    /// with the specified random number generator.
+    /// </summary>
+    public static Deck CreateShuffled(Random random)
+    {
+        var cards = CreateStandard().Cards.ToArray();
+
+        for (int i = cards.Length - 1; i > 0; i--)
+        {
+            int j = random.Next(i + 1);
+            (cards[i], cards[j]) = (cards[j], cards[i]);
+        }
+
+        return FromCards(cards);
     }
 
     /// <summary>

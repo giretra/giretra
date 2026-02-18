@@ -1,5 +1,4 @@
 using Giretra.Core;
-using Giretra.Core.Cards;
 using Giretra.Core.Players;
 using Giretra.Players;
 using Spectre.Console;
@@ -26,8 +25,7 @@ internal class Program
             left: leftAgent,
             top: topAgent,
             right: rightAgent,
-            firstDealer: PlayerPosition.Right,
-            deckProvider: Deck.CreateStandard);
+            firstDealer: PlayerPosition.Right);
 
         // Play the match
         try

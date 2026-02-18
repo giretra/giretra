@@ -63,7 +63,7 @@ public sealed class GameManager
         }
 
         _players = players;
-        _deckProvider = deckProvider ?? Deck.CreateStandard;
+        _deckProvider = deckProvider ?? Deck.CreateShuffled;
         _matchState = MatchState.Create(firstDealer, targetScore);
         _logger = logger ?? NullLogger<GameManager>.Instance;
     }
