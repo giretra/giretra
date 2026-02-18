@@ -103,6 +103,7 @@ export class GameStateService {
     team1Breakdown: CardPointsBreakdownResponse;
     team2Breakdown: CardPointsBreakdownResponse;
   } | null = null;
+  private readonly _hasPendingDealSummary = signal(false);
 
   readonly showingCompletedTrick = this._showingCompletedTrick.asReadonly();
   readonly isLastTrick = this._isLastTrick.asReadonly();
@@ -124,20 +125,19 @@ export class GameStateService {
     const room = this._currentRoom();
     const showingSummary = this._showingDealSummary();
     const showingCompletedTrick = this._showingCompletedTrick();
+    const hasPendingDealSummary = this._hasPendingDealSummary();
 
     console.log('[GameState] phase computed:', {
       gameStateIsComplete: gameState?.isComplete,
       showingSummary,
       showingCompletedTrick,
+      hasPendingDealSummary,
       roomStatus: room?.status,
       gamePhase: gameState?.phase,
       hasGame: !!gameState,
     });
 
-    // Match end takes precedence
-    if (gameState?.isComplete) return 'matchEnd';
-
-    // Deal summary overlay (only if we have summary data to show)
+    // Deal summary overlay takes highest priority — user must see scoring first
     if (showingSummary) return 'dealSummary';
 
     // If showing the last completed trick, stay in playing phase until dismissed
@@ -145,6 +145,9 @@ export class GameStateService {
       console.log('[GameState] → phase = playing (showing completed trick)');
       return 'playing';
     }
+
+    // Match end — only after deal summary has been shown and dismissed
+    if (gameState?.isComplete && !hasPendingDealSummary) return 'matchEnd';
 
     // No game started yet
     if (!gameState || room?.status === 'Waiting') {
@@ -167,7 +170,7 @@ export class GameStateService {
         result = 'playing';
         break;
       case 'Completed':
-        result = gameState.isComplete ? 'matchEnd' : 'dealSummary';
+        result = (gameState.isComplete && !hasPendingDealSummary) ? 'matchEnd' : 'dealSummary';
         break;
       default:
         result = 'waiting';
@@ -387,6 +390,8 @@ export class GameStateService {
     this._wasKicked.set(false);
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
+    this._hasPendingDealSummary.set(false);
+    this._pendingDealSummary = null;
     this._turnTimeoutAt.set(null);
   }
 
@@ -494,6 +499,7 @@ export class GameStateService {
     if (this._pendingDealSummary) {
       this.showDealSummary(this._pendingDealSummary);
       this._pendingDealSummary = null;
+      this._hasPendingDealSummary.set(false);
     } else {
       // Now refresh state to get the next trick
       this.refreshState();
@@ -637,6 +643,7 @@ export class GameStateService {
       // If last trick is still showing, store the summary to show after user dismisses it
       if (this._isLastTrick() && this._showingCompletedTrick()) {
         this._pendingDealSummary = summary;
+        this._hasPendingDealSummary.set(true);
       } else {
         this.showDealSummary(summary);
       }
