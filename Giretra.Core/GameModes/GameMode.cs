@@ -78,11 +78,12 @@ public static class GameModeExtensions
     /// Gets the base match points for this mode (before multipliers).
     /// </summary>
     public static int GetBaseMatchPoints(this GameMode mode)
-        => mode.GetCategory() switch
+        => mode switch
         {
-            GameModeCategory.ToutAs => 26,
-            GameModeCategory.SansAs => 52,
-            GameModeCategory.Colour => 16,
+            GameMode.ToutAs => 26,
+            GameMode.SansAs => 52,
+            GameMode.ColourClubs => 32,  // Clubs count double
+            _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
 

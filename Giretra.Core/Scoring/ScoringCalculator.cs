@@ -217,7 +217,7 @@ public class ScoringCalculator
             gameMode, multiplier, announcerTeam,
             team1CardPoints, team2CardPoints,
             threshold: 82,
-            basePoints: 16);
+            basePoints: gameMode.GetBaseMatchPoints());
     }
 
     private DealResult CalculateWinnerTakesAll(

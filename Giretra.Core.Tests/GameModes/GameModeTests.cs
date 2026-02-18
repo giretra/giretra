@@ -75,6 +75,9 @@ public class GameModeTests
     [InlineData(GameMode.ToutAs, 26)]
     [InlineData(GameMode.SansAs, 52)]
     [InlineData(GameMode.ColourSpades, 16)]
+    [InlineData(GameMode.ColourHearts, 16)]
+    [InlineData(GameMode.ColourDiamonds, 16)]
+    [InlineData(GameMode.ColourClubs, 32)]  // Clubs count double
     public void GetBaseMatchPoints_ReturnsCorrectValue(GameMode mode, int expected)
     {
         Assert.Equal(expected, mode.GetBaseMatchPoints());
