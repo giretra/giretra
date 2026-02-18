@@ -68,6 +68,23 @@ public sealed class UserSyncService : IUserSyncService
         }
 
         await _db.SaveChangesAsync();
+
+        // Ensure Player record exists for this user
+        var hasPlayer = await _db.Players.AnyAsync(p => p.UserId == user.Id);
+        if (!hasPlayer)
+        {
+            _db.Players.Add(new Player
+            {
+                PlayerType = PlayerType.Human,
+                UserId = user.Id,
+                EloRating = 1000,
+                EloIsPublic = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+            await _db.SaveChangesAsync();
+        }
+
         return user;
     }
 }

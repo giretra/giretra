@@ -65,4 +65,9 @@ public interface INotificationService
     /// Notifies all clients in a room that a seat's access mode changed.
     /// </summary>
     Task NotifySeatModeChangedAsync(string roomId, PlayerPosition position, Domain.SeatAccessMode accessMode);
+
+    /// <summary>
+    /// Notifies all clients in a room that a match was abandoned.
+    /// </summary>
+    Task NotifyMatchAbandonedAsync(string gameId, string roomId, PlayerPosition abandoner, Team winnerTeam);
 }

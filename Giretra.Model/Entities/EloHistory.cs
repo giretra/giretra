@@ -22,6 +22,8 @@ public class EloHistory
 
     public int EloChange { get; set; }
 
+    public bool InvolvedBots { get; set; }
+
     public DateTimeOffset RecordedAt { get; set; }
 
     [ForeignKey(nameof(PlayerId))]

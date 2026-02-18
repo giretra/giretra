@@ -6,6 +6,7 @@
     <File Path="docker-compose.infra.yml" />
     <File Path="docker/.env.example" />
     <File Path="docker/docker-compose.yml" />
+    <File Path="LASTSTATE.md" />
     <File Path="SPEC.md" />
   </Folder>
   <Project Path="Giretra.Core.Tests/Giretra.Core.Tests.csproj" />

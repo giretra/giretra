@@ -49,11 +49,24 @@ public sealed class GameService : IGameService
 
         // Build client positions mapping (human players only)
         var clientPositions = new Dictionary<string, PlayerPosition>();
-        foreach (var (position, client) in room.PlayerSlots)
+        var playerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>();
+
+        foreach (var position in Enum.GetValues<PlayerPosition>())
         {
+            var client = room.PlayerSlots[position];
             if (client != null)
             {
                 clientPositions[client.ClientId] = position;
+                playerComposition[position] = new MatchPlayerInfo(position, IsBot: false, UserId: client.UserId, AiAgentType: null);
+            }
+            else if (room.AiSlots.TryGetValue(position, out var aiType))
+            {
+                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: aiType);
+            }
+            else
+            {
+                // Unassigned slot — will become default AI
+                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: "CalculatingPlayer");
             }
         }
 
@@ -62,7 +75,8 @@ public sealed class GameService : IGameService
         {
             GameId = gameId,
             RoomId = room.RoomId,
-            ClientPositions = clientPositions
+            ClientPositions = clientPositions,
+            PlayerComposition = playerComposition
         };
 
         // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI)
@@ -498,6 +512,84 @@ public sealed class GameService : IGameService
 
         // Same suit: compare strength
         return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
+    }
+
+    public async Task AbandonGameAsync(string gameId, PlayerPosition abandonerPosition)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+        {
+            _logger.LogWarning("AbandonGame: session {GameId} not found", gameId);
+            return;
+        }
+
+        // Skip if the match already finished naturally
+        if (session.IsComplete)
+        {
+            _logger.LogInformation("AbandonGame: session {GameId} already complete, skipping", gameId);
+            return;
+        }
+
+        _logger.LogInformation("Abandoning game {GameId}, abandoner at {Position}", gameId, abandonerPosition);
+
+        // Cancel the game loop
+        session.CancellationTokenSource.Cancel();
+
+        // Force-complete any pending TaskCompletionSource so the game loop can unblock
+        var pending = session.PendingAction;
+        if (pending != null)
+        {
+            pending.CutTcs?.TrySetCanceled();
+            pending.NegotiationTcs?.TrySetCanceled();
+            pending.PlayCardTcs?.TrySetCanceled();
+            pending.ContinueDealTcs?.TrySetCanceled();
+            pending.ContinueMatchTcs?.TrySetCanceled();
+        }
+
+        // Wait briefly for the game loop to exit
+        if (session.GameLoopTask != null)
+        {
+            try
+            {
+                await session.GameLoopTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+                // Game loop may throw due to cancellation — that's expected
+            }
+        }
+
+        session.CompletedAt = DateTime.UtcNow;
+
+        // Persist the abandoned match
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var persistence = scope.ServiceProvider.GetRequiredService<IMatchPersistenceService>();
+            await persistence.PersistAbandonedMatchAsync(session, abandonerPosition);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist abandoned match for game {GameId}", gameId);
+        }
+
+        // Notify the room
+        var abandonerTeam = abandonerPosition.GetTeam();
+        var winnerTeam = abandonerTeam == Core.Players.Team.Team1
+            ? Core.Players.Team.Team2
+            : Core.Players.Team.Team1;
+
+        await _notifications.NotifyMatchAbandonedAsync(gameId, session.RoomId, abandonerPosition, winnerTeam);
+
+        // Reset room to Waiting
+        var room = _roomRepository.GetById(session.RoomId);
+        if (room != null)
+        {
+            room.Status = RoomStatus.Waiting;
+            room.GameSessionId = null;
+            _roomRepository.Update(room);
+            _logger.LogInformation("Room {RoomId} reset to Waiting after abandonment", session.RoomId);
+        }
     }
 
     private async Task PersistMatchAsync(GameSession session)

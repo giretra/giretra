@@ -10,6 +10,12 @@ public class EloHistoryConfiguration : IEntityTypeConfiguration<EloHistory>
     {
         builder.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
         builder.Property(e => e.RecordedAt).HasDefaultValueSql("now()");
+        builder.Property(e => e.InvolvedBots).HasDefaultValue(false);
+
+        // Filtered index for efficient weekly bot-Elo cap queries
+        builder.HasIndex(e => new { e.PlayerId, e.RecordedAt })
+            .HasFilter("involved_bots = TRUE AND elo_change > 0")
+            .HasDatabaseName("ix_elo_history_bot_gains");
 
         builder.HasOne(e => e.Player)
             .WithMany(p => p.EloHistories)

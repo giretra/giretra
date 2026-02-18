@@ -4,8 +4,10 @@ using Giretra.Web.Hubs;
 using Giretra.Web.Middleware;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
+using Giretra.Web.Services.Elo;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 namespace Giretra.Web;
@@ -124,6 +126,10 @@ public class Program
             // Persistence
             builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
 
+            // Elo
+            builder.Services.AddSingleton<EloCalculationService>();
+            builder.Services.AddScoped<IEloService, EloService>();
+
             // Settings
             builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IFriendService, FriendService>();
@@ -133,11 +139,32 @@ public class Program
 
             var app = builder.Build();
 
-            // Auto-create database schema
+            // Auto-create database schema and seed bot Player rows
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
                 await db.Database.EnsureCreatedAsync();
+
+                // Ensure each Bot has a corresponding Player row
+                var botsWithoutPlayer = await db.Bots
+                    .Where(b => b.Player == null)
+                    .ToListAsync();
+
+                foreach (var bot in botsWithoutPlayer)
+                {
+                    db.Players.Add(new Model.Entities.Player
+                    {
+                        PlayerType = Model.Enums.PlayerType.Bot,
+                        BotId = bot.Id,
+                        EloRating = 1000,
+                        EloIsPublic = true,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        UpdatedAt = DateTimeOffset.UtcNow
+                    });
+                }
+
+                if (botsWithoutPlayer.Count > 0)
+                    await db.SaveChangesAsync();
             }
 
             // Configure the HTTP request pipeline.

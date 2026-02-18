@@ -60,4 +60,10 @@ public interface IGameService
     /// Gets the watcher-specific view for a game (hides player hands).
     /// </summary>
     WatcherStateResponse? GetWatcherState(string gameId);
+
+    /// <summary>
+    /// Handles player abandonment during an active game.
+    /// Cancels the game loop, persists the abandoned match with Elo penalties, and notifies the room.
+    /// </summary>
+    Task AbandonGameAsync(string gameId, PlayerPosition abandonerPosition);
 }

@@ -3,6 +3,7 @@ using Giretra.Web.Domain;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Giretra.Web.Tests;
@@ -26,7 +27,7 @@ public sealed class RoomServiceTests
         _roomRepository = new InMemoryRoomRepository();
         _gameService = Substitute.For<IGameService>();
         _notifications = Substitute.For<INotificationService>();
-        _roomService = new RoomService(_roomRepository, _gameService, _notifications, new AiPlayerRegistry());
+        _roomService = new RoomService(_roomRepository, _gameService, _notifications, new AiPlayerRegistry(), Substitute.For<ILogger<RoomService>>());
     }
 
     #region CreateRoom Tests
@@ -488,7 +489,8 @@ public sealed class RoomServiceTests
             GameId = "game_123",
             RoomId = createResponse.Room.RoomId,
             PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
-            ClientPositions = new Dictionary<string, PlayerPosition>()
+            ClientPositions = new Dictionary<string, PlayerPosition>(),
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
         };
         _gameService.CreateGame(Arg.Any<Room>()).Returns(mockSession);
 
@@ -575,7 +577,8 @@ public sealed class RoomServiceTests
             GameId = "game_123",
             RoomId = createResponse.Room.RoomId,
             PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
-            ClientPositions = new Dictionary<string, PlayerPosition>()
+            ClientPositions = new Dictionary<string, PlayerPosition>(),
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
         };
         _gameService.CreateGame(Arg.Any<Room>()).Returns(mockSession);
 
@@ -609,7 +612,8 @@ public sealed class RoomServiceTests
             GameId = "game_123",
             RoomId = createResponse.Room.RoomId,
             PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
-            ClientPositions = new Dictionary<string, PlayerPosition>()
+            ClientPositions = new Dictionary<string, PlayerPosition>(),
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
         };
         _gameService.CreateGame(Arg.Any<Room>()).Returns(mockSession);
 
@@ -645,7 +649,8 @@ public sealed class RoomServiceTests
             GameId = "game_123",
             RoomId = createResponse.Room.RoomId,
             PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
-            ClientPositions = new Dictionary<string, PlayerPosition>()
+            ClientPositions = new Dictionary<string, PlayerPosition>(),
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
         };
         _gameService.CreateGame(Arg.Any<Room>()).Returns(mockSession);
 

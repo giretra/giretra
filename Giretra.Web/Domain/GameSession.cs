@@ -31,6 +31,11 @@ public sealed class GameSession
     public required IReadOnlyDictionary<string, PlayerPosition> ClientPositions { get; init; }
 
     /// <summary>
+    /// Metadata about each player (human vs bot, user IDs, agent types) for Elo computation.
+    /// </summary>
+    public required IReadOnlyDictionary<PlayerPosition, MatchPlayerInfo> PlayerComposition { get; init; }
+
+    /// <summary>
     /// The game manager running the match.
     /// </summary>
     public GameManager? GameManager { get; set; }

@@ -37,7 +37,7 @@ public sealed class RoomToGameFlowTests
         var aiRegistry = new AiPlayerRegistry();
         var serviceProvider = Substitute.For<IServiceProvider>();
         _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, logger, loggerFactory);
-        _roomService = new RoomService(_roomRepository, _gameService, _notifications, aiRegistry);
+        _roomService = new RoomService(_roomRepository, _gameService, _notifications, aiRegistry, Substitute.For<ILogger<RoomService>>());
     }
 
     #region Complete Flow Tests

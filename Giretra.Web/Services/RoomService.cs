@@ -19,15 +19,17 @@ public sealed class RoomService : IRoomService
     private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
+    private readonly ILogger<RoomService> _logger;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
     private static int _roomCounter;
 
-    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry)
+    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger)
     {
         _roomRepository = roomRepository;
         _gameService = gameService;
         _notifications = notifications;
         _aiRegistry = aiRegistry;
+        _logger = logger;
     }
 
     public RoomListResponse GetAllRooms(Guid? requestingUserId = null)
@@ -487,10 +489,25 @@ public sealed class RoomService : IRoomService
                 _pendingRemovals.TryRemove(key, out _);
                 cts.Dispose();
 
+                // Check if room has an active game — trigger abandonment
+                var room = _roomRepository.GetById(roomId);
+                if (room != null && room.Status == RoomStatus.Playing && room.GameSessionId != null)
+                {
+                    // Find the disconnected player's position
+                    var position = room.GetPlayerPosition(clientId);
+                    if (position.HasValue)
+                    {
+                        _logger.LogInformation(
+                            "Player at {Position} disconnected during active game {GameId}, triggering abandonment",
+                            position.Value, room.GameSessionId);
+                        await _gameService.AbandonGameAsync(room.GameSessionId, position.Value);
+                    }
+                }
+
                 // Client did not reconnect in time — actually remove them
-                var (removed, playerName, position) = LeaveRoom(roomId, clientId);
-                if (removed && playerName != null && position.HasValue)
-                    await _notifications.NotifyPlayerLeftAsync(roomId, playerName, position.Value);
+                var (removed, playerName, leftPosition) = LeaveRoom(roomId, clientId);
+                if (removed && playerName != null && leftPosition.HasValue)
+                    await _notifications.NotifyPlayerLeftAsync(roomId, playerName, leftPosition.Value);
             }
             catch (OperationCanceledException)
             {
