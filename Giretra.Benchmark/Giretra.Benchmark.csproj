@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Giretra.Core\Giretra.Core.csproj" />
+    <ProjectReference Include="..\Giretra.Model\Giretra.Model.csproj" />
   </ItemGroup>
 
 </Project>

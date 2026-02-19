@@ -12,6 +12,9 @@ public class Bot
     [Required, MaxLength(100)]
     public string AgentType { get; set; } = null!;
 
+    [Required, MaxLength(255)]
+    public string AgentTypeFactory { get; set; } = null!;
+
     [Required, MaxLength(100)]
     public string DisplayName { get; set; } = null!;
 

@@ -1,7 +1,10 @@
 using System.ComponentModel;
 using Giretra.Benchmark.Benchmarking;
+using Giretra.Benchmark.Data;
 using Giretra.Benchmark.Output;
 using Giretra.Core.Players.Factories;
+using Giretra.Model;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Giretra.Benchmark.Commands;
@@ -41,6 +44,10 @@ public sealed class BenchmarkSettings : CommandSettings
     [Description("ELO K-factor")]
     [DefaultValue(24.0)]
     public double KFactor { get; init; } = 24;
+
+    [CommandOption("--connection-string")]
+    [Description("PostgreSQL connection string (default: from environment)")]
+    public string? ConnectionString { get; init; }
 }
 
 public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
@@ -69,6 +76,16 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
 
         var result = await runner.RunAsync();
         renderer.RenderSummary(result, team1Factory.AgentName, team2Factory.AgentName);
+
+        var adjustedRatings = AdjustedEloCalculator.FromBenchmark(
+            team1Factory, team2Factory, result.Team1FinalElo, result.Team2FinalElo);
+        if (adjustedRatings is not null
+            && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+        {
+            var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
+            await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
+            AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
+        }
 
         return 0;
     }

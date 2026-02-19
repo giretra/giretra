@@ -1,7 +1,9 @@
 using System.ComponentModel;
+using Giretra.Benchmark.Data;
 using Giretra.Benchmark.Discovery;
 using Giretra.Benchmark.Output;
 using Giretra.Benchmark.Swiss;
+using Giretra.Model;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -51,6 +53,10 @@ public sealed class SwissSettings : CommandSettings
     [Description("Matches until K-factor is halfway between max and min")]
     [DefaultValue(30.0)]
     public double KFactorHalfLife { get; init; } = 30;
+
+    [CommandOption("--connection-string")]
+    [Description("PostgreSQL connection string (default: from environment)")]
+    public string? ConnectionString { get; init; }
 }
 
 public sealed class SwissCommand : AsyncCommand<SwissSettings>
@@ -94,6 +100,15 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
         renderer.RenderFinalRanking(result);
         renderer.RenderStatistics(result);
         renderer.RenderAdjustedElo(result);
+
+        var adjustedRatings = AdjustedEloCalculator.FromSwiss(result.RankedParticipants);
+        if (adjustedRatings is not null
+            && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+        {
+            var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
+            await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
+            AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
+        }
 
         return 0;
     }
