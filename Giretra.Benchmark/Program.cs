@@ -10,6 +10,9 @@ app.Configure(config =>
 
     config.AddCommand<SwissCommand>("swiss")
         .WithDescription("Run a Swiss tournament between multiple agents");
+
+    config.AddCommand<SyncBotsCommand>("sync-bots")
+        .WithDescription("Create or update bot entries in the database from discovered agent factories");
 });
 
 // Backward compat: if no command given, prepend "benchmark"

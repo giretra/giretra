@@ -36,6 +36,10 @@
     "Swiss (all agents, long)": {
       "commandName": "Project",
       "commandLineArgs": "swiss -r 200 -k 16 --elo 1000"
+    },
+    "Sync Bots": {
+      "commandName": "Project",
+      "commandLineArgs": "sync-bots"
     }
   }
 }
