@@ -20,6 +20,9 @@ public class Bot
     [MaxLength(255)]
     public string? Author { get; set; }
 
+    [MaxLength(512)]
+    public string? Pun { get; set; }
+
     public short Difficulty { get; set; }
 
     public int Rating { get; set; }
