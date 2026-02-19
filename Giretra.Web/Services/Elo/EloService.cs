@@ -265,6 +265,12 @@ public sealed class EloService : IEloService
                 if (bot?.Player != null)
                 {
                     player = bot.Player;
+                    // Sync Player.EloRating with Bot.Rating (authoritative source for bots)
+                    if (player.EloRating != bot.Rating)
+                    {
+                        player.EloRating = bot.Rating;
+                        player.UpdatedAt = DateTimeOffset.UtcNow;
+                    }
                 }
                 else if (bot != null)
                 {
@@ -273,7 +279,7 @@ public sealed class EloService : IEloService
                     {
                         PlayerType = ModelEnums.PlayerType.Bot,
                         BotId = bot.Id,
-                        EloRating = 1000,
+                        EloRating = bot.Rating,
                         EloIsPublic = true,
                         CreatedAt = DateTimeOffset.UtcNow,
                         UpdatedAt = DateTimeOffset.UtcNow
@@ -299,7 +305,7 @@ public sealed class EloService : IEloService
                     {
                         PlayerType = ModelEnums.PlayerType.Bot,
                         BotId = newBot.Id,
-                        EloRating = 1000,
+                        EloRating = newBot.Rating,
                         EloIsPublic = true,
                         CreatedAt = DateTimeOffset.UtcNow,
                         UpdatedAt = DateTimeOffset.UtcNow

@@ -10,6 +10,7 @@ public class BotConfiguration : IEntityTypeConfiguration<Bot>
     {
         builder.Property(b => b.Id).HasDefaultValueSql("gen_random_uuid()");
         builder.Property(b => b.Difficulty).HasDefaultValue((short)1);
+        builder.Property(b => b.Rating).HasDefaultValue(1000);
         builder.Property(b => b.IsActive).HasDefaultValue(true);
         builder.Property(b => b.CreatedAt).HasDefaultValueSql("now()");
     }

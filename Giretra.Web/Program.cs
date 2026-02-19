@@ -145,25 +145,34 @@ public class Program
                 var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
                 await db.Database.EnsureCreatedAsync();
 
-                // Ensure each Bot has a corresponding Player row
-                var botsWithoutPlayer = await db.Bots
-                    .Where(b => b.Player == null)
+                // Ensure each Bot has a corresponding Player row with synced rating
+                var allBots = await db.Bots
+                    .Include(b => b.Player)
                     .ToListAsync();
 
-                foreach (var bot in botsWithoutPlayer)
+                foreach (var bot in allBots)
                 {
-                    db.Players.Add(new Model.Entities.Player
+                    if (bot.Player == null)
                     {
-                        PlayerType = Model.Enums.PlayerType.Bot,
-                        BotId = bot.Id,
-                        EloRating = 1000,
-                        EloIsPublic = true,
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow
-                    });
+                        db.Players.Add(new Model.Entities.Player
+                        {
+                            PlayerType = Model.Enums.PlayerType.Bot,
+                            BotId = bot.Id,
+                            EloRating = bot.Rating,
+                            EloIsPublic = true,
+                            CreatedAt = DateTimeOffset.UtcNow,
+                            UpdatedAt = DateTimeOffset.UtcNow
+                        });
+                    }
+                    else if (bot.Player.EloRating != bot.Rating)
+                    {
+                        // Sync Player.EloRating with Bot.Rating
+                        bot.Player.EloRating = bot.Rating;
+                        bot.Player.UpdatedAt = DateTimeOffset.UtcNow;
+                    }
                 }
 
-                if (botsWithoutPlayer.Count > 0)
+                if (db.ChangeTracker.HasChanges())
                     await db.SaveChangesAsync();
             }
 

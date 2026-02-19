@@ -19,6 +19,8 @@ public class Bot
 
     public short Difficulty { get; set; }
 
+    public int Rating { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
