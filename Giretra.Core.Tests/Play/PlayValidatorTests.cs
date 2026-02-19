@@ -66,7 +66,7 @@ public class PlayValidatorTests
     }
 
     [Fact]
-    public void SansAs_MustBeatIfPossible()
+    public void SansAs_NoObligationToBeat_PlayAnyLeadSuitCard()
     {
         var player = Player.Create(PlayerPosition.Left, new[]
         {
@@ -80,10 +80,11 @@ public class PlayValidatorTests
 
         var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.SansAs);
 
-        // In SansAs: A > 10 > K > Q, so Ace and King beat Queen
-        Assert.Equal(2, validPlays.Count);
+        // SansAs: no obligation to beat, just must follow suit
+        Assert.Equal(3, validPlays.Count);
         Assert.Contains(new Card(CardRank.Ace, CardSuit.Hearts), validPlays);
         Assert.Contains(new Card(CardRank.King, CardSuit.Hearts), validPlays);
+        Assert.Contains(new Card(CardRank.Seven, CardSuit.Hearts), validPlays);
     }
 
     [Fact]
@@ -275,6 +276,31 @@ public class PlayValidatorTests
         // Must play higher trump: only A♠ beats 10♠ in trump ranking
         Assert.Single(validPlays);
         Assert.Equal(new Card(CardRank.Ace, CardSuit.Spades), validPlays[0]);
+    }
+
+    [Fact]
+    public void SansAs_CannotBeat_PlayAnyLeadSuitSpade()
+    {
+        // Right leads K♠, Bottom has 10♠, Q♠, 8♠ + non-spades
+        // SansAs: no obligation to beat, just must follow suit
+        var player = Player.Create(PlayerPosition.Bottom, new[]
+        {
+            new Card(CardRank.Ten, CardSuit.Spades),
+            new Card(CardRank.Queen, CardSuit.Spades),
+            new Card(CardRank.Eight, CardSuit.Spades),
+            new Card(CardRank.Ace, CardSuit.Hearts),
+            new Card(CardRank.Seven, CardSuit.Clubs)
+        });
+
+        var trick = TrickState.Create(PlayerPosition.Right, 1)
+            .PlayCard(new Card(CardRank.King, CardSuit.Spades));
+
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.SansAs);
+
+        Assert.Equal(3, validPlays.Count);
+        Assert.Contains(new Card(CardRank.Ten, CardSuit.Spades), validPlays);
+        Assert.Contains(new Card(CardRank.Queen, CardSuit.Spades), validPlays);
+        Assert.Contains(new Card(CardRank.Eight, CardSuit.Spades), validPlays);
     }
 
     [Fact]

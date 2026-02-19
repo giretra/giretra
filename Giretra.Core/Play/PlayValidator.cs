@@ -61,10 +61,11 @@ public static class PlayValidator
         GameModeCategory category)
     {
         // Must play higher if possible:
-        // - ToutAs/SansAs: always when following suit
+        // - ToutAs: always when following suit
         // - Colour: when following the trump suit (monter à l'atout)
+        // - SansAs: no obligation to beat
         var trumpSuit = gameMode.GetTrumpSuit();
-        var mustPlayHigher = category is GameModeCategory.ToutAs or GameModeCategory.SansAs
+        var mustPlayHigher = category is GameModeCategory.ToutAs
                              || (category == GameModeCategory.Colour && trumpSuit.HasValue && trick.LeadSuit == trumpSuit);
 
         if (mustPlayHigher)
