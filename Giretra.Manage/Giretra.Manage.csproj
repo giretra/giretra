@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>giretra-manage</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" Version="0.54.0" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Giretra.Core\Giretra.Core.csproj" />
+    <ProjectReference Include="..\Giretra.Model\Giretra.Model.csproj" />
+  </ItemGroup>
+
+</Project>
