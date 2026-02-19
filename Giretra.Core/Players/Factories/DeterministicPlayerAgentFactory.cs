@@ -8,7 +8,7 @@ namespace Giretra.Core.Players.Factories;
 public sealed class DeterministicPlayerAgentFactory : IPlayerAgentFactory
 {
     public string AgentName => "DeterministicPlayer";
-    public string DisplayName => "Deterministic";
+    public string DisplayName => "Eva";
 
     public IPlayerAgent Create(PlayerPosition position)
     {

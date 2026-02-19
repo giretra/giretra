@@ -15,13 +15,13 @@ public sealed class SwissSettings : CommandSettings
 
     [CommandOption("-r|--rounds")]
     [Description("Number of rounds to play")]
-    [DefaultValue(2000)]
+    [DefaultValue(1000)]
     public int Rounds { get; init; } = 1000;
 
     [CommandOption("-t|--target")]
     [Description("Target score to win a match")]
-    [DefaultValue(500)]
-    public int TargetScore { get; init; } = 500;
+    [DefaultValue(1000)]
+    public int TargetScore { get; init; } = 1000;
 
     [CommandOption("-s|--seed")]
     [Description("Random seed for reproducibility")]
@@ -34,8 +34,8 @@ public sealed class SwissSettings : CommandSettings
 
     [CommandOption("--elo")]
     [Description("Initial ELO rating for all participants")]
-    [DefaultValue(1200.0)]
-    public double Elo { get; init; } = 1200;
+    [DefaultValue(1000.0)]
+    public double Elo { get; init; } = 1000;
 
     [CommandOption("-k|--k-factor")]
     [Description("ELO K-factor")]
