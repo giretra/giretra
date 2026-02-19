@@ -68,7 +68,7 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
         runner.OnMatchCompleted += renderer.RenderMatchResult;
 
         var result = await runner.RunAsync();
-        renderer.RenderSummary(result);
+        renderer.RenderSummary(result, team1Factory.AgentName, team2Factory.AgentName);
 
         return 0;
     }

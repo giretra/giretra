@@ -120,4 +120,39 @@ public sealed class SwissRenderer
 
         AnsiConsole.Write(statsPanel);
     }
+
+    public void RenderAdjustedElo(SwissTournamentResult result)
+    {
+        var randomPlayer = result.RankedParticipants
+            .FirstOrDefault(p => p.Name == "RandomPlayer");
+
+        if (randomPlayer is null)
+            return;
+
+        var offset = 1000.0 - randomPlayer.Elo;
+
+        AnsiConsole.WriteLine();
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .Title("[bold]Adjusted ELO[/] [dim](RandomPlayer = 1000)[/]")
+            .AddColumn(new TableColumn("[bold]Agent[/]"))
+            .AddColumn(new TableColumn("[bold]ELO[/]").RightAligned())
+            .AddColumn(new TableColumn("[bold]Adjusted ELO[/]").RightAligned());
+
+        var ranked = result.RankedParticipants
+            .OrderByDescending(p => p.Elo + offset)
+            .ToList();
+
+        foreach (var p in ranked)
+        {
+            var adjusted = p.Elo + offset;
+            table.AddRow(
+                p.DisplayName,
+                $"{p.Elo:F0}",
+                $"[bold]{adjusted:F0}[/]");
+        }
+
+        AnsiConsole.Write(table);
+    }
 }

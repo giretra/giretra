@@ -67,7 +67,7 @@ public sealed class BenchmarkRenderer
     /// <summary>
     /// Renders the final summary.
     /// </summary>
-    public void RenderSummary(BenchmarkResult result)
+    public void RenderSummary(BenchmarkResult result, string? team1AgentName = null, string? team2AgentName = null)
     {
         AnsiConsole.WriteLine();
 
@@ -142,6 +142,48 @@ public sealed class BenchmarkRenderer
             .Border(BoxBorder.Rounded);
 
         AnsiConsole.Write(statsPanel);
+
+        // Adjusted ELO (normalized so RandomPlayer = 1000)
+        RenderAdjustedElo(result, team1AgentName, team2AgentName);
+    }
+
+    private static void RenderAdjustedElo(BenchmarkResult result, string? team1AgentName, string? team2AgentName)
+    {
+        const string randomPlayer = "RandomPlayer";
+
+        double? randomElo = null;
+        if (team1AgentName == randomPlayer)
+            randomElo = result.Team1FinalElo;
+        else if (team2AgentName == randomPlayer)
+            randomElo = result.Team2FinalElo;
+
+        if (randomElo is null)
+            return;
+
+        var offset = 1000.0 - randomElo.Value;
+
+        AnsiConsole.WriteLine();
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .Title("[bold]Adjusted ELO[/] [dim](RandomPlayer = 1000)[/]")
+            .AddColumn(new TableColumn("[bold]Team[/]"))
+            .AddColumn(new TableColumn("[bold]ELO[/]").RightAligned())
+            .AddColumn(new TableColumn("[bold]Adjusted ELO[/]").RightAligned());
+
+        var teams = new[]
+        {
+            (Name: result.Team1Name, Elo: result.Team1FinalElo),
+            (Name: result.Team2Name, Elo: result.Team2FinalElo)
+        };
+
+        foreach (var (name, elo) in teams.OrderByDescending(t => t.Elo + offset))
+        {
+            var adjusted = elo + offset;
+            table.AddRow(name, $"{elo:F0}", $"[bold]{adjusted:F0}[/]");
+        }
+
+        AnsiConsole.Write(table);
     }
 
     private static string FormatEloChange(double finalElo, double initialElo, string color)

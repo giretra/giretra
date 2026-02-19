@@ -93,6 +93,7 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
 
         renderer.RenderFinalRanking(result);
         renderer.RenderStatistics(result);
+        renderer.RenderAdjustedElo(result);
 
         return 0;
     }
