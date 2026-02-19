@@ -6,6 +6,11 @@ namespace Giretra.Core.Players;
 public interface IPlayerAgentFactory
 {
     /// <summary>
+    /// Gets the unique identifier for this agent type.
+    /// </summary>
+    Guid Identifier { get; }
+
+    /// <summary>
     /// Gets the name of the agent type this factory creates.
     /// </summary>
     string AgentName { get; }

@@ -23,8 +23,7 @@ public static class ConnectionStringBuilder
         var port = Environment.GetEnvironmentVariable("Giretra_Db_Port") ?? "5432";
         var name = Environment.GetEnvironmentVariable("Giretra_Db_Name") ?? "giretra";
 
-        var user = Environment.GetEnvironmentVariable("Giretra_Db_User")
-            ?? throw new InvalidOperationException("Giretra_Db_User environment variable is not set.");
+        var user = "giretra_app";
 
         var password = Environment.GetEnvironmentVariable("Giretra_Db_Password")
             ?? throw new InvalidOperationException("Giretra_Db_Password environment variable is not set.");
