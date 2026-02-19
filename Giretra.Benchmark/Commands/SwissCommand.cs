@@ -34,13 +34,23 @@ public sealed class SwissSettings : CommandSettings
 
     [CommandOption("--elo")]
     [Description("Initial ELO rating for all participants")]
-    [DefaultValue(1000.0)]
-    public double Elo { get; init; } = 1000;
+    [DefaultValue(1200.0)]
+    public double Elo { get; init; } = 1200.0;
 
-    [CommandOption("-k|--k-factor")]
-    [Description("ELO K-factor")]
-    [DefaultValue(24.0)]
-    public double KFactor { get; init; } = 24;
+    [CommandOption("-k|--k-max")]
+    [Description("Maximum ELO K-factor (early rounds)")]
+    [DefaultValue(40.0)]
+    public double KFactorMax { get; init; } = 40;
+
+    [CommandOption("--k-min")]
+    [Description("Minimum ELO K-factor (late rounds)")]
+    [DefaultValue(4.0)]
+    public double KFactorMin { get; init; } = 4;
+
+    [CommandOption("--k-half-life")]
+    [Description("Matches until K-factor is halfway between max and min")]
+    [DefaultValue(30.0)]
+    public double KFactorHalfLife { get; init; } = 30;
 }
 
 public sealed class SwissCommand : AsyncCommand<SwissSettings>
@@ -67,7 +77,9 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
             Seed = settings.Seed,
             Shuffle = settings.Shuffle,
             InitialElo = settings.Elo,
-            EloKFactor = settings.KFactor
+            EloKFactorMax = settings.KFactorMax,
+            EloKFactorMin = settings.KFactorMin,
+            EloKFactorHalfLife = settings.KFactorHalfLife
         };
 
         var participantNames = factories.Select(f => f.DisplayName).ToList();

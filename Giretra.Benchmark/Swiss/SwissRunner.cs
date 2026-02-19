@@ -101,8 +101,21 @@ public sealed class SwissRunner
 
         var team1Won = matchState.Winner!.Value == Team.Team1;
 
+        // Compute per-participant decaying K-factor
+        var k1 = EloCalculator.EffectiveKFactor(
+            _config.EloKFactorMax, _config.EloKFactorMin, p1.MatchesPlayed, _config.EloKFactorHalfLife);
+        var k2 = EloCalculator.EffectiveKFactor(
+            _config.EloKFactorMax, _config.EloKFactorMin, p2.MatchesPlayed, _config.EloKFactorHalfLife);
+
+        // Compute margin-based actual scores
+        var winnerScore = team1Won ? matchState.Team1MatchPoints : matchState.Team2MatchPoints;
+        var loserScore = team1Won ? matchState.Team2MatchPoints : matchState.Team1MatchPoints;
+        var marginActual = EloCalculator.MarginScore(winnerScore, loserScore, _config.TargetScore);
+        var actual1 = team1Won ? marginActual : 1.0 - marginActual;
+        var actual2 = team1Won ? 1.0 - marginActual : marginActual;
+
         var (newP1Elo, newP2Elo) = EloCalculator.CalculateNewRatings(
-            p1.Elo, p2.Elo, team1Won, _config.EloKFactor);
+            p1.Elo, p2.Elo, actual1, actual2, k1, k2);
 
         var eloChange = Math.Abs(newP1Elo - p1.Elo);
 

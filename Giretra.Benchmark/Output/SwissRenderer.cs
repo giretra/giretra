@@ -32,7 +32,8 @@ public sealed class SwissRenderer
         configTable.AddRow("Rounds", _config.Rounds.ToString());
         configTable.AddRow("Target Score", _config.TargetScore.ToString());
         configTable.AddRow("Initial ELO", _config.InitialElo.ToString());
-        configTable.AddRow("K-Factor", _config.EloKFactor.ToString());
+        configTable.AddRow("K-Factor", $"{_config.EloKFactorMax} → {_config.EloKFactorMin} (half-life: {_config.EloKFactorHalfLife})");
+        configTable.AddRow("Margin Scoring", "[yellow]enabled[/]");
         configTable.AddRow("Seed", _config.Seed?.ToString() ?? "[dim]random[/]");
         configTable.AddRow("Shuffle", _config.Shuffle ? "[yellow]enabled[/]" : "[dim]disabled[/]");
 

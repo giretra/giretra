@@ -21,9 +21,19 @@ public sealed class SwissConfig
     public double InitialElo { get; init; } = 1200;
 
     /// <summary>
-    /// K-factor for ELO calculations.
+    /// Maximum K-factor (used at the start of the tournament for rapid convergence).
     /// </summary>
-    public double EloKFactor { get; init; } = 24;
+    public double EloKFactorMax { get; init; } = 40;
+
+    /// <summary>
+    /// Minimum K-factor (floor for late-game stability).
+    /// </summary>
+    public double EloKFactorMin { get; init; } = 4;
+
+    /// <summary>
+    /// Number of matches at which K-factor is halfway between max and min.
+    /// </summary>
+    public double EloKFactorHalfLife { get; init; } = 30;
 
     /// <summary>
     /// Random seed for reproducibility. If null, uses non-deterministic randomness.

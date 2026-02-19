@@ -30,7 +30,7 @@ public static class EloCalculator
     }
 
     /// <summary>
-    /// Calculates new ratings for both players after a match.
+    /// Calculates new ratings for both players after a match using binary win/loss.
     /// </summary>
     /// <param name="player1Rating">Player 1's current rating.</param>
     /// <param name="player2Rating">Player 2's current rating.</param>
@@ -43,15 +43,64 @@ public static class EloCalculator
         bool player1Won,
         double kFactor)
     {
-        var expected1 = ExpectedScore(player1Rating, player2Rating);
-        var expected2 = ExpectedScore(player2Rating, player1Rating);
-
         var actual1 = player1Won ? 1.0 : 0.0;
         var actual2 = player1Won ? 0.0 : 1.0;
 
-        var newRating1 = NewRating(player1Rating, expected1, actual1, kFactor);
-        var newRating2 = NewRating(player2Rating, expected2, actual2, kFactor);
+        return CalculateNewRatings(player1Rating, player2Rating, actual1, actual2, kFactor, kFactor);
+    }
+
+    /// <summary>
+    /// Calculates new ratings for both players using continuous actual scores and per-player K-factors.
+    /// </summary>
+    /// <param name="player1Rating">Player 1's current rating.</param>
+    /// <param name="player2Rating">Player 2's current rating.</param>
+    /// <param name="actualScore1">Player 1's actual score (0.0 to 1.0).</param>
+    /// <param name="actualScore2">Player 2's actual score (0.0 to 1.0).</param>
+    /// <param name="kFactor1">K-factor for player 1.</param>
+    /// <param name="kFactor2">K-factor for player 2.</param>
+    /// <returns>Tuple of (new player 1 rating, new player 2 rating).</returns>
+    public static (double NewPlayer1Rating, double NewPlayer2Rating) CalculateNewRatings(
+        double player1Rating,
+        double player2Rating,
+        double actualScore1,
+        double actualScore2,
+        double kFactor1,
+        double kFactor2)
+    {
+        var expected1 = ExpectedScore(player1Rating, player2Rating);
+        var expected2 = ExpectedScore(player2Rating, player1Rating);
+
+        var newRating1 = NewRating(player1Rating, expected1, actualScore1, kFactor1);
+        var newRating2 = NewRating(player2Rating, expected2, actualScore2, kFactor2);
 
         return (newRating1, newRating2);
+    }
+
+    /// <summary>
+    /// Computes a decaying K-factor based on how many matches a player has completed.
+    /// Starts at kMax and decays toward kMin with the given half-life.
+    /// </summary>
+    /// <param name="kMax">Initial (maximum) K-factor for rapid early convergence.</param>
+    /// <param name="kMin">Floor (minimum) K-factor for late-game stability.</param>
+    /// <param name="matchesPlayed">Number of matches the player has completed.</param>
+    /// <param name="halfLife">Number of matches at which K is halfway between kMax and kMin.</param>
+    /// <returns>The effective K-factor for the player.</returns>
+    public static double EffectiveKFactor(double kMax, double kMin, int matchesPlayed, double halfLife)
+    {
+        return kMin + (kMax - kMin) / (1.0 + matchesPlayed / halfLife);
+    }
+
+    /// <summary>
+    /// Computes a margin-based actual score (0.5 to 1.0) for the winner.
+    /// A blowout yields ~1.0, a close win yields ~0.5.
+    /// </summary>
+    /// <param name="winnerScore">The winning team's final score.</param>
+    /// <param name="loserScore">The losing team's final score.</param>
+    /// <param name="targetScore">The target score to win a match.</param>
+    /// <returns>Actual score for the winner (0.5 to 1.0).</returns>
+    public static double MarginScore(int winnerScore, int loserScore, int targetScore)
+    {
+        var margin = (double)(winnerScore - loserScore) / targetScore;
+        return 0.5 + 0.5 * Math.Clamp(margin, 0.0, 1.0);
     }
 }

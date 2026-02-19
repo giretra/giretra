@@ -59,7 +59,7 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
         };
 
         var team1Factory = new DeterministicPlayerAgentFactory();
-        var team2Factory = new BadPlayerAgentFactory();
+        var team2Factory = new CalculatingPlayerAgentFactory();
 
         var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
         var renderer = new BenchmarkRenderer(config, team1Factory.AgentName, team2Factory.AgentName);
