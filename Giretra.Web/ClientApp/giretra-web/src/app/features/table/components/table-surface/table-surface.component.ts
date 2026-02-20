@@ -12,7 +12,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
   standalone: true,
   imports: [PlayerSeatComponent, CenterStageComponent, SpeechBubbleComponent],
   template: `
-    <div class="table-surface">
+    <div class="table-surface" [class.deal-summary-visible]="!!dealSummary()">
       <!-- Felt noise overlay -->
       <div class="felt-noise"></div>
       <!-- Vignette -->
@@ -278,6 +278,10 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
       .bubble-position {
         display: none;
       }
+    }
+
+    .table-surface.deal-summary-visible {
+      overflow: visible;
     }
 
     @media (max-width: 480px) {

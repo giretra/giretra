@@ -42,7 +42,7 @@ import { CardComponent } from '../card/card.component';
     }
 
     .card-wrapper {
-      margin-left: -28px;
+      margin-left: -36px;
       transform-origin: bottom center;
       transition: transform 0.15s ease, filter 0.15s ease;
     }
@@ -78,6 +78,11 @@ export class CardFanComponent {
 
   readonly cardWidth = computed(() => {
     const count = this.cards().length;
+    const isMobile = window.innerWidth < 640;
+    if (isMobile) {
+      if (count > 6) return 56;
+      return 64;
+    }
     if (count > 6) return 68;
     return 80;
   });
