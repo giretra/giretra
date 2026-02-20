@@ -52,7 +52,7 @@
 
                 <div class="${properties.kcFormButtonsClass!}">
                     <input type="hidden" id="id-hidden-input" name="credentialId"
-                           <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>>
+                           <#if auth?? && auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>>
                     <button name="login" id="kc-login" type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}">
                         ${msg("doLogIn")}

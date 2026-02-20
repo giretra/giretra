@@ -1,6 +1,6 @@
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}" lang="${lang}">
+<html class="${properties.kcHtmlClass!}" lang="${lang!'en'}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,7 +47,7 @@
 
         <div class="${properties.kcFormCardClass!}">
             <header class="${properties.kcFormHeaderClass!}">
-                <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
+                <#if !(auth?has_content && auth.showUsername?? && auth.showUsername() && auth.showResetCredentials?? && !auth.showResetCredentials())>
                     <#nested "header">
                 <#else>
                     <div class="giretra-attempted-user">
@@ -74,7 +74,7 @@
 
                     <#nested "form">
 
-                    <#if auth?has_content && auth.showTryAnotherWay()>
+                    <#if auth?has_content && auth.showTryAnotherWay?? && auth.showTryAnotherWay()>
                         <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
                             <input type="hidden" name="tryAnotherWay" value="on"/>
                             <a href="#" id="try-another-way"
