@@ -149,9 +149,18 @@ public class ScoringCalculator
             }
             else if (rawAnnouncerMatch == rawDefenderMatch)
             {
-                // Rounds to tie (e.g., 131-127 -> 13-13)
-                announcerMatchPoints = 0;
-                defenderMatchPoints = 0;
+                if (multiplier != MultiplierState.Normal)
+                {
+                    // Doubled/Redoubled: no rounding ties - announcer has strictly more card points
+                    announcerMatchPoints = rawAnnouncerMatch + 1;
+                    defenderMatchPoints = rawDefenderMatch - 1;
+                }
+                else
+                {
+                    // Normal mode: rounds to tie (e.g., 131-127 -> 13-13)
+                    announcerMatchPoints = 0;
+                    defenderMatchPoints = 0;
+                }
             }
             else if (rawDefenderMatch < 6)
             {

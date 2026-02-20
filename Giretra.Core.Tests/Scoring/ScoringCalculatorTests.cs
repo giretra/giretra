@@ -81,6 +81,56 @@ public class ScoringCalculatorTests
         Assert.Equal(24, result.Team2MatchPoints);  // 6 × 4
     }
 
+    [Fact]
+    public void ToutAs_Doubled_RoundingTie_AnnouncerWins()
+    {
+        // 131-127 rounds to 13-13 in normal mode (tie)
+        // In doubled mode, announcer has more card points so must win: 14-12 × 2
+        var result = _calculator.Calculate(
+            GameMode.ToutAs,
+            MultiplierState.Doubled,
+            Team.Team1,
+            131,
+            127,
+            sweepingTeam: null);
+
+        Assert.Equal(28, result.Team1MatchPoints);  // 14 × 2
+        Assert.Equal(24, result.Team2MatchPoints);  // 12 × 2
+    }
+
+    [Fact]
+    public void ToutAs_Redoubled_RoundingTie_AnnouncerWins()
+    {
+        // 130-128 rounds to 13-13 in normal mode (tie)
+        // In redoubled mode, announcer has more card points so must win: 14-12 × 4
+        var result = _calculator.Calculate(
+            GameMode.ToutAs,
+            MultiplierState.Redoubled,
+            Team.Team1,
+            130,
+            128,
+            sweepingTeam: null);
+
+        Assert.Equal(56, result.Team1MatchPoints);  // 14 × 4
+        Assert.Equal(48, result.Team2MatchPoints);  // 12 × 4
+    }
+
+    [Fact]
+    public void ToutAs_Doubled_ExactTie_StillZero()
+    {
+        // 129-129 exact tie remains 0-0 even when doubled
+        var result = _calculator.Calculate(
+            GameMode.ToutAs,
+            MultiplierState.Doubled,
+            Team.Team1,
+            129,
+            129,
+            sweepingTeam: null);
+
+        Assert.Equal(0, result.Team1MatchPoints);
+        Assert.Equal(0, result.Team2MatchPoints);
+    }
+
     #endregion
 
     #region SansAs Scoring Tests
