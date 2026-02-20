@@ -31,7 +31,7 @@
     </#if>
 </head>
 
-<body class="${properties.kcBodyClass!}" data-page-id="${pageId}">
+<body class="${properties.kcBodyClass!}" data-page-id="${pageId!''}">
     <div class="${properties.kcLoginClass!}">
 
         <div class="giretra-brand">
