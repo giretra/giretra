@@ -653,7 +653,7 @@ export class CreateRoomFormComponent implements OnInit {
     Top: null,
     Right: null,
   };
-  readonly aiTypes = signal<AiTypeInfo[]>([{ name: DEFAULT_AI_TYPE, displayName: 'Deterministic' }]);
+  readonly aiTypes = signal<AiTypeInfo[]>([{ name: DEFAULT_AI_TYPE, displayName: 'Deterministic', difficulty: 0, rating: 0, pun: null, description: null, author: null }]);
   readonly submitting = signal<boolean>(false);
   readonly error = signal<string>('');
 
