@@ -41,6 +41,14 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
         var matchId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
+        // Stage Elo changes BEFORE Match/Deal entities so that ResolvePlayersAsync's
+        // SaveChangesAsync (for new Player rows) doesn't prematurely commit the Match.
+        var isRanked = true;
+        if (isRanked)
+        {
+            await _eloService.StageMatchEloAsync(matchId, session);
+        }
+
         // Create Match entity
         var match = new ModelEntities.Match
         {
@@ -53,7 +61,7 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
                 ? (ModelEnums.Team)(int)matchState.Winner.Value
                 : null,
             TotalDeals = matchState.CompletedDeals.Count,
-            IsRanked = true,
+            IsRanked = isRanked,
             WasAbandoned = false,
             StartedAt = new DateTimeOffset(session.StartedAt, TimeSpan.Zero),
             CompletedAt = session.CompletedAt.HasValue
@@ -141,12 +149,6 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
             }
         }
 
-        // Stage Elo changes if ranked
-        if (match.IsRanked)
-        {
-            await _eloService.StageMatchEloAsync(matchId, session);
-        }
-
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
         await _dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
@@ -171,6 +173,14 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
             ? Core.Players.Team.Team2
             : Core.Players.Team.Team1;
 
+        // Stage Elo changes BEFORE Match/Deal entities so that ResolvePlayersAsync's
+        // SaveChangesAsync (for new Player rows) doesn't prematurely commit the Match.
+        var isRanked = true;
+        if (isRanked)
+        {
+            await _eloService.StageAbandonEloAsync(matchId, session, abandonerPosition);
+        }
+
         // Create Match entity
         var match = new ModelEntities.Match
         {
@@ -181,7 +191,7 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
             Team2FinalScore = matchState?.Team2MatchPoints ?? 0,
             WinnerTeam = (ModelEnums.Team)(int)winnerTeam,
             TotalDeals = matchState?.CompletedDeals.Count ?? 0,
-            IsRanked = true,
+            IsRanked = isRanked,
             WasAbandoned = true,
             StartedAt = new DateTimeOffset(session.StartedAt, TimeSpan.Zero),
             CompletedAt = now,
@@ -261,12 +271,6 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
                     }
                 }
             }
-        }
-
-        // Stage Elo changes
-        if (match.IsRanked)
-        {
-            await _eloService.StageAbandonEloAsync(matchId, session, abandonerPosition);
         }
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();

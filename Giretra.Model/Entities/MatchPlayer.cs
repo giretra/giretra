@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Giretra.Model.Entities;
 
 [Index(nameof(MatchId), nameof(Position), IsUnique = true)]
-[Index(nameof(MatchId), nameof(PlayerId), IsUnique = true)]
 [Index(nameof(PlayerId))]
 [Index(nameof(MatchId))]
 public class MatchPlayer
