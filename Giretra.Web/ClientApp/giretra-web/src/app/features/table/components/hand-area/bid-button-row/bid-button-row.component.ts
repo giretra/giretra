@@ -209,28 +209,28 @@ export class BidButtonRowComponent {
       }
     }
 
-    // Sans As button
-    const sansAs = actions.find(
-      (a) => a.actionType === 'Announce' && a.mode === GameMode.SansAs
+    // No Trumps button
+    const noTrumps = actions.find(
+      (a) => a.actionType === 'Announce' && a.mode === GameMode.NoTrumps
     );
-    if (sansAs) {
+    if (noTrumps) {
       buttons.push({
-        label: 'Sans As',
+        label: 'No Trumps',
         actionType: 'Announce',
-        mode: GameMode.SansAs,
+        mode: GameMode.NoTrumps,
         variant: 'secondary',
       });
     }
 
-    // Tout As button
-    const toutAs = actions.find(
-      (a) => a.actionType === 'Announce' && a.mode === GameMode.ToutAs
+    // All Trumps button
+    const allTrumps = actions.find(
+      (a) => a.actionType === 'Announce' && a.mode === GameMode.AllTrumps
     );
-    if (toutAs) {
+    if (allTrumps) {
       buttons.push({
-        label: 'Tout As',
+        label: 'All Trumps',
         actionType: 'Announce',
-        mode: GameMode.ToutAs,
+        mode: GameMode.AllTrumps,
         variant: 'secondary',
       });
     }
@@ -282,8 +282,8 @@ export class BidButtonRowComponent {
   }
 
   getModeHintText(mode: GameMode | null): string | null {
-    if (mode === GameMode.SansAs) return 'Sans As';
-    if (mode === GameMode.ToutAs) return 'Tout As';
+    if (mode === GameMode.NoTrumps) return 'No Trumps';
+    if (mode === GameMode.AllTrumps) return 'All Trumps';
     return null;
   }
 

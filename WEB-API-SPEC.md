@@ -56,8 +56,8 @@ ColourClubs = 0
 ColourDiamonds = 1
 ColourHearts = 2
 ColourSpades = 3
-SansAs = 4
-ToutAs = 5
+NoTrumps = 4
+AllTrumps = 5
 ```
 
 #### MultiplierState
@@ -365,8 +365,8 @@ When `pendingActionType` is `"Negotiate"`:
     { "actionType": "Accept", "mode": null },
     { "actionType": "Announce", "mode": "ColourHearts" },
     { "actionType": "Announce", "mode": "ColourSpades" },
-    { "actionType": "Announce", "mode": "SansAs" },
-    { "actionType": "Announce", "mode": "ToutAs" }
+    { "actionType": "Announce", "mode": "NoTrumps" },
+    { "actionType": "Announce", "mode": "AllTrumps" }
   ]
 }
 ```

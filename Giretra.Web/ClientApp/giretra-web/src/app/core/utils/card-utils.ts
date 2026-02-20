@@ -46,7 +46,7 @@ export function isRedSuit(suit: CardSuit): boolean {
 }
 
 /**
- * Get the trump suit from a game mode (null for SansAs/ToutAs)
+ * Get the trump suit from a game mode (null for NoTrumps/AllTrumps)
  */
 export function getTrumpSuit(gameMode: GameMode | null): CardSuit | null {
   if (!gameMode) return null;
@@ -71,9 +71,9 @@ export function getTrumpSuit(gameMode: GameMode | null): CardSuit | null {
 export function isTrump(card: Card, gameMode: GameMode | null): boolean {
   if (!gameMode) return false;
 
-  // In ToutAs, all cards use trump ranking but no "trump" suit
-  if (gameMode === GameMode.ToutAs) return false;
-  if (gameMode === GameMode.SansAs) return false;
+  // In AllTrumps, all cards use trump ranking but no "trump" suit
+  if (gameMode === GameMode.AllTrumps) return false;
+  if (gameMode === GameMode.NoTrumps) return false;
 
   const trumpSuit = getTrumpSuit(gameMode);
   return trumpSuit === card.suit;

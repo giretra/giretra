@@ -288,16 +288,16 @@ export class ScoreBarComponent {
   readonly totalPoints = computed(() => {
     const mode = this.gameMode();
     if (!mode) return 162;
-    if (mode === GameMode.ToutAs) return 258;
-    if (mode === GameMode.SansAs) return 130;
+    if (mode === GameMode.AllTrumps) return 258;
+    if (mode === GameMode.NoTrumps) return 130;
     return 162;
   });
 
   readonly thresholdPercent = computed(() => {
     const mode = this.gameMode();
     if (!mode) return 50;
-    if (mode === GameMode.ToutAs) return (129 / 258) * 100;
-    if (mode === GameMode.SansAs) return (65 / 130) * 100;
+    if (mode === GameMode.AllTrumps) return (129 / 258) * 100;
+    if (mode === GameMode.NoTrumps) return (65 / 130) * 100;
     return (82 / 162) * 100;
   });
 

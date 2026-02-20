@@ -184,9 +184,9 @@ export class NegotiationStageComponent {
         return '\u2665';
       case GameMode.ColourSpades:
         return '\u2660';
-      case GameMode.SansAs:
+      case GameMode.NoTrumps:
         return 'SA';
-      case GameMode.ToutAs:
+      case GameMode.AllTrumps:
         return 'TA';
       default:
         return mode;

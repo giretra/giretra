@@ -25,10 +25,10 @@ public class CardTests
     [InlineData(CardRank.Queen, 3)]
     [InlineData(CardRank.Eight, 0)]
     [InlineData(CardRank.Seven, 0)]
-    public void GetPointValue_ToutAs_ReturnsCorrectValue(CardRank rank, int expectedPoints)
+    public void GetPointValue_AllTrumps_ReturnsCorrectValue(CardRank rank, int expectedPoints)
     {
         var card = new Card(rank, CardSuit.Hearts);
-        Assert.Equal(expectedPoints, card.GetPointValue(GameMode.ToutAs));
+        Assert.Equal(expectedPoints, card.GetPointValue(GameMode.AllTrumps));
     }
 
     [Theory]
@@ -55,10 +55,10 @@ public class CardTests
     [InlineData(CardRank.Nine, 0)]
     [InlineData(CardRank.Eight, 0)]
     [InlineData(CardRank.Seven, 0)]
-    public void GetPointValue_SansAs_ReturnsCorrectValue(CardRank rank, int expectedPoints)
+    public void GetPointValue_NoTrumps_ReturnsCorrectValue(CardRank rank, int expectedPoints)
     {
         var card = new Card(rank, CardSuit.Hearts);
-        Assert.Equal(expectedPoints, card.GetPointValue(GameMode.SansAs));
+        Assert.Equal(expectedPoints, card.GetPointValue(GameMode.NoTrumps));
     }
 
     [Theory]
@@ -84,9 +84,9 @@ public class CardTests
         var nine = new Card(CardRank.Nine, CardSuit.Hearts);
         var ace = new Card(CardRank.Ace, CardSuit.Hearts);
 
-        var jackStrength = jack.GetStrength(GameMode.ToutAs);
-        var nineStrength = nine.GetStrength(GameMode.ToutAs);
-        var aceStrength = ace.GetStrength(GameMode.ToutAs);
+        var jackStrength = jack.GetStrength(GameMode.AllTrumps);
+        var nineStrength = nine.GetStrength(GameMode.AllTrumps);
+        var aceStrength = ace.GetStrength(GameMode.AllTrumps);
 
         Assert.True(jackStrength > nineStrength);
         Assert.True(nineStrength > aceStrength);
@@ -99,9 +99,9 @@ public class CardTests
         var ten = new Card(CardRank.Ten, CardSuit.Hearts);
         var jack = new Card(CardRank.Jack, CardSuit.Hearts);
 
-        var aceStrength = ace.GetStrength(GameMode.SansAs);
-        var tenStrength = ten.GetStrength(GameMode.SansAs);
-        var jackStrength = jack.GetStrength(GameMode.SansAs);
+        var aceStrength = ace.GetStrength(GameMode.NoTrumps);
+        var tenStrength = ten.GetStrength(GameMode.NoTrumps);
+        var jackStrength = jack.GetStrength(GameMode.NoTrumps);
 
         Assert.True(aceStrength > tenStrength);
         Assert.True(tenStrength > jackStrength);
@@ -118,20 +118,20 @@ public class CardTests
     }
 
     [Fact]
-    public void TotalCardPoints_ToutAs_Is258()
+    public void TotalCardPoints_AllTrumps_Is258()
     {
         var deck = Deck.CreateStandard();
-        var total = deck.Cards.Sum(c => c.GetPointValue(GameMode.ToutAs));
+        var total = deck.Cards.Sum(c => c.GetPointValue(GameMode.AllTrumps));
         // 62 × 4 = 248, plus 10 for last trick = 258
         // But last trick bonus is applied during play, not to cards
         Assert.Equal(248, total);
     }
 
     [Fact]
-    public void TotalCardPoints_SansAs_Is120()
+    public void TotalCardPoints_NoTrumps_Is120()
     {
         var deck = Deck.CreateStandard();
-        var total = deck.Cards.Sum(c => c.GetPointValue(GameMode.SansAs));
+        var total = deck.Cards.Sum(c => c.GetPointValue(GameMode.NoTrumps));
         // 30 × 4 = 120, plus 10 for last trick = 130
         Assert.Equal(120, total);
     }

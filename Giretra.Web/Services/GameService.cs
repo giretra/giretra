@@ -184,7 +184,7 @@ public sealed class GameService : IGameService
         var matchState = session.MatchState;
         var deal = matchState.CurrentDeal;
 
-        // Get player's hand (sorted by game mode, or ToutAs with natural suit order if no mode)
+        // Get player's hand (sorted by game mode, or AllTrumps with natural suit order if no mode)
         var unsortedHand = deal?.Players[position.Value].Hand ?? [];
         var hand = CardSorter.SortHand(unsortedHand, deal?.ResolvedMode);
 

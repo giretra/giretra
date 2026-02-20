@@ -13,10 +13,10 @@ public enum GameModeCategory
     /// <summary>
     /// No trump suit. All suits use standard ranking (A > 10 > K > Q > J > 9 > 8 > 7).
     /// </summary>
-    SansAs,
+    NoTrumps,
 
     /// <summary>
     /// No trump suit. All suits use trump ranking (J > 9 > A > 10 > K > Q > 8 > 7).
     /// </summary>
-    ToutAs
+    AllTrumps
 }

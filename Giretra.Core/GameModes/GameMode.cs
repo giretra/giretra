@@ -4,7 +4,7 @@ namespace Giretra.Core.GameModes;
 
 /// <summary>
 /// Represents the six game modes, ordered from lowest to highest.
-/// Hierarchy: ColourClubs < ColourDiamonds < ColourHearts < ColourSpades < SansAs < ToutAs
+/// Hierarchy: ColourClubs < ColourDiamonds < ColourHearts < ColourSpades < NoTrumps < AllTrumps
 /// </summary>
 public enum GameMode
 {
@@ -12,8 +12,8 @@ public enum GameMode
     ColourDiamonds = 1,
     ColourHearts = 2,
     ColourSpades = 3,
-    SansAs = 4,
-    ToutAs = 5
+    NoTrumps = 4,
+    AllTrumps = 5
 }
 
 public static class GameModeExtensions
@@ -32,13 +32,13 @@ public static class GameModeExtensions
         {
             GameMode.ColourClubs or GameMode.ColourDiamonds or
             GameMode.ColourHearts or GameMode.ColourSpades => GameModeCategory.Colour,
-            GameMode.SansAs => GameModeCategory.SansAs,
-            GameMode.ToutAs => GameModeCategory.ToutAs,
+            GameMode.NoTrumps => GameModeCategory.NoTrumps,
+            GameMode.AllTrumps => GameModeCategory.AllTrumps,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
 
     /// <summary>
-    /// Gets the trump suit for Colour modes. Returns null for SansAs/ToutAs.
+    /// Gets the trump suit for Colour modes. Returns null for NoTrumps/AllTrumps.
     /// </summary>
     public static CardSuit? GetTrumpSuit(this GameMode mode)
         => mode switch
@@ -56,8 +56,8 @@ public static class GameModeExtensions
     public static int GetWinThreshold(this GameMode mode)
         => mode.GetCategory() switch
         {
-            GameModeCategory.ToutAs => 129,
-            GameModeCategory.SansAs => 65,
+            GameModeCategory.AllTrumps => 129,
+            GameModeCategory.NoTrumps => 65,
             GameModeCategory.Colour => 82,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
@@ -68,8 +68,8 @@ public static class GameModeExtensions
     public static int GetTotalPoints(this GameMode mode)
         => mode.GetCategory() switch
         {
-            GameModeCategory.ToutAs => 258,  // 62×4 + 10
-            GameModeCategory.SansAs => 130,  // 30×4 + 10
+            GameModeCategory.AllTrumps => 258,  // 62×4 + 10
+            GameModeCategory.NoTrumps => 130,  // 30×4 + 10
             GameModeCategory.Colour => 162,  // 62 + 30×3 + 10
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
@@ -80,8 +80,8 @@ public static class GameModeExtensions
     public static int GetBaseMatchPoints(this GameMode mode)
         => mode switch
         {
-            GameMode.ToutAs => 26,
-            GameMode.SansAs => 52,
+            GameMode.AllTrumps => 26,
+            GameMode.NoTrumps => 52,
             GameMode.ColourClubs => 32,  // Clubs count double
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
@@ -94,25 +94,25 @@ public static class GameModeExtensions
     public static int GetSweepBonus(this GameMode mode)
         => mode.GetCategory() switch
         {
-            GameModeCategory.ToutAs => 35,
-            GameModeCategory.SansAs => 90,
+            GameModeCategory.AllTrumps => 35,
+            GameModeCategory.NoTrumps => 90,
             GameModeCategory.Colour => 0, // Instant win, not a point bonus
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
 
     /// <summary>
     /// Checks if redouble is allowed for this game mode.
-    /// Redouble is NOT allowed for SansAs and ColourClubs (already implicitly doubled on accept).
+    /// Redouble is NOT allowed for NoTrumps and ColourClubs (already implicitly doubled on accept).
     /// </summary>
     public static bool CanRedouble(this GameMode mode)
-        => mode is not (GameMode.SansAs or GameMode.ColourClubs);
+        => mode is not (GameMode.NoTrumps or GameMode.ColourClubs);
 
     /// <summary>
     /// Checks if accepting this mode by opponent causes automatic double.
-    /// This applies to SansAs and ColourClubs.
+    /// This applies to NoTrumps and ColourClubs.
     /// </summary>
     public static bool AcceptCausesAutoDouble(this GameMode mode)
-        => mode is GameMode.SansAs or GameMode.ColourClubs;
+        => mode is GameMode.NoTrumps or GameMode.ColourClubs;
 
     /// <summary>
     /// Creates a Colour game mode from a suit.
@@ -142,7 +142,7 @@ public static class GameModeExtensions
         yield return GameMode.ColourDiamonds;
         yield return GameMode.ColourHearts;
         yield return GameMode.ColourSpades;
-        yield return GameMode.SansAs;
-        yield return GameMode.ToutAs;
+        yield return GameMode.NoTrumps;
+        yield return GameMode.AllTrumps;
     }
 }

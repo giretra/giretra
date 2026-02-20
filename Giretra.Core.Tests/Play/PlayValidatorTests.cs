@@ -45,28 +45,28 @@ public class PlayValidatorTests
     }
 
     [Fact]
-    public void ToutAs_MustBeatIfPossible()
+    public void AllTrumps_MustBeatIfPossible()
     {
         var player = Player.Create(PlayerPosition.Left, new[]
         {
             new Card(CardRank.Ace, CardSuit.Hearts),
-            new Card(CardRank.Nine, CardSuit.Hearts),  // Higher than Ten in ToutAs
+            new Card(CardRank.Nine, CardSuit.Hearts),  // Higher than Ten in AllTrumps
             new Card(CardRank.Seven, CardSuit.Hearts)
         });
 
         var trick = TrickState.Create(PlayerPosition.Bottom, 1)
             .PlayCard(new Card(CardRank.Ten, CardSuit.Hearts));
 
-        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.ToutAs);
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.AllTrumps);
 
-        // In ToutAs: J > 9 > A > 10, so Nine and Ace beat Ten
+        // In AllTrumps: J > 9 > A > 10, so Nine and Ace beat Ten
         Assert.Equal(2, validPlays.Count);
         Assert.Contains(new Card(CardRank.Nine, CardSuit.Hearts), validPlays);
         Assert.Contains(new Card(CardRank.Ace, CardSuit.Hearts), validPlays);
     }
 
     [Fact]
-    public void SansAs_NoObligationToBeat_PlayAnyLeadSuitCard()
+    public void NoTrumps_NoObligationToBeat_PlayAnyLeadSuitCard()
     {
         var player = Player.Create(PlayerPosition.Left, new[]
         {
@@ -78,9 +78,9 @@ public class PlayValidatorTests
         var trick = TrickState.Create(PlayerPosition.Bottom, 1)
             .PlayCard(new Card(CardRank.Queen, CardSuit.Hearts));
 
-        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.SansAs);
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.NoTrumps);
 
-        // SansAs: no obligation to beat, just must follow suit
+        // NoTrumps: no obligation to beat, just must follow suit
         Assert.Equal(3, validPlays.Count);
         Assert.Contains(new Card(CardRank.Ace, CardSuit.Hearts), validPlays);
         Assert.Contains(new Card(CardRank.King, CardSuit.Hearts), validPlays);
@@ -88,7 +88,7 @@ public class PlayValidatorTests
     }
 
     [Fact]
-    public void SansAs_CannotBeat_PlayAnyLeadSuitCard()
+    public void NoTrumps_CannotBeat_PlayAnyLeadSuitCard()
     {
         var player = Player.Create(PlayerPosition.Left, new[]
         {
@@ -100,7 +100,7 @@ public class PlayValidatorTests
         var trick = TrickState.Create(PlayerPosition.Bottom, 1)
             .PlayCard(new Card(CardRank.Ace, CardSuit.Hearts));
 
-        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.SansAs);
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.NoTrumps);
 
         // Cannot beat Ace, so can play any heart
         Assert.Equal(2, validPlays.Count);
@@ -223,8 +223,8 @@ public class PlayValidatorTests
         var trick = TrickState.Create(PlayerPosition.Bottom, 1)
             .PlayCard(new Card(CardRank.King, CardSuit.Hearts));
 
-        Assert.True(PlayValidator.IsValidPlay(player, new Card(CardRank.Ace, CardSuit.Hearts), trick, GameMode.SansAs));
-        Assert.False(PlayValidator.IsValidPlay(player, new Card(CardRank.Seven, CardSuit.Clubs), trick, GameMode.SansAs));
+        Assert.True(PlayValidator.IsValidPlay(player, new Card(CardRank.Ace, CardSuit.Hearts), trick, GameMode.NoTrumps));
+        Assert.False(PlayValidator.IsValidPlay(player, new Card(CardRank.Seven, CardSuit.Clubs), trick, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -279,10 +279,10 @@ public class PlayValidatorTests
     }
 
     [Fact]
-    public void SansAs_CannotBeat_PlayAnyLeadSuitSpade()
+    public void NoTrumps_CannotBeat_PlayAnyLeadSuitSpade()
     {
         // Right leads K♠, Bottom has 10♠, Q♠, 8♠ + non-spades
-        // SansAs: no obligation to beat, just must follow suit
+        // NoTrumps: no obligation to beat, just must follow suit
         var player = Player.Create(PlayerPosition.Bottom, new[]
         {
             new Card(CardRank.Ten, CardSuit.Spades),
@@ -295,7 +295,7 @@ public class PlayValidatorTests
         var trick = TrickState.Create(PlayerPosition.Right, 1)
             .PlayCard(new Card(CardRank.King, CardSuit.Spades));
 
-        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.SansAs);
+        var validPlays = PlayValidator.GetValidPlays(player, trick, GameMode.NoTrumps);
 
         Assert.Equal(3, validPlays.Count);
         Assert.Contains(new Card(CardRank.Ten, CardSuit.Spades), validPlays);

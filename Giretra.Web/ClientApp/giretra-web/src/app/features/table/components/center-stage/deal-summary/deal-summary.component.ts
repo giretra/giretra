@@ -443,7 +443,7 @@ export class DealSummaryComponent {
         rows.push({ label: 'Jacks', perCardValue: 2, team1Points: t1OtherJ, team2Points: t2OtherJ, isTrump: false });
       // Non-trump nines = 0pts, skip
 
-    } else if (mode === GameMode.ToutAs) {
+    } else if (mode === GameMode.AllTrumps) {
       // All trump ranking: J(20) > 9(14) > A(11) > 10(10) > K(4) > Q(3)
       if (t1.jacks > 0 || t2.jacks > 0)
         rows.push({ label: 'Jacks', perCardValue: 20, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
@@ -459,7 +459,7 @@ export class DealSummaryComponent {
         rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
 
     } else {
-      // SansAs: A(11) > 10(10) > K(4) > Q(3) > J(2) > 9(0, skip)
+      // NoTrumps: A(11) > 10(10) > K(4) > Q(3) > J(2) > 9(0, skip)
       if (t1.aces > 0 || t2.aces > 0)
         rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
       if (t1.tens > 0 || t2.tens > 0)

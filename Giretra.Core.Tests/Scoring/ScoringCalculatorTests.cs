@@ -8,7 +8,7 @@ public class ScoringCalculatorTests
 {
     private readonly ScoringCalculator _calculator = new();
 
-    #region ToutAs Scoring Tests
+    #region AllTrumps Scoring Tests
 
     [Theory]
     [InlineData(199, 59, 20, 6)]   // Announcer wins big
@@ -17,7 +17,7 @@ public class ScoringCalculatorTests
     [InlineData(129, 129, 0, 0)]   // Exact tie
     [InlineData(209, 49, 26, 0)]   // Announcer dominates - gets all 26
     [InlineData(120, 138, 0, 26)]  // Announcer loses (< 129)
-    public void ToutAs_Scoring_MatchesSpec(
+    public void AllTrumps_Scoring_MatchesSpec(
         int announcerCardPoints,
         int defenderCardPoints,
         int expectedAnnouncerMatch,
@@ -25,7 +25,7 @@ public class ScoringCalculatorTests
     {
         // Announcer is Team1
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             announcerCardPoints,
@@ -37,10 +37,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_AnnouncerIsTeam2_PointsCorrectlyAssigned()
+    public void AllTrumps_AnnouncerIsTeam2_PointsCorrectlyAssigned()
     {
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team2,
             59,  // Team1 card points (defender)
@@ -52,10 +52,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Doubled_PointsMultiplied()
+    public void AllTrumps_Doubled_PointsMultiplied()
     {
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             199,
@@ -67,10 +67,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Redoubled_PointsMultiplied()
+    public void AllTrumps_Redoubled_PointsMultiplied()
     {
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Redoubled,
             Team.Team1,
             199,
@@ -82,12 +82,12 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Doubled_RoundingTie_AnnouncerWins()
+    public void AllTrumps_Doubled_RoundingTie_AnnouncerWins()
     {
         // 131-127 rounds to 13-13 in normal mode (tie)
         // In doubled mode, announcer has more card points so must win: 14-12 × 2
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             131,
@@ -99,12 +99,12 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Redoubled_RoundingTie_AnnouncerWins()
+    public void AllTrumps_Redoubled_RoundingTie_AnnouncerWins()
     {
         // 130-128 rounds to 13-13 in normal mode (tie)
         // In redoubled mode, announcer has more card points so must win: 14-12 × 4
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Redoubled,
             Team.Team1,
             130,
@@ -116,11 +116,11 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Doubled_ExactTie_StillZero()
+    public void AllTrumps_Doubled_ExactTie_StillZero()
     {
         // 129-129 exact tie remains 0-0 even when doubled
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             129,
@@ -133,13 +133,13 @@ public class ScoringCalculatorTests
 
     #endregion
 
-    #region SansAs Scoring Tests
+    #region NoTrumps Scoring Tests
 
     [Fact]
-    public void SansAs_AnnouncerWins_Gets52Points()
+    public void NoTrumps_AnnouncerWins_Gets52Points()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             80,  // Announcer >= 65
@@ -151,10 +151,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void SansAs_AnnouncerLoses_DefenderGets52Points()
+    public void NoTrumps_AnnouncerLoses_DefenderGets52Points()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             60,  // Announcer < 65
@@ -166,10 +166,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void SansAs_Tie_ZeroPoints()
+    public void NoTrumps_Tie_ZeroPoints()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             65,
@@ -181,10 +181,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void SansAs_Doubled_104Points()
+    public void NoTrumps_Doubled_104Points()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             80,
@@ -320,10 +320,10 @@ public class ScoringCalculatorTests
     #region Sweep Tests
 
     [Fact]
-    public void ToutAs_Sweep_35Points()
+    public void AllTrumps_Sweep_35Points()
     {
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             258,  // All card points
@@ -337,10 +337,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ToutAs_Sweep_Doubled_70Points()
+    public void AllTrumps_Sweep_Doubled_70Points()
     {
         var result = _calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             258,
@@ -351,10 +351,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void SansAs_Sweep_90Points()
+    public void NoTrumps_Sweep_90Points()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             130,
@@ -367,10 +367,10 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void SansAs_Sweep_Doubled_180Points()
+    public void NoTrumps_Sweep_Doubled_180Points()
     {
         var result = _calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Doubled,
             Team.Team1,
             130,

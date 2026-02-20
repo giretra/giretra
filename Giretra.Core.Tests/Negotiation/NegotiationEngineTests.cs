@@ -30,10 +30,10 @@ public class NegotiationEngineTests
         Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.ColourDiamonds));
         Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.ColourHearts));
 
-        // Left can announce Spades, SansAs, or ToutAs
+        // Left can announce Spades, NoTrumps, or AllTrumps
         Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.ColourSpades));
-        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.SansAs));
-        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.ToutAs));
+        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.NoTrumps));
+        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.AllTrumps));
     }
 
     [Fact]
@@ -51,9 +51,9 @@ public class NegotiationEngineTests
         Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.ColourHearts));
         Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.ColourSpades));
 
-        // Top can still announce SansAs or ToutAs
-        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.SansAs));
-        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.ToutAs));
+        // Top can still announce NoTrumps or AllTrumps
+        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.NoTrumps));
+        Assert.True(NegotiationEngine.CanAnnounce(state, GameMode.AllTrumps));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class NegotiationEngineTests
 
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.SansAs));
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.NoTrumps));
 
         // Right accepts
         state = state.Apply(new AcceptAction(PlayerPosition.Right));
@@ -102,17 +102,17 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void AutoDouble_SansAs_OpponentAccept()
+    public void AutoDouble_NoTrumps_OpponentAccept()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
-        // Bottom announces SansAs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.SansAs));
+        // Bottom announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
         // Left (opponent) accepts - should cause auto-double
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        Assert.True(state.DoubledModes.ContainsKey(GameMode.SansAs));
+        Assert.True(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
     }
 
     [Fact]
@@ -134,8 +134,8 @@ public class NegotiationEngineTests
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
-        // Bottom announces SansAs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.SansAs));
+        // Bottom announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
         // Left accepts (opponent - causes double)
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
@@ -163,18 +163,18 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void Redouble_NotAllowedForSansAs()
+    public void Redouble_NotAllowedForNoTrumps()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
-        // Bottom announces SansAs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.SansAs));
+        // Bottom announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
         // Left accepts (auto-double)
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // Top cannot redouble SansAs
-        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.SansAs));
+        // Top cannot redouble NoTrumps
+        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public class NegotiationEngineTests
         state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourHearts));
 
         // Top cannot announce after double
-        Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.ToutAs));
+        Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.AllTrumps));
     }
 
     [Fact]

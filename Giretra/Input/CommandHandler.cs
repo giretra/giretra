@@ -83,8 +83,8 @@ public static class CommandHandler
 
         AnsiConsole.MarkupLine("[bold]Modes (lowest to highest):[/]");
         AnsiConsole.MarkupLine("  1. Colour (Clubs/Diamonds/Hearts/Spades) - One suit is trump");
-        AnsiConsole.MarkupLine("  2. SansAs - No trump, standard ranking");
-        AnsiConsole.MarkupLine("  3. ToutAs - No trump, trump ranking for all");
+        AnsiConsole.MarkupLine("  2. NoTrumps - No trump, standard ranking");
+        AnsiConsole.MarkupLine("  3. AllTrumps - No trump, trump ranking for all");
         AnsiConsole.WriteLine();
 
         AnsiConsole.MarkupLine("[bold]Win Condition:[/]");

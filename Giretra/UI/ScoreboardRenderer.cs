@@ -146,9 +146,9 @@ public static class ScoreboardRenderer
         {
             calcTable.AddRow("Result:", "[yellow]TIE - No points awarded[/]");
         }
-        else if (category == GameModeCategory.ToutAs)
+        else if (category == GameModeCategory.AllTrumps)
         {
-            // ToutAs split scoring explanation
+            // AllTrumps split scoring explanation
             if (announcerCardPoints < threshold)
             {
                 calcTable.AddRow("Announcer Failed:", $"{announcerCardPoints} < {threshold}");
@@ -171,8 +171,8 @@ public static class ScoreboardRenderer
         }
         else
         {
-            // Winner-takes-all (SansAs/Colour)
-            var scoringType = category == GameModeCategory.SansAs ? "SansAs" : "Colour";
+            // Winner-takes-all (NoTrumps/Colour)
+            var scoringType = category == GameModeCategory.NoTrumps ? "NoTrumps" : "Colour";
             calcTable.AddRow($"{scoringType} Scoring:", "Winner takes all");
             calcTable.AddRow("Base Points:", $"{baseMatchPoints}");
 

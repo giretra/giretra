@@ -18,19 +18,19 @@ dotnet test
 ## Game Modes (lowest to highest)
 
 1. **Colour Clubs/Diamonds/Hearts/Spades** - One suit is trump
-2. **SansAs** - No trump, standard ranking
-3. **ToutAs** - No trump, trump ranking for all suits
+2. **NoTrumps** - No trump, standard ranking
+3. **AllTrumps** - No trump, trump ranking for all suits
 
 ## Card Rankings
 
 | Context | Order (high to low) |
 |---------|---------------------|
-| Trump / ToutAs | J > 9 > A > 10 > K > Q > 8 > 7 |
-| Non-trump / SansAs | A > 10 > K > Q > J > 9 > 8 > 7 |
+| Trump / AllTrumps | J > 9 > A > 10 > K > Q > 8 > 7 |
+| Non-trump / NoTrumps | A > 10 > K > Q > J > 9 > 8 > 7 |
 
 ## Card Points
 
-| Card | Trump/ToutAs | Non-trump/SansAs |
+| Card | Trump/AllTrumps | Non-trump/NoTrumps |
 |------|--------------|------------------|
 | J | 20 | 2 |
 | 9 | 14 | 0 |
@@ -53,8 +53,8 @@ dotnet test
 - First player (dealer's left) MUST announce
 - Announce only higher modes than current bid
 - One Colour per team per deal
-- Accept on SansAs/ColourClubs by opponent = auto-Double
-- Redouble only for ToutAs, Spades, Hearts, Diamonds
+- Accept on NoTrumps/ColourClubs by opponent = auto-Double
+- Redouble only for AllTrumps, Spades, Hearts, Diamonds
 - Ends on 3 consecutive Accepts
 - Priority: first announced mode that was Doubled wins
 
@@ -63,7 +63,7 @@ dotnet test
 ### All Modes
 - Must follow suit if able
 
-### ToutAs/SansAs
+### AllTrumps/NoTrumps
 - Must play higher card if following suit and able
 
 ### Colour Mode
@@ -74,12 +74,12 @@ dotnet test
 
 | Mode | Total | Threshold | Match Points |
 |------|-------|-----------|--------------|
-| ToutAs | 258 | 129+ | 26 (split, round to nearest) |
-| SansAs | 130 | 65+ | 52 (winner-takes-all) |
+| AllTrumps | 258 | 129+ | 26 (split, round to nearest) |
+| NoTrumps | 130 | 65+ | 52 (winner-takes-all) |
 | Colour | 162 | 82+ | 16 (winner-takes-all) |
 
 - **Last trick bonus:** +10 card points
-- **Sweep (all 8 tricks):** ToutAs=35, SansAs=90, Colour=instant match win
+- **Sweep (all 8 tricks):** AllTrumps=35, NoTrumps=90, Colour=instant match win
 - **Multipliers:** Double ×2, Redouble ×4
 - **Tie:** 0-0 (no points awarded)
 

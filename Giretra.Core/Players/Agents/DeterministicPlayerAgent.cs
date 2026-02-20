@@ -311,8 +311,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return category switch
         {
             GameModeCategory.Colour => EvaluateColourHand(hand, mode),
-            GameModeCategory.SansAs => EvaluateSansAsHand(hand, mode),
-            GameModeCategory.ToutAs => EvaluateToutAsHand(hand, mode),
+            GameModeCategory.NoTrumps => EvaluateNoTrumpsHand(hand, mode),
+            GameModeCategory.AllTrumps => EvaluateAllTrumpsHand(hand, mode),
             _ => new HandEvaluation(0, 0, 0)
         };
     }
@@ -389,7 +389,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return new HandEvaluation(guaranteed, probable, Math.Min(100, Math.Max(0, score)));
     }
 
-    private HandEvaluation EvaluateSansAsHand(IReadOnlyList<Card> hand, GameMode mode)
+    private HandEvaluation EvaluateNoTrumpsHand(IReadOnlyList<Card> hand, GameMode mode)
     {
         int guaranteed = 0;
         int probable = 0;
@@ -404,7 +404,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
             if (hasAce)
             {
-                guaranteed++; // Ace is master in SansAs
+                guaranteed++; // Ace is master in NoTrumps
                 if (hasTen)
                 {
                     guaranteed++; // A+10 guaranteed
@@ -430,7 +430,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return new HandEvaluation(guaranteed, probable, Math.Min(100, Math.Max(0, score)));
     }
 
-    private HandEvaluation EvaluateToutAsHand(IReadOnlyList<Card> hand, GameMode mode)
+    private HandEvaluation EvaluateAllTrumpsHand(IReadOnlyList<Card> hand, GameMode mode)
     {
         int guaranteed = 0;
         int probable = 0;
@@ -445,7 +445,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
             if (hasJack)
             {
-                guaranteed++; // Jack is master in ToutAs
+                guaranteed++; // Jack is master in AllTrumps
                 if (hasNine)
                     guaranteed++; // J+9 guaranteed
                 if (hasAce)
@@ -563,7 +563,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
             {
                 var bidMode = currentBid.Value;
 
-                // Accepting Clubs or SansAs by opponent triggers auto-double —
+                // Accepting Clubs or NoTrumps by opponent triggers auto-double —
                 // treat this like voluntarily doubling: require a strong hand
                 if (bidMode.AcceptCausesAutoDouble() &&
                     negotiationState.CurrentBidder.HasValue &&

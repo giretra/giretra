@@ -69,7 +69,7 @@ internal class Program
                 "  [blue]Team 1:[/] You (Bottom) + Top (Partner)\n" +
                 "  [green]Team 2:[/] Left + Right\n\n" +
                 "[bold]Goal:[/] First team to [yellow]150[/] match points wins!\n\n" +
-                "[bold]Modes:[/] Clubs < Diamonds < Hearts < Spades < SansAs < ToutAs\n\n" +
+                "[bold]Modes:[/] Clubs < Diamonds < Hearts < Spades < NoTrumps < AllTrumps\n\n" +
                 "[bold]Commands during play:[/]\n" +
                 "  /tricks - View completed tricks\n" +
                 "  /score  - View score breakdown\n" +

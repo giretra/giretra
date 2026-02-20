@@ -12,14 +12,14 @@ public readonly record struct Card(CardRank Rank, CardSuit Suit) : IComparable<C
     /// </summary>
     public int GetPointValue(GameMode gameMode)
     {
-        var useTrumpValues = gameMode.GetCategory() == GameModeCategory.ToutAs ||
+        var useTrumpValues = gameMode.GetCategory() == GameModeCategory.AllTrumps ||
                              (gameMode.GetTrumpSuit() == Suit);
 
         return useTrumpValues ? GetTrumpPointValue() : GetNonTrumpPointValue();
     }
 
     /// <summary>
-    /// Gets the point value using trump/ToutAs scoring.
+    /// Gets the point value using trump/AllTrumps scoring.
     /// J=20, 9=14, A=11, 10=10, K=4, Q=3, 8=0, 7=0
     /// </summary>
     private int GetTrumpPointValue()
@@ -37,7 +37,7 @@ public readonly record struct Card(CardRank Rank, CardSuit Suit) : IComparable<C
         };
 
     /// <summary>
-    /// Gets the point value using non-trump/SansAs scoring.
+    /// Gets the point value using non-trump/NoTrumps scoring.
     /// A=11, 10=10, K=4, Q=3, J=2, 9=0, 8=0, 7=0
     /// </summary>
     private int GetNonTrumpPointValue()
@@ -60,14 +60,14 @@ public readonly record struct Card(CardRank Rank, CardSuit Suit) : IComparable<C
     /// </summary>
     public int GetStrength(GameMode gameMode)
     {
-        var useTrumpRanking = gameMode.GetCategory() == GameModeCategory.ToutAs ||
+        var useTrumpRanking = gameMode.GetCategory() == GameModeCategory.AllTrumps ||
                               (gameMode.GetTrumpSuit() == Suit);
 
         return useTrumpRanking ? GetTrumpStrength() : GetNonTrumpStrength();
     }
 
     /// <summary>
-    /// Gets strength using trump/ToutAs ranking: J > 9 > A > 10 > K > Q > 8 > 7
+    /// Gets strength using trump/AllTrumps ranking: J > 9 > A > 10 > K > Q > 8 > 7
     /// </summary>
     private int GetTrumpStrength()
         => Rank switch
@@ -84,7 +84,7 @@ public readonly record struct Card(CardRank Rank, CardSuit Suit) : IComparable<C
         };
 
     /// <summary>
-    /// Gets strength using non-trump/SansAs ranking: A > 10 > K > Q > J > 9 > 8 > 7
+    /// Gets strength using non-trump/NoTrumps ranking: A > 10 > K > Q > J > 9 > 8 > 7
     /// </summary>
     private int GetNonTrumpStrength()
         => Rank switch

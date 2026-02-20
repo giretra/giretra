@@ -289,8 +289,8 @@ export class BidDialogComponent {
       case GameMode.ColourDiamonds: return 'Diamonds';
       case GameMode.ColourHearts: return 'Hearts';
       case GameMode.ColourSpades: return 'Spades';
-      case GameMode.SansAs: return 'Sans As';
-      case GameMode.ToutAs: return 'Tout As';
+      case GameMode.NoTrumps: return 'No Trumps';
+      case GameMode.AllTrumps: return 'All Trumps';
       default: return mode;
     }
   }

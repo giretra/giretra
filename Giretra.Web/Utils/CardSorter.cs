@@ -15,15 +15,15 @@ public static class CardSorter
 
     /// <summary>
     /// Sorts a hand for display, grouping by suit with trump first.
-    /// If no game mode, uses ToutAs ranking with natural suit order.
+    /// If no game mode, uses AllTrumps ranking with natural suit order.
     /// </summary>
     public static IReadOnlyList<Card> SortHand(IEnumerable<Card> cards, GameMode? gameMode)
     {
         var cardList = cards.ToList();
         var trumpSuit = gameMode?.GetTrumpSuit();
 
-        // Use ToutAs if no game mode (for default trump-style ranking)
-        var effectiveMode = gameMode ?? GameMode.ToutAs;
+        // Use AllTrumps if no game mode (for default trump-style ranking)
+        var effectiveMode = gameMode ?? GameMode.AllTrumps;
 
         return cardList
             .OrderBy(c => GetSuitSortOrder(c.Suit, trumpSuit))

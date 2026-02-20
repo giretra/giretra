@@ -118,8 +118,8 @@ export class SpeechBubbleComponent {
       case 'Redouble':
         return '\u00d74';
       case 'Announce':
-        if (m === GameMode.SansAs) return 'Sans As';
-        if (m === GameMode.ToutAs) return 'Tout As';
+        if (m === GameMode.NoTrumps) return 'No Trumps';
+        if (m === GameMode.AllTrumps) return 'All Trumps';
         return '';
       default:
         return action;

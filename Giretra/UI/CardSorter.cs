@@ -14,7 +14,7 @@ public static class CardSorter
     private static readonly CardSuit[] SuitOrder = [CardSuit.Spades, CardSuit.Hearts, CardSuit.Diamonds, CardSuit.Clubs];
 
     /// <summary>
-    /// Trump/ToutAs ranking: J > 9 > A > 10 > K > Q > 8 > 7
+    /// Trump/AllTrumps ranking: J > 9 > A > 10 > K > Q > 8 > 7
     /// </summary>
     private static readonly CardRank[] TrumpRankOrder =
     [
@@ -23,7 +23,7 @@ public static class CardSorter
     ];
 
     /// <summary>
-    /// Non-trump/SansAs ranking: A > 10 > K > Q > J > 9 > 8 > 7
+    /// Non-trump/NoTrumps ranking: A > 10 > K > Q > J > 9 > 8 > 7
     /// </summary>
     private static readonly CardRank[] StandardRankOrder =
     [
@@ -95,7 +95,7 @@ public static class CardSorter
     private static int GetRankSortOrder(CardRank rank, GameMode? gameMode, bool isTrump)
     {
         var category = gameMode?.GetCategory() ?? GameModeCategory.Colour;
-        var useTrumpRanking = category == GameModeCategory.ToutAs || isTrump;
+        var useTrumpRanking = category == GameModeCategory.AllTrumps || isTrump;
         var rankOrder = useTrumpRanking ? TrumpRankOrder : StandardRankOrder;
 
         return Array.IndexOf(rankOrder, rank);

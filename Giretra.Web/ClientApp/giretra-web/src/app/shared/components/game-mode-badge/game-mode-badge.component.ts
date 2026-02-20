@@ -35,11 +35,11 @@ import { SuitIconComponent } from '../suit-icon/suit-icon.component';
       letter-spacing: 0.025em;
     }
 
-    .sans-as {
+    .no-trumps {
       color: hsl(210, 40%, 96%);
     }
 
-    .tout-as {
+    .all-trumps {
       color: hsl(45, 90%, 55%);
     }
   `],
@@ -55,15 +55,15 @@ export class GameModeBadgeComponent {
 
   readonly modeText = computed(() => {
     const m = this.mode();
-    if (m === GameMode.SansAs) return 'Sans As';
-    if (m === GameMode.ToutAs) return 'Tout As';
+    if (m === GameMode.NoTrumps) return 'No Trumps';
+    if (m === GameMode.AllTrumps) return 'All Trumps';
     return '';
   });
 
   readonly badgeClass = computed(() => {
     const m = this.mode();
-    if (m === GameMode.SansAs) return 'sans-as';
-    if (m === GameMode.ToutAs) return 'tout-as';
+    if (m === GameMode.NoTrumps) return 'no-trumps';
+    if (m === GameMode.AllTrumps) return 'all-trumps';
     return '';
   });
 }

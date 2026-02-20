@@ -80,13 +80,13 @@ One suit is designated as trump. Listed lowest to highest:
 
 **Card ranking in non-trump suits (strongest to weakest):** A, 10, K, Q, J, 9, 8, 7
 
-### 4.2 SansAs Mode
+### 4.2 NoTrumps Mode
 
 No trump suit exists. All four suits are equal.
 
 **Card ranking for all suits (strongest to weakest):** A, 10, K, Q, J, 9, 8, 7
 
-### 4.3 ToutAs Mode (highest)
+### 4.3 AllTrumps Mode (highest)
 
 No trump suit exists. All four suits use the strong ranking.
 
@@ -98,14 +98,14 @@ No trump suit exists. All four suits use the strong ranking.
 2. Colour Diamonds
 3. Colour Hearts
 4. Colour Spades
-5. SansAs
-6. ToutAs
+5. NoTrumps
+6. AllTrumps
 
 ---
 
 ## 5. Card Point Values
 
-### 5.1 ToutAs Values (or Trump Suit in Colour Mode)
+### 5.1 AllTrumps Values (or Trump Suit in Colour Mode)
 
 | Card | Points |
 |------|--------|
@@ -119,7 +119,7 @@ No trump suit exists. All four suits use the strong ranking.
 | 7 | 0 |
 | **Total per suit** | **62** |
 
-### 5.2 SansAs Values (or Non-Trump Suits in Colour Mode)
+### 5.2 NoTrumps Values (or Non-Trump Suits in Colour Mode)
 
 | Card | Points |
 |------|--------|
@@ -137,8 +137,8 @@ No trump suit exists. All four suits use the strong ranking.
 
 | Game Mode | Calculation | Total (with Last Trick Bonus) |
 |-----------|-------------|-------------------------------|
-| ToutAs | 62 × 4 + 10 | **258** |
-| SansAs | 30 × 4 + 10 | **130** |
+| AllTrumps | 62 × 4 + 10 | **258** |
+| NoTrumps | 30 × 4 + 10 | **130** |
 | Colour | 62 + (30 × 3) + 10 | **162** |
 
 ---
@@ -192,9 +192,9 @@ When it is a player's turn to speak, they may:
 | Option | Description | Restrictions |
 |--------|-------------|--------------|
 | **Announce** | Declare a game mode | Must be higher than current bid; one Colour announcement per team per deal |
-| **Accept** | Agree to current bid | Cannot Accept own team's bid in SansAs or Colour Clubs (auto-Double) |
+| **Accept** | Agree to current bid | Cannot Accept own team's bid in NoTrumps or Colour Clubs (auto-Double) |
 | **Double** | Challenge opponent's bid | Only against opponent's bid; doubles match points |
-| **Redouble** | Counter a Double | Only available in ToutAs and Colour (except Clubs); quadruples match points |
+| **Redouble** | Counter a Double | Only available in AllTrumps and Colour (except Clubs); quadruples match points |
 
 ### 7.3 Announcement Restrictions
 
@@ -213,21 +213,21 @@ When it is a player's turn to speak, they may:
 
 ### 7.5 Automatic Double
 
-- **SansAs**: If an opponent Accepts, it counts as a Double
+- **NoTrumps**: If an opponent Accepts, it counts as a Double
 - **Colour Clubs**: If an opponent Accepts, it counts as a Double
 
 ### 7.6 Redouble Restrictions
 
 Redouble is only available for:
 
-- ToutAs
+- AllTrumps
 - Colour Spades
 - Colour Hearts
 - Colour Diamonds
 
 Redouble is **not** available for:
 
-- SansAs (already implicitly Doubled)
+- NoTrumps (already implicitly Doubled)
 - Colour Clubs (already implicitly Doubled)
 
 ### 7.7 Negotiation End Conditions
@@ -294,7 +294,7 @@ When a card is led, subsequent players must follow these rules in order:
 
 If you have a card of the led suit, you must play it.
 
-**Rule 2: In ToutAs and SansAs - play higher if possible**
+**Rule 2: In AllTrumps and NoTrumps - play higher if possible**
 
 When following suit, you must play a higher card than the current highest if you can.
 
@@ -314,7 +314,7 @@ If trump has been played in the trick (whether led or ruffed):
 
 **Rule 5: Discard if no other option**
 
-If you cannot follow suit and have no trump (or in SansAs/ToutAs, cannot beat current card):
+If you cannot follow suit and have no trump (or in NoTrumps/AllTrumps, cannot beat current card):
 
 - You may play any card
 
@@ -323,7 +323,7 @@ If you cannot follow suit and have no trump (or in SansAs/ToutAs, cannot beat cu
 | Situation | Your Hand | Teammate Winning? | Trump Played? | Action Required |
 |-----------|-----------|-------------------|---------------|-----------------|
 | Can follow suit | Has led suit | - | - | Must follow suit |
-| Can follow + beat | Has higher card of led suit | - | - | Must play higher (ToutAs/SansAs) |
+| Can follow + beat | Has higher card of led suit | - | - | Must play higher (AllTrumps/NoTrumps) |
 | Cannot follow (Colour mode) | Has trump | No | No | Must play trump |
 | Cannot follow (Colour mode) | Has trump | Yes (non-trump) | No | May discard |
 | Cannot follow (Colour mode) | Has trump | Yes (trump) | Yes | Must overtrump if possible |
@@ -348,8 +348,8 @@ The team that wins the 8th (final) trick receives 10 bonus card points.
 
 | Game Mode | Base Match Points | Sweep Bonus | Minimum Card Points to Win |
 |-----------|-------------------|-------------|----------------------------|
-| ToutAs | 26 (split) | 35 | 129 (to avoid losing) |
-| SansAs | 52 | 90 | 65 |
+| AllTrumps | 26 (split) | 35 | 129 (to avoid losing) |
+| NoTrumps | 52 | 90 | 65 |
 | Colour | 16 | Instant match win | 82 |
 
 ### 9.2 Multipliers
@@ -360,9 +360,9 @@ The team that wins the 8th (final) trick receives 10 bonus card points.
 | Doubled | ×2 |
 | Redoubled | ×4 |
 
-### 9.3 ToutAs Scoring (Split System)
+### 9.3 AllTrumps Scoring (Split System)
 
-ToutAs is unique in having split scoring:
+AllTrumps is unique in having split scoring:
 
 1. Total card points available: 258
 2. Each team's card points are divided by 10 and rounded up
@@ -387,7 +387,7 @@ ToutAs is unique in having split scoring:
 | 129 | 129 | 0 | 0 |
 | 120 | 138 | 0 | 26 |
 
-### 9.4 SansAs Scoring (Winner Takes All)
+### 9.4 NoTrumps Scoring (Winner Takes All)
 
 - Total card points available: 130
 - Announcer needs ≥65 card points to win
@@ -407,8 +407,8 @@ If a team wins all 8 tricks:
 
 | Game Mode | Sweep Reward |
 |-----------|--------------|
-| ToutAs | 35 match points (replaces normal scoring) |
-| SansAs | 90 match points (replaces normal scoring) |
+| AllTrumps | 35 match points (replaces normal scoring) |
+| NoTrumps | 90 match points (replaces normal scoring) |
 | Colour | **Instant match victory** (regardless of current score) |
 
 Sweep bonuses are also affected by Double/Redouble multipliers.
@@ -478,20 +478,20 @@ If one team has exactly 150 and the other has more, play continues to 250.
 
 ### Card Rankings
 
-**ToutAs / Trump suit:** J > 9 > A > 10 > K > Q > 8 > 7
+**AllTrumps / Trump suit:** J > 9 > A > 10 > K > Q > 8 > 7
 
-**SansAs / Non-trump suits:** A > 10 > K > Q > J > 9 > 8 > 7
+**NoTrumps / Non-trump suits:** A > 10 > K > Q > J > 9 > 8 > 7
 
 ### Game Mode Hierarchy (low to high)
 
-Clubs < Diamonds < Hearts < Spades < SansAs < ToutAs
+Clubs < Diamonds < Hearts < Spades < NoTrumps < AllTrumps
 
 ### Key Thresholds
 
 | Mode | Total Points | To Win | Match Points |
 |------|--------------|--------|--------------|
-| ToutAs | 258 | 129+ | 26 (split) |
-| SansAs | 130 | 65+ | 52 |
+| AllTrumps | 258 | 129+ | 26 (split) |
+| NoTrumps | 130 | 65+ | 52 |
 | Colour | 162 | 82+ | 16 |
 
 ### Multipliers

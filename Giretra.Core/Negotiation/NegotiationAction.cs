@@ -19,7 +19,7 @@ public sealed record AnnouncementAction(PlayerPosition Player, GameMode Mode)
 
 /// <summary>
 /// A player accepts the current bid.
-/// For SansAs/ColourClubs, an opponent's accept counts as a Double.
+/// For NoTrumps/ColourClubs, an opponent's accept counts as a Double.
 /// </summary>
 public sealed record AcceptAction(PlayerPosition Player)
     : NegotiationAction(Player)
@@ -38,7 +38,7 @@ public sealed record DoubleAction(PlayerPosition Player, GameMode TargetMode)
 
 /// <summary>
 /// A player redoubles after their bid was doubled.
-/// Only available for ToutAs and Colour (except Clubs).
+/// Only available for AllTrumps and Colour (except Clubs).
 /// </summary>
 public sealed record RedoubleAction(PlayerPosition Player, GameMode TargetMode)
     : NegotiationAction(Player)

@@ -234,21 +234,21 @@ public class BadPlayerAgent : IPlayerAgent
                 trumpBonus += 5;
         }
 
-        double toutAsBonus = 0;
-        if (category == GameModeCategory.ToutAs)
+        double allTrumpsBonus = 0;
+        if (category == GameModeCategory.AllTrumps)
         {
-            toutAsBonus += hand.Count(c => c.Rank == CardRank.Jack) * 6;
-            toutAsBonus += hand.Count(c => c.Rank == CardRank.Nine) * 4;
+            allTrumpsBonus += hand.Count(c => c.Rank == CardRank.Jack) * 6;
+            allTrumpsBonus += hand.Count(c => c.Rank == CardRank.Nine) * 4;
         }
 
-        double sansAsBonus = 0;
-        if (category == GameModeCategory.SansAs)
+        double noTrumpsBonus = 0;
+        if (category == GameModeCategory.NoTrumps)
         {
-            sansAsBonus += hand.Count(c => c.Rank == CardRank.Ace) * 5;
-            sansAsBonus += hand.Count(c => c.Rank == CardRank.Ten) * 2;
+            noTrumpsBonus += hand.Count(c => c.Rank == CardRank.Ace) * 5;
+            noTrumpsBonus += hand.Count(c => c.Rank == CardRank.Ten) * 2;
         }
 
-        double score = pointPercentage * 0.4 + strengthBonus + trumpBonus + toutAsBonus + sansAsBonus;
+        double score = pointPercentage * 0.4 + strengthBonus + trumpBonus + allTrumpsBonus + noTrumpsBonus;
         return Math.Min(100, Math.Max(0, score));
     }
 

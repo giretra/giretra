@@ -141,7 +141,7 @@ public class SpecExamplesTests
 
     #endregion
 
-    #region Section 9.3: ToutAs Scoring Examples
+    #region Section 9.3: AllTrumps Scoring Examples
 
     [Theory]
     [InlineData(199, 59, 20, 6)]
@@ -149,7 +149,7 @@ public class SpecExamplesTests
     [InlineData(131, 127, 0, 0)]   // Rounds to 13-13 = tie
     [InlineData(129, 129, 0, 0)]   // Exact tie
     [InlineData(120, 138, 0, 26)]  // Announcer < 129 = loses
-    public void ToutAsScoringExamples_MatchSpec(
+    public void AllTrumpsScoringExamples_MatchSpec(
         int announcerPoints,
         int defenderPoints,
         int expectedAnnouncerMatch,
@@ -158,7 +158,7 @@ public class SpecExamplesTests
         var calculator = new ScoringCalculator();
 
         var result = calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,  // Announcer
             announcerPoints,
@@ -192,12 +192,12 @@ public class SpecExamplesTests
     }
 
     [Fact]
-    public void SansAsMode_WinThreshold65_MatchPoints52()
+    public void NoTrumpsMode_WinThreshold65_MatchPoints52()
     {
         var calculator = new ScoringCalculator();
 
         var result = calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             65,  // Exactly threshold
@@ -210,7 +210,7 @@ public class SpecExamplesTests
 
         // Now with clear win
         result = calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             66,
@@ -221,13 +221,13 @@ public class SpecExamplesTests
     }
 
     [Fact]
-    public void ToutAsMode_WinThreshold129_MatchPoints26Split()
+    public void AllTrumpsMode_WinThreshold129_MatchPoints26Split()
     {
         var calculator = new ScoringCalculator();
 
         // Announcer barely wins
         var result = calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             130,  // Just above threshold
@@ -240,7 +240,7 @@ public class SpecExamplesTests
 
         // Another case that rounds to tie
         result = calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             132,
@@ -253,7 +253,7 @@ public class SpecExamplesTests
 
         // Clear win: 140-118 rounds to 14-12
         result = calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             140,
@@ -269,12 +269,12 @@ public class SpecExamplesTests
     #region Section 9.6: Sweep Bonuses
 
     [Fact]
-    public void ToutAsSweep_35MatchPoints()
+    public void AllTrumpsSweep_35MatchPoints()
     {
         var calculator = new ScoringCalculator();
 
         var result = calculator.Calculate(
-            GameMode.ToutAs,
+            GameMode.AllTrumps,
             MultiplierState.Normal,
             Team.Team1,
             258,
@@ -287,12 +287,12 @@ public class SpecExamplesTests
     }
 
     [Fact]
-    public void SansAsSweep_90MatchPoints()
+    public void NoTrumpsSweep_90MatchPoints()
     {
         var calculator = new ScoringCalculator();
 
         var result = calculator.Calculate(
-            GameMode.SansAs,
+            GameMode.NoTrumps,
             MultiplierState.Normal,
             Team.Team1,
             130,

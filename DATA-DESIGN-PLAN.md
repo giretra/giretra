@@ -379,7 +379,7 @@ For documentation — store as `SMALLINT` in DB, map in application code.
 ```
 PlayerPosition: Bottom=0, Left=1, Top=2, Right=3
 Team:           Team1=0, Team2=1
-GameMode:       ColourClubs=0, ColourDiamonds=1, ColourHearts=2, ColourSpades=3, SansAs=4, ToutAs=5
+GameMode:       ColourClubs=0, ColourDiamonds=1, ColourHearts=2, ColourSpades=3, NoTrumps=4, AllTrumps=5
 Multiplier:     Normal=1, Doubled=2, Redoubled=4
 CardRank:       Seven=7, Eight=8, Nine=9, Ten=10, Jack=11, Queen=12, King=13, Ace=14
 CardSuit:       Clubs=0, Diamonds=1, Hearts=2, Spades=3

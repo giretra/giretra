@@ -34,8 +34,8 @@ export enum GameMode {
   ColourDiamonds = 'ColourDiamonds',
   ColourHearts = 'ColourHearts',
   ColourSpades = 'ColourSpades',
-  SansAs = 'SansAs',
-  ToutAs = 'ToutAs',
+  NoTrumps = 'NoTrumps',
+  AllTrumps = 'AllTrumps',
 }
 
 export enum CardRank {

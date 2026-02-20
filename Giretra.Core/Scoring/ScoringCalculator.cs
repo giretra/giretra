@@ -50,9 +50,9 @@ public class ScoringCalculator
             // Calculate based on mode category
             result = category switch
             {
-                GameModeCategory.ToutAs => CalculateToutAs(gameMode, multiplier, announcerTeam,
+                GameModeCategory.AllTrumps => CalculateAllTrumps(gameMode, multiplier, announcerTeam,
                     team1CardPoints, team2CardPoints),
-                GameModeCategory.SansAs => CalculateSansAs(gameMode, multiplier, announcerTeam,
+                GameModeCategory.NoTrumps => CalculateNoTrumps(gameMode, multiplier, announcerTeam,
                     team1CardPoints, team2CardPoints),
                 GameModeCategory.Colour => CalculateColour(gameMode, multiplier, announcerTeam,
                     team1CardPoints, team2CardPoints),
@@ -94,7 +94,7 @@ public class ScoringCalculator
             };
         }
 
-        // ToutAs sweep = 35, SansAs sweep = 90
+        // AllTrumps sweep = 35, NoTrumps sweep = 90
         var sweepBonus = gameMode.GetSweepBonus();
         var points = sweepBonus * multiplier.GetMultiplier();
 
@@ -113,7 +113,7 @@ public class ScoringCalculator
         };
     }
 
-    private DealResult CalculateToutAs(
+    private DealResult CalculateAllTrumps(
         GameMode gameMode,
         MultiplierState multiplier,
         Team announcerTeam,
@@ -201,7 +201,7 @@ public class ScoringCalculator
         };
     }
 
-    private DealResult CalculateSansAs(
+    private DealResult CalculateNoTrumps(
         GameMode gameMode,
         MultiplierState multiplier,
         Team announcerTeam,

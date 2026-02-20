@@ -175,7 +175,7 @@ public sealed class NegotiationState
         var newConsecutiveAccepts = ConsecutiveAccepts + 1;
         var newPlayersAccepted = PlayersWhoAccepted.Add(action.Player);
 
-        // Check for auto-double on SansAs or ColourClubs
+        // Check for auto-double on NoTrumps or ColourClubs
         var accepterTeam = action.Player.GetTeam();
         var bidderTeam = CurrentBidder?.GetTeam();
         var isOpponentAccept = bidderTeam != null && accepterTeam != bidderTeam;

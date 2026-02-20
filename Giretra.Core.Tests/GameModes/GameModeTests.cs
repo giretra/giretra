@@ -8,8 +8,8 @@ public class GameModeTests
     [Fact]
     public void IsHigherThan_FollowsHierarchy()
     {
-        Assert.True(GameMode.ToutAs.IsHigherThan(GameMode.SansAs));
-        Assert.True(GameMode.SansAs.IsHigherThan(GameMode.ColourSpades));
+        Assert.True(GameMode.AllTrumps.IsHigherThan(GameMode.NoTrumps));
+        Assert.True(GameMode.NoTrumps.IsHigherThan(GameMode.ColourSpades));
         Assert.True(GameMode.ColourSpades.IsHigherThan(GameMode.ColourHearts));
         Assert.True(GameMode.ColourHearts.IsHigherThan(GameMode.ColourDiamonds));
         Assert.True(GameMode.ColourDiamonds.IsHigherThan(GameMode.ColourClubs));
@@ -18,7 +18,7 @@ public class GameModeTests
     [Fact]
     public void IsHigherThan_SameMode_ReturnsFalse()
     {
-        Assert.False(GameMode.ToutAs.IsHigherThan(GameMode.ToutAs));
+        Assert.False(GameMode.AllTrumps.IsHigherThan(GameMode.AllTrumps));
         Assert.False(GameMode.ColourSpades.IsHigherThan(GameMode.ColourSpades));
     }
 
@@ -27,8 +27,8 @@ public class GameModeTests
     [InlineData(GameMode.ColourDiamonds, GameModeCategory.Colour)]
     [InlineData(GameMode.ColourHearts, GameModeCategory.Colour)]
     [InlineData(GameMode.ColourSpades, GameModeCategory.Colour)]
-    [InlineData(GameMode.SansAs, GameModeCategory.SansAs)]
-    [InlineData(GameMode.ToutAs, GameModeCategory.ToutAs)]
+    [InlineData(GameMode.NoTrumps, GameModeCategory.NoTrumps)]
+    [InlineData(GameMode.AllTrumps, GameModeCategory.AllTrumps)]
     public void GetCategory_ReturnsCorrectCategory(GameMode mode, GameModeCategory expected)
     {
         Assert.Equal(expected, mode.GetCategory());
@@ -45,16 +45,16 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.SansAs)]
-    [InlineData(GameMode.ToutAs)]
+    [InlineData(GameMode.NoTrumps)]
+    [InlineData(GameMode.AllTrumps)]
     public void GetTrumpSuit_NoTrumpModes_ReturnsNull(GameMode mode)
     {
         Assert.Null(mode.GetTrumpSuit());
     }
 
     [Theory]
-    [InlineData(GameMode.ToutAs, 129)]
-    [InlineData(GameMode.SansAs, 65)]
+    [InlineData(GameMode.AllTrumps, 129)]
+    [InlineData(GameMode.NoTrumps, 65)]
     [InlineData(GameMode.ColourSpades, 82)]
     [InlineData(GameMode.ColourClubs, 82)]
     public void GetWinThreshold_ReturnsCorrectValue(GameMode mode, int expected)
@@ -63,8 +63,8 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.ToutAs, 258)]
-    [InlineData(GameMode.SansAs, 130)]
+    [InlineData(GameMode.AllTrumps, 258)]
+    [InlineData(GameMode.NoTrumps, 130)]
     [InlineData(GameMode.ColourSpades, 162)]
     public void GetTotalPoints_ReturnsCorrectValue(GameMode mode, int expected)
     {
@@ -72,8 +72,8 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.ToutAs, 26)]
-    [InlineData(GameMode.SansAs, 52)]
+    [InlineData(GameMode.AllTrumps, 26)]
+    [InlineData(GameMode.NoTrumps, 52)]
     [InlineData(GameMode.ColourSpades, 16)]
     [InlineData(GameMode.ColourHearts, 16)]
     [InlineData(GameMode.ColourDiamonds, 16)]
@@ -84,8 +84,8 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.ToutAs, 35)]
-    [InlineData(GameMode.SansAs, 90)]
+    [InlineData(GameMode.AllTrumps, 35)]
+    [InlineData(GameMode.NoTrumps, 90)]
     [InlineData(GameMode.ColourSpades, 0)] // Instant win, not points
     public void GetSweepBonus_ReturnsCorrectValue(GameMode mode, int expected)
     {
@@ -93,11 +93,11 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.ToutAs, true)]
+    [InlineData(GameMode.AllTrumps, true)]
     [InlineData(GameMode.ColourSpades, true)]
     [InlineData(GameMode.ColourHearts, true)]
     [InlineData(GameMode.ColourDiamonds, true)]
-    [InlineData(GameMode.SansAs, false)]
+    [InlineData(GameMode.NoTrumps, false)]
     [InlineData(GameMode.ColourClubs, false)]
     public void CanRedouble_ReturnsCorrectValue(GameMode mode, bool expected)
     {
@@ -105,9 +105,9 @@ public class GameModeTests
     }
 
     [Theory]
-    [InlineData(GameMode.SansAs, true)]
+    [InlineData(GameMode.NoTrumps, true)]
     [InlineData(GameMode.ColourClubs, true)]
-    [InlineData(GameMode.ToutAs, false)]
+    [InlineData(GameMode.AllTrumps, false)]
     [InlineData(GameMode.ColourSpades, false)]
     public void AcceptCausesAutoDouble_ReturnsCorrectValue(GameMode mode, bool expected)
     {
@@ -127,8 +127,8 @@ public class GameModeTests
     [Theory]
     [InlineData(GameMode.ColourClubs, true)]
     [InlineData(GameMode.ColourSpades, true)]
-    [InlineData(GameMode.SansAs, false)]
-    [InlineData(GameMode.ToutAs, false)]
+    [InlineData(GameMode.NoTrumps, false)]
+    [InlineData(GameMode.AllTrumps, false)]
     public void IsColourMode_ReturnsCorrectValue(GameMode mode, bool expected)
     {
         Assert.Equal(expected, mode.IsColourMode());
@@ -144,8 +144,8 @@ public class GameModeTests
         Assert.Contains(GameMode.ColourDiamonds, modes);
         Assert.Contains(GameMode.ColourHearts, modes);
         Assert.Contains(GameMode.ColourSpades, modes);
-        Assert.Contains(GameMode.SansAs, modes);
-        Assert.Contains(GameMode.ToutAs, modes);
+        Assert.Contains(GameMode.NoTrumps, modes);
+        Assert.Contains(GameMode.AllTrumps, modes);
     }
 
     [Fact]

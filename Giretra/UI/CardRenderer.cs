@@ -104,8 +104,8 @@ public static class CardRenderer
         GameMode.ColourDiamonds => $"[red]Diamonds {GetSuitSymbol(CardSuit.Diamonds)}[/]",
         GameMode.ColourHearts => $"[red]Hearts {GetSuitSymbol(CardSuit.Hearts)}[/]",
         GameMode.ColourSpades => $"Spades {GetSuitSymbol(CardSuit.Spades)}",
-        GameMode.SansAs => "SansAs",
-        GameMode.ToutAs => "[bold]ToutAs[/]",
+        GameMode.NoTrumps => "NoTrumps",
+        GameMode.AllTrumps => "[bold]AllTrumps[/]",
         _ => mode.ToString()
     };
 
@@ -118,8 +118,8 @@ public static class CardRenderer
         GameMode.ColourDiamonds => $"Diamonds {GetSuitSymbol(CardSuit.Diamonds)}",
         GameMode.ColourHearts => $"Hearts {GetSuitSymbol(CardSuit.Hearts)}",
         GameMode.ColourSpades => $"Spades {GetSuitSymbol(CardSuit.Spades)}",
-        GameMode.SansAs => "SansAs",
-        GameMode.ToutAs => "ToutAs",
+        GameMode.NoTrumps => "NoTrumps",
+        GameMode.AllTrumps => "AllTrumps",
         _ => mode.ToString()
     };
 

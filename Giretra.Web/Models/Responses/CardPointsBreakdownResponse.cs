@@ -8,12 +8,12 @@ namespace Giretra.Web.Models.Responses;
 public sealed class CardPointsBreakdownResponse
 {
     /// <summary>
-    /// Points from Jacks (20 each in trump/ToutAs, 2 each in non-trump/SansAs).
+    /// Points from Jacks (20 each in trump/AllTrumps, 2 each in non-trump/NoTrumps).
     /// </summary>
     public int Jacks { get; init; }
 
     /// <summary>
-    /// Points from Nines (14 each in trump/ToutAs, 0 in non-trump/SansAs).
+    /// Points from Nines (14 each in trump/AllTrumps, 0 in non-trump/NoTrumps).
     /// </summary>
     public int Nines { get; init; }
 

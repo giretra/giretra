@@ -63,7 +63,7 @@ public class CardComparerTests
         var ten = new Card(CardRank.Ten, CardSuit.Hearts);
         var king = new Card(CardRank.King, CardSuit.Hearts);
 
-        Assert.True(CardComparer.Beats(ten, king, CardSuit.Hearts, GameMode.SansAs));
+        Assert.True(CardComparer.Beats(ten, king, CardSuit.Hearts, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -72,30 +72,30 @@ public class CardComparerTests
         var leadCard = new Card(CardRank.Seven, CardSuit.Hearts);
         var offSuit = new Card(CardRank.Ace, CardSuit.Clubs);
 
-        // In SansAs (no trump), following lead beats not following
-        var result = CardComparer.Compare(leadCard, offSuit, CardSuit.Hearts, GameMode.SansAs);
+        // In NoTrumps (no trump), following lead beats not following
+        var result = CardComparer.Compare(leadCard, offSuit, CardSuit.Hearts, GameMode.NoTrumps);
 
         Assert.True(result > 0);
     }
 
     [Fact]
-    public void Compare_ToutAs_AllSuitsUseTrumpRanking()
+    public void Compare_AllTrumps_AllSuitsUseTrumpRanking()
     {
         var jackHearts = new Card(CardRank.Jack, CardSuit.Hearts);
         var aceHearts = new Card(CardRank.Ace, CardSuit.Hearts);
 
-        // In ToutAs, Jack beats Ace in any suit
-        Assert.True(CardComparer.Beats(jackHearts, aceHearts, CardSuit.Hearts, GameMode.ToutAs));
+        // In AllTrumps, Jack beats Ace in any suit
+        Assert.True(CardComparer.Beats(jackHearts, aceHearts, CardSuit.Hearts, GameMode.AllTrumps));
     }
 
     [Fact]
-    public void Compare_SansAs_AllSuitsUseNonTrumpRanking()
+    public void Compare_NoTrumps_AllSuitsUseNonTrumpRanking()
     {
         var aceHearts = new Card(CardRank.Ace, CardSuit.Hearts);
         var jackHearts = new Card(CardRank.Jack, CardSuit.Hearts);
 
-        // In SansAs, Ace beats Jack
-        Assert.True(CardComparer.Beats(aceHearts, jackHearts, CardSuit.Hearts, GameMode.SansAs));
+        // In NoTrumps, Ace beats Jack
+        Assert.True(CardComparer.Beats(aceHearts, jackHearts, CardSuit.Hearts, GameMode.NoTrumps));
     }
 
     [Theory]
@@ -127,7 +127,7 @@ public class CardComparerTests
         var higherCard = new Card(higher, CardSuit.Hearts);
         var lowerCard = new Card(lower, CardSuit.Hearts);
 
-        Assert.True(CardComparer.Beats(higherCard, lowerCard, CardSuit.Hearts, GameMode.SansAs));
+        Assert.True(CardComparer.Beats(higherCard, lowerCard, CardSuit.Hearts, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class CardComparerTests
         var ace = new Card(CardRank.Ace, CardSuit.Hearts);
         var king = new Card(CardRank.King, CardSuit.Hearts);
 
-        Assert.True(CardComparer.IsStrongerInSuit(ace, king, GameMode.SansAs));
-        Assert.False(CardComparer.IsStrongerInSuit(king, ace, GameMode.SansAs));
+        Assert.True(CardComparer.IsStrongerInSuit(ace, king, GameMode.NoTrumps));
+        Assert.False(CardComparer.IsStrongerInSuit(king, ace, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -146,6 +146,6 @@ public class CardComparerTests
         var hearts = new Card(CardRank.Ace, CardSuit.Hearts);
         var spades = new Card(CardRank.Ace, CardSuit.Spades);
 
-        Assert.Throws<ArgumentException>(() => CardComparer.IsStrongerInSuit(hearts, spades, GameMode.SansAs));
+        Assert.Throws<ArgumentException>(() => CardComparer.IsStrongerInSuit(hearts, spades, GameMode.NoTrumps));
     }
 }

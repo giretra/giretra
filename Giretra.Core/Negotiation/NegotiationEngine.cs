@@ -126,7 +126,7 @@ public static class NegotiationEngine
         // Mode must not already be redoubled
         if (state.RedoubledModes.Contains(mode)) return false;
 
-        // Redouble not allowed for SansAs or ColourClubs
+        // Redouble not allowed for NoTrumps or ColourClubs
         if (!mode.CanRedouble()) return false;
 
         // Only announcer's team can redouble

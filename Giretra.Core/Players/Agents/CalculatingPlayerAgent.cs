@@ -25,7 +25,7 @@ namespace Giretra.Core.Players.Agents;
 ///   <item>Considers: raw points, high cards, trump count, and mode-specific bonuses</item>
 ///   <item>Announces at 60%+ strength eagerly, 45%+ if competitive bidding</item>
 ///   <item>Only doubles/redoubles when holding 3+ potential master cards (risk threshold)</item>
-///   <item>Only accepts Clubs/SansAs (which auto-double) with 40%+ hand strength;
+///   <item>Only accepts Clubs/NoTrumps (which auto-double) with 40%+ hand strength;
 ///         otherwise tries to announce a higher mode to escape the doubled game</item>
 /// </list>
 ///
@@ -151,7 +151,7 @@ public class CalculatingPlayerAgent : IPlayerAgent
             }
         }
 
-        // Default: accept (but be selective about Clubs/SansAs which auto-double)
+        // Default: accept (but be selective about Clubs/NoTrumps which auto-double)
         var acceptAction = validActions.OfType<AcceptAction>().FirstOrDefault();
         if (acceptAction != null)
         {
@@ -160,8 +160,8 @@ public class CalculatingPlayerAgent : IPlayerAgent
             {
                 var bidMode = currentBid.Value;
 
-                // Accepting Clubs or SansAs triggers auto-double, so be careful
-                if (bidMode == GameMode.ColourClubs || bidMode == GameMode.SansAs)
+                // Accepting Clubs or NoTrumps triggers auto-double, so be careful
+                if (bidMode == GameMode.ColourClubs || bidMode == GameMode.NoTrumps)
                 {
                     // Only accept if we have decent cards for that mode (>= 40%)
                     double ourStrength = modeScores[bidMode];
@@ -395,24 +395,24 @@ public class CalculatingPlayerAgent : IPlayerAgent
                 trumpBonus += 5;
         }
 
-        // ToutAs bonus: Jacks and 9s are very valuable
-        double toutAsBonus = 0;
-        if (category == GameModeCategory.ToutAs)
+        // AllTrumps bonus: Jacks and 9s are very valuable
+        double allTrumpsBonus = 0;
+        if (category == GameModeCategory.AllTrumps)
         {
-            toutAsBonus += hand.Count(c => c.Rank == CardRank.Jack) * 6;
-            toutAsBonus += hand.Count(c => c.Rank == CardRank.Nine) * 4;
+            allTrumpsBonus += hand.Count(c => c.Rank == CardRank.Jack) * 6;
+            allTrumpsBonus += hand.Count(c => c.Rank == CardRank.Nine) * 4;
         }
 
-        // SansAs bonus: Aces and sequences are valuable
-        double sansAsBonus = 0;
-        if (category == GameModeCategory.SansAs)
+        // NoTrumps bonus: Aces and sequences are valuable
+        double noTrumpsBonus = 0;
+        if (category == GameModeCategory.NoTrumps)
         {
-            sansAsBonus += hand.Count(c => c.Rank == CardRank.Ace) * 5;
-            sansAsBonus += hand.Count(c => c.Rank == CardRank.Ten) * 2;
+            noTrumpsBonus += hand.Count(c => c.Rank == CardRank.Ace) * 5;
+            noTrumpsBonus += hand.Count(c => c.Rank == CardRank.Ten) * 2;
         }
 
         // Combine factors (weighted)
-        double score = pointPercentage * 0.4 + strengthBonus + trumpBonus + toutAsBonus + sansAsBonus;
+        double score = pointPercentage * 0.4 + strengthBonus + trumpBonus + allTrumpsBonus + noTrumpsBonus;
 
         return Math.Min(100, Math.Max(0, score));
     }

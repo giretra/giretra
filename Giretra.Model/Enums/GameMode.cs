@@ -6,6 +6,6 @@ public enum GameMode
     ColourDiamonds = 1,
     ColourHearts = 2,
     ColourSpades = 3,
-    SansAs = 4,
-    ToutAs = 5
+    NoTrumps = 4,
+    AllTrumps = 5
 }

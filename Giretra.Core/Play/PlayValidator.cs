@@ -49,7 +49,7 @@ public static class PlayValidator
         }
         else
         {
-            // SansAs/ToutAs: cannot follow, may discard any card
+            // NoTrumps/AllTrumps: cannot follow, may discard any card
             return hand.ToList();
         }
     }
@@ -61,11 +61,11 @@ public static class PlayValidator
         GameModeCategory category)
     {
         // Must play higher if possible:
-        // - ToutAs: always when following suit
+        // - AllTrumps: always when following suit
         // - Colour: when following the trump suit (monter à l'atout)
-        // - SansAs: no obligation to beat
+        // - NoTrumps: no obligation to beat
         var trumpSuit = gameMode.GetTrumpSuit();
-        var mustPlayHigher = category is GameModeCategory.ToutAs
+        var mustPlayHigher = category is GameModeCategory.AllTrumps
                              || (category == GameModeCategory.Colour && trumpSuit.HasValue && trick.LeadSuit == trumpSuit);
 
         if (mustPlayHigher)
