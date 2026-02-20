@@ -22,7 +22,8 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
   ],
   template: `
     <div class="table-container"
-         [class.bid-dialog-open]="gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate'">
+         [class.bid-dialog-open]="gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate'"
+         [class.deal-summary-open]="gameState.dealSummary()">
       <!-- Zone A: Score Bar -->
       <app-score-bar
         [room]="gameState.currentRoom()"
@@ -138,6 +139,12 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
 
     app-hand-area {
       flex-shrink: 0;
+    }
+
+    .deal-summary-open app-table-surface {
+      overflow: visible;
+      position: relative;
+      z-index: 10;
     }
 
     .bid-dialog-open app-table-surface {
