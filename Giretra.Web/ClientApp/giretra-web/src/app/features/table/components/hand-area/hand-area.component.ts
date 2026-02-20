@@ -38,9 +38,9 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
           @case ('playing') {
             <app-card-fan
               [cards]="hand()"
-              [validCards]="isMyTurn() ? validCards() : []"
+              [validCards]="isMyTurn() && !disabled() ? validCards() : []"
               [gameMode]="gameMode()"
-              [interactive]="isMyTurn()"
+              [interactive]="isMyTurn() && !disabled()"
               (cardSelected)="onCardSelected($event)"
             />
           }
@@ -151,6 +151,7 @@ export class HandAreaComponent implements OnInit, DoCheck {
   readonly gameMode = input<GameMode | null>(null);
   readonly activePlayer = input<PlayerPosition | null>(null);
   readonly playerCardCounts = input<Record<PlayerPosition, number> | null>(null);
+  readonly disabled = input<boolean>(false);
 
   readonly playCard = output<{ rank: string; suit: string }>();
   onCardSelected(card: Card): void {

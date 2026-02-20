@@ -101,6 +101,7 @@ export class GameHubService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.disconnect();
+    this.reconnected$.complete();
     this.playerJoined$.complete();
     this.playerLeft$.complete();
     this.gameStarted$.complete();
@@ -113,6 +114,28 @@ export class GameHubService implements OnDestroy {
     this.matchEnded$.complete();
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
+  }
+
+  private registerConnectionHandlers(): void {
+    if (!this.hubConnection) return;
+
+    this.hubConnection.onreconnecting((error) => {
+      console.warn('[Hub] Reconnecting...', error);
+      this.ngZone.run(() => this._connectionStatus.set('reconnecting'));
+    });
+
+    this.hubConnection.onreconnected((connectionId) => {
+      console.log('[Hub] Reconnected with connectionId:', connectionId);
+      this.ngZone.run(() => {
+        this._connectionStatus.set('connected');
+        this.reconnected$.next();
+      });
+    });
+
+    this.hubConnection.onclose((error) => {
+      console.error('[Hub] Connection closed', error);
+      this.ngZone.run(() => this._connectionStatus.set('disconnected'));
+    });
   }
 
   private registerEventHandlers(): void {

@@ -592,19 +592,28 @@ export class ApiService {
   // ─────────────────────────────────────────────────────────────────────────
 
   private handleError = (error: HttpErrorResponse): Observable<never> => {
-    let message = 'An error occurred';
+    let message: string;
 
-    if (error.error && typeof error.error === 'object') {
-      // Try different error response formats
+    if (error.status === 0) {
+      // Network error — no response from server
+      message = 'Connection issue — your action may not have been sent';
+    } else if (error.status >= 500) {
+      message = 'Server error — please try again';
+    } else if (error.error && typeof error.error === 'object') {
+      // Server validation/business errors (4xx)
       if ('detail' in error.error) {
         message = (error.error as ApiError).detail;
       } else if ('error' in error.error) {
         message = error.error.error;
       } else if ('message' in error.error) {
         message = error.error.message;
+      } else {
+        message = 'An error occurred';
       }
     } else if (error.message) {
       message = error.message;
+    } else {
+      message = 'An error occurred';
     }
 
     console.error('API Error:', error);

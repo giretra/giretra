@@ -331,8 +331,26 @@ export class GameStateService {
   /** Is watcher mode? */
   readonly isWatcher = computed(() => this.session.isWatcher());
 
+  /** Connection status (from hub) */
+  readonly connectionStatus = computed(() => this.hub.connectionStatus());
+
+  /** Is an action currently being submitted? */
+  private readonly _isSubmittingAction = signal(false);
+  readonly isSubmittingAction = this._isSubmittingAction.asReadonly();
+
+  /** Mark action submission start */
+  beginSubmit(): void {
+    this._isSubmittingAction.set(true);
+  }
+
+  /** Mark action submission end */
+  endSubmit(): void {
+    this._isSubmittingAction.set(false);
+  }
+
   constructor() {
     this.setupHubListeners();
+    this.setupReconnectHandler();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -682,6 +700,25 @@ export class GameStateService {
           this._currentRoom.set(r);
         });
       }
+    });
+  }
+
+  private setupReconnectHandler(): void {
+    this.hub.reconnected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async () => {
+      console.log('[GameState] Hub reconnected — re-joining room and refreshing state');
+      const roomId = this._currentRoom()?.roomId;
+      const clientId = this.session.clientId();
+
+      if (roomId && clientId) {
+        try {
+          await this.hub.joinRoom(roomId, clientId);
+          console.log('[GameState] Re-joined room after reconnect');
+        } catch (e) {
+          console.warn('[GameState] Failed to re-join room after reconnect', e);
+        }
+      }
+
+      await this.refreshState();
     });
   }
 }

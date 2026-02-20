@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientSessionService } from './core/services/client-session.service';
+import { GameStateService } from './core/services/game-state.service';
 
 // Guard to ensure user has a clientId or invite token before accessing table
 export const hasClientIdGuard = () => {
@@ -23,6 +24,28 @@ export const hasClientIdGuard = () => {
   return router.createUrlTree(['/']);
 };
 
+// Guard to warn user before navigating away from an active game
+export const confirmLeaveGameGuard = async () => {
+  const gameState = inject(GameStateService);
+  const session = inject(ClientSessionService);
+
+  const phase = gameState.phase();
+  const gameInProgress = gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
+
+  if (!gameInProgress) {
+    return true;
+  }
+
+  if (!confirm('Leaving during a match may result in a rating loss. Are you sure?')) {
+    return false;
+  }
+
+  // User confirmed — clean up session
+  await gameState.leaveRoom();
+  session.leaveRoom();
+  return true;
+};
+
 export const routes: Routes = [
   {
     path: '',
@@ -34,6 +57,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/table/table.component').then((m) => m.TableComponent),
     canActivate: [hasClientIdGuard],
+    canDeactivate: [confirmLeaveGameGuard],
   },
   {
     path: 'settings',

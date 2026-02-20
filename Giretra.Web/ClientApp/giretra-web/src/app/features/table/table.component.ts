@@ -3,6 +3,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
+import { GameHubService } from '../../api/game-hub.service';
 import { PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
@@ -11,6 +12,7 @@ import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-table',
@@ -27,6 +29,20 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     <div class="table-container"
          [class.bid-dialog-open]="gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate'"
          [class.deal-summary-open]="gameState.dealSummary()">
+
+      <!-- Connection Status Banner -->
+      @if (hub.connectionStatus() === 'reconnecting') {
+        <div class="connection-banner reconnecting">
+          <span class="connection-spinner"></span>
+          Reconnecting...
+        </div>
+      } @else if (hub.connectionStatus() === 'disconnected' && gameState.gameId()) {
+        <div class="connection-banner disconnected">
+          Connection lost
+          <button class="retry-btn" (click)="onRetryConnection()">Retry</button>
+        </div>
+      }
+
       <!-- Zone A: Score Bar -->
       <app-score-bar
         [room]="gameState.currentRoom()"
@@ -87,6 +103,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
         [gameMode]="gameState.gameMode()"
         [activePlayer]="gameState.activePlayer()"
         [playerCardCounts]="gameState.playerCardCounts()"
+        [disabled]="gameState.isSubmittingAction()"
         (playCard)="onPlayCard($event)"
       />
 
@@ -174,10 +191,63 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
       position: relative;
       z-index: 60;
     }
+
+    .connection-banner {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.375rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      z-index: 100;
+    }
+
+    .connection-banner.reconnecting {
+      background: hsl(45 90% 55% / 0.15);
+      color: hsl(45 90% 65%);
+      border-bottom: 1px solid hsl(45 90% 55% / 0.3);
+    }
+
+    .connection-banner.disconnected {
+      background: hsl(0 72% 51% / 0.15);
+      color: hsl(0 72% 65%);
+      border-bottom: 1px solid hsl(0 72% 51% / 0.3);
+    }
+
+    .connection-spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid hsl(45 90% 55% / 0.3);
+      border-top-color: hsl(45 90% 65%);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .retry-btn {
+      padding: 0.125rem 0.5rem;
+      font-size: 0.75rem;
+      background: hsl(0 72% 51% / 0.2);
+      color: hsl(0 72% 65%);
+      border: 1px solid hsl(0 72% 51% / 0.4);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .retry-btn:hover {
+      background: hsl(0 72% 51% / 0.35);
+    }
   `],
 })
 export class TableComponent implements OnInit, OnDestroy {
   readonly gameState = inject(GameStateService);
+  readonly hub = inject(GameHubService);
   private readonly session = inject(ClientSessionService);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
@@ -185,6 +255,21 @@ export class TableComponent implements OnInit, OnDestroy {
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
+
+  private readonly beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+    const phase = this.gameState.phase();
+    const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
+    if (gameInProgress) {
+      e.preventDefault();
+      // Send leave notification via beacon (works during page unload)
+      const roomId = this.gameState.currentRoom()?.roomId;
+      const clientId = this.session.clientId();
+      if (roomId && clientId) {
+        const url = `${environment.apiBaseUrl}/api/rooms/${roomId}/leave`;
+        navigator.sendBeacon(url, new Blob([JSON.stringify({ clientId })], { type: 'application/json' }));
+      }
+    }
+  };
 
   constructor() {
     // Watch for kick — navigate home
@@ -205,6 +290,8 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+
     const roomId = this.route.snapshot.paramMap.get('roomId');
     const inviteToken = this.route.snapshot.queryParamMap.get('invite');
 
@@ -238,7 +325,7 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Clean up will be handled when explicitly leaving
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
   onStartGame(): void {
@@ -272,33 +359,43 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onSubmitCut(): void {
+    if (this.gameState.isSubmittingAction()) return;
+
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
 
     if (gameId && clientId) {
+      this.gameState.beginSubmit();
       // Random cut position between 6 and 26
       const position = Math.floor(Math.random() * 21) + 6;
       this.api.submitCut(gameId, clientId, position, true).subscribe({
+        next: () => this.gameState.endSubmit(),
         error: (err) => {
           console.error('Failed to submit cut', err);
+          this.gameState.endSubmit();
         },
       });
     }
   }
 
   onPlayCard(card: { rank: string; suit: string }): void {
+    if (this.gameState.isSubmittingAction()) return;
+
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
 
     console.log('[Table] Playing card', { card, gameId, clientId });
     if (gameId && clientId) {
+      this.gameState.beginSubmit();
       this.api.playCard(gameId, clientId, card.rank as any, card.suit as any).subscribe({
         next: () => {
           console.log('[Table] Card played successfully');
+          this.gameState.endSubmit();
         },
         error: (err) => {
           console.error('Failed to play card', err);
-          // Refresh state to revert optimistic update
+          this.gameState.endSubmit();
+          // Refresh state to get true server state
           this.gameState.refreshState();
         },
       });
@@ -308,11 +405,14 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onSubmitNegotiation(action: { actionType: string; mode?: string | null }): void {
+    if (this.gameState.isSubmittingAction()) return;
+
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
 
     console.log('[Table] Submitting negotiation', { action, gameId, clientId });
     if (gameId && clientId) {
+      this.gameState.beginSubmit();
       this.api
         .submitNegotiation(
           gameId,
@@ -323,14 +423,30 @@ export class TableComponent implements OnInit, OnDestroy {
         .subscribe({
           next: () => {
             console.log('[Table] Negotiation submitted successfully');
+            this.gameState.endSubmit();
           },
           error: (err) => {
             console.error('Failed to submit negotiation', err);
+            this.gameState.endSubmit();
             this.gameState.refreshState();
           },
         });
     } else {
       console.warn('[Table] Cannot submit negotiation - missing gameId or clientId');
+    }
+  }
+
+  async onRetryConnection(): Promise<void> {
+    try {
+      await this.hub.connect(environment.hubUrl);
+      const roomId = this.gameState.currentRoom()?.roomId;
+      const clientId = this.session.clientId();
+      if (roomId && clientId) {
+        await this.hub.joinRoom(roomId, clientId);
+      }
+      await this.gameState.refreshState();
+    } catch (e) {
+      console.error('Failed to retry connection', e);
     }
   }
 
@@ -442,6 +558,8 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   async onLeaveTable(): Promise<void> {
+    // The canDeactivate guard handles the confirmation dialog and session cleanup.
+    // For the explicit "Leave Table" button, also call the leave API before navigating.
     const phase = this.gameState.phase();
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 

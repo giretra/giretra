@@ -60,6 +60,14 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
         </div>
       </header>
 
+      <!-- Resume game banner -->
+      @if (activeGameRoomId()) {
+        <div class="resume-banner" (click)="resumeGame()">
+          <span class="resume-text">You have a game in progress</span>
+          <button class="resume-btn">Resume</button>
+        </div>
+      }
+
       <!-- Main body -->
       <main class="main">
         <div class="main-inner">
@@ -142,6 +150,11 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
       .logo { font-size:2.5rem; }
       .main { padding:2rem; }
     }
+    .resume-banner { display:flex; align-items:center; justify-content:center; gap:0.75rem; padding:0.625rem 1rem; background:hsl(var(--primary)/0.1); border-bottom:1px solid hsl(var(--primary)/0.25); cursor:pointer; transition:background 0.15s ease; }
+    .resume-banner:hover { background:hsl(var(--primary)/0.15); }
+    .resume-text { font-size:0.8125rem; font-weight:500; color:hsl(var(--primary)); }
+    .resume-btn { padding:0.25rem 0.75rem; font-size:0.75rem; font-weight:600; background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); border:none; border-radius:9999px; cursor:pointer; transition:opacity 0.15s ease; }
+    .resume-btn:hover { opacity:0.85; }
     @media (max-width:480px) {
       .hero { padding:1.5rem 1rem; }
       .hero-content { flex-direction:column; align-items:flex-start; gap:1rem; }
@@ -168,10 +181,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly loading = signal<boolean>(true);
   readonly showCreateForm = signal<boolean>(false);
   readonly pendingFriendCount = signal<number>(0);
+  readonly activeGameRoomId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadRooms();
     this.loadPendingFriendCount();
+    this.checkActiveSession();
 
     this.pollSubscription = interval(5000).subscribe(() => {
       this.loadRooms();
@@ -245,6 +260,34 @@ export class HomeComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to watch room', err);
+      },
+    });
+  }
+
+  resumeGame(): void {
+    const roomId = this.activeGameRoomId();
+    if (roomId) {
+      this.router.navigate(['/table', roomId]);
+    }
+  }
+
+  private checkActiveSession(): void {
+    const roomId = this.session.roomId();
+    if (!roomId) return;
+
+    // Validate the session is still live
+    this.api.getRoom(roomId).subscribe({
+      next: (room) => {
+        if (room.status === 'Playing') {
+          this.activeGameRoomId.set(roomId);
+        } else {
+          // Room is no longer active — clear stale session
+          this.session.leaveRoom();
+        }
+      },
+      error: () => {
+        // Room not found — clear stale session
+        this.session.leaveRoom();
       },
     });
   }
