@@ -65,8 +65,8 @@ public sealed class GameService : IGameService
             }
             else
             {
-                // Unassigned slot — will become default AI
-                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: "CalculatingPlayer");
+                // Unassigned slot — use strongest active bot as default
+                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: _aiRegistry.GetDefaultAgentType());
             }
         }
 
@@ -101,8 +101,8 @@ public sealed class GameService : IGameService
             }
             else
             {
-                // Unassigned slot — default AI
-                agents[position] = _aiRegistry.CreateAgent("CalculatingPlayer", position);
+                // Unassigned slot — use strongest active bot as default
+                agents[position] = _aiRegistry.CreateAgent(_aiRegistry.GetDefaultAgentType(), position);
             }
         }
 

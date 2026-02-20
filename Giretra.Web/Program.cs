@@ -176,6 +176,10 @@ public class Program
                     await db.SaveChangesAsync();
             }
 
+            // Load active bots from database into the AI registry
+            var aiRegistry = app.Services.GetRequiredService<AiPlayerRegistry>();
+            await aiRegistry.InitializeAsync();
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

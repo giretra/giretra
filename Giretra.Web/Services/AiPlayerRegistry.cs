@@ -1,51 +1,177 @@
 using Giretra.Core.Players;
 using Giretra.Core.Players.Factories;
+using Giretra.Model;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Giretra.Web.Services;
 
 /// <summary>
-/// Registry that discovers and manages available AI player agent factories.
+/// Registry that loads available AI player agent factories from the database.
+/// Requires sync-bots to have been run to populate the Bots table.
 /// </summary>
 public sealed class AiPlayerRegistry
 {
-    private readonly Dictionary<string, IPlayerAgentFactory> _factories;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<AiPlayerRegistry> _logger;
+    private Dictionary<string, CachedBot> _bots = new(StringComparer.OrdinalIgnoreCase);
+    private string? _defaultAgentType;
 
-    public AiPlayerRegistry()
+    public AiPlayerRegistry(IServiceScopeFactory scopeFactory, ILogger<AiPlayerRegistry> logger)
     {
-        var factories = new IPlayerAgentFactory[]
-        {
-            new DeterministicPlayerAgentFactory(),
-            new CalculatingPlayerAgentFactory(),
-            new RandomPlayerAgentFactory(),
-            new BadPlayerAgentFactory()
-        };
-
-        _factories = factories.ToDictionary(f => f.AgentName, StringComparer.OrdinalIgnoreCase);
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Gets the list of available AI types with display names.
+    /// Creates a registry pre-populated from all known factories via reflection (for testing).
+    /// </summary>
+    public static AiPlayerRegistry CreateFromAssembly()
+    {
+        var registry = new AiPlayerRegistry(null!, NullLogger<AiPlayerRegistry>.Instance);
+
+        var factoryAssembly = typeof(IPlayerAgentFactory).Assembly;
+        var factoryType = typeof(IPlayerAgentFactory);
+        short difficulty = 0;
+
+        foreach (var type in factoryAssembly.GetTypes())
+        {
+            if (type.IsAbstract || type.IsInterface || !factoryType.IsAssignableFrom(type))
+                continue;
+
+            var constructor = type.GetConstructor(Type.EmptyTypes)
+                ?? type.GetConstructors()
+                    .FirstOrDefault(c => c.GetParameters().All(p => p.HasDefaultValue));
+
+            if (constructor is null)
+                continue;
+
+            var args = constructor.GetParameters().Select(p => p.DefaultValue).ToArray();
+            var factory = (IPlayerAgentFactory)constructor.Invoke(args);
+
+            registry._bots[factory.AgentName] = new CachedBot(
+                factory.AgentName, factory.DisplayName, difficulty++, 1000,
+                null, null, null, factory);
+        }
+
+        registry._defaultAgentType = registry._bots.Values
+            .MaxBy(b => b.Difficulty)?.AgentType;
+
+        return registry;
+    }
+
+    /// <summary>
+    /// Loads active bots from the database and resolves their factories via reflection.
+    /// </summary>
+    public async Task InitializeAsync()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
+
+        var bots = await db.Bots
+            .Where(b => b.IsActive)
+            .OrderByDescending(b => b.Difficulty)
+            .ToListAsync();
+
+        var factoryAssembly = typeof(IPlayerAgentFactory).Assembly;
+        var newBots = new Dictionary<string, CachedBot>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var bot in bots)
+        {
+            var factoryType = factoryAssembly.GetType(bot.AgentTypeFactory)
+                ?? Type.GetType(bot.AgentTypeFactory);
+
+            if (factoryType is null)
+            {
+                _logger.LogWarning("Could not resolve factory type {FactoryType} for bot {BotName}",
+                    bot.AgentTypeFactory, bot.AgentType);
+                continue;
+            }
+
+            var constructor = factoryType.GetConstructor(Type.EmptyTypes)
+                ?? factoryType.GetConstructors()
+                    .FirstOrDefault(c => c.GetParameters().All(p => p.HasDefaultValue));
+
+            if (constructor is null)
+            {
+                _logger.LogWarning("No suitable constructor for factory {FactoryType}", bot.AgentTypeFactory);
+                continue;
+            }
+
+            var args = constructor.GetParameters().Select(p => p.DefaultValue).ToArray();
+            var factory = (IPlayerAgentFactory)constructor.Invoke(args);
+
+            newBots[bot.AgentType] = new CachedBot(
+                bot.AgentType,
+                bot.DisplayName,
+                bot.Difficulty,
+                bot.Rating,
+                bot.Pun,
+                bot.Description,
+                bot.Author,
+                factory);
+        }
+
+        _bots = newBots;
+        _defaultAgentType = bots.FirstOrDefault()?.AgentType;
+
+        _logger.LogInformation("Loaded {Count} active bot(s) from database", newBots.Count);
+    }
+
+    /// <summary>
+    /// Gets the list of available AI types with full bot info.
     /// </summary>
     public IReadOnlyList<AiTypeInfo> GetAvailableTypes() =>
-        _factories.Values.Select(f => new AiTypeInfo(f.AgentName, f.DisplayName)).ToList();
+        _bots.Values.Select(b => new AiTypeInfo(
+            b.AgentType, b.DisplayName, b.Difficulty, b.Rating,
+            b.Pun, b.Description, b.Author)).ToList();
 
     /// <summary>
     /// Creates an AI player agent of the specified type for the given position.
-    /// Falls back to CalculatingPlayer if the type is not found.
+    /// Falls back to the strongest active bot if the type is not found.
     /// </summary>
     public IPlayerAgent CreateAgent(string aiType, PlayerPosition position)
     {
-        if (_factories.TryGetValue(aiType, out var factory))
+        if (_bots.TryGetValue(aiType, out var bot))
+            return bot.Factory.Create(position);
+
+        if (_defaultAgentType != null && _bots.TryGetValue(_defaultAgentType, out var defaultBot))
         {
-            return factory.Create(position);
+            _logger.LogWarning("Unknown AI type {AiType}, falling back to {Default}", aiType, _defaultAgentType);
+            return defaultBot.Factory.Create(position);
         }
 
-        // Fallback to CalculatingPlayer
-        return _factories["CalculatingPlayer"].Create(position);
+        throw new InvalidOperationException(
+            $"No bot found for type '{aiType}' and no default bot available. Run sync-bots first.");
     }
 
+    /// <summary>
+    /// Gets the agent type of the strongest active bot (highest difficulty).
+    /// Used as default for unassigned seats.
+    /// </summary>
+    public string GetDefaultAgentType() =>
+        _defaultAgentType
+        ?? throw new InvalidOperationException("No active bots available. Run sync-bots first.");
+
     public string GetDisplayName(string aiType) =>
-        _factories.TryGetValue(aiType, out var factory) ? factory.DisplayName : aiType;
+        _bots.TryGetValue(aiType, out var bot) ? bot.DisplayName : aiType;
+
+    private sealed record CachedBot(
+        string AgentType,
+        string DisplayName,
+        short Difficulty,
+        int Rating,
+        string? Pun,
+        string? Description,
+        string? Author,
+        IPlayerAgentFactory Factory);
 }
 
-public record AiTypeInfo(string Name, string DisplayName);
+public record AiTypeInfo(
+    string Name,
+    string DisplayName,
+    short Difficulty,
+    int Rating,
+    string? Pun,
+    string? Description,
+    string? Author);

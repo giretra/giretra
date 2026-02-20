@@ -32,6 +32,11 @@ export interface PlayerSlot {
 export interface AiTypeInfo {
   name: string;
   displayName: string;
+  difficulty: number;
+  rating: number;
+  pun: string | null;
+  description: string | null;
+  author: string | null;
 }
 
 export interface AiSeat {
