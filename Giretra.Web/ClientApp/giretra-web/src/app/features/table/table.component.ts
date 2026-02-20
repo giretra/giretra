@@ -147,6 +147,11 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
       z-index: 10;
     }
 
+    .deal-summary-open app-hand-area {
+      position: relative;
+      z-index: 1;
+    }
+
     .bid-dialog-open app-table-surface {
       position: relative;
       z-index: 52;
