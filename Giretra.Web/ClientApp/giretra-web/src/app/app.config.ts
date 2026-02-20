@@ -43,6 +43,9 @@ import {
   Trash2,
   EyeOff,
   Shield,
+  Flame,
+  Calendar,
+  Star,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -76,6 +79,9 @@ const usedIcons = {
   Trash2,
   EyeOff,
   Shield,
+  Flame,
+  Calendar,
+  Star,
 };
 
 function initializeKeycloak(auth: AuthService) {

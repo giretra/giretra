@@ -258,6 +258,25 @@ export interface LeaderboardResponse {
   totalCount: number;
 }
 
+export interface PlayerProfileResponse {
+  displayName: string;
+  isBot: boolean;
+  gamesPlayed: number;
+  gamesWon: number;
+  winStreak: number;
+  bestWinStreak: number;
+  // Human-only
+  avatarUrl: string | null;
+  eloRating: number | null;
+  memberSince: string | null;
+  // Bot-only
+  description: string | null;
+  author: string | null;
+  pun: string | null;
+  difficulty: number | null;
+  botRating: number | null;
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -354,6 +373,12 @@ export class ApiService {
   kickPlayer(roomId: string, position: PlayerPosition): Observable<void> {
     return this.http
       .post<void>(`${this.baseUrl}/api/rooms/${roomId}/seats/${position}/kick`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  getPlayerProfile(roomId: string, position: PlayerPosition): Observable<PlayerProfileResponse> {
+    return this.http
+      .get<PlayerProfileResponse>(`${this.baseUrl}/api/rooms/${roomId}/seats/${position}/profile`)
       .pipe(catchError(this.handleError));
   }
 

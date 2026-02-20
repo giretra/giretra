@@ -1,14 +1,16 @@
-import { Component, inject, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, effect, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
-import { ApiService } from '../../core/services/api.service';
+import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
+import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
+import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
 @Component({
   selector: 'app-table',
@@ -19,6 +21,7 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
     HandAreaComponent,
     MatchEndOverlayComponent,
     BidDialogComponent,
+    PlayerProfilePopupComponent,
   ],
   template: `
     <div class="table-container"
@@ -71,6 +74,7 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
         (setSeatMode)="onSetSeatMode($event)"
         (generateInvite)="onGenerateInvite($event)"
         (kickPlayer)="onKickPlayer($event)"
+        (seatClicked)="onSeatClicked($event)"
       />
 
       <!-- Zone C: Hand / Action Area -->
@@ -107,6 +111,15 @@ import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component
           [isCreator]="gameState.isCreator()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
+        />
+      }
+
+      <!-- Player Profile Popup -->
+      @if (profilePopupData()) {
+        <app-player-profile-popup
+          [profile]="profilePopupData()!"
+          [teamClass]="profilePopupTeam()"
+          (closed)="closeProfilePopup()"
         />
       }
     </div>
@@ -170,6 +183,9 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
+  readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
+  readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
+
   constructor() {
     // Watch for kick — navigate home
     effect(() => {
@@ -177,6 +193,13 @@ export class TableComponent implements OnInit, OnDestroy {
         this.gameState.leaveRoom();
         this.session.leaveRoom();
         this.router.navigate(['/']);
+      }
+    });
+
+    // Close popup when bid dialog opens
+    effect(() => {
+      if (this.gameState.isMyTurn()) {
+        this.profilePopupData.set(null);
       }
     });
   }
@@ -401,7 +424,31 @@ export class TableComponent implements OnInit, OnDestroy {
     }
   }
 
+  onSeatClicked(position: PlayerPosition): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    if (!roomId) return;
+
+    this.api.getPlayerProfile(roomId, position).subscribe({
+      next: (profile) => {
+        const team = getTeam(position);
+        this.profilePopupTeam.set(team === 'Team1' ? 'team1' : 'team2');
+        this.profilePopupData.set(profile);
+      },
+    });
+  }
+
+  closeProfilePopup(): void {
+    this.profilePopupData.set(null);
+  }
+
   async onLeaveTable(): Promise<void> {
+    const phase = this.gameState.phase();
+    const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
+
+    if (gameInProgress && !confirm('Leaving during a match may result in a rating loss. Are you sure?')) {
+      return;
+    }
+
     const roomId = this.gameState.currentRoom()?.roomId;
     const clientId = this.session.clientId();
 

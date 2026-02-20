@@ -33,6 +33,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
               [isDealer]="dealer() === slot.position"
               [cardCount]="getCardCount(slot.position)"
               [tricksWon]="getTricksWon(slot.position)"
+              (seatClicked)="seatClicked.emit($event)"
             />
             @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
               <div class="bubble-position top">
@@ -71,6 +72,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
+                (seatClicked)="seatClicked.emit($event)"
                 />
             </div>
           }
@@ -121,6 +123,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
+                (seatClicked)="seatClicked.emit($event)"
                 />
               @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
                 <div class="bubble-position right">
@@ -158,6 +161,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
               [isDealer]="dealer() === slot.position"
               [showCardBacks]="false"
               [tricksWon]="getTricksWon(slot.position)"
+              (seatClicked)="seatClicked.emit($event)"
             />
           </div>
         }
@@ -323,6 +327,7 @@ export class TableSurfaceComponent {
   readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();
   readonly generateInvite = output<PlayerPosition>();
   readonly kickPlayer = output<PlayerPosition>();
+  readonly seatClicked = output<PlayerPosition>();
 
   // Get slots relative to my position (for proper table layout)
   readonly relativePositions = computed(() => {

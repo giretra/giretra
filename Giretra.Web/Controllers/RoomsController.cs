@@ -19,12 +19,14 @@ public class RoomsController : ControllerBase
     private readonly IRoomService _roomService;
     private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
+    private readonly IProfileService _profileService;
 
-    public RoomsController(IRoomService roomService, INotificationService notifications, AiPlayerRegistry aiRegistry)
+    public RoomsController(IRoomService roomService, INotificationService notifications, AiPlayerRegistry aiRegistry, IProfileService profileService)
     {
         _roomService = roomService;
         _notifications = notifications;
         _aiRegistry = aiRegistry;
+        _profileService = profileService;
     }
 
     /// <summary>
@@ -182,6 +184,20 @@ public class RoomsController : ControllerBase
             await _notifications.NotifyPlayerKickedAsync(roomId, playerName, kickedPosition.Value);
 
         return Ok();
+    }
+
+    /// <summary>
+    /// Gets the player profile for a specific seat in a room.
+    /// </summary>
+    [HttpGet("{roomId}/seats/{position}/profile")]
+    public async Task<ActionResult<PlayerProfileResponse>> GetPlayerProfile(string roomId, PlayerPosition position)
+    {
+        var user = GetAuthenticatedUser();
+        var profile = await _profileService.GetPlayerProfileAsync(roomId, position, user.Id);
+        if (profile == null)
+            return NotFound();
+
+        return Ok(profile);
     }
 
     /// <summary>

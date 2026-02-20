@@ -1,4 +1,4 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, output, computed } from '@angular/core';
 import { PlayerPosition } from '../../../api/generated/signalr-types.generated';
 import { getTeam } from '../../../core/utils/position-utils';
 import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
@@ -14,6 +14,7 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       [class.team1]="team() === 'Team1'"
       [class.team2]="team() === 'Team2'"
       [class.empty]="!isOccupied()"
+      (click)="onSeatClick()"
     >
       <!-- Avatar circle -->
       <div class="avatar" [class.active-glow]="isActiveTurn()">
@@ -74,6 +75,15 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       border: 2px solid transparent;
       min-width: 5rem;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .player-seat:not(.empty) {
+      cursor: pointer;
+    }
+
+    .player-seat:not(.empty):hover {
+      border-color: hsl(var(--border));
+      background: hsl(var(--card) / 0.95);
     }
 
     .player-seat.empty {
@@ -269,6 +279,8 @@ export class PlayerSeatComponent {
   readonly isOccupied = input<boolean>(false);
   readonly showCardBacks = input<boolean>(true);
 
+  readonly seatClicked = output<PlayerPosition>();
+
   readonly team = computed(() => getTeam(this.position()));
 
   readonly initial = computed(() => {
@@ -281,4 +293,10 @@ export class PlayerSeatComponent {
     const count = Math.min(this.cardCount(), 8);
     return Array.from({ length: count }, (_, i) => i);
   });
+
+  onSeatClick(): void {
+    if (this.isOccupied()) {
+      this.seatClicked.emit(this.position());
+    }
+  }
 }

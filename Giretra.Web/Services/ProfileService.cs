@@ -2,9 +2,11 @@ using Giretra.Model;
 using Giretra.Model.Entities;
 using Giretra.Model.Enums;
 using Giretra.Web.Models.Responses;
+using Giretra.Web.Repositories;
 using Giretra.Web.Validation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using PlayerPosition = Giretra.Core.Players.PlayerPosition;
 
 namespace Giretra.Web.Services;
 
@@ -12,14 +14,16 @@ public sealed class ProfileService : IProfileService
 {
     private readonly GiretraDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly IRoomRepository _rooms;
 
     private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png"];
     private const long MaxAvatarSize = 2 * 1024 * 1024; // 2MB
 
-    public ProfileService(GiretraDbContext db, IWebHostEnvironment env)
+    public ProfileService(GiretraDbContext db, IWebHostEnvironment env, IRoomRepository rooms)
     {
         _db = db;
         _env = env;
+        _rooms = rooms;
     }
 
     public async Task<ProfileResponse> GetProfileAsync(Guid userId)
@@ -58,6 +62,71 @@ public sealed class ProfileService : IProfileService
             BestWinStreak = user.Player.BestWinStreak,
             CreatedAt = user.CreatedAt
         };
+    }
+
+    public async Task<PlayerProfileResponse?> GetPlayerProfileAsync(string roomId, PlayerPosition position, Guid requestingUserId)
+    {
+        var room = _rooms.GetById(roomId);
+        if (room == null)
+            return null;
+
+        // Check if it's a human player
+        var client = room.PlayerSlots.GetValueOrDefault(position);
+        if (client?.UserId != null)
+        {
+            var user = await _db.Users
+                .Include(u => u.Player)
+                .FirstOrDefaultAsync(u => u.Id == client.UserId);
+
+            if (user == null)
+                return null;
+
+            var player = user.Player;
+            var isSelf = user.Id == requestingUserId;
+            var showElo = player != null && (player.EloIsPublic || isSelf);
+
+            return new PlayerProfileResponse
+            {
+                DisplayName = user.EffectiveDisplayName,
+                IsBot = false,
+                GamesPlayed = player?.GamesPlayed ?? 0,
+                GamesWon = player?.GamesWon ?? 0,
+                WinStreak = player?.WinStreak ?? 0,
+                BestWinStreak = player?.BestWinStreak ?? 0,
+                AvatarUrl = user.AvatarUrl,
+                EloRating = showElo ? player?.EloRating : null,
+                MemberSince = user.CreatedAt,
+            };
+        }
+
+        // Check if it's a bot
+        if (room.AiSlots.TryGetValue(position, out var agentType))
+        {
+            var bot = await _db.Bots
+                .Include(b => b.Player)
+                .FirstOrDefaultAsync(b => b.AgentType == agentType);
+
+            if (bot == null)
+                return null;
+
+            return new PlayerProfileResponse
+            {
+                DisplayName = bot.DisplayName,
+                IsBot = true,
+                GamesPlayed = bot.Player?.GamesPlayed ?? 0,
+                GamesWon = bot.Player?.GamesWon ?? 0,
+                WinStreak = bot.Player?.WinStreak ?? 0,
+                BestWinStreak = bot.Player?.BestWinStreak ?? 0,
+                Description = bot.Description,
+                Author = bot.Author,
+                Pun = bot.Pun,
+                Difficulty = bot.Difficulty,
+                BotRating = bot.Rating,
+            };
+        }
+
+        // Seat is empty
+        return null;
     }
 
     public async Task<(bool Success, string? Error)> UpdateDisplayNameAsync(Guid userId, string displayName)

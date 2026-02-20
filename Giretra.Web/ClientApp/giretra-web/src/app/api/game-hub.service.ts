@@ -1,4 +1,4 @@
-import { Injectable, NgZone, OnDestroy, inject } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject, signal } from '@angular/core';
 import {
   HubConnection,
   HubConnectionBuilder,
@@ -7,6 +7,8 @@ import {
 } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
+
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 import {
   CardPlayedEvent,
   DealEndedEvent,
@@ -30,6 +32,11 @@ export class GameHubService implements OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
   private hubConnection: HubConnection | null = null;
+
+  // Connection status
+  private readonly _connectionStatus = signal<ConnectionStatus>('disconnected');
+  readonly connectionStatus = this._connectionStatus.asReadonly();
+  readonly reconnected$ = new Subject<void>();
 
   // Event subjects
   readonly playerJoined$ = new Subject<PlayerJoinedEvent>();
@@ -59,8 +66,10 @@ export class GameHubService implements OnDestroy {
       .build();
 
     this.registerEventHandlers();
+    this.registerConnectionHandlers();
 
     await this.hubConnection.start();
+    this.ngZone.run(() => this._connectionStatus.set('connected'));
     console.log('[Hub] Connected successfully');
   }
 
@@ -69,6 +78,7 @@ export class GameHubService implements OnDestroy {
       await this.hubConnection.stop();
       this.hubConnection = null;
     }
+    this._connectionStatus.set('disconnected');
   }
 
   async joinRoom(roomId: string, clientId: string): Promise<void> {
