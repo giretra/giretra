@@ -26,11 +26,8 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
         <div class="hero-vignette"></div>
         <div class="hero-content">
           <div class="brand">
-            <img src="hero-icon.svg" alt="Giretra" class="hero-icon" width="64" height="64" />
-            <div class="brand-text">
-              <h1 class="logo">GIRETRA</h1>
-              <p class="tagline">Belote Malagasy</p>
-            </div>
+            <img src="icon-192x192.png" alt="Giretra" class="hero-icon" width="64" height="64" />
+            <h1 class="logo">giretra</h1>
           </div>
 
           <!-- User greeting / name area -->
@@ -115,11 +112,9 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
     .hero-vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(0,0,0,0.35) 100%); }
     .hero-content { position:relative; z-index:1; max-width:720px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
-    .brand { display:flex; align-items:center; gap:1rem; }
-    .brand-text { display:flex; flex-direction:column; gap:0.25rem; }
-    .hero-icon { width:4rem; height:4rem; flex-shrink:0; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
-    .logo { font-size:2rem; font-weight:800; letter-spacing:0.15em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
-    .tagline { margin:0; font-size:0.75rem; font-weight:500; letter-spacing:0.2em; text-transform:uppercase; color:hsl(var(--gold)); opacity:0.8; }
+    .brand { display:flex; align-items:center; gap:0.625rem; }
+    .hero-icon { width:2.25rem; height:2.25rem; flex-shrink:0; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+    .logo { font-family:'Urbanist',sans-serif; font-size:2rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
     .user-area { display:flex; align-items:center; }
     .user-pill { display:flex; align-items:center; gap:0.5rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.25rem 0.5rem 0.25rem 0.25rem; }
     .user-avatar { width:2rem; height:2rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
@@ -142,7 +137,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     .room-count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.5rem; border-radius:9999px; min-width:1.25rem; text-align:center; }
     @media (min-width:640px) {
       .hero { padding:3rem 2rem 2.5rem; }
-      .hero-icon { width:5rem; height:5rem; }
+      .hero-icon { width:2.75rem; height:2.75rem; }
       .logo { font-size:2.5rem; }
       .main { padding:2rem; }
     }
@@ -154,7 +149,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     @media (max-width:480px) {
       .hero { padding:1.5rem 1rem; }
       .hero-content { flex-direction:column; align-items:flex-start; gap:1rem; }
-      .hero-icon { width:3rem; height:3rem; }
+      .hero-icon { width:2rem; height:2rem; }
       .logo { font-size:1.75rem; }
     }
   `],
