@@ -76,7 +76,7 @@ One suit is designated as trump. Listed lowest to highest:
 3. **Colour Hearts**
 4. **Colour Spades**
 
-**Card ranking in trump suit (strongest to weakest):** J, 9, A, 10, K, Q, 8, 7. When in trump mode player must player higher card the cards in current trick if possible.
+**Card ranking in trump suit (strongest to weakest):** J, 9, A, 10, K, Q, 8, 7
 
 **Card ranking in non-trump suits (strongest to weakest):** A, 10, K, Q, J, 9, 8, 7
 
@@ -294,9 +294,9 @@ When a card is led, subsequent players must follow these rules in order:
 
 If you have a card of the led suit, you must play it.
 
-**Rule 2: In AllTrumps and NoTrumps - play higher if possible**
+**Rule 2: In AllTrumps - play higher if possible**
 
-When following suit, you must play a higher card than the current highest if you can.
+When following suit in AllTrumps, you must play a higher card than the current highest if you can.
 
 **Rule 3: In Colour mode - trump if you cannot follow**
 
@@ -314,7 +314,7 @@ If trump has been played in the trick (whether led or ruffed):
 
 **Rule 5: Discard if no other option**
 
-If you cannot follow suit and have no trump (or in NoTrumps/AllTrumps, cannot beat current card):
+If you cannot follow suit and have no trump (or in NoTrumps/AllTrumps where there is no trump suit):
 
 - You may play any card
 
@@ -323,7 +323,7 @@ If you cannot follow suit and have no trump (or in NoTrumps/AllTrumps, cannot be
 | Situation | Your Hand | Teammate Winning? | Trump Played? | Action Required |
 |-----------|-----------|-------------------|---------------|-----------------|
 | Can follow suit | Has led suit | - | - | Must follow suit |
-| Can follow + beat | Has higher card of led suit | - | - | Must play higher (AllTrumps/NoTrumps) |
+| Can follow + beat | Has higher card of led suit | - | - | Must play higher (AllTrumps only) |
 | Cannot follow (Colour mode) | Has trump | No | No | Must play trump |
 | Cannot follow (Colour mode) | Has trump | Yes (non-trump) | No | May discard |
 | Cannot follow (Colour mode) | Has trump | Yes (trump) | Yes | Must overtrump if possible |
