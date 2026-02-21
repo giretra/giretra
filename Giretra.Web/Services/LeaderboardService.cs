@@ -1,4 +1,5 @@
 using Giretra.Model;
+using Giretra.Model.Entities;
 using Giretra.Model.Enums;
 using Giretra.Web.Models.Responses;
 using Microsoft.EntityFrameworkCore;
@@ -16,60 +17,72 @@ public sealed class LeaderboardService : ILeaderboardService
 
     public async Task<LeaderboardResponse> GetLeaderboardAsync()
     {
-        var eligible = _db.Players
-            .Include(p => p.User)
+        var bots = await _db.Players
             .Include(p => p.Bot)
-            .Where(p => p.GamesPlayed >= 5);
+            .Where(p => p.PlayerType == PlayerType.Bot)
+            .ToListAsync();
 
-        var totalCount = await eligible.CountAsync();
+        var eligibleHumans = _db.Players
+            .Include(p => p.User)
+            .Where(p => p.PlayerType != PlayerType.Bot && p.GamesPlayed >= 5);
 
-        var top = await eligible
+        var humanCount = await eligibleHumans.CountAsync();
+
+        var topHumans = await eligibleHumans
             .OrderByDescending(p => p.EloRating)
             .ThenByDescending(p => p.GamesWon)
             .Take(100)
             .ToListAsync();
 
-        var entries = top.Select((p, i) =>
-        {
-            string displayName;
-            string? avatarUrl;
-            bool isBot;
+        var entries = bots
+            .Select(p => ToEntry(p, isBot: true, rating: p.Bot?.Rating ?? p.EloRating))
+            .Concat(topHumans.Select(p => ToEntry(p, isBot: false, rating: p.EloRating)))
+            .OrderByDescending(e => e.Rating)
+            .ThenByDescending(e => e.WinRate)
+            .ToList();
 
-            if (p.PlayerType == PlayerType.Bot)
-            {
-                displayName = p.Bot?.DisplayName ?? "Bot";
-                avatarUrl = null;
-                isBot = true;
-            }
-            else if (p.EloIsPublic)
-            {
-                displayName = p.User?.EffectiveDisplayName ?? "Unknown";
-                avatarUrl = p.User?.AvatarUrl;
-                isBot = false;
-            }
-            else
-            {
-                displayName = "Anonymous Player";
-                avatarUrl = null;
-                isBot = false;
-            }
-
-            return new LeaderboardEntryResponse
-            {
-                Rank = i + 1,
-                DisplayName = displayName,
-                AvatarUrl = avatarUrl,
-                Rating = p.EloRating,
-                GamesPlayed = p.GamesPlayed,
-                WinRate = Math.Round((double)p.GamesWon / p.GamesPlayed * 100, 1),
-                IsBot = isBot,
-            };
-        }).ToList();
+        for (var i = 0; i < entries.Count; i++)
+            entries[i].Rank = i + 1;
 
         return new LeaderboardResponse
         {
             Entries = entries,
-            TotalCount = totalCount,
+            TotalCount = humanCount + bots.Count,
+        };
+    }
+
+    private static LeaderboardEntryResponse ToEntry(Player p, bool isBot, int rating)
+    {
+        string displayName;
+        string? avatarUrl;
+
+        if (isBot)
+        {
+            displayName = p.Bot?.DisplayName ?? "Bot";
+            avatarUrl = null;
+        }
+        else if (p.EloIsPublic)
+        {
+            displayName = p.User?.EffectiveDisplayName ?? "Unknown";
+            avatarUrl = p.User?.AvatarUrl;
+        }
+        else
+        {
+            displayName = "Anonymous Player";
+            avatarUrl = null;
+        }
+
+        return new LeaderboardEntryResponse
+        {
+            Rank = 0,
+            DisplayName = displayName,
+            AvatarUrl = avatarUrl,
+            Rating = rating,
+            GamesPlayed = p.GamesPlayed,
+            WinRate = p.GamesPlayed > 0
+                ? Math.Round((double)p.GamesWon / p.GamesPlayed * 100, 1)
+                : 0,
+            IsBot = isBot,
         };
     }
 }
