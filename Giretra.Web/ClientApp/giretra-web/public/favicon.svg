@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <style>
+      .card-face { fill: #ffffff; }
+      .card-stroke { stroke: #E63946; }
+      .card-accent { fill: #E63946; }
+      @media (prefers-color-scheme: dark) {
+        .card-face { fill: #1a1a1a; }
+      }
+    </style>
+  </defs>
+  <g transform="translate(22, 8) scale(1.6)">
+    <!-- Card face -->
+    <rect class="card-face" x="0" y="0" width="52" height="72" rx="6" ry="6"/>
+    <!-- Card border -->
+    <rect x="0" y="0" width="52" height="72" rx="6" ry="6"
+          fill="none" class="card-stroke" stroke-width="3.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- J top-left -->
+    <text x="10" y="22" font-family="'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif"
+          font-size="20" font-weight="800" class="card-accent" stroke="none">J</text>
+    <!-- Club symbol center -->
+    <g transform="translate(26, 44)" class="card-accent" stroke="none">
+      <circle cx="0" cy="-5.5" r="5"/>
+      <circle cx="-4.5" cy="1.5" r="5"/>
+      <circle cx="4.5" cy="1.5" r="5"/>
+      <rect x="-1.5" y="4" width="3" height="7" rx="1"/>
+    </g>
+  </g>
+</svg>
