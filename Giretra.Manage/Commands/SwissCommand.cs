@@ -92,24 +92,34 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
         var renderer = new SwissRenderer(config, participantNames);
         var runner = new SwissRunner(factories, config);
 
-        renderer.RenderHeader();
-        runner.OnRoundCompleted += renderer.RenderRoundResult;
-
-        var result = await runner.RunAsync();
-
-        renderer.RenderFinalRanking(result);
-        renderer.RenderStatistics(result);
-        renderer.RenderAdjustedElo(result);
-
-        var adjustedRatings = AdjustedEloCalculator.FromSwiss(result.RankedParticipants);
-        if (adjustedRatings is not null
-            && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+        try
         {
-            var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
-            await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
-            AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
-        }
+            await runner.InitializeAsync(cancellation);
 
-        return 0;
+            renderer.RenderHeader();
+            runner.OnRoundCompleted += renderer.RenderRoundResult;
+
+            var result = await runner.RunAsync();
+
+            renderer.RenderFinalRanking(result);
+            renderer.RenderStatistics(result);
+            renderer.RenderAdjustedElo(result);
+
+            var adjustedRatings = AdjustedEloCalculator.FromSwiss(result.RankedParticipants);
+            if (adjustedRatings is not null
+                && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+            {
+                var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
+                await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
+                AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
+            }
+
+            return 0;
+        }
+        finally
+        {
+            foreach (var factory in factories)
+                (factory as IDisposable)?.Dispose();
+        }
     }
 }

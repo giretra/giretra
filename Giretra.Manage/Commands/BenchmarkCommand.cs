@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Giretra.Manage.Benchmarking;
 using Giretra.Manage.Data;
 using Giretra.Manage.Output;
+using Giretra.Core.Players;
 using Giretra.Core.Players.Factories;
 using Giretra.Model;
 using Spectre.Console;
@@ -65,28 +66,38 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
             EloKFactor = settings.KFactor
         };
 
-        var team1Factory = new DeterministicPlayerAgentFactory();
-        var team2Factory = new CalculatingPlayerAgentFactory();
+        IPlayerAgentFactory team1Factory = new DeterministicPlayerAgentFactory();
+        IPlayerAgentFactory team2Factory = new CalculatingPlayerAgentFactory();
 
         var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
         var renderer = new BenchmarkRenderer(config, team1Factory.AgentName, team2Factory.AgentName);
 
-        renderer.RenderHeader();
-        runner.OnMatchCompleted += renderer.RenderMatchResult;
-
-        var result = await runner.RunAsync();
-        renderer.RenderSummary(result, team1Factory.AgentName, team2Factory.AgentName);
-
-        var adjustedRatings = AdjustedEloCalculator.FromBenchmark(
-            team1Factory, team2Factory, result.Team1FinalElo, result.Team2FinalElo);
-        if (adjustedRatings is not null
-            && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+        try
         {
-            var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
-            await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
-            AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
-        }
+            await runner.InitializeAsync(cancellation);
 
-        return 0;
+            renderer.RenderHeader();
+            runner.OnMatchCompleted += renderer.RenderMatchResult;
+
+            var result = await runner.RunAsync();
+            renderer.RenderSummary(result, team1Factory.AgentName, team2Factory.AgentName);
+
+            var adjustedRatings = AdjustedEloCalculator.FromBenchmark(
+                team1Factory, team2Factory, result.Team1FinalElo, result.Team2FinalElo);
+            if (adjustedRatings is not null
+                && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
+            {
+                var connectionString = settings.ConnectionString ?? ConnectionStringBuilder.FromEnvironment();
+                await BotRatingUpdater.SaveAdjustedRatingsAsync(connectionString, adjustedRatings);
+                AnsiConsole.MarkupLine("[green]Ratings saved to database.[/]");
+            }
+
+            return 0;
+        }
+        finally
+        {
+            (team1Factory as IDisposable)?.Dispose();
+            (team2Factory as IDisposable)?.Dispose();
+        }
     }
 }

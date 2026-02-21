@@ -106,7 +106,17 @@ public sealed class GameService : IGameService
             }
         }
 
-        // Wrap agents with recording decorator
+        // Wrap non-human agents with resilience decorator
+        var resilientLogger = _loggerFactory.CreateLogger<ResilientPlayerAgent>();
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            if (room.PlayerSlots[position] == null)
+            {
+                agents[position] = new ResilientPlayerAgent(agents[position], resilientLogger);
+            }
+        }
+
+        // Wrap all agents with recording decorator
         var recorder = new ActionRecorder();
         session.ActionRecorder = recorder;
         foreach (var position in Enum.GetValues<PlayerPosition>())
@@ -126,12 +136,13 @@ public sealed class GameService : IGameService
         _gameRepository.Add(session);
 
         // Start the game loop in the background
+        var cancellationToken = session.CancellationTokenSource.Token;
         session.GameLoopTask = Task.Run(async () =>
         {
             try
             {
                 _logger.LogInformation("Starting game {GameId}", gameId);
-                await gameManager.PlayMatchAsync();
+                await gameManager.PlayMatchAsync(cancellationToken);
                 session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
 
@@ -147,6 +158,10 @@ public sealed class GameService : IGameService
                     _roomRepository.Update(roomToReset);
                     _logger.LogInformation("Room {RoomId} reset to Waiting state", room.RoomId);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("Game {GameId} was cancelled", gameId);
             }
             catch (Exception ex)
             {

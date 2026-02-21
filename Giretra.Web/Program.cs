@@ -178,7 +178,8 @@ public class Program
 
             // Load active bots from database into the AI registry
             var aiRegistry = app.Services.GetRequiredService<AiPlayerRegistry>();
-            await aiRegistry.InitializeAsync();
+            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+            await aiRegistry.InitializeAsync(lifetime.ApplicationStopping);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

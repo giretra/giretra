@@ -26,6 +26,15 @@ public sealed class SwissRunner
             .ToList();
     }
 
+    /// <summary>
+    /// Initializes all participant factories (e.g. launches remote bot processes).
+    /// </summary>
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var p in _participants)
+            await p.Factory.InitializeAsync(cancellationToken);
+    }
+
     public async Task<SwissTournamentResult> RunAsync()
     {
         var totalStopwatch = Stopwatch.StartNew();

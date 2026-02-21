@@ -21,6 +21,7 @@ public sealed class GameManager
     private readonly ILogger<GameManager> _logger;
 
     private MatchState _matchState;
+    private CancellationToken _cancellationToken;
 
     /// <summary>
     /// Gets the current match state.
@@ -106,14 +107,18 @@ public sealed class GameManager
     /// <summary>
     /// Plays a complete match until a winner is determined.
     /// </summary>
+    /// <param name="cancellationToken">Optional token to cancel the match between deals.</param>
     /// <returns>The final match state with the winner.</returns>
-    public async Task<MatchState> PlayMatchAsync()
+    public async Task<MatchState> PlayMatchAsync(CancellationToken cancellationToken = default)
     {
+        _cancellationToken = cancellationToken;
+
         _logger.LogDebug("Match started with target score {TargetScore}, first dealer: {Dealer}",
             _matchState.TargetScore, _matchState.CurrentDealer);
 
         while (!_matchState.IsComplete)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             await PlayDealAsync();
         }
 
@@ -271,6 +276,7 @@ public sealed class GameManager
 
         while (deal.Phase == DealPhase.Playing)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             var currentPosition = deal.Hand!.CurrentTrick!.CurrentPlayer!.Value;
             var player = _players[currentPosition];
             var playerState = deal.Players[currentPosition];
@@ -394,12 +400,23 @@ public sealed class GameManager
 
     /// <summary>
     /// Notifies all players with the given action.
+    /// Sequential execution is required — AI agents track cards in order.
+    /// Individual failures are caught so one player's error doesn't skip the rest.
     /// </summary>
     private async Task NotifyAllPlayersAsync(Func<IPlayerAgent, Task> action)
     {
         foreach (var player in _players.Values)
         {
-            await action(player);
+            try
+            {
+                await action(player);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Notification failed for player at {Position}, continuing with remaining players",
+                    player.Position);
+            }
         }
     }
 }

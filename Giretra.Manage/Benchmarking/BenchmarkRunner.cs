@@ -32,6 +32,15 @@ public sealed class BenchmarkRunner
     }
 
     /// <summary>
+    /// Initializes both agent factories (e.g. launches remote bot processes).
+    /// </summary>
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        await _team1Factory.InitializeAsync(cancellationToken);
+        await _team2Factory.InitializeAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Runs the benchmark and returns aggregated results.
     /// </summary>
     public async Task<BenchmarkResult> RunAsync()

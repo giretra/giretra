@@ -10,7 +10,7 @@ namespace Giretra.Web.Services;
 /// Registry that loads available AI player agent factories from the database.
 /// Requires sync-bots to have been run to populate the Bots table.
 /// </summary>
-public sealed class AiPlayerRegistry
+public sealed class AiPlayerRegistry : IDisposable
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AiPlayerRegistry> _logger;
@@ -62,8 +62,9 @@ public sealed class AiPlayerRegistry
 
     /// <summary>
     /// Loads active bots from the database and resolves their factories via reflection.
+    /// Then calls InitializeAsync on each factory (e.g. to launch remote bot processes).
     /// </summary>
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
@@ -112,6 +113,22 @@ public sealed class AiPlayerRegistry
                 factory);
         }
 
+        // Initialize each factory (e.g. launch remote bot processes)
+        foreach (var (agentType, cached) in newBots)
+        {
+            try
+            {
+                await cached.Factory.InitializeAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize factory for bot {AgentType}, skipping", agentType);
+                if (cached.Factory is IDisposable disposable)
+                    disposable.Dispose();
+                newBots.Remove(agentType);
+            }
+        }
+
         _bots = newBots;
         _defaultAgentType = bots.FirstOrDefault()?.AgentType;
 
@@ -155,6 +172,15 @@ public sealed class AiPlayerRegistry
 
     public string GetDisplayName(string aiType) =>
         _bots.TryGetValue(aiType, out var bot) ? bot.DisplayName : aiType;
+
+    public void Dispose()
+    {
+        foreach (var bot in _bots.Values)
+        {
+            if (bot.Factory is IDisposable disposable)
+                disposable.Dispose();
+        }
+    }
 
     private sealed record CachedBot(
         string AgentType,
