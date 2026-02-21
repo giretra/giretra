@@ -111,7 +111,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     .hero { position:relative; overflow:hidden; padding:2.5rem 1rem 2rem; flex-shrink:0; }
     .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
     .hero-vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(0,0,0,0.35) 100%); }
-    .hero-content { position:relative; z-index:1; max-width:720px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+    .hero-content { position:relative; z-index:1; max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
     .brand { display:flex; align-items:center; gap:0.625rem; }
     .hero-icon { width:2.25rem; height:2.25rem; flex-shrink:0; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
     .logo { font-family:'Urbanist',sans-serif; font-size:2rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
@@ -123,7 +123,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
     .main { flex:1; padding:1.5rem 1rem; }
-    .main-inner { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
+    .main-inner { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
     .create-btn { width:100%; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px dashed hsl(var(--primary)/0.4); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
     .create-btn:hover { border-color:hsl(var(--primary)); border-style:solid; background:hsl(var(--primary)/0.06); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
