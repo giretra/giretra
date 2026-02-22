@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Giretra.Manage.Benchmarking;
 using Giretra.Manage.Data;
+using Giretra.Manage.Discovery;
 using Giretra.Manage.Output;
 using Giretra.Core.Players;
 using Giretra.Core.Players.Factories;
@@ -12,6 +13,14 @@ namespace Giretra.Manage.Commands;
 
 public sealed class BenchmarkSettings : CommandSettings
 {
+    [CommandArgument(0, "[team1]")]
+    [Description("Team 1 agent by AgentName or DisplayName (default: DeterministicPlayer)")]
+    public string? Team1 { get; init; }
+
+    [CommandArgument(1, "[team2]")]
+    [Description("Team 2 agent by AgentName or DisplayName (default: CalculatingPlayer)")]
+    public string? Team2 { get; init; }
+
     [CommandOption("-n|--matches")]
     [Description("Number of matches to play")]
     [DefaultValue(1000)]
@@ -66,11 +75,25 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
             EloKFactor = settings.KFactor
         };
 
-        IPlayerAgentFactory team1Factory = new DeterministicPlayerAgentFactory();
-        IPlayerAgentFactory team2Factory = new CalculatingPlayerAgentFactory();
+        IPlayerAgentFactory team1Factory;
+        IPlayerAgentFactory team2Factory;
+
+        if (settings.Team1 is not null || settings.Team2 is not null)
+        {
+            var available = FactoryDiscovery.DiscoverAll();
+            var names = new[] { settings.Team1 ?? "DeterministicPlayer", settings.Team2 ?? "CalculatingPlayer" };
+            var resolved = FactoryDiscovery.Resolve(names, available);
+            team1Factory = resolved[0];
+            team2Factory = resolved[1];
+        }
+        else
+        {
+            team1Factory = new DeterministicPlayerAgentFactory();
+            team2Factory = new CalculatingPlayerAgentFactory();
+        }
 
         var runner = new BenchmarkRunner(team1Factory, team2Factory, config);
-        var renderer = new BenchmarkRenderer(config, team1Factory.AgentName, team2Factory.AgentName);
+        var renderer = new BenchmarkRenderer(config, team1Factory.DisplayName, team2Factory.DisplayName);
 
         try
         {

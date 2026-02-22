@@ -17,6 +17,10 @@
       "commandName": "Project",
       "commandLineArgs": "benchmark -n 500 --elo1 1300 --elo2 1100 -k 16"
     },
+    "Benchmark (rng node bot vs Eva)": {
+      "commandName": "Project",
+      "commandLineArgs": "benchmark random-node-bot Eva"
+    },
     "Swiss (all agents)": {
       "commandName": "Project",
       "commandLineArgs": "swiss"
