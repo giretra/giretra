@@ -47,4 +47,9 @@ public sealed class PlayerSlotResponse
     /// Whether this seat has an active invite token (only visible to owner).
     /// </summary>
     public bool HasInvite { get; init; }
+
+    /// <summary>
+    /// Whether this slot is occupied by the requesting user.
+    /// </summary>
+    public bool IsCurrentUser { get; init; }
 }

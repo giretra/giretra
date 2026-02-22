@@ -58,9 +58,9 @@ public sealed class RoomToGameFlowTests
         Assert.Equal(RoomStatus.Waiting, createResponse.Room.Status);
 
         // Step 2: Three more players join
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
-        var player3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" }, "Player3", Player3UserId);
-        var player4 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" }, "Player4", Player4UserId);
+        var (player2, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
+        var (player3, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player3" }, "Player3", Player3UserId);
+        var (player4, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player4" }, "Player4", Player4UserId);
 
         Assert.NotNull(player2);
         Assert.NotNull(player3);
@@ -205,10 +205,11 @@ public sealed class RoomToGameFlowTests
         _roomService.StartGame(createResponse.Room.RoomId, CreatorUserId);
 
         // Act - Try to join after game started
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" }, "LatePlayer", Guid.NewGuid());
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "LatePlayer" }, "LatePlayer", Guid.NewGuid());
 
         // Assert
         Assert.Null(joinResponse);
+        Assert.NotNull(error);
     }
 
     [Fact]
@@ -247,7 +248,7 @@ public sealed class RoomToGameFlowTests
             AiSeats = null
         }, "Creator", CreatorUserId);
 
-        _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
+        _ = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Player2" }, "Player2", Player2UserId);
 
         // Act
         var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, Player2UserId);
@@ -268,7 +269,7 @@ public sealed class RoomToGameFlowTests
             AiSeats = null
         }, "Human1", CreatorUserId);
 
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
+        var (player2, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Human2",
             PreferredPosition = PlayerPosition.Top
@@ -477,7 +478,7 @@ public sealed class RoomToGameFlowTests
             AiSeats = null
         }, "Player1", CreatorUserId);
 
-        var player2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
+        var (player2, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest
         {
             DisplayName = "Player2",
             PreferredPosition = PlayerPosition.Left

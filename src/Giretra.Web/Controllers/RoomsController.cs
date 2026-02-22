@@ -84,9 +84,9 @@ public class RoomsController : ControllerBase
     public async Task<ActionResult<JoinRoomResponse>> JoinRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.JoinRoom(roomId, request, user.EffectiveDisplayName, user.Id);
+        var (response, error) = _roomService.JoinRoom(roomId, request, user.EffectiveDisplayName, user.Id);
         if (response == null)
-            return BadRequest("Unable to join room. Room may be full, game already started, or seat is invite-only.");
+            return BadRequest(new { error = error ?? "Unable to join room" });
 
         if (response.Position.HasValue)
             await _notifications.NotifyPlayerJoinedAsync(roomId, user.EffectiveDisplayName, response.Position.Value);

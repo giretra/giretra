@@ -174,6 +174,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly showCreateForm = signal<boolean>(false);
   readonly pendingFriendCount = signal<number>(0);
   readonly activeGameRoomId = signal<string | null>(null);
+  private readonly joining = signal(false);
 
   ngOnInit(): void {
     this.loadRooms();
@@ -231,15 +232,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   onJoinRoom(event: JoinRoomEvent): void {
+    if (this.joining()) return;
+    this.joining.set(true);
     this.api.joinRoom(event.room.roomId, event.position).subscribe({
       next: (response) => {
         if (response.position) {
           this.session.joinRoom(event.room.roomId, response.clientId, response.position);
           this.navigateToTable(response.room, false);
         }
+        this.joining.set(false);
       },
       error: (err) => {
         console.error('Failed to join room', err);
+        this.joining.set(false);
       },
     });
   }

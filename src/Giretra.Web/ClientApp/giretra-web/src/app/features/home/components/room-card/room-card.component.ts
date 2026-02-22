@@ -212,21 +212,25 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
         <div class="card-bottom">
           @if (!selecting()) {
             @if (room().status !== 'Completed') {
-              <button
-                hlmBtn
-                [variant]="canJoin() ? 'default' : 'secondary'"
-                size="sm"
-                class="action-btn"
-                (click)="handleAction()"
-              >
-                @if (canJoin()) {
-                  <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  Join
-                } @else {
-                  <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  Watch
-                }
-              </button>
+              @if (isSeated()) {
+                <span class="seated-label">Seated</span>
+              } @else {
+                <button
+                  hlmBtn
+                  [variant]="canJoin() ? 'default' : 'secondary'"
+                  size="sm"
+                  class="action-btn"
+                  (click)="handleAction()"
+                >
+                  @if (canJoin()) {
+                    <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                    Join
+                  } @else {
+                    <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                    Watch
+                  }
+                </button>
+              }
             } @else {
               <span class="finished-label">Finished</span>
             }
@@ -419,6 +423,12 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
       font-style: italic;
+    }
+
+    .seated-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: hsl(var(--primary));
     }
 
     /* ─── Seat Picker ─── */
@@ -628,9 +638,14 @@ export class RoomCardComponent {
 
   readonly selecting = signal(false);
 
+  readonly isSeated = computed(() => {
+    return this.room().playerSlots.some(s => s.isCurrentUser);
+  });
+
   readonly canJoin = computed(() => {
     const r = this.room();
     if (r.status !== 'Waiting') return false;
+    if (this.isSeated()) return false;
     // Only count public, unoccupied seats as joinable
     return r.playerSlots.some(s => !s.isOccupied && s.accessMode === SeatAccessMode.Public);
   });

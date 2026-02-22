@@ -33,7 +33,8 @@ public interface IRoomService
     /// <summary>
     /// Joins a room as a player.
     /// </summary>
-    JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId);
+    /// <returns>A tuple containing the response (or null on failure) and an error message.</returns>
+    (JoinRoomResponse? Response, string? Error) JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId);
 
     /// <summary>
     /// Joins a room as a watcher.

@@ -185,10 +185,11 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
 
         // Assert
         Assert.NotNull(joinResponse);
+        Assert.Null(error);
         Assert.NotNull(joinResponse.ClientId);
         Assert.NotEqual(createResponse.ClientId, joinResponse.ClientId);
         Assert.NotNull(joinResponse.Position);
@@ -213,15 +214,16 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
 
         // Assert
         Assert.NotNull(joinResponse);
+        Assert.Null(error);
         Assert.Equal(PlayerPosition.Top, joinResponse.Position);
     }
 
     [Fact]
-    public void JoinRoom_WhenPositionOccupied_ReturnsNull()
+    public void JoinRoom_WhenPositionOccupied_ReturnsError()
     {
         // Arrange
         var createResponse = _roomService.CreateRoom(new CreateRoomRequest
@@ -238,14 +240,15 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player2", Player2UserId);
 
         // Assert
         Assert.Null(joinResponse);
+        Assert.NotNull(error);
     }
 
     [Fact]
-    public void JoinRoom_WhenRoomFull_ReturnsNull()
+    public void JoinRoom_WhenRoomFull_ReturnsError()
     {
         // Arrange
         var createResponse = _roomService.CreateRoom(new CreateRoomRequest
@@ -266,20 +269,22 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player5", Guid.NewGuid());
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, joinRequest, "Player5", Guid.NewGuid());
 
         // Assert
         Assert.Null(joinResponse);
+        Assert.NotNull(error);
     }
 
     [Fact]
-    public void JoinRoom_WhenRoomNotFound_ReturnsNull()
+    public void JoinRoom_WhenRoomNotFound_ReturnsError()
     {
         // Act
-        var joinResponse = _roomService.JoinRoom("nonexistent", new JoinRoomRequest { DisplayName = "Player" }, "Player", Guid.NewGuid());
+        var (joinResponse, error) = _roomService.JoinRoom("nonexistent", new JoinRoomRequest { DisplayName = "Player" }, "Player", Guid.NewGuid());
 
         // Assert
         Assert.Null(joinResponse);
+        Assert.Equal("Room not found", error);
     }
 
     [Fact]
@@ -294,13 +299,80 @@ public sealed class RoomServiceTests
         }, "Creator", CreatorUserId);
 
         // Act - Join 3 more players without specifying positions
-        var join1 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Guid.NewGuid());
-        var join2 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P3" }, "P3", Guid.NewGuid());
-        var join3 = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P4" }, "P4", Guid.NewGuid());
+        var (join1, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Guid.NewGuid());
+        var (join2, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P3" }, "P3", Guid.NewGuid());
+        var (join3, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P4" }, "P4", Guid.NewGuid());
 
         // Assert - All should get different positions
         var positions = new[] { createResponse.Position, join1!.Position, join2!.Position, join3!.Position };
         Assert.Equal(4, positions.Distinct().Count());
+    }
+
+    [Fact]
+    public void JoinRoom_SameUserTwice_ReturnsError()
+    {
+        // Arrange
+        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        {
+            Name = "Test Room",
+            CreatorName = "Creator",
+            AiSeats = null
+        }, "Creator", CreatorUserId);
+
+        var (firstJoin, firstError) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+        Assert.NotNull(firstJoin);
+        Assert.Null(firstError);
+
+        // Act — same user tries to join again
+        var (secondJoin, secondError) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+
+        // Assert
+        Assert.Null(secondJoin);
+        Assert.Equal("You are already seated in this room", secondError);
+    }
+
+    [Fact]
+    public void JoinRoom_CreatorTriesToJoinOwnRoom_ReturnsError()
+    {
+        // Arrange
+        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        {
+            Name = "Test Room",
+            CreatorName = "Creator",
+            AiSeats = null
+        }, "Creator", CreatorUserId);
+
+        // Act — creator tries to join again
+        var (joinResponse, error) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "Creator" }, "Creator", CreatorUserId);
+
+        // Assert
+        Assert.Null(joinResponse);
+        Assert.Equal("You are already seated in this room", error);
+    }
+
+    [Fact]
+    public void JoinRoom_UserCanRejoinAfterLeaving()
+    {
+        // Arrange
+        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        {
+            Name = "Test Room",
+            CreatorName = "Creator",
+            AiSeats = null
+        }, "Creator", CreatorUserId);
+
+        var (firstJoin, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+        Assert.NotNull(firstJoin);
+
+        // Leave
+        _roomService.LeaveRoom(createResponse.Room.RoomId, firstJoin.ClientId);
+
+        // Act — rejoin after leaving
+        var (rejoin, error) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+
+        // Assert
+        Assert.NotNull(rejoin);
+        Assert.Null(error);
     }
 
     #endregion
@@ -357,7 +429,7 @@ public sealed class RoomServiceTests
             CreatorName = "Creator",
             AiSeats = null
         }, "Creator", CreatorUserId);
-        var joinResponse = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+        var (joinResponse, _) = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
 
         // Act
         var result = _roomService.LeaveRoom(createResponse.Room.RoomId, joinResponse!.ClientId);
@@ -444,7 +516,7 @@ public sealed class RoomServiceTests
             CreatorName = "Creator",
             AiSeats = null
         }, "Creator", CreatorUserId);
-        _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+        _ = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
 
         // Act
         var result = _roomService.DeleteRoom(createResponse.Room.RoomId, Player2UserId);
@@ -514,7 +586,7 @@ public sealed class RoomServiceTests
             CreatorName = "Creator",
             AiSeats = null
         }, "Creator", CreatorUserId);
-        _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
+        _ = _roomService.JoinRoom(createResponse.Room.RoomId, new JoinRoomRequest { DisplayName = "P2" }, "P2", Player2UserId);
 
         // Act
         var (response, error) = _roomService.StartGame(createResponse.Room.RoomId, Player2UserId);

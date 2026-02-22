@@ -126,11 +126,23 @@ public sealed class Room
     }
 
     /// <summary>
+    /// Checks whether a user is already seated in the room.
+    /// </summary>
+    public bool HasPlayer(Guid userId)
+    {
+        return PlayerSlots.Values.Any(p => p?.UserId == userId);
+    }
+
+    /// <summary>
     /// Tries to add a player to a specific position.
     /// </summary>
     public bool TryAddPlayerAtPosition(ConnectedClient client, PlayerPosition position)
     {
         if (Status != RoomStatus.Waiting)
+            return false;
+
+        // Cannot join if already seated in this room
+        if (client.UserId.HasValue && HasPlayer(client.UserId.Value))
             return false;
 
         // Cannot join if slot is occupied by human or reserved for AI

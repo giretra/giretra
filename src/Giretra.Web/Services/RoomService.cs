@@ -126,11 +126,16 @@ public sealed class RoomService : IRoomService
         return _roomRepository.Remove(roomId);
     }
 
-    public JoinRoomResponse? JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId)
+    public (JoinRoomResponse? Response, string? Error) JoinRoom(string roomId, JoinRoomRequest request, string displayName, Guid userId)
     {
         var room = _roomRepository.GetById(roomId);
-        if (room == null || room.Status != RoomStatus.Waiting)
-            return null;
+        if (room == null)
+            return (null, "Room not found");
+        if (room.Status != RoomStatus.Waiting)
+            return (null, "Room is not in waiting state");
+
+        if (room.HasPlayer(userId))
+            return (null, "You are already seated in this room");
 
         var clientId = GenerateId("client");
         var client = new ConnectedClient
@@ -152,9 +157,9 @@ public sealed class RoomService : IRoomService
                 // Validate token against specific seat
                 var seatConfig = room.SeatConfigs[request.PreferredPosition.Value];
                 if (seatConfig.InviteToken != request.InviteToken)
-                    return null;
+                    return (null, "Invalid invite token");
                 if (seatConfig.KickedUserIds.Contains(userId))
-                    return null;
+                    return (null, "You have been kicked from this seat");
 
                 success = room.TryAddPlayerAtPosition(client, request.PreferredPosition.Value);
                 position = success ? request.PreferredPosition : null;
@@ -194,11 +199,11 @@ public sealed class RoomService : IRoomService
 
             // Reject if kicked from this seat
             if (seatConfig.KickedUserIds.Contains(userId))
-                return null;
+                return (null, "You have been kicked from this seat");
 
             // Reject if invite-only and no token
             if (seatConfig.AccessMode == SeatAccessMode.InviteOnly)
-                return null;
+                return (null, "This seat is invite-only");
 
             success = room.TryAddPlayerAtPosition(client, targetPos);
             position = success ? request.PreferredPosition : null;
@@ -228,16 +233,16 @@ public sealed class RoomService : IRoomService
         }
 
         if (!success)
-            return null;
+            return (null, "Unable to join room. Room may be full or seat is unavailable.");
 
         _roomRepository.Update(room);
 
-        return new JoinRoomResponse
+        return (new JoinRoomResponse
         {
             ClientId = clientId,
             Position = position,
             Room = MapToResponse(room, userId)
-        };
+        }, null);
     }
 
     public JoinRoomResponse? WatchRoom(string roomId, JoinRoomRequest request, string displayName)
@@ -561,7 +566,8 @@ public sealed class RoomService : IRoomService
                         AiType = room.AiSlots.GetValueOrDefault(pos),
                         AiDisplayName = room.AiSlots.TryGetValue(pos, out var aiType) ? _aiRegistry.GetDisplayName(aiType) : null,
                         AccessMode = seatConfig.AccessMode,
-                        HasInvite = isOwner && seatConfig.InviteToken != null
+                        HasInvite = isOwner && seatConfig.InviteToken != null,
+                        IsCurrentUser = requestingUserId.HasValue && room.PlayerSlots[pos]?.UserId == requestingUserId.Value
                     };
                 })
                 .ToList(),

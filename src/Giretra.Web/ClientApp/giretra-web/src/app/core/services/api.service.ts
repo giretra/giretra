@@ -27,6 +27,7 @@ export interface PlayerSlot {
   aiDisplayName: string | null;
   accessMode: SeatAccessMode;
   hasInvite: boolean;
+  isCurrentUser: boolean;
 }
 
 export interface AiTypeInfo {
