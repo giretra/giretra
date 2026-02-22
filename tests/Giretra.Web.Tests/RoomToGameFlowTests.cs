@@ -621,16 +621,18 @@ public sealed class RoomToGameFlowTests
 
         var secondSession = _gameService.CreateGame(room);
         Assert.NotNull(secondSession);
+        Assert.NotEqual(firstSession.GameId, secondSession.GameId);
 
         room.Status = RoomStatus.Playing;
         room.GameSessionId = secondSession.GameId;
         _roomRepository.Update(room);
 
-        Assert.NotEqual(firstSession.GameId, secondSession.GameId);
+        // Wait for the second game to also complete (all-AI games finish nearly instantly)
+        await WaitForGameCompletion(secondSession, TimeSpan.FromSeconds(120));
 
-        var roomDuringSecond = _roomRepository.GetById(room.RoomId);
-        Assert.Equal(RoomStatus.Playing, roomDuringSecond!.Status);
-        Assert.Equal(secondSession.GameId, roomDuringSecond.GameSessionId);
+        var roomAfterSecond = _roomRepository.GetById(room.RoomId);
+        Assert.NotNull(roomAfterSecond);
+        Assert.Equal(RoomStatus.Waiting, roomAfterSecond.Status);
     }
 
     #endregion
