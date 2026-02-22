@@ -17,6 +17,7 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     private readonly string _baseUrl;
     private readonly string _matchId;
     private readonly BotProcessConfig? _processConfig;
+    private readonly IReadOnlySet<string>? _enabledNotifications;
     private Process? _process;
 
     public Guid Identifier { get; }
@@ -43,7 +44,8 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         HttpClient? httpClient = null,
         TimeSpan? decisionTimeout = null,
         TimeSpan? notificationTimeout = null,
-        BotProcessConfig? processConfig = null)
+        BotProcessConfig? processConfig = null,
+        IReadOnlySet<string>? enabledNotifications = null)
     {
         AgentName = agentName;
         DisplayName = displayName ?? agentName;
@@ -52,6 +54,7 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         _matchId = Guid.NewGuid().ToString();
         _baseUrl = baseUrl;
         _processConfig = processConfig;
+        _enabledNotifications = enabledNotifications;
 
         var ownsClient = httpClient is null;
         httpClient ??= new HttpClient();
@@ -124,7 +127,7 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
 
     public IPlayerAgent Create(PlayerPosition position)
     {
-        return new RemotePlayerAgent(_client, position, _matchId);
+        return new RemotePlayerAgent(_client, position, _matchId, _enabledNotifications);
     }
 
     public void Dispose()

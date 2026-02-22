@@ -43,9 +43,14 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
             HealthEndpoint = metadata.Launch.HealthEndpoint
         };
 
+        HashSet<string>? enabledNotifications = metadata.Notifications is not null
+            ? new HashSet<string>(metadata.Notifications, StringComparer.OrdinalIgnoreCase)
+            : null;
+
         _inner = new RemotePlayerAgentFactory(
             baseUrl, agentName, DisplayName, Pun,
-            processConfig: processConfig);
+            processConfig: processConfig,
+            enabledNotifications: enabledNotifications);
     }
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)

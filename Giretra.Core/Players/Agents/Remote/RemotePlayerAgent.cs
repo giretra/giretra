@@ -13,16 +13,25 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
 {
     private readonly RemoteBotClient _client;
     private readonly string _matchId;
+    private readonly IReadOnlySet<string>? _enabledNotifications;
     private string? _sessionId;
 
     public PlayerPosition Position { get; }
 
-    public RemotePlayerAgent(RemoteBotClient client, PlayerPosition position, string matchId)
+    public RemotePlayerAgent(
+        RemoteBotClient client,
+        PlayerPosition position,
+        string matchId,
+        IReadOnlySet<string>? enabledNotifications = null)
     {
         _client = client;
         Position = position;
         _matchId = matchId;
+        _enabledNotifications = enabledNotifications;
     }
+
+    private bool IsNotificationEnabled(string name)
+        => _enabledNotifications is null || _enabledNotifications.Contains(name);
 
     private async Task EnsureSessionAsync()
     {
@@ -58,33 +67,34 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
 
     public async Task OnDealStartedAsync(MatchState matchState)
     {
+        if (!IsNotificationEnabled("deal-started")) return;
         await EnsureSessionAsync();
         await _client.NotifyDealStartedAsync(_sessionId!, matchState);
     }
 
     public async Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
-        if (_sessionId is null) return;
+        if (_sessionId is null || !IsNotificationEnabled("deal-ended")) return;
         await _client.NotifyDealEndedAsync(_sessionId, result, handState, matchState);
     }
 
     public async Task OnCardPlayedAsync(
         PlayerPosition player, Card card, HandState handState, MatchState matchState)
     {
-        if (_sessionId is null) return;
+        if (_sessionId is null || !IsNotificationEnabled("card-played")) return;
         await _client.NotifyCardPlayedAsync(_sessionId, player, card, handState, matchState);
     }
 
     public async Task OnTrickCompletedAsync(
         TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
     {
-        if (_sessionId is null) return;
+        if (_sessionId is null || !IsNotificationEnabled("trick-completed")) return;
         await _client.NotifyTrickCompletedAsync(_sessionId, completedTrick, winner, handState, matchState);
     }
 
     public async Task OnMatchEndedAsync(MatchState matchState)
     {
-        if (_sessionId is null) return;
+        if (_sessionId is null || !IsNotificationEnabled("match-ended")) return;
         await _client.NotifyMatchEndedAsync(_sessionId, matchState);
     }
 

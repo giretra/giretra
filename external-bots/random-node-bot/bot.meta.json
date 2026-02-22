@@ -2,6 +2,7 @@
   "name": "random-node-bot",
   "displayName": "Random Node Bot",
   "pun": "I'm just randomly clicking buttons",
+  "notifications": [],
   "launch": {
     "fileName": "node",
     "arguments": "index.js",
