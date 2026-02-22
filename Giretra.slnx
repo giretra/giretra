@@ -7,6 +7,8 @@
     <File Path="docker/.env.example" />
     <File Path="docker/docker-compose.yml" />
     <File Path="LASTSTATE.md" />
+    <File Path="README.md" />
+    <File Path="RULES.md" />
     <File Path="SPEC.md" />
   </Folder>
   <Project Path="tests/Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
