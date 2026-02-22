@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Giretra.Web\Giretra.Web.csproj" />
+    <ProjectReference Include="..\..\src\Giretra.Web\Giretra.Web.csproj" />
   </ItemGroup>
 
 </Project>

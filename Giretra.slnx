@@ -9,11 +9,11 @@
     <File Path="LASTSTATE.md" />
     <File Path="SPEC.md" />
   </Folder>
-  <Project Path="Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
-  <Project Path="Giretra.Core/Giretra.Core.csproj" />
-  <Project Path="Giretra.Model/Giretra.Model.csproj" />
-  <Project Path="Giretra.Web.Tests/Giretra.Web.Tests.csproj" />
-  <Project Path="Giretra.Web/Giretra.Web.csproj" />
-  <Project Path="Giretra/Giretra.csproj" />
-  <Project Path="Giretra.Manage/Giretra.Manage.csproj" />
+  <Project Path="tests/Giretra.Core.Tests/Giretra.Core.Tests.csproj" />
+  <Project Path="src/Giretra.Core/Giretra.Core.csproj" />
+  <Project Path="src/Giretra.Model/Giretra.Model.csproj" />
+  <Project Path="tests/Giretra.Web.Tests/Giretra.Web.Tests.csproj" />
+  <Project Path="src/Giretra.Web/Giretra.Web.csproj" />
+  <Project Path="src/Giretra/Giretra.csproj" />
+  <Project Path="src/Giretra.Manage/Giretra.Manage.csproj" />
 </Solution>

@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Giretra.Core\Giretra.Core.csproj" />
+    <ProjectReference Include="..\..\src\Giretra.Core\Giretra.Core.csproj" />
   </ItemGroup>
 
 </Project>
