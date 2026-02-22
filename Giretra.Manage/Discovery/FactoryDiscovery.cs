@@ -4,12 +4,14 @@ using Giretra.Core.Players;
 namespace Giretra.Manage.Discovery;
 
 /// <summary>
-/// Discovers IPlayerAgentFactory implementations via reflection.
+/// Discovers IPlayerAgentFactory implementations via reflection and external bot directories.
 /// </summary>
 public static class FactoryDiscovery
 {
     /// <summary>
-    /// Discovers all concrete IPlayerAgentFactory implementations in Giretra.Core.
+    /// Discovers all concrete IPlayerAgentFactory implementations in Giretra.Core,
+    /// then merges any external bots found in the external-bots/ directory.
+    /// External bot discovery uses the current working directory by default.
     /// </summary>
     public static Dictionary<string, IPlayerAgentFactory> DiscoverAll()
     {
@@ -32,6 +34,14 @@ public static class FactoryDiscovery
             var args = constructor.GetParameters().Select(p => p.DefaultValue).ToArray();
             var factory = (IPlayerAgentFactory)constructor.Invoke(args);
             factories[factory.AgentName] = factory;
+        }
+
+        var repoRoot = ExternalBotDiscovery.FindRepoRoot();
+        if (repoRoot is not null)
+        {
+            var external = ExternalBotDiscovery.Discover(repoRoot, factories.Keys);
+            foreach (var (name, factory) in external)
+                factories[name] = factory;
         }
 
         return factories;
