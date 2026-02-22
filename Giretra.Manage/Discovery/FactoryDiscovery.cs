@@ -58,7 +58,18 @@ public static class FactoryDiscovery
         {
             if (!available.TryGetValue(name, out var factory))
             {
-                var known = string.Join(", ", available.Keys.OrderBy(k => k));
+                // Fall back to matching by DisplayName
+                factory = available.Values.FirstOrDefault(f =>
+                    string.Equals(f.DisplayName, name, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (factory is null)
+            {
+                var known = string.Join(", ", available.Values
+                    .OrderBy(f => f.AgentName)
+                    .Select(f => f.AgentName == f.DisplayName
+                        ? f.AgentName
+                        : $"{f.AgentName} ({f.DisplayName})"));
                 throw new ArgumentException($"Unknown agent '{name}'. Available: {known}");
             }
 

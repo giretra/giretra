@@ -21,6 +21,10 @@
       "commandName": "Project",
       "commandLineArgs": "swiss"
     },
+    "Swiss (bot vs eva)": {
+      "commandName": "Project",
+      "commandLineArgs": "swiss Eva random-node-bot random-python-bot Baomijijy"
+    },
     "Swiss (quick)": {
       "commandName": "Project",
       "commandLineArgs": "swiss -r 10"

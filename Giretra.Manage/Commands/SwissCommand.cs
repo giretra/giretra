@@ -12,7 +12,7 @@ namespace Giretra.Manage.Commands;
 public sealed class SwissSettings : CommandSettings
 {
     [CommandArgument(0, "[agents]")]
-    [Description("Agent factory names to include (default: all discovered)")]
+    [Description("Agents to include by AgentName or DisplayName (default: all discovered)")]
     public string[]? Agents { get; init; }
 
     [CommandOption("-r|--rounds")]
@@ -72,7 +72,7 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
         if (factories.Count < 2)
         {
             AnsiConsole.MarkupLine("[red]Error: At least 2 agent factories are required for a Swiss tournament.[/]");
-            AnsiConsole.MarkupLine($"[dim]Available: {string.Join(", ", available.Keys.OrderBy(k => k))}[/]");
+            AnsiConsole.MarkupLine($"[dim]Available: {string.Join(", ", available.Values.OrderBy(f => f.AgentName).Select(f => f.AgentName == f.DisplayName ? f.AgentName : $"{f.AgentName} ({f.DisplayName})"))}[/]");
             return 1;
         }
 
