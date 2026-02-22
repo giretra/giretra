@@ -11,7 +11,18 @@ public sealed record BotMetadata
     public string? AgentName { get; init; }
     public string? Pun { get; init; }
     public string[]? Notifications { get; init; }
+    public BotInitConfig? Init { get; init; }
     public required BotLaunchConfig Launch { get; init; }
+}
+
+/// <summary>
+/// Optional initialization command to run before launching the bot (e.g. npm install).
+/// </summary>
+public sealed record BotInitConfig
+{
+    public required string Command { get; init; }
+    public string Arguments { get; init; } = "";
+    public int Timeout { get; init; } = 120;
 }
 
 /// <summary>

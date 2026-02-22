@@ -3,9 +3,13 @@
   "displayName": "Random Node Bot",
   "pun": "I'm just randomly clicking buttons",
   "notifications": [],
+  "init": {
+    "command": "npm",
+    "arguments": "install"
+  },
   "launch": {
     "fileName": "node",
-    "arguments": "index.js",
+    "arguments": "server.js",
     "port": 5060,
     "startupTimeout": 30,
     "healthEndpoint": "health"

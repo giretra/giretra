@@ -40,7 +40,8 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
             WorkingDirectory = botDirectory,
             EnvironmentVariables = envVars,
             StartupTimeout = TimeSpan.FromSeconds(metadata.Launch.StartupTimeout),
-            HealthEndpoint = metadata.Launch.HealthEndpoint
+            HealthEndpoint = metadata.Launch.HealthEndpoint,
+            Init = metadata.Init
         };
 
         HashSet<string>? enabledNotifications = metadata.Notifications is not null

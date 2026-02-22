@@ -1,0 +1,14 @@
+{
+  "name": "random-node-bot",
+  "version": "1.0.0",
+  "description": "Random Belote bot — example for Giretra external bot API",
+  "main": "server.js",
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "npm run build",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

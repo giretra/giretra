@@ -40,4 +40,9 @@ public sealed record BotProcessConfig
     /// Relative path appended to the base URL for the health check endpoint.
     /// </summary>
     public string HealthEndpoint { get; init; } = "health";
+
+    /// <summary>
+    /// Optional initialization command to run before launching the bot process.
+    /// </summary>
+    public BotInitConfig? Init { get; init; }
 }

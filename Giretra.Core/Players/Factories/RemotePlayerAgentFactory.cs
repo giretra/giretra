@@ -72,6 +72,62 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         if (_processConfig is null)
             return;
 
+        // Run init command if configured (e.g. npm install)
+        if (_processConfig.Init is { } init)
+        {
+            var initStartInfo = new ProcessStartInfo
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            // On Windows, commands like "npm" are .cmd scripts that require
+            // the shell to resolve. Route through cmd /c so they are found.
+            if (OperatingSystem.IsWindows())
+            {
+                initStartInfo.FileName = "cmd";
+                initStartInfo.Arguments = string.IsNullOrEmpty(init.Arguments)
+                    ? $"/c {init.Command}"
+                    : $"/c {init.Command} {init.Arguments}";
+            }
+            else
+            {
+                initStartInfo.FileName = init.Command;
+                initStartInfo.Arguments = init.Arguments;
+            }
+
+            if (_processConfig.WorkingDirectory is not null)
+                initStartInfo.WorkingDirectory = _processConfig.WorkingDirectory;
+
+            using var initProcess = Process.Start(initStartInfo)
+                ?? throw new InvalidOperationException(
+                    $"Failed to start init command: {init.Command} {init.Arguments}");
+
+            using var initCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            initCts.CancelAfter(TimeSpan.FromSeconds(init.Timeout));
+
+            try
+            {
+                await initProcess.WaitForExitAsync(initCts.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                initProcess.Kill(entireProcessTree: true);
+                throw new TimeoutException(
+                    $"Init command '{init.Command} {init.Arguments}' timed out after {init.Timeout}s.");
+            }
+
+            if (initProcess.ExitCode != 0)
+            {
+                var stderr = await initProcess.StandardError.ReadToEndAsync(cancellationToken);
+                throw new InvalidOperationException(
+                    $"Init command '{init.Command} {init.Arguments}' failed with exit code {initProcess.ExitCode}. " +
+                    $"stderr: {stderr}");
+            }
+        }
+
         var startInfo = new ProcessStartInfo
         {
             FileName = _processConfig.FileName,

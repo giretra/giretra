@@ -1,5 +1,9 @@
+// server.js — HTTP boilerplate. Bot creators should not need to edit this file.
+// All game logic lives in bot.js.
+
 const http = require("node:http");
 const crypto = require("node:crypto");
+const bot = require("./dist/bot");
 
 const PORT = parseInt(process.env.PORT, 10) || 5060;
 
@@ -24,14 +28,6 @@ function json(res, status, data) {
     "Content-Length": Buffer.byteLength(body),
   });
   res.end(body);
-}
-
-function randomInt(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
-}
-
-function randomChoice(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 const server = http.createServer(async (req, res) => {
@@ -70,11 +66,14 @@ const server = http.createServer(async (req, res) => {
       /^\/api\/sessions\/([^/]+)\/choose-cut$/
     );
     if (method === "POST" && cutMatch) {
-      await parseBody(req);
-      return json(res, 200, {
-        position: randomInt(6, 26),
-        fromTop: Math.random() > 0.5,
+      const body = await parseBody(req);
+      const session = sessions.get(cutMatch[1]);
+      const result = bot.chooseCut({
+        deckSize: body.deckSize,
+        matchState: body.matchState,
+        session,
       });
+      return json(res, 200, result);
     }
 
     // POST /api/sessions/:sessionId/choose-negotiation-action
@@ -83,7 +82,15 @@ const server = http.createServer(async (req, res) => {
     );
     if (method === "POST" && negMatch) {
       const body = await parseBody(req);
-      return json(res, 200, randomChoice(body.validActions));
+      const session = sessions.get(negMatch[1]);
+      const result = bot.chooseNegotiationAction({
+        hand: body.hand,
+        negotiationState: body.negotiationState,
+        matchState: body.matchState,
+        validActions: body.validActions,
+        session,
+      });
+      return json(res, 200, result);
     }
 
     // POST /api/sessions/:sessionId/choose-card
@@ -92,15 +99,39 @@ const server = http.createServer(async (req, res) => {
     );
     if (method === "POST" && cardMatch) {
       const body = await parseBody(req);
-      return json(res, 200, randomChoice(body.validPlays));
+      const session = sessions.get(cardMatch[1]);
+      const result = bot.chooseCard({
+        hand: body.hand,
+        handState: body.handState,
+        matchState: body.matchState,
+        validPlays: body.validPlays,
+        session,
+      });
+      return json(res, 200, result);
     }
 
     // POST /api/sessions/:sessionId/notify/*
     const notifyMatch = path.match(
-      /^\/api\/sessions\/([^/]+)\/notify\/.+$/
+      /^\/api\/sessions\/([^/]+)\/notify\/(.+)$/
     );
     if (method === "POST" && notifyMatch) {
-      await parseBody(req);
+      const body = await parseBody(req);
+      const session = sessions.get(notifyMatch[1]);
+      const eventName = notifyMatch[2];
+
+      const handlers = {
+        "deal-started": bot.onDealStarted,
+        "card-played": bot.onCardPlayed,
+        "trick-completed": bot.onTrickCompleted,
+        "deal-ended": bot.onDealEnded,
+        "match-ended": bot.onMatchEnded,
+      };
+
+      const handler = handlers[eventName];
+      if (handler) {
+        handler({ ...body, session });
+      }
+
       res.writeHead(200);
       return res.end();
     }
