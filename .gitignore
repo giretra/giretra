@@ -366,3 +366,5 @@ FodyWeavers.xsd
 docker/.env
 
 .env
+
+CLAUDE.md
