@@ -8,7 +8,7 @@
 
 ---
 
-Giretra is a popular Malagasy card game. With family on a Sunday afternoon, between classes at school (some people have repeated a school year because they played too much of it). It's a trick-taking game derived from Belote, played by 4 players in 2 teams, and it's been passed down across generations mostly by word of mouth.
+A trick-taking card game where trash talk is a core mechanic, so addictive that university students in Madagascar have repeated entire years because they couldn't stop playing. Derived from Belote, played 4 players in 2 teams, the rules have survived generations almost entirely through word of mouth. No rulebook, no wiki, just your uncle questioning your entire upbringing for playing the wrong card.
 
 This project is an attempt to preserve those rules properly, make the game playable online, and give developers a platform to build their own bots. The engine handles all the game logic (negotiation, trump rules, scoring, the works), and there are two ways to play: a web app with real-time multiplayer, or a terminal UI for quick local games against AI.
 
