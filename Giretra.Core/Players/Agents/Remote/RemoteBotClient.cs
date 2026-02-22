@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Giretra.Core.Cards;
@@ -194,17 +195,56 @@ public sealed class RemoteBotClient : IDisposable
 
     #region HTTP helpers
 
+    /// <summary>
+    /// Serializes <paramref name="body"/> to a <see cref="StringContent"/> with an
+    /// explicit Content-Length. This avoids chunked transfer encoding, which simple
+    /// HTTP servers (e.g. Python's http.server) don't support.
+    /// </summary>
+    private static StringContent ToJsonContent(object body)
+    {
+        var json = JsonSerializer.Serialize(body, JsonOptions);
+        return new StringContent(json, new System.Net.Http.Headers.MediaTypeHeaderValue("application/json") { CharSet = "utf-8" });
+    }
+
     private async Task<HttpResponseMessage> PostAsync(string path, object body, TimeSpan timeout)
     {
         using var cts = new CancellationTokenSource(timeout);
-        return await _httpClient.PostAsJsonAsync(path, body, JsonOptions, cts.Token);
+        using var content = ToJsonContent(body);
+        try
+        {
+            return await _httpClient.PostAsync(path, content, cts.Token);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException(
+                $"Request to {_httpClient.BaseAddress}{path} failed: {ex.Message}", ex, ex.StatusCode);
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                $"Request to {_httpClient.BaseAddress}{path} timed out after {timeout.TotalSeconds}s.");
+        }
     }
 
     private async Task PostNotificationAsync(string path, object body)
     {
         using var cts = new CancellationTokenSource(_notificationTimeout);
-        var response = await _httpClient.PostAsJsonAsync(path, body, JsonOptions, cts.Token);
-        response.EnsureSuccessStatusCode();
+        using var content = ToJsonContent(body);
+        try
+        {
+            var response = await _httpClient.PostAsync(path, content, cts.Token);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new HttpRequestException(
+                $"Notification to {_httpClient.BaseAddress}{path} failed: {ex.Message}", ex, ex.StatusCode);
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                $"Notification to {_httpClient.BaseAddress}{path} timed out after {_notificationTimeout.TotalSeconds}s.");
+        }
     }
 
     #endregion

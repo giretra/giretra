@@ -116,6 +116,13 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
 
             return 0;
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+            for (var inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+                AnsiConsole.MarkupLine($"[red]  └─ {Markup.Escape(inner.Message)}[/]");
+            return 1;
+        }
         finally
         {
             foreach (var factory in factories)

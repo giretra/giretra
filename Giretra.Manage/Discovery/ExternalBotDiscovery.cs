@@ -50,7 +50,6 @@ public static class ExternalBotDiscovery
             return new Dictionary<string, IPlayerAgentFactory>(StringComparer.OrdinalIgnoreCase);
 
         var factories = new Dictionary<string, IPlayerAgentFactory>(StringComparer.OrdinalIgnoreCase);
-        var usedPorts = new Dictionary<int, string>();
 
         foreach (var botDir in Directory.GetDirectories(externalBotsDir))
         {
@@ -80,17 +79,7 @@ public static class ExternalBotDiscovery
                 continue;
             }
 
-            // Validate port uniqueness
-            var port = metadata.Launch.Port;
             var agentName = metadata.AgentName ?? metadata.Name ?? Path.GetFileName(botDir);
-
-            if (usedPorts.TryGetValue(port, out var existingBot))
-            {
-                throw new InvalidOperationException(
-                    $"Port conflict: external bots '{existingBot}' and '{agentName}' " +
-                    $"both use port {port}.");
-            }
-            usedPorts[port] = agentName;
 
             // Warn on name collision with built-in agents
             if (builtInNames?.Contains(agentName, StringComparer.OrdinalIgnoreCase) == true)

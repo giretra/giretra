@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Giretra.Core.Players.Agents.Remote;
 
 namespace Giretra.Core.Players.Factories;
@@ -19,6 +20,27 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     private readonly BotProcessConfig? _processConfig;
     private readonly IReadOnlySet<string>? _enabledNotifications;
     private Process? _process;
+
+    /// <summary>
+    /// Returns a short diagnostic string about the bot process status.
+    /// </summary>
+    public string ProcessStatus
+    {
+        get
+        {
+            if (_process is null) return "no process (remote-only)";
+            try
+            {
+                return _process.HasExited
+                    ? $"EXITED (code {_process.ExitCode}, PID {_process.Id})"
+                    : $"running (PID {_process.Id})";
+            }
+            catch (InvalidOperationException)
+            {
+                return "unknown (disposed)";
+            }
+        }
+    }
 
     public Guid Identifier { get; }
     public string AgentName { get; }
@@ -105,6 +127,12 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
                 ?? throw new InvalidOperationException(
                     $"Failed to start init command: {init.Command} {init.Arguments}");
 
+            // Read stdout and stderr concurrently to prevent pipe buffer deadlock.
+            // If only WaitForExitAsync is awaited while both streams are redirected,
+            // the child process blocks once the OS pipe buffer (~4KB) fills up.
+            var stdoutTask = initProcess.StandardOutput.ReadToEndAsync(cancellationToken);
+            var stderrTask = initProcess.StandardError.ReadToEndAsync(cancellationToken);
+
             using var initCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             initCts.CancelAfter(TimeSpan.FromSeconds(init.Timeout));
 
@@ -119,13 +147,16 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
                     $"Init command '{init.Command} {init.Arguments}' timed out after {init.Timeout}s.");
             }
 
+            var stdout = await stdoutTask;
+            var stderr = await stderrTask;
+
             if (initProcess.ExitCode != 0)
             {
-                var stderr = await initProcess.StandardError.ReadToEndAsync(cancellationToken);
                 throw new InvalidOperationException(
                     $"Init command '{init.Command} {init.Arguments}' failed with exit code {initProcess.ExitCode}. " +
                     $"stderr: {stderr}");
             }
+
         }
 
         var startInfo = new ProcessStartInfo
@@ -133,8 +164,12 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
             FileName = _processConfig.FileName,
             Arguments = _processConfig.Arguments,
             UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            // Do NOT redirect stdout/stderr for long-running bot processes.
+            // The streams would never be consumed, causing the OS pipe buffer
+            // (~4KB) to fill up, which blocks the child process on write and
+            // freezes its HTTP server ("response ended prematurely").
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
             CreateNoWindow = true
         };
 
@@ -152,6 +187,7 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         var healthUrl = _baseUrl.TrimEnd('/') + '/' + _processConfig.HealthEndpoint.TrimStart('/');
         using var healthClient = new HttpClient();
         var deadline = DateTime.UtcNow + _processConfig.StartupTimeout;
+        var pollCount = 0;
 
         while (DateTime.UtcNow < deadline)
         {
@@ -161,15 +197,19 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
                 throw new InvalidOperationException(
                     $"Bot process exited prematurely with code {_process.ExitCode}.");
 
+            pollCount++;
             try
             {
                 using var response = await healthClient.GetAsync(healthUrl, cancellationToken);
                 if (response.IsSuccessStatusCode)
+                {
+                    await VerifyPostEndpointAsync(healthClient, cancellationToken);
                     return;
+                }
+
             }
             catch (HttpRequestException)
             {
-                // Server not ready yet — retry
             }
 
             await Task.Delay(_processConfig.StartupPollInterval, cancellationToken);
@@ -190,6 +230,39 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     {
         _client.Dispose();
         KillProcess();
+    }
+
+    /// <summary>
+    /// Smoke test: creates and immediately destroys a session to verify
+    /// the bot handles POST requests correctly after health check passes.
+    /// </summary>
+    private async Task VerifyPostEndpointAsync(HttpClient healthClient, CancellationToken cancellationToken)
+    {
+        var sessionsUrl = _baseUrl.TrimEnd('/') + "/api/sessions";
+        try
+        {
+            var json = """{"position":"Bottom","matchId":"__smoke_test__"}""";
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await healthClient.PostAsync(sessionsUrl, content, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Clean up the smoke test session
+                try
+                {
+                    var sessionId = JsonDocument.Parse(body).RootElement.GetProperty("sessionId").GetString();
+                    if (sessionId is not null)
+                        await healthClient.DeleteAsync($"{_baseUrl.TrimEnd('/')}/api/sessions/{sessionId}", cancellationToken);
+                }
+                catch { /* best effort cleanup */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Bot process started and health check passed, but POST /api/sessions failed: {ex.Message}", ex);
+        }
     }
 
     private void KillProcess()

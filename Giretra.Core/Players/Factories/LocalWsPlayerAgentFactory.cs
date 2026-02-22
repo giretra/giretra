@@ -28,10 +28,11 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
         Pun = metadata.Pun ?? string.Empty;
         Identifier = metadata.Id ?? DeriveIdentifier(agentName);
 
-        var baseUrl = $"http://localhost:{metadata.Launch.Port}";
+        var port = metadata.Launch.Port ?? PortAllocator.AllocateFreePort();
+        var baseUrl = $"http://localhost:{port}";
         var envVars = new Dictionary<string, string>(
             metadata.Launch.EnvironmentVariables ?? []);
-        envVars.TryAdd("PORT", metadata.Launch.Port.ToString());
+        envVars.TryAdd("PORT", port.ToString());
 
         var processConfig = new BotProcessConfig
         {
@@ -54,8 +55,13 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
             enabledNotifications: enabledNotifications);
     }
 
-    public Task InitializeAsync(CancellationToken cancellationToken = default)
-        => _inner.InitializeAsync(cancellationToken);
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+        => await _inner.InitializeAsync(cancellationToken);
+
+    /// <summary>
+    /// Returns a short diagnostic string about the bot process status.
+    /// </summary>
+    public string ProcessStatus => _inner.ProcessStatus;
 
     public IPlayerAgent Create(PlayerPosition position)
         => _inner.Create(position);

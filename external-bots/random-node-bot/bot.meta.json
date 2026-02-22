@@ -10,7 +10,6 @@
   "launch": {
     "fileName": "node",
     "arguments": "server.js",
-    "port": 5060,
     "startupTimeout": 30,
     "healthEndpoint": "health"
   }

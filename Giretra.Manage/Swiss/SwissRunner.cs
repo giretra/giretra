@@ -1,9 +1,11 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Text;
 using Giretra.Manage.Elo;
 using Giretra.Core;
 using Giretra.Core.Cards;
 using Giretra.Core.Players;
+using Giretra.Core.Players.Factories;
 
 namespace Giretra.Manage.Swiss;
 
@@ -103,8 +105,23 @@ public sealed class SwissRunner
             ? () => Deck.CreateShuffled(deckRandom)
             : Deck.CreateShuffled;
 
-        var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
-        var matchState = await gameManager.PlayMatchAsync();
+        Core.State.MatchState matchState;
+        try
+        {
+            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
+            matchState = await gameManager.PlayMatchAsync();
+        }
+        catch (Exception ex)
+        {
+            // Log process status for remote bot factories
+            var diag = new StringBuilder();
+            diag.Append($"Round {round}: match between '{p1.Factory.DisplayName}' and '{p2.Factory.DisplayName}' failed: {ex.Message}");
+            AppendProcessDiag(diag, p1.Factory);
+            AppendProcessDiag(diag, p2.Factory);
+
+            Console.WriteLine($"[Swiss] {diag}");
+            throw new InvalidOperationException(diag.ToString(), ex);
+        }
 
         matchStopwatch.Stop();
 
@@ -147,5 +164,17 @@ public sealed class SwissRunner
             EloChange = eloChange,
             Duration = matchStopwatch.Elapsed
         };
+    }
+
+    private static void AppendProcessDiag(StringBuilder diag, IPlayerAgentFactory factory)
+    {
+        var status = factory switch
+        {
+            LocalWsPlayerAgentFactory local => local.ProcessStatus,
+            RemotePlayerAgentFactory remote => remote.ProcessStatus,
+            _ => null
+        };
+        if (status is not null)
+            diag.Append($"\n  [{factory.DisplayName}] process: {status}");
     }
 }

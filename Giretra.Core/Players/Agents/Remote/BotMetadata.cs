@@ -32,7 +32,7 @@ public sealed record BotLaunchConfig
 {
     public required string FileName { get; init; }
     public string Arguments { get; init; } = "";
-    public required int Port { get; init; }
+    public int? Port { get; init; }
     public int StartupTimeout { get; init; } = 30;
     public string HealthEndpoint { get; init; } = "health";
     public Dictionary<string, string>? EnvironmentVariables { get; init; }

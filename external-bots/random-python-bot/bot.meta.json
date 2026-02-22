@@ -1,0 +1,12 @@
+{
+  "name": "random-python-bot",
+  "displayName": "Random Python Bot",
+  "pun": "import random; random.choice(moves)",
+  "notifications": [],
+  "launch": {
+    "fileName": "python",
+    "arguments": "server.py",
+    "startupTimeout": 15,
+    "healthEndpoint": "health"
+  }
+}
