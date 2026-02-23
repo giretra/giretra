@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A Malagasy Belote card game you can play in your browser or terminal.
+  A Malagasy Belote card game you can play online or in a terminal.
 </p>
 
 ---
