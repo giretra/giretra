@@ -20,6 +20,10 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     private readonly BotProcessConfig? _processConfig;
     private readonly IReadOnlySet<string>? _enabledNotifications;
     private Process? _process;
+    private StringBuilder? _processStdout;
+    private StringBuilder? _processStderr;
+    private Task? _stdoutDrainTask;
+    private Task? _stderrDrainTask;
 
     /// <summary>
     /// Returns a short diagnostic string about the bot process status.
@@ -152,9 +156,25 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
 
             if (initProcess.ExitCode != 0)
             {
-                throw new InvalidOperationException(
-                    $"Init command '{init.Command} {init.Arguments}' failed with exit code {initProcess.ExitCode}. " +
-                    $"stderr: {stderr}");
+                var errorMessage = new StringBuilder();
+                errorMessage.Append(
+                    $"Init command '{init.Command} {init.Arguments}' failed with exit code {initProcess.ExitCode}.");
+
+                if (!string.IsNullOrWhiteSpace(stdout))
+                {
+                    errorMessage.AppendLine();
+                    errorMessage.AppendLine("--- stdout ---");
+                    errorMessage.Append(stdout.TrimEnd());
+                }
+
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    errorMessage.AppendLine();
+                    errorMessage.AppendLine("--- stderr ---");
+                    errorMessage.Append(stderr.TrimEnd());
+                }
+
+                throw new InvalidOperationException(errorMessage.ToString());
             }
 
         }
@@ -164,12 +184,11 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
             FileName = _processConfig.FileName,
             Arguments = _processConfig.Arguments,
             UseShellExecute = false,
-            // Do NOT redirect stdout/stderr for long-running bot processes.
-            // The streams would never be consumed, causing the OS pipe buffer
-            // (~4KB) to fill up, which blocks the child process on write and
-            // freezes its HTTP server ("response ended prematurely").
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
+            // Redirect stdout/stderr and consume them asynchronously via
+            // background drain tasks. This prevents the OS pipe buffer (~4KB)
+            // from filling up while still capturing output for error reporting.
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
             CreateNoWindow = true
         };
 
@@ -183,6 +202,13 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
             ?? throw new InvalidOperationException(
                 $"Failed to start bot process: {_processConfig.FileName}");
 
+        // Drain stdout/stderr in background to prevent pipe buffer deadlock.
+        // Keeps only the last 16KB so chatty processes don't consume memory.
+        _processStdout = new StringBuilder();
+        _processStderr = new StringBuilder();
+        _stdoutDrainTask = DrainStreamAsync(_process.StandardOutput, _processStdout);
+        _stderrDrainTask = DrainStreamAsync(_process.StandardError, _processStderr);
+
         // Poll health endpoint until healthy or timeout
         var healthUrl = _baseUrl.TrimEnd('/') + '/' + _processConfig.HealthEndpoint.TrimStart('/');
         using var healthClient = new HttpClient();
@@ -194,8 +220,11 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
             cancellationToken.ThrowIfCancellationRequested();
 
             if (_process.HasExited)
+            {
+                var exitOutput = await GetCapturedOutputAsync();
                 throw new InvalidOperationException(
-                    $"Bot process exited prematurely with code {_process.ExitCode}.");
+                    $"Bot process exited prematurely with code {_process.ExitCode}.{exitOutput}");
+            }
 
             pollCount++;
             try
@@ -216,9 +245,10 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         }
 
         // Timeout — kill the process and throw
+        var timeoutOutput = await GetCapturedOutputAsync();
         KillProcess();
         throw new TimeoutException(
-            $"Bot process did not become healthy within {_processConfig.StartupTimeout}.");
+            $"Bot process did not become healthy within {_processConfig.StartupTimeout}.{timeoutOutput}");
     }
 
     public IPlayerAgent Create(PlayerPosition position)
@@ -262,6 +292,71 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
         {
             throw new InvalidOperationException(
                 $"Bot process started and health check passed, but POST /api/sessions failed: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Waits for background drain tasks to finish, then formats the captured
+    /// stdout/stderr from the bot process for inclusion in error messages.
+    /// </summary>
+    private async Task<string> GetCapturedOutputAsync()
+    {
+        try
+        {
+            await Task.WhenAll(
+                _stdoutDrainTask ?? Task.CompletedTask,
+                _stderrDrainTask ?? Task.CompletedTask
+            ).WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException) { /* Use whatever was captured so far */ }
+
+        return FormatCapturedOutput();
+    }
+
+    private string FormatCapturedOutput()
+    {
+        var stdout = _processStdout?.ToString().TrimEnd() ?? "";
+        var stderr = _processStderr?.ToString().TrimEnd() ?? "";
+
+        if (string.IsNullOrEmpty(stdout) && string.IsNullOrEmpty(stderr))
+            return "";
+
+        var sb = new StringBuilder();
+        if (!string.IsNullOrEmpty(stdout))
+        {
+            sb.AppendLine();
+            sb.AppendLine("--- stdout ---");
+            sb.Append(stdout);
+        }
+        if (!string.IsNullOrEmpty(stderr))
+        {
+            sb.AppendLine();
+            sb.AppendLine("--- stderr ---");
+            sb.Append(stderr);
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Reads a stream into a StringBuilder in the background, keeping only the
+    /// last <paramref name="maxChars"/> characters to bound memory usage.
+    /// </summary>
+    private static async Task DrainStreamAsync(StreamReader reader, StringBuilder sb, int maxChars = 16384)
+    {
+        var buffer = new Memory<char>(new char[1024]);
+        try
+        {
+            int read;
+            while ((read = await reader.ReadAsync(buffer)) > 0)
+            {
+                sb.Append(buffer.Span[..read]);
+                if (sb.Length > maxChars)
+                    sb.Remove(0, sb.Length - maxChars);
+            }
+        }
+        catch
+        {
+            // Process killed or stream closed — expected during cleanup
         }
     }
 

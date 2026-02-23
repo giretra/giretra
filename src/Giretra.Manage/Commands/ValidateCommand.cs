@@ -119,7 +119,10 @@ public sealed class ValidateCommand : AsyncCommand<ValidateSettings>
         }
         catch (Exception ex)
         {
-            AnsiConsole.MarkupLine($"[red]Infrastructure error: {Markup.Escape(ex.Message)}[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine($"[bold red]Infrastructure error ({Markup.Escape(ex.GetType().Name)}):[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine(ex.Message);
             return 2;
         }
         finally
