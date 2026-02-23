@@ -1,2 +1,2 @@
 @echo off
-dotnet run --project "%~dp0src\Giretra.Manage" -- %*
+dotnet run --no-launch-profile --project "%~dp0src\Giretra.Manage" -- %*
