@@ -1,5 +1,9 @@
 # bot.py — Pure game logic. This is the only file you need to edit.
 # See bot_types.py for full type definitions.
+#
+# One Bot instance is created per game session.
+# You are always the Bottom player. Your teammate sits across (Top),
+# and your opponents are Left and Right.
 
 import random
 
@@ -10,28 +14,54 @@ from bot_types import (
     NegotiationActionChoice,
     ChooseCardContext,
     Card,
+    DealStartedContext,
+    CardPlayedContext,
+    TrickCompletedContext,
+    DealEndedContext,
+    MatchEndedContext,
 )
 
 
-def choose_cut(ctx: ChooseCutContext) -> CutResult:
-    position = random.randint(6, 26)
-    from_top = random.random() > 0.5
-    return {"position": position, "fromTop": from_top}
+class Bot:
+    def __init__(self, match_id: str) -> None:
+        self.match_id = match_id
 
+    def choose_cut(self, ctx: ChooseCutContext) -> CutResult:
+        """Called when it's your turn to cut the deck before a deal.
 
-def choose_negotiation_action(
-    ctx: ChooseNegotiationActionContext,
-) -> NegotiationActionChoice:
-    return random.choice(ctx["validActions"])
+        Return a position (6–26) and whether to cut from the top.
+        """
+        position = random.randint(6, 26)
+        from_top = random.random() > 0.5
+        return {"position": position, "fromTop": from_top}
 
+    def choose_negotiation_action(
+        self, ctx: ChooseNegotiationActionContext
+    ) -> NegotiationActionChoice:
+        """Called during the negotiation (bidding) phase.
 
-def choose_card(ctx: ChooseCardContext) -> Card:
-    return random.choice(ctx["validPlays"])
+        Pick one action from ``ctx["validActions"]``.
+        """
+        return random.choice(ctx["validActions"])
 
+    def choose_card(self, ctx: ChooseCardContext) -> Card:
+        """Called when it's your turn to play a card.
 
-# Optional notification hooks — uncomment and import the context types you need:
-# def on_deal_started(ctx: DealStartedContext) -> None: ...
-# def on_card_played(ctx: CardPlayedContext) -> None: ...
-# def on_trick_completed(ctx: TrickCompletedContext) -> None: ...
-# def on_deal_ended(ctx: DealEndedContext) -> None: ...
-# def on_match_ended(ctx: MatchEndedContext) -> None: ...
+        Pick one card from ``ctx["validPlays"]``.
+        """
+        return random.choice(ctx["validPlays"])
+
+    def on_deal_started(self, ctx: DealStartedContext) -> None:
+        """Called when a new deal begins."""
+
+    def on_card_played(self, ctx: CardPlayedContext) -> None:
+        """Called after any player (including you) plays a card."""
+
+    def on_trick_completed(self, ctx: TrickCompletedContext) -> None:
+        """Called when a trick is completed, with the winner."""
+
+    def on_deal_ended(self, ctx: DealEndedContext) -> None:
+        """Called when a deal ends, with scoring results."""
+
+    def on_match_ended(self, ctx: MatchEndedContext) -> None:
+        """Called when the match is over."""
