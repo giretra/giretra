@@ -27,8 +27,9 @@ public sealed class GameSession
 
     /// <summary>
     /// Mapping of client IDs to player positions (for human players only).
+    /// Mutable to support client remapping on rejoin.
     /// </summary>
-    public required IReadOnlyDictionary<string, PlayerPosition> ClientPositions { get; init; }
+    public required Dictionary<string, PlayerPosition> ClientPositions { get; init; }
 
     /// <summary>
     /// Metadata about each player (human vs bot, user IDs, agent types) for Elo computation.
@@ -91,6 +92,18 @@ public sealed class GameSession
     public PlayerPosition? GetPositionForClient(string clientId)
     {
         return ClientPositions.TryGetValue(clientId, out var position) ? position : null;
+    }
+
+    /// <summary>
+    /// Remaps a client ID in the positions dictionary (used on rejoin with new clientId).
+    /// </summary>
+    public bool RemapClient(string oldClientId, string newClientId)
+    {
+        if (!ClientPositions.Remove(oldClientId, out var position))
+            return false;
+
+        ClientPositions[newClientId] = position;
+        return true;
     }
 
     /// <summary>

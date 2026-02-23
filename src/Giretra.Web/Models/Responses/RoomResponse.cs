@@ -58,6 +58,11 @@ public sealed class RoomResponse
     public bool IsOwner { get; init; }
 
     /// <summary>
+    /// Whether the requesting user is a disconnected player who can rejoin this Playing room.
+    /// </summary>
+    public bool IsDisconnectedPlayer { get; init; }
+
+    /// <summary>
     /// Whether games in this room affect player ratings.
     /// </summary>
     public bool IsRanked { get; init; }
