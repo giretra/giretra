@@ -2,7 +2,8 @@
 // See BotTypes.cs for full type definitions.
 //
 // One Bot instance is created per game session.
-// Use Position and MatchId to access your session info.
+// You are always the Bottom player. Your teammate sits across (Top),
+// and your opponents are Left and Right.
 
 namespace RandomDotnetBot;
 
@@ -10,12 +11,10 @@ public class Bot
 {
     private readonly Random Rng = new();
 
-    public PlayerPosition Position { get; }
     public string MatchId { get; }
 
-    public Bot(PlayerPosition position, string matchId)
+    public Bot(string matchId)
     {
-        Position = position;
         MatchId = matchId;
     }
 

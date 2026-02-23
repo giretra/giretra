@@ -34,7 +34,7 @@ app.MapPost("/api/sessions", async (HttpRequest req) =>
 {
     var body = await req.ReadFromJsonAsync<SessionRequest>();
     var sessionId = Guid.NewGuid().ToString();
-    bots[sessionId] = new Bot(body!.Position, body.MatchId);
+    bots[sessionId] = new Bot(body!.MatchId);
     return Results.Created($"/api/sessions/{sessionId}", new { sessionId });
 });
 
