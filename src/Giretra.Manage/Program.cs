@@ -11,6 +11,9 @@ app.Configure(config =>
     config.AddCommand<SwissCommand>("swiss")
         .WithDescription("Run a Swiss tournament between multiple agents");
 
+    config.AddCommand<ValidateCommand>("validate")
+        .WithDescription("Validate that a bot agent plays by the rules and measure response times");
+
     config.AddCommand<SyncBotsCommand>("sync-bots")
         .WithDescription("Create or update bot entries in the database from discovered agent factories");
 });
