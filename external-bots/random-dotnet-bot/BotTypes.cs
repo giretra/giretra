@@ -7,10 +7,13 @@ namespace RandomDotnetBot;
 
 // ─── Cards ──────────────────────────────────────────────────────────
 
+public enum Rank { Seven, Eight, Nine, Ten, Jack, Queen, King, Ace }
+public enum Suit { Clubs, Diamonds, Hearts, Spades }
+
 public class Card
 {
-    public string Rank { get; set; } = "";
-    public string Suit { get; set; } = "";
+    public Rank Rank { get; set; }
+    public Suit Suit { get; set; }
 }
 
 // ─── Players ────────────────────────────────────────────────────────
