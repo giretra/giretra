@@ -56,6 +56,7 @@ export interface RoomResponse {
   createdAt: string;
   turnTimerSeconds: number;
   isOwner: boolean;
+  isDisconnectedPlayer?: boolean;
 }
 
 export interface InviteTokenResponse {
@@ -352,6 +353,12 @@ export class ApiService {
   startGame(roomId: string, clientId: string): Observable<StartGameResponse> {
     return this.http
       .post<StartGameResponse>(`${this.baseUrl}/api/rooms/${roomId}/start`, { clientId })
+      .pipe(catchError(this.handleError));
+  }
+
+  rejoinRoom(roomId: string): Observable<JoinRoomResponse> {
+    return this.http
+      .post<JoinRoomResponse>(`${this.baseUrl}/api/rooms/${roomId}/rejoin`, {})
       .pipe(catchError(this.handleError));
   }
 

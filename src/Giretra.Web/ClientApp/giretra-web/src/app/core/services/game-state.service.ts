@@ -454,8 +454,67 @@ export class GameStateService {
           );
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to refresh game state', e);
+
+      // If player state fetch failed (e.g. 404 — clientId not recognized after disconnect),
+      // attempt to rejoin the room and retry
+      if (!isWatcher && clientId) {
+        await this.attemptRejoin();
+      }
+    }
+  }
+
+  /**
+   * Attempt to rejoin the current room after a failed state refresh.
+   * This handles the case where the player's clientId is no longer valid
+   * (e.g., after a long disconnect where the grace period expired).
+   */
+  private async attemptRejoin(): Promise<void> {
+    const room = this._currentRoom();
+    const gameId = this._gameId();
+    if (!room || room.status !== 'Playing' || !gameId) return;
+
+    console.log('[GameState] Attempting rejoin for room', room.roomId);
+
+    try {
+      const response = await this.api.rejoinRoom(room.roomId).toPromise();
+      if (!response) return;
+
+      console.log('[GameState] Rejoin succeeded', response);
+
+      // Update session with new clientId + position
+      if (response.position) {
+        this.session.joinRoom(room.roomId, response.clientId, response.position);
+      }
+
+      // Update room data
+      this._currentRoom.set(response.room);
+      this._gameId.set(response.room.gameId);
+
+      // Re-join SignalR with new clientId
+      try {
+        await this.hub.joinRoom(room.roomId, response.clientId);
+      } catch (e) {
+        console.warn('[GameState] Failed to re-join SignalR after rejoin', e);
+      }
+
+      // Retry state refresh
+      const newGameId = response.room.gameId;
+      if (newGameId && response.clientId) {
+        const playerState = await this.api.getPlayerState(newGameId, response.clientId).toPromise();
+        if (playerState) {
+          this._playerState.set(playerState);
+          this._gameState.set(playerState.gameState);
+          this._turnTimeoutAt.set(
+            playerState.gameState.pendingActionTimeoutAt
+              ? new Date(playerState.gameState.pendingActionTimeoutAt)
+              : null
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('[GameState] Rejoin attempt failed', e);
     }
   }
 
@@ -714,7 +773,10 @@ export class GameStateService {
           await this.hub.joinRoom(roomId, clientId);
           console.log('[GameState] Re-joined room after reconnect');
         } catch (e) {
-          console.warn('[GameState] Failed to re-join room after reconnect', e);
+          console.warn('[GameState] Failed to re-join room after reconnect, attempting rejoin', e);
+          // If joining fails, the clientId might be stale — try rejoin
+          await this.attemptRejoin();
+          return; // attemptRejoin already refreshes state
         }
       }
 

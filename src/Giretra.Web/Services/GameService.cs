@@ -529,6 +529,73 @@ public sealed class GameService : IGameService
         return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
     }
 
+    public bool RejoinPlayer(string gameId, string oldClientId, string newClientId, TimeSpan turnTimeout)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return false;
+
+        var position = session.GetPositionForClient(oldClientId);
+        if (position == null)
+            return false;
+
+        // Remap in ClientPositions
+        if (!session.RemapClient(oldClientId, newClientId))
+            return false;
+
+        // Find and update the WebApiPlayerAgent (unwrap recording decorator)
+        var agent = session.PlayerAgents[position.Value];
+        var webAgent = UnwrapWebApiAgent(agent);
+        if (webAgent != null)
+        {
+            webAgent.UpdateClientId(newClientId);
+            _logger.LogInformation(
+                "Rejoined player at {Position} in game {GameId}: {OldClientId} → {NewClientId}",
+                position.Value, gameId, oldClientId, newClientId);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Could not find WebApiPlayerAgent for position {Position} in game {GameId}",
+                position.Value, gameId);
+        }
+
+        // If there's a pending action for this player, re-notify with new clientId
+        var pending = session.PendingAction;
+        if (pending != null && pending.Player == position.Value)
+        {
+            _ = _notifications.NotifyYourTurnAsync(
+                gameId, newClientId, position.Value, pending.ActionType, pending.TimeoutAt);
+        }
+
+        return true;
+    }
+
+    private static WebApiPlayerAgent? UnwrapWebApiAgent(Core.Players.IPlayerAgent agent)
+    {
+        // Agent chain: RecordingPlayerAgent → ResilientPlayerAgent? → WebApiPlayerAgent
+        while (agent is not WebApiPlayerAgent)
+        {
+            if (agent is RecordingPlayerAgent recording)
+            {
+                // Use reflection to access _inner field
+                var innerField = typeof(RecordingPlayerAgent).GetField("_inner",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                agent = (Core.Players.IPlayerAgent?)innerField?.GetValue(recording)!;
+            }
+            else
+            {
+                // Try reflection for any decorator with _inner field
+                var innerField = agent.GetType().GetField("_inner",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (innerField == null)
+                    return null;
+                agent = (Core.Players.IPlayerAgent?)innerField.GetValue(agent)!;
+            }
+        }
+        return agent as WebApiPlayerAgent;
+    }
+
     public async Task AbandonGameAsync(string gameId, PlayerPosition abandonerPosition)
     {
         var session = _gameRepository.GetById(gameId);

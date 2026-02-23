@@ -201,6 +201,23 @@ public class RoomsController : ControllerBase
     }
 
     /// <summary>
+    /// Allows a disconnected player to rejoin an active game by userId.
+    /// </summary>
+    [HttpPost("{roomId}/rejoin")]
+    public async Task<ActionResult<JoinRoomResponse>> RejoinRoom(string roomId)
+    {
+        var user = GetAuthenticatedUser();
+        var (response, error) = _roomService.RejoinRoom(roomId, user.EffectiveDisplayName, user.Id);
+        if (response == null)
+            return BadRequest(new { error = error ?? "Unable to rejoin room" });
+
+        if (response.Position.HasValue)
+            await _notifications.NotifyPlayerJoinedAsync(roomId, user.EffectiveDisplayName, response.Position.Value);
+
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Gets available AI player types.
     /// </summary>
     [HttpGet("/api/ai-types")]

@@ -437,6 +437,102 @@ public sealed class RoomService : IRoomService
         return (true, null, position, playerName);
     }
 
+    public (JoinRoomResponse? Response, string? Error) RejoinRoom(string roomId, string displayName, Guid userId)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null)
+            return (null, "Room not found");
+
+        if (room.Status != RoomStatus.Playing)
+            return (null, "Room is not in playing state");
+
+        if (room.GameSessionId == null)
+            return (null, "No active game session");
+
+        // Case (a): Player still seated (client in PlayerSlots with matching userId, possibly null ConnectionId)
+        var existingEntry = room.PlayerSlots
+            .FirstOrDefault(kvp => kvp.Value?.UserId == userId);
+
+        if (existingEntry.Value != null)
+        {
+            var existingClient = existingEntry.Value;
+            var position = existingEntry.Key;
+
+            if (existingClient.ConnectionId != null)
+                return (null, "Player is already connected");
+
+            // Player still has a client slot — reuse the existing clientId
+            _logger.LogInformation(
+                "Player {UserId} rejoining room {RoomId} at position {Position} (reusing clientId {ClientId})",
+                userId, roomId, position, existingClient.ClientId);
+
+            // Cancel any pending removal for this client
+            CancelPendingRemoval(roomId, existingClient.ClientId);
+
+            return (new JoinRoomResponse
+            {
+                ClientId = existingClient.ClientId,
+                Position = position,
+                Room = MapToResponse(room, userId)
+            }, null);
+        }
+
+        // Case (b): Player in DisconnectedPlayers (client was cleaned up but position preserved)
+        var disconnectedEntry = room.DisconnectedPlayers
+            .FirstOrDefault(kvp => kvp.Value == userId);
+
+        if (disconnectedEntry.Value == userId && room.DisconnectedPlayers.ContainsKey(disconnectedEntry.Key))
+        {
+            var position = disconnectedEntry.Key;
+            var newClientId = GenerateId("client");
+
+            var newClient = new ConnectedClient
+            {
+                UserId = userId,
+                ClientId = newClientId,
+                DisplayName = displayName,
+                IsPlayer = true,
+                Position = position
+            };
+
+            // Place in the stored position
+            room.PlayerSlots[position] = newClient;
+            room.DisconnectedPlayers.Remove(position);
+
+            // Remap in the game session
+            // We need the old clientId — we don't have it anymore in DisconnectedPlayers,
+            // so we need to search the game session for this position
+            var game = _gameService.GetGame(room.GameSessionId);
+            if (game != null)
+            {
+                var oldClientId = game.ClientPositions
+                    .FirstOrDefault(kvp => kvp.Value == position).Key;
+
+                if (oldClientId != null)
+                {
+                    _gameService.RejoinPlayer(
+                        room.GameSessionId, oldClientId, newClientId,
+                        TimeSpan.FromSeconds(room.TurnTimerSeconds));
+                }
+            }
+
+            _roomRepository.Update(room);
+
+            _logger.LogInformation(
+                "Player {UserId} rejoined room {RoomId} at position {Position} with new clientId {ClientId}",
+                userId, roomId, position, newClientId);
+
+            return (new JoinRoomResponse
+            {
+                ClientId = newClientId,
+                Position = position,
+                Room = MapToResponse(room, userId)
+            }, null);
+        }
+
+        return (null, "You are not a disconnected player in this room");
+    }
+
     public Room? GetRoomForClient(string clientId)
     {
         return _roomRepository.FindByClientId(clientId);
@@ -494,22 +590,22 @@ public sealed class RoomService : IRoomService
                 _pendingRemovals.TryRemove(key, out _);
                 cts.Dispose();
 
-                // Check if room has an active game — trigger abandonment
                 var room = _roomRepository.GetById(roomId);
-                if (room != null && room.Status == RoomStatus.Playing && room.GameSessionId != null)
+                if (room == null)
+                    return;
+
+                if (room.Status == RoomStatus.Playing && room.GameSessionId != null)
                 {
-                    // Find the disconnected player's position
-                    var position = room.GetPlayerPosition(clientId);
-                    if (position.HasValue)
-                    {
-                        _logger.LogInformation(
-                            "Player at {Position} disconnected during active game {GameId}, triggering abandonment",
-                            position.Value, room.GameSessionId);
-                        await _gameService.AbandonGameAsync(room.GameSessionId, position.Value);
-                    }
+                    // Game is active — do NOT abandon or remove the player.
+                    // Their WebApiPlayerAgent handles turns via timeout (auto-plays defaults).
+                    // The player can rejoin later via the rejoin endpoint.
+                    _logger.LogInformation(
+                        "Player {ClientId} disconnected during active game {GameId}, keeping seat for rejoin",
+                        clientId, room.GameSessionId);
+                    return;
                 }
 
-                // Client did not reconnect in time — actually remove them
+                // Room is Waiting — remove the player normally
                 var (removed, playerName, leftPosition) = LeaveRoom(roomId, clientId);
                 if (removed && playerName != null && leftPosition.HasValue)
                     await _notifications.NotifyPlayerLeftAsync(roomId, playerName, leftPosition.Value);
@@ -546,6 +642,22 @@ public sealed class RoomService : IRoomService
     {
         var isOwner = requestingUserId.HasValue && room.IsOwner(requestingUserId.Value);
 
+        // Check if the requesting user is a disconnected player in this Playing room
+        var isDisconnectedPlayer = false;
+        if (requestingUserId.HasValue && room.Status == RoomStatus.Playing)
+        {
+            // Check if seated but with null ConnectionId
+            isDisconnectedPlayer = room.PlayerSlots.Values
+                .Any(p => p?.UserId == requestingUserId.Value && p.ConnectionId == null);
+
+            // Also check DisconnectedPlayers dict
+            if (!isDisconnectedPlayer)
+            {
+                isDisconnectedPlayer = room.DisconnectedPlayers.Values
+                    .Any(uid => uid == requestingUserId.Value);
+            }
+        }
+
         return new RoomResponse
         {
             RoomId = room.RoomId,
@@ -574,7 +686,8 @@ public sealed class RoomService : IRoomService
             GameId = room.GameSessionId,
             CreatedAt = room.CreatedAt,
             TurnTimerSeconds = room.TurnTimerSeconds,
-            IsOwner = isOwner
+            IsOwner = isOwner,
+            IsDisconnectedPlayer = isDisconnectedPlayer
         };
     }
 }

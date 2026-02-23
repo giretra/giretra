@@ -46,6 +46,7 @@ import {
   Flame,
   Calendar,
   Star,
+  RotateCcw,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -82,6 +83,7 @@ const usedIcons = {
   Flame,
   Calendar,
   Star,
+  RotateCcw,
 };
 
 function initializeKeycloak(auth: AuthService) {

@@ -261,13 +261,9 @@ export class TableComponent implements OnInit, OnDestroy {
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
     if (gameInProgress) {
       e.preventDefault();
-      // Send leave notification via beacon (works during page unload)
-      const roomId = this.gameState.currentRoom()?.roomId;
-      const clientId = this.session.clientId();
-      if (roomId && clientId) {
-        const url = `${environment.apiBaseUrl}/api/rooms/${roomId}/leave`;
-        navigator.sendBeacon(url, new Blob([JSON.stringify({ clientId })], { type: 'application/json' }));
-      }
+      // SignalR disconnect handles the grace period — no beacon needed.
+      // sendBeacon can't include JWT auth headers, and the disconnect handler
+      // already keeps the player's seat for rejoin.
     }
   };
 

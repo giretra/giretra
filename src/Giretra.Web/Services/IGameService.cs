@@ -66,4 +66,10 @@ public interface IGameService
     /// Cancels the game loop, persists the abandoned match with Elo penalties, and notifies the room.
     /// </summary>
     Task AbandonGameAsync(string gameId, PlayerPosition abandonerPosition);
+
+    /// <summary>
+    /// Remaps a player's client ID in an active game session (used when a disconnected player rejoins).
+    /// Updates ClientPositions and the underlying WebApiPlayerAgent.
+    /// </summary>
+    bool RejoinPlayer(string gameId, string oldClientId, string newClientId, TimeSpan turnTimeout);
 }
