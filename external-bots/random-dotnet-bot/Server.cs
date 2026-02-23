@@ -17,11 +17,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.PropertyNameCaseInsensitive = true;
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.SerializerOptions.Converters.Add(new LenientBoolConverter());
 });
 
 var app = builder.Build();
-var sessions = new ConcurrentDictionary<string, Session>();
+var bots = new ConcurrentDictionary<string, Bot>();
 
 // ── Health ───────────────────────────────────────────────────────────
 
@@ -31,15 +32,15 @@ app.MapGet("/health", () => Results.Ok());
 
 app.MapPost("/api/sessions", async (HttpRequest req) =>
 {
-    var body = await req.ReadFromJsonAsync<Session>();
+    var body = await req.ReadFromJsonAsync<SessionRequest>();
     var sessionId = Guid.NewGuid().ToString();
-    sessions[sessionId] = body!;
+    bots[sessionId] = new Bot(body!.Position, body.MatchId);
     return Results.Created($"/api/sessions/{sessionId}", new { sessionId });
 });
 
 app.MapDelete("/api/sessions/{sessionId}", (string sessionId) =>
 {
-    sessions.TryRemove(sessionId, out _);
+    bots.TryRemove(sessionId, out _);
     return Results.NoContent();
 });
 
@@ -49,24 +50,21 @@ app.MapPost("/api/sessions/{sessionId}/choose-cut",
     async (string sessionId, HttpRequest req) =>
     {
         var ctx = await req.ReadFromJsonAsync<ChooseCutContext>();
-        ctx!.Session = sessions.GetValueOrDefault(sessionId);
-        return Results.Ok(Bot.ChooseCut(ctx));
+        return Results.Ok(bots[sessionId].ChooseCut(ctx!));
     });
 
 app.MapPost("/api/sessions/{sessionId}/choose-negotiation-action",
     async (string sessionId, HttpRequest req) =>
     {
         var ctx = await req.ReadFromJsonAsync<ChooseNegotiationActionContext>();
-        ctx!.Session = sessions.GetValueOrDefault(sessionId);
-        return Results.Ok(Bot.ChooseNegotiationAction(ctx));
+        return Results.Ok(bots[sessionId].ChooseNegotiationAction(ctx!));
     });
 
 app.MapPost("/api/sessions/{sessionId}/choose-card",
     async (string sessionId, HttpRequest req) =>
     {
         var ctx = await req.ReadFromJsonAsync<ChooseCardContext>();
-        ctx!.Session = sessions.GetValueOrDefault(sessionId);
-        return Results.Ok(Bot.ChooseCard(ctx));
+        return Results.Ok(bots[sessionId].ChooseCard(ctx!));
     });
 
 // ── Notifications ────────────────────────────────────────────────────
@@ -74,43 +72,38 @@ app.MapPost("/api/sessions/{sessionId}/choose-card",
 app.MapPost("/api/sessions/{sessionId}/notify/{eventName}",
     async (string sessionId, string eventName, HttpRequest req) =>
     {
-        var session = sessions.GetValueOrDefault(sessionId);
+        var bot = bots[sessionId];
 
         switch (eventName)
         {
             case "deal-started":
             {
                 var ctx = await req.ReadFromJsonAsync<DealStartedContext>();
-                ctx!.Session = session;
-                Bot.OnDealStarted(ctx);
+                bot.OnDealStarted(ctx!);
                 break;
             }
             case "card-played":
             {
                 var ctx = await req.ReadFromJsonAsync<CardPlayedContext>();
-                ctx!.Session = session;
-                Bot.OnCardPlayed(ctx);
+                bot.OnCardPlayed(ctx!);
                 break;
             }
             case "trick-completed":
             {
                 var ctx = await req.ReadFromJsonAsync<TrickCompletedContext>();
-                ctx!.Session = session;
-                Bot.OnTrickCompleted(ctx);
+                bot.OnTrickCompleted(ctx!);
                 break;
             }
             case "deal-ended":
             {
                 var ctx = await req.ReadFromJsonAsync<DealEndedContext>();
-                ctx!.Session = session;
-                Bot.OnDealEnded(ctx);
+                bot.OnDealEnded(ctx!);
                 break;
             }
             case "match-ended":
             {
                 var ctx = await req.ReadFromJsonAsync<MatchEndedContext>();
-                ctx!.Session = session;
-                Bot.OnMatchEnded(ctx);
+                bot.OnMatchEnded(ctx!);
                 break;
             }
         }

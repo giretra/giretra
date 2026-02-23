@@ -15,7 +15,8 @@ public class Card
 
 // ─── Players ────────────────────────────────────────────────────────
 
-// PlayerPosition values: "Bottom", "Left", "Top", "Right"
+public enum PlayerPosition { Bottom, Left, Top, Right }
+
 // Team values: "Team1", "Team2"
 
 public class PlayedCard
@@ -114,21 +115,20 @@ public class MatchState
     public List<DealResult> CompletedDeals { get; set; } = [];
 }
 
-// ─── Session ────────────────────────────────────────────────────────
+// ─── Session (internal — used by Server.cs for deserialization) ──────
 
-public class Session
+public class SessionRequest
 {
-    public string Position { get; set; } = "";
+    public PlayerPosition Position { get; set; }
     public string MatchId { get; set; } = "";
 }
 
-// ─── Bot Contexts (passed to your functions) ────────────────────────
+// ─── Bot Contexts (passed to your methods) ──────────────────────────
 
 public class ChooseCutContext
 {
     public int DeckSize { get; set; }
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
 
 public class CutResult
@@ -143,7 +143,6 @@ public class ChooseNegotiationActionContext
     public NegotiationState NegotiationState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
     public List<NegotiationActionChoice> ValidActions { get; set; } = [];
-    public Session? Session { get; set; }
 }
 
 public class ChooseCardContext
@@ -152,13 +151,11 @@ public class ChooseCardContext
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
     public List<Card> ValidPlays { get; set; } = [];
-    public Session? Session { get; set; }
 }
 
 public class DealStartedContext
 {
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
 
 public class CardPlayedContext
@@ -167,7 +164,6 @@ public class CardPlayedContext
     public Card Card { get; set; } = new();
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
 
 public class TrickCompletedContext
@@ -176,7 +172,6 @@ public class TrickCompletedContext
     public string Winner { get; set; } = "";
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
 
 public class DealEndedContext
@@ -184,11 +179,9 @@ public class DealEndedContext
     public DealResult Result { get; set; } = new();
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
 
 public class MatchEndedContext
 {
     public MatchState MatchState { get; set; } = new();
-    public Session? Session { get; set; }
 }
