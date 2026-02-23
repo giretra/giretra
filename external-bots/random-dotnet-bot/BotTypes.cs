@@ -16,29 +16,32 @@ public class Card
     public Suit Suit { get; set; }
 }
 
-// ─── Players ────────────────────────────────────────────────────────
+// ─── Players & Teams ────────────────────────────────────────────────
 
 public enum PlayerPosition { Bottom, Left, Top, Right }
-
-// Team values: "Team1", "Team2"
+public enum Team { Team1, Team2 }
 
 public class PlayedCard
 {
-    public string Player { get; set; } = "";
+    public PlayerPosition Player { get; set; }
     public Card Card { get; set; } = new();
 }
 
 // ─── Game Modes ─────────────────────────────────────────────────────
 
-// GameMode values: "ColourClubs", "ColourDiamonds", "ColourHearts",
-//                  "ColourSpades", "NoTrumps", "AllTrumps"
-// MultiplierState values: "None", "Doubled", "Redoubled"
+public enum GameMode
+{
+    ColourClubs, ColourDiamonds, ColourHearts, ColourSpades,
+    NoTrumps, AllTrumps
+}
+
+public enum Multiplier { Normal, Doubled, Redoubled }
 
 // ─── Trick ──────────────────────────────────────────────────────────
 
 public class TrickState
 {
-    public string Leader { get; set; } = "";
+    public PlayerPosition Leader { get; set; }
     public int TrickNumber { get; set; }
     public List<PlayedCard> PlayedCards { get; set; } = [];
     public bool IsComplete { get; set; }
@@ -48,7 +51,7 @@ public class TrickState
 
 public class HandState
 {
-    public string GameMode { get; set; } = "";
+    public GameMode GameMode { get; set; }
     public int Team1CardPoints { get; set; }
     public int Team2CardPoints { get; set; }
     public int Team1TricksWon { get; set; }
@@ -59,49 +62,51 @@ public class HandState
 
 // ─── Negotiation ────────────────────────────────────────────────────
 
+public enum NegotiationActionType { Announcement, Accept, Double, Redouble }
+
 public class NegotiationAction
 {
-    public string Type { get; set; } = "";
-    public string? Player { get; set; }
-    public string? Mode { get; set; }
-    public string? TargetMode { get; set; }
+    public NegotiationActionType Type { get; set; }
+    public PlayerPosition? Player { get; set; }
+    public GameMode? Mode { get; set; }
+    public GameMode? TargetMode { get; set; }
 }
 
 /// <summary>Valid action choice (no player field — the server knows who you are).</summary>
 public class NegotiationActionChoice
 {
-    public string Type { get; set; } = "";
-    public string? Mode { get; set; }
-    public string? TargetMode { get; set; }
+    public NegotiationActionType Type { get; set; }
+    public GameMode? Mode { get; set; }
+    public GameMode? TargetMode { get; set; }
 }
 
 public class NegotiationState
 {
-    public string Dealer { get; set; } = "";
-    public string CurrentPlayer { get; set; } = "";
-    public string? CurrentBid { get; set; }
-    public string? CurrentBidder { get; set; }
+    public PlayerPosition Dealer { get; set; }
+    public PlayerPosition CurrentPlayer { get; set; }
+    public GameMode? CurrentBid { get; set; }
+    public PlayerPosition? CurrentBidder { get; set; }
     public int ConsecutiveAccepts { get; set; }
     public bool HasDoubleOccurred { get; set; }
     public List<NegotiationAction> Actions { get; set; } = [];
-    public Dictionary<string, bool> DoubledModes { get; set; } = new();
-    public List<string> RedoubledModes { get; set; } = [];
-    public Dictionary<string, string> TeamColourAnnouncements { get; set; } = new();
+    public Dictionary<GameMode, bool> DoubledModes { get; set; } = new();
+    public List<GameMode> RedoubledModes { get; set; } = [];
+    public Dictionary<Team, GameMode> TeamColourAnnouncements { get; set; } = new();
 }
 
 // ─── Scoring ────────────────────────────────────────────────────────
 
 public class DealResult
 {
-    public string GameMode { get; set; } = "";
-    public string Multiplier { get; set; } = "";
-    public string AnnouncerTeam { get; set; } = "";
+    public GameMode GameMode { get; set; }
+    public Multiplier Multiplier { get; set; }
+    public Team AnnouncerTeam { get; set; }
     public int Team1CardPoints { get; set; }
     public int Team2CardPoints { get; set; }
     public int Team1MatchPoints { get; set; }
     public int Team2MatchPoints { get; set; }
     public bool WasSweep { get; set; }
-    public string? SweepingTeam { get; set; }
+    public Team? SweepingTeam { get; set; }
     public bool IsInstantWin { get; set; }
 }
 
@@ -112,9 +117,9 @@ public class MatchState
     public int TargetScore { get; set; }
     public int Team1MatchPoints { get; set; }
     public int Team2MatchPoints { get; set; }
-    public string CurrentDealer { get; set; } = "";
+    public PlayerPosition CurrentDealer { get; set; }
     public bool IsComplete { get; set; }
-    public string? Winner { get; set; }
+    public Team? Winner { get; set; }
     public List<DealResult> CompletedDeals { get; set; } = [];
 }
 
@@ -163,7 +168,7 @@ public class DealStartedContext
 
 public class CardPlayedContext
 {
-    public string Player { get; set; } = "";
+    public PlayerPosition Player { get; set; }
     public Card Card { get; set; } = new();
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
@@ -172,7 +177,7 @@ public class CardPlayedContext
 public class TrickCompletedContext
 {
     public TrickState CompletedTrick { get; set; } = new();
-    public string Winner { get; set; } = "";
+    public PlayerPosition Winner { get; set; }
     public HandState HandState { get; set; } = new();
     public MatchState MatchState { get; set; } = new();
 }
