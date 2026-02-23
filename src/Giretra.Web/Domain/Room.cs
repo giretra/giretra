@@ -70,6 +70,11 @@ public sealed class Room
     public string? GameSessionId { get; set; }
 
     /// <summary>
+    /// Whether games in this room affect player ratings.
+    /// </summary>
+    public bool IsRanked { get; init; } = true;
+
+    /// <summary>
     /// Turn timer duration in seconds (5–60).
     /// </summary>
     public int TurnTimerSeconds { get; init; } = 20;

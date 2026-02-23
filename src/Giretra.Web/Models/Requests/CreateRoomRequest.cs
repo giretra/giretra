@@ -32,4 +32,9 @@ public sealed class CreateRoomRequest
     /// When true, all non-AI human seats are set to InviteOnly on creation.
     /// </summary>
     public bool InviteOnly { get; init; }
+
+    /// <summary>
+    /// Whether the game affects player ratings. Defaults to true (ranked).
+    /// </summary>
+    public bool IsRanked { get; init; } = true;
 }

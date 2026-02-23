@@ -76,7 +76,8 @@ public sealed class GameService : IGameService
             GameId = gameId,
             RoomId = room.RoomId,
             ClientPositions = clientPositions,
-            PlayerComposition = playerComposition
+            PlayerComposition = playerComposition,
+            IsRanked = room.IsRanked
         };
 
         // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI)
@@ -146,8 +147,9 @@ public sealed class GameService : IGameService
                 session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
 
-                // Persist match to database
-                await PersistMatchAsync(session);
+                // Persist match to database (skip for unranked games)
+                if (session.IsRanked)
+                    await PersistMatchAsync(session);
 
                 // Reset room status to allow "Play Again"
                 var roomToReset = _roomRepository.GetById(room.RoomId);
@@ -576,16 +578,19 @@ public sealed class GameService : IGameService
 
         session.CompletedAt = DateTime.UtcNow;
 
-        // Persist the abandoned match
-        try
+        // Persist the abandoned match (skip for unranked games)
+        if (session.IsRanked)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var persistence = scope.ServiceProvider.GetRequiredService<IMatchPersistenceService>();
-            await persistence.PersistAbandonedMatchAsync(session, abandonerPosition);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to persist abandoned match for game {GameId}", gameId);
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var persistence = scope.ServiceProvider.GetRequiredService<IMatchPersistenceService>();
+                await persistence.PersistAbandonedMatchAsync(session, abandonerPosition);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist abandoned match for game {GameId}", gameId);
+            }
         }
 
         // Notify the room

@@ -56,4 +56,9 @@ public sealed class RoomResponse
     /// Whether the requesting user is the room owner.
     /// </summary>
     public bool IsOwner { get; init; }
+
+    /// <summary>
+    /// Whether games in this room affect player ratings.
+    /// </summary>
+    public bool IsRanked { get; init; }
 }
