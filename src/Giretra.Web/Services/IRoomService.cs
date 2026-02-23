@@ -83,4 +83,9 @@ public interface IRoomService
     /// Kicks a player from a seat. Owner-only, Waiting-only.
     /// </summary>
     (bool Success, string? Error, PlayerPosition? Position, string? PlayerName) KickPlayer(string roomId, Guid userId, PlayerPosition position);
+
+    /// <summary>
+    /// Allows a disconnected player to rejoin an active game by userId.
+    /// </summary>
+    (JoinRoomResponse? Response, string? Error) RejoinRoom(string roomId, string displayName, Guid userId);
 }

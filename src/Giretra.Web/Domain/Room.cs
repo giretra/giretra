@@ -60,6 +60,12 @@ public sealed class Room
     };
 
     /// <summary>
+    /// Tracks userId → position for players who disconnected during a Playing game
+    /// and whose client entry was cleaned up. Used for userId-based rejoin.
+    /// </summary>
+    public Dictionary<PlayerPosition, Guid> DisconnectedPlayers { get; } = [];
+
+    /// <summary>
     /// Watchers observing the room.
     /// </summary>
     public List<ConnectedClient> Watchers { get; } = [];

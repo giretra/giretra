@@ -34,6 +34,7 @@ export interface JoinRoomEvent {
             [room]="room"
             (joinClicked)="joinRoom.emit({ room: room, position: $event })"
             (watchClicked)="watchRoom.emit(room)"
+            (rejoinClicked)="rejoinRoom.emit(room)"
           />
         }
       </div>
@@ -111,4 +112,5 @@ export class RoomListComponent {
 
   readonly joinRoom = output<JoinRoomEvent>();
   readonly watchRoom = output<RoomResponse>();
+  readonly rejoinRoom = output<RoomResponse>();
 }

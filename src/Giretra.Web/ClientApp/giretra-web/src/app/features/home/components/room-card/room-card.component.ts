@@ -3,7 +3,7 @@ import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service'
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
-import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
+import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide-angular';
 
 @Component({
   selector: 'app-room-card',
@@ -212,7 +212,18 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
         <div class="card-bottom">
           @if (!selecting()) {
             @if (room().status !== 'Completed') {
-              @if (isSeated()) {
+              @if (canRejoin()) {
+                <button
+                  hlmBtn
+                  variant="default"
+                  size="sm"
+                  class="action-btn rejoin-btn"
+                  (click)="rejoinClicked.emit()"
+                >
+                  <i-lucide [img]="RotateCcwIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  Rejoin
+                </button>
+              } @else if (isSeated()) {
                 <span class="seated-label">Seated</span>
               } @else {
                 <button
@@ -431,6 +442,16 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock } from 'lucide-angular';
       color: hsl(var(--primary));
     }
 
+    .rejoin-btn {
+      background: hsl(var(--gold) / 0.15);
+      color: hsl(var(--gold));
+      border: 1px solid hsl(var(--gold) / 0.3);
+    }
+
+    .rejoin-btn:hover {
+      background: hsl(var(--gold) / 0.25);
+    }
+
     /* ─── Seat Picker ─── */
     .seat-picker {
       width: 100%;
@@ -625,6 +646,7 @@ export class RoomCardComponent {
   readonly BotIcon = Bot;
   readonly XIcon = X;
   readonly LockIcon = Lock;
+  readonly RotateCcwIcon = RotateCcw;
 
   readonly PositionBottom = PlayerPosition.Bottom;
   readonly PositionLeft = PlayerPosition.Left;
@@ -635,6 +657,7 @@ export class RoomCardComponent {
 
   readonly joinClicked = output<PlayerPosition>();
   readonly watchClicked = output<void>();
+  readonly rejoinClicked = output<void>();
 
   readonly selecting = signal(false);
 
@@ -648,6 +671,11 @@ export class RoomCardComponent {
     if (this.isSeated()) return false;
     // Only count public, unoccupied seats as joinable
     return r.playerSlots.some(s => !s.isOccupied && s.accessMode === SeatAccessMode.Public);
+  });
+
+  readonly canRejoin = computed(() => {
+    const r = this.room();
+    return r.status === 'Playing' && !!r.isDisconnectedPlayer;
   });
 
   readonly statusClass = computed(() => {

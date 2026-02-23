@@ -16,10 +16,19 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
 {
     private readonly GameSession _session;
     private readonly INotificationService _notifications;
-    private readonly string _clientId;
+    private string _clientId;
     private readonly TimeSpan _timeout;
 
     public PlayerPosition Position { get; }
+    public string ClientId => _clientId;
+
+    /// <summary>
+    /// Updates the client ID when a player rejoins with a new session.
+    /// </summary>
+    public void UpdateClientId(string newClientId)
+    {
+        _clientId = newClientId;
+    }
 
     public WebApiPlayerAgent(
         PlayerPosition position,

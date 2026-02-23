@@ -99,6 +99,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
               [loading]="loading()"
               (joinRoom)="onJoinRoom($event)"
               (watchRoom)="onWatchRoom($event)"
+              (rejoinRoom)="onRejoinRoom($event)"
             />
           </section>
         </div>
@@ -244,6 +245,25 @@ export class HomeComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to join room', err);
+        this.joining.set(false);
+      },
+    });
+  }
+
+  onRejoinRoom(room: RoomResponse): void {
+    if (this.joining()) return;
+    this.joining.set(true);
+    this.api.rejoinRoom(room.roomId).subscribe({
+      next: async (response) => {
+        if (response.position) {
+          this.session.joinRoom(room.roomId, response.clientId, response.position);
+        }
+        await this.gameState.enterRoom(response.room, response.room.isOwner);
+        this.router.navigate(['/table', room.roomId]);
+        this.joining.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to rejoin room', err);
         this.joining.set(false);
       },
     });
