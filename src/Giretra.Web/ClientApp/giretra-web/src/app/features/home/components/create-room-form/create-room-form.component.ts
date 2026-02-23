@@ -83,7 +83,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeTop"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -115,7 +115,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeLeft"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -145,7 +145,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeRight"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -432,7 +432,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
     .ai-type-select {
       width: 100%;
-      max-width: 6rem;
+      max-width: 9rem;
       padding: 0.125rem 0.25rem;
       font-size: 0.625rem;
       background: hsl(var(--input));
