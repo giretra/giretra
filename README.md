@@ -8,9 +8,9 @@
 
 ---
 
-A trick-taking card game where trash talk is a core mechanic, so addictive that university students in Madagascar have repeated entire years because they couldn't stop playing. Derived from Belote, played 4 players in 2 teams, the rules have survived generations almost entirely through word of mouth. No rulebook, no wiki, just your uncle questioning your entire upbringing for playing the wrong card.
+A trick-taking card game where trash talk is a core mechanic, the kind of game that makes you trade a med diploma for one more round. Derived from Belote, played 4 players in 2 teams, the rules have survived generations almost entirely through word of mouth. No rulebook, no wiki, just your uncle questioning your entire upbringing for playing the wrong card.
 
-This project is an attempt to preserve those rules properly, make the game playable online, and give developers a platform to build their own bots. The engine handles all the game logic (negotiation, trump rules, scoring, the works), and there are two ways to play: a web app with real-time multiplayer, or a terminal UI for quick local games against AI.
+This project is an attempt to preserve those rules properly, make the game playable online, and give developers a platform to build their own bots. The engine handles all the game logic (negotiation, trump rules, scoring, ...), and there are two ways to play: a web app with real-time multiplayer, or a terminal UI for quick local games against AI.
 
 **[Read the full rules](RULES.md)**
 
