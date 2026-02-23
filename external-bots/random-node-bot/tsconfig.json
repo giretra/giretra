@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "declaration": false
   },
-  "include": ["bot.ts", "types.ts"]
+  "include": ["bot.ts", "types.ts", "server.ts"]
 }

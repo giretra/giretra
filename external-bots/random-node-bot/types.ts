@@ -131,19 +131,18 @@ export interface MatchState {
   completedDeals: DealResult[];
 }
 
-// ─── Session ────────────────────────────────────────────────────────
+// ─── Session (server-internal — not passed to bot methods) ──────────
 
-export interface Session {
+export interface SessionRequest {
   position: PlayerPosition;
   matchId: string;
 }
 
-// ─── Bot Contexts (passed to your functions) ────────────────────────
+// ─── Bot Contexts (passed to your methods) ──────────────────────────
 
 export interface ChooseCutContext {
   deckSize: number;
   matchState: MatchState;
-  session: Session;
 }
 
 export interface CutResult {
@@ -156,7 +155,6 @@ export interface ChooseNegotiationActionContext {
   negotiationState: NegotiationState;
   matchState: MatchState;
   validActions: NegotiationActionChoice[];
-  session: Session;
 }
 
 export interface ChooseCardContext {
@@ -164,12 +162,10 @@ export interface ChooseCardContext {
   handState: HandState;
   matchState: MatchState;
   validPlays: Card[];
-  session: Session;
 }
 
 export interface DealStartedContext {
   matchState: MatchState;
-  session: Session;
 }
 
 export interface CardPlayedContext {
@@ -177,7 +173,6 @@ export interface CardPlayedContext {
   card: Card;
   handState: HandState;
   matchState: MatchState;
-  session: Session;
 }
 
 export interface TrickCompletedContext {
@@ -185,17 +180,14 @@ export interface TrickCompletedContext {
   winner: PlayerPosition;
   handState: HandState;
   matchState: MatchState;
-  session: Session;
 }
 
 export interface DealEndedContext {
   result: DealResult;
   handState: HandState;
   matchState: MatchState;
-  session: Session;
 }
 
 export interface MatchEndedContext {
   matchState: MatchState;
-  session: Session;
 }
