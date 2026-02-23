@@ -1,0 +1,16 @@
+{
+  "name": "random-go-bot",
+  "displayName": "Random Go Bot",
+  "pun": "validMoves[rand.IntN(len(validMoves))]",
+  "notifications": [],
+  "init": {
+    "command": "go",
+    "arguments": "build -o random-go-bot ."
+  },
+  "launch": {
+    "fileName": "./random-go-bot",
+    "arguments": "",
+    "startupTimeout": 5,
+    "healthEndpoint": "health"
+  }
+}
