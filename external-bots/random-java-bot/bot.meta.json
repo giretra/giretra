@@ -1,0 +1,16 @@
+{
+  "name": "random-java-bot",
+  "displayName": "Random Java Bot",
+  "pun": "ThreadLocalRandom.current().nextInt(validPlays.size())",
+  "notifications": [],
+  "init": {
+    "command": "mvn",
+    "arguments": "package -q"
+  },
+  "launch": {
+    "fileName": "java",
+    "arguments": "-jar target/random-java-bot.jar",
+    "startupTimeout": 15,
+    "healthEndpoint": "health"
+  }
+}
