@@ -5,7 +5,7 @@ import { ClientSessionService } from '../../../../core/services/client-session.s
 import { AuthService } from '../../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
-import { LucideAngularModule, Bot, UserPlus, Lock } from 'lucide-angular';
+import { LucideAngularModule, Bot, UserPlus, Lock, Trophy } from 'lucide-angular';
 
 const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
@@ -83,7 +83,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeTop"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -115,7 +115,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeLeft"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -145,7 +145,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                     name="aiTypeRight"
                   >
                     @for (type of aiTypes(); track type.name) {
-                      <option [value]="type.name">{{ type.displayName }}</option>
+                      <option [value]="type.name">{{ type.displayName }} ({{ type.rating }})</option>
                     }
                   </select>
                 }
@@ -172,6 +172,24 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
               </button>
             }
           </div>
+        </div>
+
+        <!-- Rated -->
+        <div class="field">
+          <button
+            type="button"
+            class="invite-only-toggle"
+            [class.active]="isRanked"
+            [disabled]="submitting()"
+            (click)="isRanked = !isRanked"
+          >
+            <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+            <span>Rated</span>
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </button>
+          <p class="hint">Game results affect player ratings</p>
         </div>
 
         <!-- Invite only -->
@@ -432,7 +450,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
     .ai-type-select {
       width: 100%;
-      max-width: 6rem;
+      max-width: 9rem;
       padding: 0.125rem 0.25rem;
       font-size: 0.625rem;
       background: hsl(var(--input));
@@ -633,6 +651,7 @@ export class CreateRoomFormComponent implements OnInit {
   readonly BotIcon = Bot;
   readonly UserPlusIcon = UserPlus;
   readonly LockIcon = Lock;
+  readonly TrophyIcon = Trophy;
 
   readonly displayName = () => this.auth.user()?.displayName ?? '';
 
@@ -640,6 +659,7 @@ export class CreateRoomFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   roomName = '';
+  isRanked = true;
   inviteOnly = false;
   selectedTimer = 20;
   readonly timerPresets = [
@@ -701,7 +721,7 @@ export class CreateRoomFormComponent implements OnInit {
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.createRoom(name, this.getAiSeats(), this.selectedTimer, this.inviteOnly).subscribe({
+    this.api.createRoom(name, this.getAiSeats(), this.selectedTimer, this.inviteOnly, this.isRanked).subscribe({
       next: (response) => {
         this.session.joinRoom(
           response.room.roomId,

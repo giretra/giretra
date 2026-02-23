@@ -1,4 +1,4 @@
-# types.py — Type definitions for the Giretra bot API.
+# bot_types.py — Type definitions for the Giretra bot API.
 
 from typing import TypedDict, Literal, Optional, List, Dict, Union
 
@@ -154,21 +154,20 @@ class MatchState(TypedDict):
     completedDeals: List[DealResult]
 
 
-# ─── Session ────────────────────────────────────────────────────────
+# ─── Session (server-internal — not passed to bot methods) ──────────
 
 
-class Session(TypedDict):
+class SessionRequest(TypedDict):
     position: PlayerPosition
     matchId: str
 
 
-# ─── Bot Contexts (passed to your functions) ────────────────────────
+# ─── Bot Contexts (passed to your methods) ──────────────────────────
 
 
 class ChooseCutContext(TypedDict):
     deckSize: int
     matchState: MatchState
-    session: Session
 
 
 class CutResult(TypedDict):
@@ -181,7 +180,6 @@ class ChooseNegotiationActionContext(TypedDict):
     negotiationState: NegotiationState
     matchState: MatchState
     validActions: List[NegotiationActionChoice]
-    session: Session
 
 
 class ChooseCardContext(TypedDict):
@@ -189,12 +187,10 @@ class ChooseCardContext(TypedDict):
     handState: HandState
     matchState: MatchState
     validPlays: List[Card]
-    session: Session
 
 
 class DealStartedContext(TypedDict):
     matchState: MatchState
-    session: Session
 
 
 class CardPlayedContext(TypedDict):
@@ -202,7 +198,6 @@ class CardPlayedContext(TypedDict):
     card: Card
     handState: HandState
     matchState: MatchState
-    session: Session
 
 
 class TrickCompletedContext(TypedDict):
@@ -210,16 +205,13 @@ class TrickCompletedContext(TypedDict):
     winner: PlayerPosition
     handState: HandState
     matchState: MatchState
-    session: Session
 
 
 class DealEndedContext(TypedDict):
     result: DealResult
     handState: HandState
     matchState: MatchState
-    session: Session
 
 
 class MatchEndedContext(TypedDict):
     matchState: MatchState
-    session: Session

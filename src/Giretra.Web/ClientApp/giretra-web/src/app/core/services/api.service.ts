@@ -57,6 +57,7 @@ export interface RoomResponse {
   turnTimerSeconds: number;
   isOwner: boolean;
   isDisconnectedPlayer?: boolean;
+  isRanked: boolean;
 }
 
 export interface InviteTokenResponse {
@@ -307,9 +308,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number, inviteOnly = false): Observable<CreateRoomResponse> {
+  createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number, inviteOnly = false, isRanked = true): Observable<CreateRoomResponse> {
     return this.http
-      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, aiSeats, turnTimerSeconds, inviteOnly })
+      .post<CreateRoomResponse>(`${this.baseUrl}/api/rooms`, { name, aiSeats, turnTimerSeconds, inviteOnly, isRanked })
       .pipe(catchError(this.handleError));
   }
 

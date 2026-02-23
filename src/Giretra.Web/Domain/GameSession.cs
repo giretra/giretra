@@ -57,6 +57,11 @@ public sealed class GameSession
     public CancellationTokenSource CancellationTokenSource { get; } = new();
 
     /// <summary>
+    /// Whether this game affects player ratings.
+    /// </summary>
+    public bool IsRanked { get; init; } = true;
+
+    /// <summary>
     /// Records all player actions for persistence.
     /// </summary>
     public ActionRecorder? ActionRecorder { get; set; }

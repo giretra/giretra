@@ -10,6 +10,8 @@ public sealed record BotMetadata
     public string? DisplayName { get; init; }
     public string? AgentName { get; init; }
     public string? Pun { get; init; }
+    public string? Author { get; init; }
+    public string? AuthorGithub { get; init; }
     public string[]? Notifications { get; init; }
     public BotInitConfig? Init { get; init; }
     public required BotLaunchConfig Launch { get; init; }

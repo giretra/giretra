@@ -3,9 +3,13 @@
   "displayName": "Random Python Bot",
   "pun": "import random; random.choice(moves)",
   "notifications": [],
+  "init": {
+    "command": "bash",
+    "arguments": "-c \"python3 -m venv .venv && .venv/bin/pip install -r requirements.txt\""
+  },
   "launch": {
-    "fileName": "python",
-    "arguments": "server.py",
+    "fileName": "bash",
+    "arguments": "-c \"exec .venv/bin/python server.py\"",
     "startupTimeout": 15,
     "healthEndpoint": "health"
   }

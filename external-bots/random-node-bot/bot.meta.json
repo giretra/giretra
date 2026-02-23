@@ -9,7 +9,7 @@
   },
   "launch": {
     "fileName": "node",
-    "arguments": "server.js",
+    "arguments": "dist/server.js",
     "startupTimeout": 30,
     "healthEndpoint": "health"
   }

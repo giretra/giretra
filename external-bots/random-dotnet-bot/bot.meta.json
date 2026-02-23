@@ -1,0 +1,16 @@
+{
+  "name": "random-dotnet-bot",
+  "displayName": "Random .NET Bot",
+  "pun": "Random.Shared.Next(validMoves.Count)",
+  "notifications": [],
+  "init": {
+    "command": "dotnet",
+    "arguments": "build -c Release"
+  },
+  "launch": {
+    "fileName": "dotnet",
+    "arguments": "run --no-build -c Release",
+    "startupTimeout": 15,
+    "healthEndpoint": "health"
+  }
+}
