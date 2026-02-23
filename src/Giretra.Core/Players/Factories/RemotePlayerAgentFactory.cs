@@ -109,9 +109,12 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
                 CreateNoWindow = true
             };
 
-            // On Windows, commands like "npm" are .cmd scripts that require
-            // the shell to resolve. Route through cmd /c so they are found.
-            if (OperatingSystem.IsWindows())
+            // On Windows, commands like "npm" and "mvn" are .cmd/.bat scripts
+            // that require cmd /c to resolve.  Real executables (bash, python,
+            // java, etc.) must NOT be wrapped because the extra cmd layer breaks
+            // handle inheritance — nested cmd → bash → python -m venv fails
+            // with [WinError 6] "Invalid handle".
+            if (OperatingSystem.IsWindows() && !CanFindExecutableOnPath(init.Command))
             {
                 initStartInfo.FileName = "cmd";
                 initStartInfo.Arguments = string.IsNullOrEmpty(init.Arguments)
@@ -379,6 +382,30 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
             _process.Dispose();
             _process = null;
         }
+    }
+
+    /// <summary>
+    /// Checks whether <paramref name="command"/> resolves to a real executable
+    /// (.exe or .com) on the system PATH.  Commands that are .cmd/.bat scripts
+    /// (e.g. npm, mvn) will NOT be found and should be routed through cmd /c.
+    /// </summary>
+    private static bool CanFindExecutableOnPath(string command)
+    {
+        // If the command already has an executable extension, trust it.
+        var ext = Path.GetExtension(command);
+        if (ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".com", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
+        foreach (var dir in pathDirs)
+        {
+            if (File.Exists(Path.Combine(dir, command + ".exe")) ||
+                File.Exists(Path.Combine(dir, command + ".com")))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
