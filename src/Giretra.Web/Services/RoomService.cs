@@ -691,7 +691,7 @@ public sealed class RoomService : IRoomService
             CreatedAt = room.CreatedAt,
             TurnTimerSeconds = room.TurnTimerSeconds,
             IsOwner = isOwner,
-            IsRanked = room.IsRanked
+            IsRanked = room.IsRanked,
             IsDisconnectedPlayer = isDisconnectedPlayer
         };
     }
