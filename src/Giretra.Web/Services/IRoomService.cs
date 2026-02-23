@@ -23,7 +23,8 @@ public interface IRoomService
     /// <summary>
     /// Creates a new room.
     /// </summary>
-    JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName, Guid userId);
+    /// <returns>A tuple containing the response (or null on failure) and an error message.</returns>
+    (JoinRoomResponse? Response, string? Error) CreateRoom(CreateRoomRequest request, string displayName, Guid userId);
 
     /// <summary>
     /// Deletes a room.

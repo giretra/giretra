@@ -41,4 +41,9 @@ public interface IRoomRepository
     /// Finds a room containing a client with the given SignalR connection ID.
     /// </summary>
     (Room Room, ConnectedClient Client)? FindByConnectionId(string connectionId);
+
+    /// <summary>
+    /// Counts active rooms owned by a specific user.
+    /// </summary>
+    int CountByOwner(Guid userId);
 }

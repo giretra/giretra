@@ -54,4 +54,7 @@ public sealed class InMemoryRoomRepository : IRoomRepository
 
         return null;
     }
+
+    public int CountByOwner(Guid userId)
+        => _rooms.Values.Count(r => r.OwnerUserId == userId);
 }

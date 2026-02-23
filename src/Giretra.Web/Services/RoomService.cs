@@ -48,8 +48,11 @@ public sealed class RoomService : IRoomService
         return room != null ? MapToResponse(room, requestingUserId) : null;
     }
 
-    public JoinRoomResponse CreateRoom(CreateRoomRequest request, string displayName, Guid userId)
+    public (JoinRoomResponse? Response, string? Error) CreateRoom(CreateRoomRequest request, string displayName, Guid userId)
     {
+        if (_roomRepository.CountByOwner(userId) >= 2)
+            return (null, "You can have at most 2 active tables");
+
         var roomId = GenerateId("room");
         var clientId = GenerateId("client");
 
@@ -105,12 +108,12 @@ public sealed class RoomService : IRoomService
 
         _roomRepository.Add(room);
 
-        return new JoinRoomResponse
+        return (new JoinRoomResponse
         {
             ClientId = clientId,
             Position = PlayerPosition.Bottom,
             Room = MapToResponse(room, userId)
-        };
+        }, null);
     }
 
     public bool DeleteRoom(string roomId, Guid userId)

@@ -46,7 +46,7 @@ public sealed class RoomToGameFlowTests
     public void CompleteFlow_CreateRoom_JoinPlayers_StartGame()
     {
         // Step 1: Create room
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Full Game Room",
             CreatorName = "Player1",
@@ -91,7 +91,7 @@ public sealed class RoomToGameFlowTests
     public void CompleteFlow_CreateRoomWithAi_StartGame_ImmediatePlay()
     {
         // Step 1: Create room with AI
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "AI Game Room",
             CreatorName = "HumanPlayer",
@@ -122,7 +122,7 @@ public sealed class RoomToGameFlowTests
     public async Task CompleteFlow_GameState_AvailableAfterStart()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -153,7 +153,7 @@ public sealed class RoomToGameFlowTests
     public async Task CompleteFlow_WatcherCanViewGame()
     {
         // Step 1: Create and start game
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Spectated Game",
             CreatorName = "Player",
@@ -190,7 +190,7 @@ public sealed class RoomToGameFlowTests
     public void FlowValidation_CannotJoinAfterGameStarts()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -216,7 +216,7 @@ public sealed class RoomToGameFlowTests
     public void FlowValidation_CannotDeleteRoomAfterGameStarts()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -241,7 +241,7 @@ public sealed class RoomToGameFlowTests
     public void FlowValidation_NonCreatorCannotStartGame()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -262,7 +262,7 @@ public sealed class RoomToGameFlowTests
     public void FlowValidation_GameCreatesCorrectAgentTypes()
     {
         // Arrange - Room with 2 humans and 2 AI
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Mixed Room",
             CreatorName = "Human1",
@@ -299,7 +299,7 @@ public sealed class RoomToGameFlowTests
     public async Task ActionFlow_CutSubmission_CompletesSuccessfully()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -330,7 +330,7 @@ public sealed class RoomToGameFlowTests
     public async Task ActionFlow_NegotiationSubmission_CompletesSuccessfully()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -368,7 +368,7 @@ public sealed class RoomToGameFlowTests
     public async Task ActionFlow_CardPlaySubmission_CompletesSuccessfully()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -402,7 +402,7 @@ public sealed class RoomToGameFlowTests
     public async Task ActionFlow_PlayerState_ShowsCorrectTurnInfo()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -440,7 +440,7 @@ public sealed class RoomToGameFlowTests
     public async Task StateConsistency_GameAndRoomLinked()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",
@@ -471,7 +471,7 @@ public sealed class RoomToGameFlowTests
     public void StateConsistency_ClientIdMappingCorrect()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player1",
@@ -505,7 +505,7 @@ public sealed class RoomToGameFlowTests
             AiSeats = null
         }, "Player1", Guid.NewGuid());
 
-        var room2Response = _roomService.CreateRoom(new CreateRoomRequest
+        var (room2Response, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Room 2",
             CreatorName = "Player2",
@@ -513,7 +513,7 @@ public sealed class RoomToGameFlowTests
         }, "Player2", Guid.NewGuid());
 
         // Act
-        var foundRoom = _roomService.GetRoomForClient(room2Response.ClientId);
+        var foundRoom = _roomService.GetRoomForClient(room2Response!.ClientId);
 
         // Assert
         Assert.NotNull(foundRoom);
@@ -528,7 +528,7 @@ public sealed class RoomToGameFlowTests
     public void Notifications_GameStarted_IsSent()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player",

@@ -44,7 +44,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request, "Player1", CreatorUserId);
+        var (response, _) = _roomService.CreateRoom(request, "Player1", CreatorUserId);
 
         // Assert
         Assert.NotNull(response);
@@ -73,7 +73,7 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request, "Human", CreatorUserId);
+        var (response, _) = _roomService.CreateRoom(request, "Human", CreatorUserId);
 
         // Assert
         Assert.NotNull(response.Room);
@@ -103,12 +103,47 @@ public sealed class RoomServiceTests
         };
 
         // Act
-        var response = _roomService.CreateRoom(request, "Creator", CreatorUserId);
+        var (response, _) = _roomService.CreateRoom(request, "Creator", CreatorUserId);
 
         // Assert
         var storedRoom = _roomRepository.GetById(response.Room.RoomId);
         Assert.NotNull(storedRoom);
         Assert.Equal("Stored Room", storedRoom.Name);
+    }
+
+    [Fact]
+    public void CreateRoom_WhenUserAlreadyHasTwoRooms_ReturnsError()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P", AiSeats = null }, "P", userId);
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P", AiSeats = null }, "P", userId);
+
+        // Act
+        var (response, error) = _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 3", CreatorName = "P", AiSeats = null }, "P", userId);
+
+        // Assert
+        Assert.Null(response);
+        Assert.Equal("You can have at most 2 active tables", error);
+    }
+
+    [Fact]
+    public void CreateRoom_AfterDeletingRoom_AllowsCreation()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var (room1, _) = _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 1", CreatorName = "P", AiSeats = null }, "P", userId);
+        _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 2", CreatorName = "P", AiSeats = null }, "P", userId);
+
+        // Delete one room
+        _roomService.DeleteRoom(room1!.Room.RoomId, userId);
+
+        // Act
+        var (response, error) = _roomService.CreateRoom(new CreateRoomRequest { Name = "Room 3", CreatorName = "P", AiSeats = null }, "P", userId);
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.Null(error);
     }
 
     #endregion
@@ -119,7 +154,7 @@ public sealed class RoomServiceTests
     public void GetRoom_WithValidId_ReturnsRoom()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Player1",
@@ -172,7 +207,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_WithValidRequest_AddsPlayerToRoom()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -200,7 +235,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_WithPreferredPosition_AssignsToPreferredPosition()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -226,7 +261,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_WhenPositionOccupied_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -251,7 +286,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_WhenRoomFull_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -291,7 +326,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_AssignsFirstAvailablePosition()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -312,7 +347,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_SameUserTwice_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -335,7 +370,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_CreatorTriesToJoinOwnRoom_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -354,7 +389,7 @@ public sealed class RoomServiceTests
     public void JoinRoom_UserCanRejoinAfterLeaving()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -383,7 +418,7 @@ public sealed class RoomServiceTests
     public void WatchRoom_WithValidRequest_AddsWatcher()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -423,7 +458,7 @@ public sealed class RoomServiceTests
     public void LeaveRoom_AsPlayer_RemovesPlayer()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -446,7 +481,7 @@ public sealed class RoomServiceTests
     public void LeaveRoom_AsWatcher_RemovesWatcher()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -469,7 +504,7 @@ public sealed class RoomServiceTests
     public void LeaveRoom_WithInvalidClientId_ReturnsFalse()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -491,7 +526,7 @@ public sealed class RoomServiceTests
     public void DeleteRoom_AsCreator_DeletesRoom()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -510,7 +545,7 @@ public sealed class RoomServiceTests
     public void DeleteRoom_NotAsCreator_ReturnsFalse()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -544,7 +579,7 @@ public sealed class RoomServiceTests
     public void StartGame_WithValidSetup_StartsGame()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -580,7 +615,7 @@ public sealed class RoomServiceTests
     public void StartGame_NotAsCreator_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -600,7 +635,7 @@ public sealed class RoomServiceTests
     public void StartGame_WithNoPlayers_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -632,7 +667,7 @@ public sealed class RoomServiceTests
     public void StartGame_UpdatesRoomStatus()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -667,7 +702,7 @@ public sealed class RoomServiceTests
     public void StartGame_WhenAlreadyPlaying_ReturnsError()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -704,7 +739,7 @@ public sealed class RoomServiceTests
     public void StartGame_NotifiesClients()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -741,7 +776,7 @@ public sealed class RoomServiceTests
     public void GetRoomForClient_WithValidPlayer_ReturnsRoom()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -760,7 +795,7 @@ public sealed class RoomServiceTests
     public void GetRoomForClient_WithWatcher_ReturnsRoom()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",
@@ -802,7 +837,7 @@ public sealed class RoomServiceTests
     public void UpdateClientConnection_UpdatesConnectionId()
     {
         // Arrange
-        var createResponse = _roomService.CreateRoom(new CreateRoomRequest
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
         {
             Name = "Test Room",
             CreatorName = "Creator",

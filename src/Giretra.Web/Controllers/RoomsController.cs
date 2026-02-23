@@ -60,7 +60,9 @@ public class RoomsController : ControllerBase
     public ActionResult<JoinRoomResponse> CreateRoom([FromBody] CreateRoomRequest request)
     {
         var user = GetAuthenticatedUser();
-        var response = _roomService.CreateRoom(request, user.EffectiveDisplayName, user.Id);
+        var (response, error) = _roomService.CreateRoom(request, user.EffectiveDisplayName, user.Id);
+        if (response == null)
+            return BadRequest(new { error = error ?? "Unable to create room" });
         return CreatedAtAction(nameof(GetRoom), new { roomId = response.Room.RoomId }, response);
     }
 
