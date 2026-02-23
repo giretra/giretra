@@ -368,3 +368,4 @@ docker/.env
 .env
 
 CLAUDE.md
+/external-bots/random-java-bot/target
