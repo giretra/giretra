@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using Giretra.Manage.Discovery;
+using Giretra.Core.Players.Discovery;
 using Giretra.Manage.Output;
 using Giretra.Manage.Validation;
 using Giretra.Core.Players.Factories;
@@ -68,7 +68,7 @@ public sealed class ValidateCommand : AsyncCommand<ValidateSettings>
             Verbose = settings.Verbose
         };
 
-        var available = FactoryDiscovery.DiscoverAll();
+        var available = FactoryDiscovery.DiscoverAll(msg => AnsiConsole.MarkupLine($"[yellow]{msg}[/]"));
         var agentFactory = FactoryDiscovery.Resolve([settings.Agent], available)[0];
 
         var opponentFactory = settings.Opponent is not null

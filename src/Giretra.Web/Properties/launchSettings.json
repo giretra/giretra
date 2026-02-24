@@ -10,6 +10,17 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Giretra_Db_User": "giretra_app"
       }
+    },
+    "offline": {
+      "commandName": "Project",
+      "commandLineArgs": "--offline",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5067",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Giretra_Db_User": "giretra_app"
+      }
     }
   }
 }

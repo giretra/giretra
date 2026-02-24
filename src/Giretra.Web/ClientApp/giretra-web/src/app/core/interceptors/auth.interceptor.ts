@@ -17,8 +17,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return from(auth.getToken()).pipe(
     switchMap((token) => {
+      const scheme = auth.offlineMode() ? 'Offline' : 'Bearer';
       const authReq = req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
+        setHeaders: { Authorization: `${scheme} ${token}` },
       });
       return next(authReq);
     }),

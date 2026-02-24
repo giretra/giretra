@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Giretra.Manage.Benchmarking;
 using Giretra.Manage.Data;
-using Giretra.Manage.Discovery;
+using Giretra.Core.Players.Discovery;
 using Giretra.Manage.Output;
 using Giretra.Core.Players;
 using Giretra.Core.Players.Factories;
@@ -80,7 +80,7 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
 
         if (settings.Team1 is not null || settings.Team2 is not null)
         {
-            var available = FactoryDiscovery.DiscoverAll();
+            var available = FactoryDiscovery.DiscoverAll(msg => AnsiConsole.MarkupLine($"[yellow]{msg}[/]"));
             var names = new[] { settings.Team1 ?? "DeterministicPlayer", settings.Team2 ?? "CalculatingPlayer" };
             var resolved = FactoryDiscovery.Resolve(names, available);
             team1Factory = resolved[0];
