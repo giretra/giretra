@@ -89,8 +89,8 @@
   "negotiation.announce": "Annoncer",
   "negotiation.respond": "Répondre",
   "negotiation.accept": "Accepter",
-  "negotiation.double": "Coinche",
-  "negotiation.redouble": "Surcoinche",
+  "negotiation.double": "Contré",
+  "negotiation.redouble": "Surcontré",
 
   "bidDialog.title": "À vous d'enchérir",
   "bidDialog.noBidYouOpen": "Pas d'annonce — à vous d'ouvrir",
