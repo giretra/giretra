@@ -21,4 +21,13 @@ public class LeaderboardController : ControllerBase
         var result = await _leaderboardService.GetLeaderboardAsync();
         return Ok(result);
     }
+
+    [HttpGet("players/{playerId:guid}")]
+    public async Task<ActionResult<PlayerProfileResponse>> GetPlayerProfile(Guid playerId)
+    {
+        var profile = await _leaderboardService.GetPlayerProfileAsync(playerId);
+        if (profile == null)
+            return NotFound();
+        return Ok(profile);
+    }
 }

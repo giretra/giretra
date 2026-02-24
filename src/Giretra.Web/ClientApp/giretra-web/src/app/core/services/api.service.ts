@@ -247,6 +247,7 @@ export interface PendingCountResponse {
 }
 
 export interface LeaderboardPlayerEntry {
+  playerId: string;
   rank: number;
   displayName: string;
   avatarUrl: string | null;
@@ -256,6 +257,7 @@ export interface LeaderboardPlayerEntry {
 }
 
 export interface LeaderboardBotEntry {
+  playerId: string;
   rank: number;
   displayName: string;
   rating: number;
@@ -604,6 +606,12 @@ export class ApiService {
   getLeaderboard(): Observable<LeaderboardResponse> {
     return this.http
       .get<LeaderboardResponse>(`${this.baseUrl}/api/leaderboard`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getLeaderboardProfile(playerId: string): Observable<PlayerProfileResponse> {
+    return this.http
+      .get<PlayerProfileResponse>(`${this.baseUrl}/api/leaderboard/players/${playerId}`)
       .pipe(catchError(this.handleError));
   }
 
