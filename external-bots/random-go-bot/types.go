@@ -132,7 +132,7 @@ type NegotiationState struct {
 	ConsecutiveAccepts      int                  `json:"consecutiveAccepts"`
 	HasDoubleOccurred       bool                 `json:"hasDoubleOccurred"`
 	Actions                 []NegotiationAction  `json:"actions"`
-	DoubledModes            map[GameMode]bool    `json:"doubledModes"`
+	DoubledModes            map[GameMode]int     `json:"doubledModes"`
 	RedoubledModes          []GameMode           `json:"redoubledModes"`
 	TeamColourAnnouncements map[Team]GameMode    `json:"teamColourAnnouncements"`
 }
