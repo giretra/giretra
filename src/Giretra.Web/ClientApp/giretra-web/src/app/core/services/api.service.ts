@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { TranslocoService } from '@jsverse/transloco';
@@ -320,6 +320,13 @@ export class ApiService {
     return this.http
       .get<RoomResponse>(`${this.baseUrl}/api/rooms/${roomId}`)
       .pipe(catchError(this.handleError));
+  }
+
+  /** Returns room or null if not found. Does not show error toast. */
+  tryGetRoom(roomId: string): Observable<RoomResponse | null> {
+    return this.http
+      .get<RoomResponse>(`${this.baseUrl}/api/rooms/${roomId}`)
+      .pipe(catchError(() => of(null)));
   }
 
   createRoom(name: string | null, aiSeats: AiSeat[] = [], turnTimerSeconds?: number, inviteOnly = false, isRanked = true): Observable<CreateRoomResponse> {

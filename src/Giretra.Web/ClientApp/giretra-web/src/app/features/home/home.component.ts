@@ -317,20 +317,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     const roomId = this.session.roomId();
     if (!roomId) return;
 
-    // Validate the session is still live
-    this.api.getRoom(roomId).subscribe({
-      next: (room) => {
-        if (room.status === 'Playing') {
-          this.activeGameRoomId.set(roomId);
-        } else {
-          // Room is no longer active — clear stale session
-          this.session.leaveRoom();
-        }
-      },
-      error: () => {
-        // Room not found — clear stale session
+    // Validate the session is still live (silent — room may have been cleaned up)
+    this.api.tryGetRoom(roomId).subscribe((room) => {
+      if (room?.status === 'Playing') {
+        this.activeGameRoomId.set(roomId);
+      } else {
         this.session.leaveRoom();
-      },
+      }
     });
   }
 
