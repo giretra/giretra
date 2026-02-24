@@ -1,10 +1,11 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { GameMode } from '../../../../../api/generated/signalr-types.generated';
 import { ValidAction } from '../../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
 import { CardSuit } from '../../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Check, ChevronsUp } from 'lucide-angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 interface BidButton {
   label: string;
@@ -17,12 +18,12 @@ interface BidButton {
 @Component({
   selector: 'app-bid-button-row',
   standalone: true,
-  imports: [HlmButton, SuitIconComponent, LucideAngularModule],
+  imports: [HlmButton, SuitIconComponent, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="bid-buttons">
+    <div class="bid-buttons" *transloco="let t">
       <!-- Announce section -->
       @if (suitButtons().length > 0) {
-        <div class="section-label">Announce</div>
+        <div class="section-label">{{ t('negotiation.announce') }}</div>
         <div class="button-row suits">
           @for (btn of suitButtons(); track btn.label) {
             <button
@@ -43,7 +44,7 @@ interface BidButton {
 
       <!-- Respond section -->
       @if (actionButtons().length > 0) {
-        <div class="section-label">Respond</div>
+        <div class="section-label">{{ t('negotiation.respond') }}</div>
         <div class="button-row actions">
           @for (btn of actionButtons(); track btn.label) {
             <button
@@ -56,10 +57,10 @@ interface BidButton {
             >
               @if (btn.actionType === 'Accept') {
                 <i-lucide [img]="CheckIcon" [size]="16" [strokeWidth]="2.5"></i-lucide>
-                Accept
+                {{ t('negotiation.accept') }}
               } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                <span>Double <span class="multiplier">×2</span></span>
+                <span>{{ t('negotiation.double') }} <span class="multiplier">\u00d72</span></span>
                 @if (getModeHintSuit(btn.mode); as suit) {
                   <app-suit-icon [suit]="suit" size="1rem" />
                 } @else if (getModeHintText(btn.mode); as text) {
@@ -67,7 +68,7 @@ interface BidButton {
                 }
               } @else if (btn.actionType === 'Redouble') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                <span>Redouble <span class="multiplier">×4</span></span>
+                <span>{{ t('negotiation.redouble') }} <span class="multiplier">\u00d74</span></span>
                 @if (getModeHintSuit(btn.mode); as suit) {
                   <app-suit-icon [suit]="suit" size="1rem" />
                 } @else if (getModeHintText(btn.mode); as text) {
@@ -176,6 +177,7 @@ interface BidButton {
 export class BidButtonRowComponent {
   readonly CheckIcon = Check;
   readonly ChevronsUpIcon = ChevronsUp;
+  private readonly transloco = inject(TranslocoService);
 
   readonly validActions = input<ValidAction[]>([]);
 
@@ -215,7 +217,7 @@ export class BidButtonRowComponent {
     );
     if (noTrumps) {
       buttons.push({
-        label: 'No Trumps',
+        label: this.transloco.translate('game.modes.noTrumps'),
         actionType: 'Announce',
         mode: GameMode.NoTrumps,
         variant: 'secondary',
@@ -228,7 +230,7 @@ export class BidButtonRowComponent {
     );
     if (allTrumps) {
       buttons.push({
-        label: 'All Trumps',
+        label: this.transloco.translate('game.modes.allTrumps'),
         actionType: 'Announce',
         mode: GameMode.AllTrumps,
         variant: 'secondary',
@@ -282,8 +284,8 @@ export class BidButtonRowComponent {
   }
 
   getModeHintText(mode: GameMode | null): string | null {
-    if (mode === GameMode.NoTrumps) return 'No Trumps';
-    if (mode === GameMode.AllTrumps) return 'All Trumps';
+    if (mode === GameMode.NoTrumps) return this.transloco.translate('game.modes.noTrumps');
+    if (mode === GameMode.AllTrumps) return this.transloco.translate('game.modes.allTrumps');
     return null;
   }
 

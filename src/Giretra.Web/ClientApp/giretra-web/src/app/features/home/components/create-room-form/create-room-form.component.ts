@@ -6,17 +6,19 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Bot, UserPlus, Lock, Trophy } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
 @Component({
   selector: 'app-create-room-form',
   standalone: true,
-  imports: [FormsModule, HlmButton, LucideAngularModule],
+  imports: [FormsModule, HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     <div class="create-form">
       <div class="form-header">
-        <h3>New Table</h3>
+        <h3>{{ t('createForm.title') }}</h3>
         <button
           type="button"
           class="close-btn"
@@ -27,14 +29,14 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
       <form (ngSubmit)="onSubmit()">
         <!-- Room name -->
         <div class="field">
-          <label for="roomName" class="field-label">Table Name</label>
+          <label for="roomName" class="field-label">{{ t('createForm.tableName') }}</label>
           <input
             id="roomName"
             type="text"
             class="text-input"
             [(ngModel)]="roomName"
             name="roomName"
-            [placeholder]="displayName() + '\u2019s table'"
+            [placeholder]="t('createForm.tableNamePlaceholder', { name: displayName() })"
             maxlength="50"
             [disabled]="submitting()"
           />
@@ -43,14 +45,14 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
         <!-- AI seats -->
         <div class="field">
           <div class="ai-header">
-            <label class="field-label">AI Players</label>
+            <label class="field-label">{{ t('createForm.aiPlayers') }}</label>
             <button
               type="button"
               class="toggle-all-btn"
               [disabled]="submitting()"
               (click)="toggleAllAi()"
             >
-              {{ allAi ? 'Clear all' : 'Fill all' }}
+              {{ allAi ? t('createForm.clearAll') : t('createForm.fillAll') }}
             </button>
           </div>
 
@@ -71,8 +73,8 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                   } @else {
                     <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                   }
-                  <span class="seat-label">Top</span>
-                  <span class="seat-role">Partner</span>
+                  <span class="seat-label">{{ t('positions.top') }}</span>
+                  <span class="seat-role">{{ t('createForm.partner') }}</span>
                 </button>
                 @if (aiSeats.Top && aiTypes().length > 1) {
                   <select
@@ -104,7 +106,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                   } @else {
                     <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                   }
-                  <span class="seat-label">Left</span>
+                  <span class="seat-label">{{ t('positions.left') }}</span>
                 </button>
                 @if (aiSeats.Left && aiTypes().length > 1) {
                   <select
@@ -120,7 +122,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                   </select>
                 }
               </div>
-              <div class="you-marker">You</div>
+              <div class="you-marker">{{ t('common.you') }}</div>
               <div class="seat-group">
                 <button
                   type="button"
@@ -134,7 +136,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
                   } @else {
                     <i-lucide [img]="UserPlusIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                   }
-                  <span class="seat-label">Right</span>
+                  <span class="seat-label">{{ t('positions.right') }}</span>
                 </button>
                 @if (aiSeats.Right && aiTypes().length > 1) {
                   <select
@@ -153,12 +155,12 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             </div>
           </div>
 
-          <p class="hint">Click seats to toggle AI opponents</p>
+          <p class="hint">{{ t('createForm.aiHint') }}</p>
         </div>
 
         <!-- Turn timer -->
         <div class="field">
-          <label class="field-label">Turn Timer</label>
+          <label class="field-label">{{ t('createForm.turnTimer') }}</label>
           <div class="timer-presets">
             @for (preset of timerPresets; track preset.value) {
               <button
@@ -184,12 +186,12 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             (click)="isRanked = !isRanked"
           >
             <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-            <span>Rated</span>
+            <span>{{ t('createForm.rated') }}</span>
             <span class="toggle-track">
               <span class="toggle-thumb"></span>
             </span>
           </button>
-          <p class="hint">Game results affect player ratings</p>
+          <p class="hint">{{ t('createForm.ratedHint') }}</p>
         </div>
 
         <!-- Invite only -->
@@ -202,12 +204,12 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             (click)="inviteOnly = !inviteOnly"
           >
             <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-            <span>Invite Only</span>
+            <span>{{ t('createForm.inviteOnly') }}</span>
             <span class="toggle-track">
               <span class="toggle-thumb"></span>
             </span>
           </button>
-          <p class="hint">Only players with an invite link can join</p>
+          <p class="hint">{{ t('createForm.inviteOnlyHint') }}</p>
         </div>
 
         @if (error()) {
@@ -221,7 +223,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             (click)="cancelled.emit()"
             [disabled]="submitting()"
           >
-            Cancel
+            {{ t('common.cancel') }}
           </button>
           <button
             type="submit"
@@ -231,14 +233,15 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             [disabled]="submitting()"
           >
             @if (submitting()) {
-              Creating...
+              {{ t('createForm.creating') }}
             } @else {
-              Create Table
+              {{ t('createForm.createTable') }}
             }
           </button>
         </div>
       </form>
     </div>
+    </ng-container>
   `,
   styles: [`
     .create-form {

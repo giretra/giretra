@@ -4,13 +4,14 @@ import { GamePhase } from '../../../../core/services/game-state.service';
 import { Card } from '../../../../core/models';
 import { CardFanComponent } from '../../../../shared/components/card-fan/card-fan.component';
 import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-hand-area',
   standalone: true,
-  imports: [CardFanComponent, WatcherBarComponent],
+  imports: [CardFanComponent, WatcherBarComponent, TranslocoDirective],
   template: `
-    <div class="hand-area">
+    <div class="hand-area" *transloco="let t">
       @if (isWatcher()) {
         <!-- Watcher view -->
         <app-watcher-bar
@@ -19,11 +20,11 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
       } @else {
         @switch (phase()) {
           @case ('waiting') {
-            <p class="waiting-message">Game hasn't started yet</p>
+            <p class="waiting-message">{{ t('handArea.notStarted') }}</p>
           }
           @case ('cut') {
             @if (!isMyTurn()) {
-              <p class="waiting-message">Waiting for cut...</p>
+              <p class="waiting-message">{{ t('handArea.waitingForCut') }}</p>
             }
           }
           @case ('negotiation') {
@@ -45,14 +46,14 @@ import { WatcherBarComponent } from '../watcher-bar/watcher-bar.component';
             />
           }
           @case ('dealSummary') {
-            <p class="waiting-message">Deal complete</p>
+            <p class="waiting-message">{{ t('handArea.dealComplete') }}</p>
           }
         }
 
         <!-- Turn indicator -->
         @if (!isMyTurn() && phase() === 'playing' && activePlayer()) {
           <div class="turn-pill">
-            <span class="turn-text">{{ activePlayer() }} is thinking</span>
+            <span class="turn-text">{{ t('handArea.playerThinking', { player: activePlayer() }) }}</span>
             <span class="thinking-dots">
               <span class="dot"></span>
               <span class="dot"></span>

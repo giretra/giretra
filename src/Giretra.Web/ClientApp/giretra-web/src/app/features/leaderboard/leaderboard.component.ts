@@ -7,14 +7,15 @@ import {
   PlayerProfileResponse,
 } from '../../core/services/api.service';
 import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
 @Component({
   selector: 'app-leaderboard',
   standalone: true,
-  imports: [LucideAngularModule, PlayerProfilePopupComponent],
+  imports: [LucideAngularModule, TranslocoDirective, PlayerProfilePopupComponent],
   template: `
-    <div class="lb-shell">
+    <div class="lb-shell" *transloco="let t">
       <header class="lb-header">
         <div class="header-inner">
           <button class="back-btn" (click)="goBack()" title="Back to home">
@@ -22,14 +23,14 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
           </button>
           <h1 class="header-title">
             <i-lucide [img]="TrophyIcon" [size]="18"></i-lucide>
-            Leaderboard
+            {{ t('leaderboard.title') }}
           </h1>
           <div class="header-badges">
             @if (playerCount() > 0) {
-              <span class="count-badge">{{ playerCount() }} players</span>
+              <span class="count-badge">{{ t('leaderboard.playerCount', { count: playerCount() }) }}</span>
             }
             @if (botCount() > 0) {
-              <span class="count-badge count-badge-bot">{{ botCount() }} bots</span>
+              <span class="count-badge count-badge-bot">{{ t('leaderboard.botCount', { count: botCount() }) }}</span>
             }
           </div>
         </div>
@@ -38,7 +39,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
       <main class="lb-main">
         <div class="lb-inner">
           @if (loading()) {
-            <div class="loading-state">Loading...</div>
+            <div class="loading-state">{{ t('common.loading') }}</div>
           } @else {
             <div class="columns">
 
@@ -46,19 +47,19 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
               <section class="column">
                 <div class="column-head">
                   <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
-                  <span class="column-label">Players</span>
+                  <span class="column-label">{{ t('leaderboard.players') }}</span>
                   <span class="column-count">{{ playerCount() }}</span>
                 </div>
 
                 @if (players().length === 0) {
-                  <div class="empty-col">No players with 5+ rated games yet.</div>
+                  <div class="empty-col">{{ t('leaderboard.noPlayers') }}</div>
                 } @else {
                   <div class="row row-header">
-                    <div class="col-rank">#</div>
-                    <div class="col-name">Player</div>
-                    <div class="col-rating">Rating</div>
-                    <div class="col-games">Games</div>
-                    <div class="col-winrate">Win %</div>
+                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                    <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
+                    <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
+                    <div class="col-games">{{ t('leaderboard.columns.games') }}</div>
+                    <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
                   </div>
 
                   @for (p of players(); track p.rank) {
@@ -94,19 +95,19 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
               <section class="column column-bots">
                 <div class="column-head column-head-bot">
                   <i-lucide [img]="BotIcon" [size]="14"></i-lucide>
-                  <span class="column-label">Bots</span>
+                  <span class="column-label">{{ t('leaderboard.bots') }}</span>
                   <span class="column-count">{{ botCount() }}</span>
                 </div>
 
                 @if (bots().length === 0) {
-                  <div class="empty-col">No bots ranked yet.</div>
+                  <div class="empty-col">{{ t('leaderboard.noBots') }}</div>
                 } @else {
                   <div class="row row-header">
-                    <div class="col-rank">#</div>
-                    <div class="col-name">Bot</div>
-                    <div class="col-rating">Rating</div>
-                    <div class="col-games">Games</div>
-                    <div class="col-winrate">Win %</div>
+                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                    <div class="col-name">{{ t('leaderboard.columns.bot') }}</div>
+                    <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
+                    <div class="col-games">{{ t('leaderboard.columns.games') }}</div>
+                    <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
                   </div>
 
                   @for (b of bots(); track b.rank) {

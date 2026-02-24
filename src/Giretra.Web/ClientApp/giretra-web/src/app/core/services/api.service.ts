@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HotToastService } from '@ngxpert/hot-toast';
+import { TranslocoService } from '@jsverse/transloco';
 import { API_BASE_URL } from '../../app.config';
 import {
   CardRank,
@@ -304,6 +305,7 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(HotToastService);
+  private readonly transloco = inject(TranslocoService);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Rooms
@@ -624,9 +626,9 @@ export class ApiService {
 
     if (error.status === 0) {
       // Network error — no response from server
-      message = 'Connection issue — your action may not have been sent';
+      message = this.transloco.translate('errors.connectionIssue');
     } else if (error.status >= 500) {
-      message = 'Server error — please try again';
+      message = this.transloco.translate('errors.serverError');
     } else if (error.error && typeof error.error === 'object') {
       // Server validation/business errors (4xx)
       if ('detail' in error.error) {
@@ -636,12 +638,12 @@ export class ApiService {
       } else if ('message' in error.error) {
         message = error.error.message;
       } else {
-        message = 'An error occurred';
+        message = this.transloco.translate('errors.genericError');
       }
     } else if (error.message) {
       message = error.message;
     } else {
-      message = 'An error occurred';
+      message = this.transloco.translate('errors.genericError');
     }
 
     console.error('API Error:', error);

@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { LucideAngularModule, Search, UserPlus, UserMinus, X, Check } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 import {
   ApiService,
   FriendsListResponse,
@@ -13,9 +14,9 @@ import {
 @Component({
   selector: 'app-friends-section',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="friends">
+    <div class="friends" *transloco="let t">
       <!-- Search -->
       <div class="search-section">
         <div class="search-input-wrap">
@@ -23,7 +24,7 @@ import {
           <input
             type="text"
             class="search-input"
-            placeholder="Search users to add..."
+            [placeholder]="t('settings.friends.searchPlaceholder')"
             [(ngModel)]="searchQuery"
             (ngModelChange)="onSearchChange($event)"
           />
@@ -39,7 +40,7 @@ import {
                 </div>
                 <button class="btn btn-sm btn-primary" (click)="sendRequest(user.username)">
                   <i-lucide [img]="UserPlusIcon" [size]="12"></i-lucide>
-                  Add
+                  {{ t('settings.friends.add') }}
                 </button>
               </div>
             }
@@ -50,7 +51,7 @@ import {
       <!-- Pending received -->
       @if (pendingReceived().length > 0) {
         <div class="section">
-          <h3 class="section-title">Pending Requests</h3>
+          <h3 class="section-title">{{ t('settings.friends.pendingRequests') }}</h3>
           @for (req of pendingReceived(); track req.friendshipId) {
             <div class="user-row">
               <div class="user-avatar-sm">{{ req.displayName.charAt(0).toUpperCase() }}</div>
@@ -61,11 +62,11 @@ import {
               <div class="row-actions">
                 <button class="btn btn-sm btn-primary" (click)="acceptRequest(req.friendshipId)">
                   <i-lucide [img]="CheckIcon" [size]="12"></i-lucide>
-                  Accept
+                  {{ t('settings.friends.accept') }}
                 </button>
                 <button class="btn btn-sm btn-destructive" (click)="declineRequest(req.friendshipId)">
                   <i-lucide [img]="XIcon" [size]="12"></i-lucide>
-                  Decline
+                  {{ t('settings.friends.decline') }}
                 </button>
               </div>
             </div>
@@ -76,7 +77,7 @@ import {
       <!-- Pending sent -->
       @if (pendingSent().length > 0) {
         <div class="section">
-          <h3 class="section-title">Sent Requests</h3>
+          <h3 class="section-title">{{ t('settings.friends.sentRequests') }}</h3>
           @for (req of pendingSent(); track req.friendshipId) {
             <div class="user-row">
               <div class="user-avatar-sm">{{ req.displayName.charAt(0).toUpperCase() }}</div>
@@ -86,7 +87,7 @@ import {
               </div>
               <button class="btn btn-sm btn-destructive" (click)="declineRequest(req.friendshipId)">
                 <i-lucide [img]="XIcon" [size]="12"></i-lucide>
-                Cancel
+                {{ t('settings.friends.cancel') }}
               </button>
             </div>
           }
@@ -95,9 +96,9 @@ import {
 
       <!-- Friends list -->
       <div class="section">
-        <h3 class="section-title">Friends</h3>
+        <h3 class="section-title">{{ t('settings.friends.friendsList') }}</h3>
         @if (friends().length === 0) {
-          <div class="empty-state">No friends yet. Search for users above to add them.</div>
+          <div class="empty-state">{{ t('settings.friends.noFriends') }}</div>
         } @else {
           @for (friend of friends(); track friend.userId) {
             <div class="user-row">
@@ -108,7 +109,7 @@ import {
               </div>
               <button class="btn btn-sm btn-destructive" (click)="removeFriend(friend.userId)">
                 <i-lucide [img]="UserMinusIcon" [size]="12"></i-lucide>
-                Remove
+                {{ t('settings.friends.remove') }}
               </button>
             </div>
           }
