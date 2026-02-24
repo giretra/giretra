@@ -35,14 +35,7 @@
     <div class="${properties.kcLoginClass!}">
 
         <div class="giretra-brand">
-            <div class="giretra-suits">
-                <span class="suit-spade">&#9824;</span>
-                <span class="suit-heart">&#9829;</span>
-                <span class="suit-diamond">&#9830;</span>
-                <span class="suit-club">&#9827;</span>
-            </div>
-            <h1 class="giretra-logo">GIRETRA</h1>
-            <p class="giretra-tagline">Belote Malagasy</p>
+            <img src="${url.resourcesPath}/img/giretra-banner.png" alt="Giretra" class="giretra-banner">
         </div>
 
         <div class="${properties.kcFormCardClass!}">
