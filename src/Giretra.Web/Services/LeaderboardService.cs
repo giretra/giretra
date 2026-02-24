@@ -8,6 +8,9 @@ namespace Giretra.Web.Services;
 
 public sealed class LeaderboardService : ILeaderboardService
 {
+    private const int MinGamesForRanking = 5;
+    private const int MaxPlayerEntries = 100;
+
     private readonly GiretraDbContext _db;
 
     public LeaderboardService(GiretraDbContext db)
@@ -17,26 +20,47 @@ public sealed class LeaderboardService : ILeaderboardService
 
     public async Task<LeaderboardResponse> GetLeaderboardAsync()
     {
-        var bots = await _db.Players
-            .Include(p => p.Bot)
-            .Where(p => p.PlayerType == PlayerType.Bot)
-            .ToListAsync();
+        var players = await GetPlayerEntriesAsync();
+        var bots = await GetBotEntriesAsync();
 
-        var eligibleHumans = _db.Players
+        return new LeaderboardResponse
+        {
+            Players = players,
+            Bots = bots,
+            PlayerCount = players.Count,
+            BotCount = bots.Count,
+        };
+    }
+
+    private async Task<IReadOnlyList<LeaderboardPlayerEntry>> GetPlayerEntriesAsync()
+    {
+        var topHumans = await _db.Players
             .Include(p => p.User)
-            .Where(p => p.PlayerType != PlayerType.Bot && p.GamesPlayed >= 5);
-
-        var humanCount = await eligibleHumans.CountAsync();
-
-        var topHumans = await eligibleHumans
+            .Where(p => p.PlayerType != PlayerType.Bot && p.GamesPlayed >= MinGamesForRanking)
             .OrderByDescending(p => p.EloRating)
             .ThenByDescending(p => p.GamesWon)
-            .Take(100)
+            .Take(MaxPlayerEntries)
+            .ToListAsync();
+
+        var entries = topHumans
+            .Select(ToPlayerEntry)
+            .ToList();
+
+        for (var i = 0; i < entries.Count; i++)
+            entries[i].Rank = i + 1;
+
+        return entries;
+    }
+
+    private async Task<IReadOnlyList<LeaderboardBotEntry>> GetBotEntriesAsync()
+    {
+        var bots = await _db.Players
+            .Include(p => p.Bot)
+            .Where(p => p.PlayerType == PlayerType.Bot && p.Bot != null && p.Bot.IsActive)
             .ToListAsync();
 
         var entries = bots
-            .Select(p => ToEntry(p, isBot: true, rating: p.Bot?.Rating ?? p.EloRating))
-            .Concat(topHumans.Select(p => ToEntry(p, isBot: false, rating: p.EloRating)))
+            .Select(ToBotEntry)
             .OrderByDescending(e => e.Rating)
             .ThenByDescending(e => e.WinRate)
             .ToList();
@@ -44,24 +68,15 @@ public sealed class LeaderboardService : ILeaderboardService
         for (var i = 0; i < entries.Count; i++)
             entries[i].Rank = i + 1;
 
-        return new LeaderboardResponse
-        {
-            Entries = entries,
-            TotalCount = humanCount + bots.Count,
-        };
+        return entries;
     }
 
-    private static LeaderboardEntryResponse ToEntry(Player p, bool isBot, int rating)
+    private static LeaderboardPlayerEntry ToPlayerEntry(Player p)
     {
         string displayName;
         string? avatarUrl;
 
-        if (isBot)
-        {
-            displayName = p.Bot?.DisplayName ?? "Bot";
-            avatarUrl = null;
-        }
-        else if (p.EloIsPublic)
+        if (p.EloIsPublic)
         {
             displayName = p.User?.EffectiveDisplayName ?? "Unknown";
             avatarUrl = p.User?.AvatarUrl;
@@ -72,17 +87,35 @@ public sealed class LeaderboardService : ILeaderboardService
             avatarUrl = null;
         }
 
-        return new LeaderboardEntryResponse
+        return new LeaderboardPlayerEntry
         {
             Rank = 0,
             DisplayName = displayName,
             AvatarUrl = avatarUrl,
-            Rating = rating,
+            Rating = p.EloRating,
             GamesPlayed = p.GamesPlayed,
-            WinRate = p.GamesPlayed > 0
-                ? Math.Round((double)p.GamesWon / p.GamesPlayed * 100, 1)
-                : 0,
-            IsBot = isBot,
+            WinRate = ComputeWinRate(p),
         };
+    }
+
+    private static LeaderboardBotEntry ToBotEntry(Player p)
+    {
+        return new LeaderboardBotEntry
+        {
+            Rank = 0,
+            DisplayName = p.Bot?.DisplayName ?? "Bot",
+            Rating = p.Bot?.Rating ?? p.EloRating,
+            GamesPlayed = p.GamesPlayed,
+            WinRate = ComputeWinRate(p),
+            Author = p.Bot?.Author,
+            Difficulty = p.Bot?.Difficulty ?? 0,
+        };
+    }
+
+    private static double ComputeWinRate(Player p)
+    {
+        return p.GamesPlayed > 0
+            ? Math.Round((double)p.GamesWon / p.GamesPlayed * 100, 1)
+            : 0;
     }
 }
