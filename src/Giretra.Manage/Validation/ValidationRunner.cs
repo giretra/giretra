@@ -45,6 +45,13 @@ public sealed class ValidationRunner
 
         var totalStopwatch = Stopwatch.StartNew();
 
+        // Seed agent factories for reproducibility
+        if (_config.Seed.HasValue)
+        {
+            _agentFactory.Seed = _config.Seed.Value;
+            _opponentFactory.Seed = _config.Seed.Value + 10000;
+        }
+
         var deckRandom = _config.Shuffle
             ? (_config.Seed.HasValue ? new Random(_config.Seed.Value + 50000) : new Random())
             : null;

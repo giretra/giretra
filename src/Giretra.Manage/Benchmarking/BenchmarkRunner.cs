@@ -48,6 +48,13 @@ public sealed class BenchmarkRunner
         var results = ImmutableList.CreateBuilder<MatchResult>();
         var totalStopwatch = Stopwatch.StartNew();
 
+        // Seed agent factories for reproducibility
+        if (_config.Seed.HasValue)
+        {
+            _team1Factory.Seed = _config.Seed.Value;
+            _team2Factory.Seed = _config.Seed.Value + 10000;
+        }
+
         // Create random for deck shuffling if enabled
         var deckRandom = _config.Shuffle
             ? (_config.Seed.HasValue ? new Random(_config.Seed.Value + 50000) : new Random())

@@ -7,13 +7,19 @@ namespace Giretra.Core.Players.Factories;
 /// </summary>
 public sealed class RandomPlayerAgentFactory : IPlayerAgentFactory
 {
-    private readonly int? _baseSeed;
+    private int? _baseSeed;
     private int _counter;
 
     public Guid Identifier { get; } = Guid.Parse("55c0e9ae-bd69-4c48-6a93-8187ea811929");
 
     public string AgentName => "RandomPlayer";
     public string DisplayName => "Baomijijy";
+
+    public int? Seed
+    {
+        get => _baseSeed;
+        set { _baseSeed = value; _counter = 0; }
+    }
 
     /// <summary>
     /// Creates a factory with optional base seed for reproducibility.
