@@ -4,13 +4,15 @@ import {
   ApiService,
   LeaderboardPlayerEntry,
   LeaderboardBotEntry,
+  PlayerProfileResponse,
 } from '../../core/services/api.service';
 import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-angular';
+import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
 @Component({
   selector: 'app-leaderboard',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, PlayerProfilePopupComponent],
   template: `
     <div class="lb-shell">
       <header class="lb-header">
@@ -60,7 +62,7 @@ import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-ang
                   </div>
 
                   @for (p of players(); track p.rank) {
-                    <div class="row" [class.row-top3]="p.rank <= 3">
+                    <div class="row row-clickable" [class.row-top3]="p.rank <= 3" (click)="openProfile(p.playerId)">
                       <div class="col-rank">
                         @if (p.rank === 1) {
                           <span class="medal medal-gold">1</span>
@@ -108,7 +110,7 @@ import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-ang
                   </div>
 
                   @for (b of bots(); track b.rank) {
-                    <div class="row" [class.row-top3]="b.rank <= 3">
+                    <div class="row row-clickable" [class.row-top3]="b.rank <= 3" (click)="openProfile(b.playerId)">
                       <div class="col-rank">
                         @if (b.rank === 1) {
                           <span class="medal medal-gold">1</span>
@@ -144,6 +146,13 @@ import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-ang
         </div>
       </main>
     </div>
+
+    @if (profileData()) {
+      <app-player-profile-popup
+        [profile]="profileData()!"
+        (closed)="closeProfile()"
+      />
+    }
   `,
   styles: [`
     .lb-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
@@ -182,6 +191,7 @@ import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-ang
     .row-header { font-size:0.625rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:hsl(var(--muted-foreground)); border-radius:0; margin-bottom:0.125rem; padding-bottom:0.375rem; }
     .row:not(.row-header):hover { background:hsl(var(--foreground)/0.03); }
     .row-top3 { background:hsl(var(--foreground)/0.02); }
+    .row-clickable { cursor:pointer; }
 
     /* Columns */
     .col-rank { width:2rem; flex-shrink:0; text-align:center; }
@@ -233,6 +243,7 @@ export class LeaderboardComponent implements OnInit {
   readonly playerCount = signal<number>(0);
   readonly botCount = signal<number>(0);
   readonly loading = signal<boolean>(true);
+  readonly profileData = signal<PlayerProfileResponse | null>(null);
 
   ngOnInit(): void {
     this.api.getLeaderboard().subscribe({
@@ -247,6 +258,16 @@ export class LeaderboardComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  openProfile(playerId: string): void {
+    this.api.getLeaderboardProfile(playerId).subscribe({
+      next: (profile) => this.profileData.set(profile),
+    });
+  }
+
+  closeProfile(): void {
+    this.profileData.set(null);
   }
 
   goBack(): void {

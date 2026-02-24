@@ -298,6 +298,84 @@ public sealed class LeaderboardServiceTests : IDisposable
 
     #endregion
 
+    #region Player profile
+
+    [Fact]
+    public async Task GetPlayerProfile_HumanPlayer_ReturnsProfile()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7, avatarUrl: "https://example.com/a.png");
+        await _db.SaveChangesAsync();
+
+        var playerId = _db.Players.First(p => p.PlayerType == PlayerType.Human).Id;
+        var profile = await _service.GetPlayerProfileAsync(playerId);
+
+        Assert.NotNull(profile);
+        Assert.False(profile.IsBot);
+        Assert.Equal("Alice", profile.DisplayName);
+        Assert.Equal(1800, profile.EloRating);
+        Assert.Equal(10, profile.GamesPlayed);
+        Assert.Equal(7, profile.GamesWon);
+        Assert.Equal("https://example.com/a.png", profile.AvatarUrl);
+    }
+
+    [Fact]
+    public async Task GetPlayerProfile_PrivateHuman_HidesEloAndAvatar()
+    {
+        AddHuman("Private", rating: 1800, gamesPlayed: 10, gamesWon: 7,
+            eloIsPublic: false, avatarUrl: "https://example.com/p.png");
+        await _db.SaveChangesAsync();
+
+        var playerId = _db.Players.First().Id;
+        var profile = await _service.GetPlayerProfileAsync(playerId);
+
+        Assert.NotNull(profile);
+        Assert.Null(profile.EloRating);
+        Assert.Null(profile.AvatarUrl);
+    }
+
+    [Fact]
+    public async Task GetPlayerProfile_Bot_ReturnsBotProfile()
+    {
+        AddBot("CleverBot", rating: 1700, gamesPlayed: 50, gamesWon: 30,
+            author: "John", difficulty: 3);
+        await _db.SaveChangesAsync();
+
+        var playerId = _db.Players.First(p => p.PlayerType == PlayerType.Bot).Id;
+        var profile = await _service.GetPlayerProfileAsync(playerId);
+
+        Assert.NotNull(profile);
+        Assert.True(profile.IsBot);
+        Assert.Equal("CleverBot", profile.DisplayName);
+        Assert.Equal(1700, profile.BotRating);
+        Assert.Equal("John", profile.Author);
+        Assert.Equal((short)3, profile.Difficulty);
+        Assert.Equal(50, profile.GamesPlayed);
+        Assert.Equal(30, profile.GamesWon);
+    }
+
+    [Fact]
+    public async Task GetPlayerProfile_NonExistentId_ReturnsNull()
+    {
+        var profile = await _service.GetPlayerProfileAsync(Guid.NewGuid());
+
+        Assert.Null(profile);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_EntriesContainPlayerIds()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
+        AddBot("Bot1", rating: 1500, gamesPlayed: 10, gamesWon: 5);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.NotEqual(Guid.Empty, result.Players[0].PlayerId);
+        Assert.NotEqual(Guid.Empty, result.Bots[0].PlayerId);
+    }
+
+    #endregion
+
     #region Mixed scenarios
 
     [Fact]

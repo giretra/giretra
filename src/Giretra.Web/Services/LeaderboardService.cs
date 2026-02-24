@@ -32,6 +32,49 @@ public sealed class LeaderboardService : ILeaderboardService
         };
     }
 
+    public async Task<PlayerProfileResponse?> GetPlayerProfileAsync(Guid playerId)
+    {
+        var player = await _db.Players
+            .Include(p => p.User)
+            .Include(p => p.Bot)
+            .FirstOrDefaultAsync(p => p.Id == playerId);
+
+        if (player == null)
+            return null;
+
+        if (player.PlayerType == PlayerType.Bot)
+        {
+            return new PlayerProfileResponse
+            {
+                DisplayName = player.Bot?.DisplayName ?? "Bot",
+                IsBot = true,
+                GamesPlayed = player.GamesPlayed,
+                GamesWon = player.GamesWon,
+                WinStreak = player.WinStreak,
+                BestWinStreak = player.BestWinStreak,
+                Description = player.Bot?.Description,
+                Author = player.Bot?.Author,
+                Pun = player.Bot?.Pun,
+                Difficulty = player.Bot?.Difficulty,
+                BotRating = player.Bot?.Rating,
+            };
+        }
+
+        var showElo = player.EloIsPublic;
+        return new PlayerProfileResponse
+        {
+            DisplayName = player.User?.EffectiveDisplayName ?? "Unknown",
+            IsBot = false,
+            GamesPlayed = player.GamesPlayed,
+            GamesWon = player.GamesWon,
+            WinStreak = player.WinStreak,
+            BestWinStreak = player.BestWinStreak,
+            AvatarUrl = showElo ? player.User?.AvatarUrl : null,
+            EloRating = showElo ? player.EloRating : null,
+            MemberSince = player.User?.CreatedAt,
+        };
+    }
+
     private async Task<IReadOnlyList<LeaderboardPlayerEntry>> GetPlayerEntriesAsync()
     {
         var topHumans = await _db.Players
@@ -89,6 +132,7 @@ public sealed class LeaderboardService : ILeaderboardService
 
         return new LeaderboardPlayerEntry
         {
+            PlayerId = p.Id,
             Rank = 0,
             DisplayName = displayName,
             AvatarUrl = avatarUrl,
@@ -102,6 +146,7 @@ public sealed class LeaderboardService : ILeaderboardService
     {
         return new LeaderboardBotEntry
         {
+            PlayerId = p.Id,
             Rank = 0,
             DisplayName = p.Bot?.DisplayName ?? "Bot",
             Rating = p.Bot?.Rating ?? p.EloRating,
