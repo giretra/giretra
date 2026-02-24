@@ -34,9 +34,16 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
             metadata.Launch.EnvironmentVariables ?? []);
         envVars.TryAdd("PORT", port.ToString());
 
+        // Resolve relative file paths (e.g. "./random-go-bot") against the bot directory.
+        // Process.Start with UseShellExecute=false resolves FileName relative to the
+        // calling process's working directory, not the specified WorkingDirectory.
+        var fileName = metadata.Launch.FileName;
+        if (!Path.IsPathRooted(fileName))
+            fileName = Path.Combine(botDirectory, fileName);
+
         var processConfig = new BotProcessConfig
         {
-            FileName = metadata.Launch.FileName,
+            FileName = fileName,
             Arguments = metadata.Launch.Arguments,
             WorkingDirectory = botDirectory,
             EnvironmentVariables = envVars,
