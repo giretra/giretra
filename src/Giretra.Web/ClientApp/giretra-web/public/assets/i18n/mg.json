@@ -88,9 +88,9 @@
   "negotiation.playerBidding": "{{player}} milaza...",
   "negotiation.announce": "Milaza",
   "negotiation.respond": "Mamaly",
-  "negotiation.accept": "Manaiky",
-  "negotiation.double": "Coinche",
-  "negotiation.redouble": "Surcoinche",
+  "negotiation.accept": "Bonne",
+  "negotiation.double": "Contré",
+  "negotiation.redouble": "Surcontré",
 
   "bidDialog.title": "Anjaranao ny milaza",
   "bidDialog.noBidYouOpen": "Mbola tsy misy — ianao no manokatra",
