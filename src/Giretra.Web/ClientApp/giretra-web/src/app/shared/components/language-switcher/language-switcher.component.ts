@@ -10,9 +10,10 @@ import { TranslocoService } from '@jsverse/transloco';
         <button
           class="lang-btn"
           [class.active]="activeLang() === lang.code"
+          [title]="lang.label"
           (click)="setLang(lang.code)"
         >
-          {{ lang.label }}
+          {{ lang.flag }}
         </button>
       }
     </div>
@@ -23,31 +24,32 @@ import { TranslocoService } from '@jsverse/transloco';
       background: hsl(var(--muted) / 0.3);
       border-radius: 9999px;
       padding: 0.125rem;
-      gap: 0.0625rem;
     }
 
     .lang-btn {
-      padding: 0.125rem 0.5rem;
-      font-size: 0.625rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.875rem;
+      line-height: 1;
       border: none;
       border-radius: 9999px;
       background: transparent;
-      color: hsl(var(--muted-foreground));
       cursor: pointer;
       transition: all 0.15s ease;
-      text-transform: uppercase;
+      opacity: 0.5;
     }
 
     .lang-btn:hover:not(.active) {
-      color: hsl(var(--foreground));
+      opacity: 0.8;
       background: hsl(var(--muted) / 0.3);
     }
 
     .lang-btn.active {
-      background: hsl(var(--primary) / 0.2);
-      color: hsl(var(--primary));
+      opacity: 1;
+      background: hsl(var(--primary) / 0.15);
     }
   `],
 })
@@ -55,9 +57,9 @@ export class LanguageSwitcherComponent {
   private readonly transloco = inject(TranslocoService);
 
   readonly langs = [
-    { code: 'en', label: 'EN' },
-    { code: 'fr', label: 'FR' },
-    { code: 'mg', label: 'MG' },
+    { code: 'en', flag: '\u{1F1EC}\u{1F1E7}', label: 'English' },
+    { code: 'fr', flag: '\u{1F1EB}\u{1F1F7}', label: 'Fran\u00e7ais' },
+    { code: 'mg', flag: '\u{1F1F2}\u{1F1EC}', label: 'Malagasy' },
   ];
 
   readonly activeLang = this.transloco.langChanges$
