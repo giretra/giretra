@@ -523,7 +523,8 @@ export class TableComponent implements OnInit, OnDestroy {
     if (roomId) {
       this.api.generateInvite(roomId, position).subscribe({
         next: (response) => {
-          navigator.clipboard.writeText(response.inviteUrl).then(
+          const inviteUrl = `${window.location.origin}/table/${roomId}?invite=${response.token}`;
+          navigator.clipboard.writeText(inviteUrl).then(
             () => console.log('[Table] Invite URL copied to clipboard'),
             () => console.warn('[Table] Failed to copy invite URL')
           );

@@ -64,7 +64,6 @@ export interface RoomResponse {
 export interface InviteTokenResponse {
   position: PlayerPosition;
   token: string;
-  inviteUrl: string;
 }
 
 export interface RoomListResponse {

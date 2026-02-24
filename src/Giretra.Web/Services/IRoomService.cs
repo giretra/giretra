@@ -77,7 +77,7 @@ public interface IRoomService
     /// <summary>
     /// Generates an invite token for a seat. Auto-sets seat to InviteOnly.
     /// </summary>
-    InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position, string baseUrl);
+    InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position);
 
     /// <summary>
     /// Kicks a player from a seat. Owner-only, Waiting-only.
