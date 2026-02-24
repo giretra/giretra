@@ -43,12 +43,12 @@ The `init-db.sql` script runs only on the **first** PostgreSQL startup. The pass
 
 ### 2. Configure Social Identity Providers
 
-The realm export sets up the `giretra` realm, clients, and roles automatically. Social login providers (Google, Facebook, GitHub) must be configured manually in the Keycloak admin console because they require secrets that shouldn't be in the realm export.
+The realm export sets up the `giretra` realm, clients, and roles automatically. Social login providers (Google, GitHub) must be configured manually in the Keycloak admin console because they require secrets that shouldn't be in the realm export.
 
 1. Create OAuth apps on each provider (see `CONFIGURE-KEYCLOAK.md` for redirect URIs)
 2. Fill in the credentials in your `.env`
 3. Go to **Keycloak Admin > giretra realm > Identity Providers**
-4. Add Google, Facebook, and/or GitHub with the credentials from your `.env`
+4. Add Google and/or GitHub with the credentials from your `.env`
 
 ### 3. Apply the Application Database Schema
 
@@ -75,7 +75,6 @@ Before deploying to production:
 | Redirect URIs | Update client redirect URIs and social provider callbacks to production URLs |
 | Secrets | Use a secrets manager instead of `.env` files |
 | Admin console | Restrict network access or disable with `KC_FEATURES_DISABLED=admin2` |
-| Facebook app | Switch from Development to Live mode |
 
 ## Useful Commands
 

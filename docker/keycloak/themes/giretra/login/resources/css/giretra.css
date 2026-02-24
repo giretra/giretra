@@ -409,10 +409,6 @@
     border-color: hsl(210 80% 55% / 0.4);
 }
 
-.giretra-social-btn[data-provider="facebook"]:hover {
-    border-color: hsl(220 80% 55% / 0.4);
-}
-
 .giretra-social-btn[data-provider="github"]:hover {
     border-color: hsl(var(--foreground) / 0.3);
 }

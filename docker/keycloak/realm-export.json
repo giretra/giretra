@@ -97,18 +97,6 @@
       }
     },
     {
-      "alias": "facebook",
-      "providerId": "facebook",
-      "enabled": true,
-      "trustEmail": true,
-      "firstBrokerLoginFlowAlias": "first broker login",
-      "config": {
-        "clientId": "${FACEBOOK_APP_ID}",
-        "clientSecret": "${FACEBOOK_APP_SECRET}",
-        "defaultScope": "openid email public_profile"
-      }
-    },
-    {
       "alias": "github",
       "providerId": "github",
       "enabled": true,
