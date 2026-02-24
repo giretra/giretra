@@ -162,8 +162,7 @@ public class RoomsController : ControllerBase
     public async Task<ActionResult<InviteTokenResponse>> GenerateInvite(string roomId, PlayerPosition position)
     {
         var user = GetAuthenticatedUser();
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var response = _roomService.GenerateInviteToken(roomId, user.Id, position, baseUrl);
+        var response = _roomService.GenerateInviteToken(roomId, user.Id, position);
         if (response == null)
             return BadRequest(new { error = "Unable to generate invite. Check that you are the room owner and the room is waiting." });
 

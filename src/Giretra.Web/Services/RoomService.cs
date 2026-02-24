@@ -378,7 +378,7 @@ public sealed class RoomService : IRoomService
         return (true, null);
     }
 
-    public InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position, string baseUrl)
+    public InviteTokenResponse? GenerateInviteToken(string roomId, Guid userId, PlayerPosition position)
     {
         var room = _roomRepository.GetById(roomId);
         if (room == null || !room.IsOwner(userId) || room.Status != RoomStatus.Waiting)
@@ -399,13 +399,10 @@ public sealed class RoomService : IRoomService
 
         _roomRepository.Update(room);
 
-        var inviteUrl = $"{baseUrl.TrimEnd('/')}/table/{roomId}?invite={token}";
-
         return new InviteTokenResponse
         {
             Position = position,
-            Token = token,
-            InviteUrl = inviteUrl
+            Token = token
         };
     }
 
