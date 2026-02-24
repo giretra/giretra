@@ -237,7 +237,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.NoTrumps,
         variant: 'secondary',
-        icon: '\uD83C\uDD59',
+        icon: '\uD83C\uDD70\uFE0F',
       });
     }
 
@@ -251,7 +251,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.AllTrumps,
         variant: 'secondary',
-        icon: '\uD83C\uDD70\uFE0F',
+        icon: '\uD83C\uDD59',
       });
     }
 
