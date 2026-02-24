@@ -146,20 +146,6 @@ public sealed class GameService : IGameService
                 await gameManager.PlayMatchAsync(cancellationToken);
                 session.CompletedAt = DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
-
-                // Persist match to database (skip for unranked games)
-                if (session.IsRanked)
-                    await PersistMatchAsync(session);
-
-                // Reset room status to allow "Play Again"
-                var roomToReset = _roomRepository.GetById(room.RoomId);
-                if (roomToReset != null)
-                {
-                    roomToReset.Status = RoomStatus.Waiting;
-                    roomToReset.GameSessionId = null;
-                    _roomRepository.Update(roomToReset);
-                    _logger.LogInformation("Room {RoomId} reset to Waiting state", room.RoomId);
-                }
             }
             catch (OperationCanceledException)
             {
@@ -169,6 +155,23 @@ public sealed class GameService : IGameService
             {
                 _logger.LogError(ex, "Game {GameId} failed with error", gameId);
             }
+            finally
+            {
+                // Reset room status immediately so "Play Again" works without
+                // waiting for database persistence to complete.
+                var roomToReset = _roomRepository.GetById(room.RoomId);
+                if (roomToReset != null)
+                {
+                    roomToReset.Status = RoomStatus.Waiting;
+                    roomToReset.GameSessionId = null;
+                    _roomRepository.Update(roomToReset);
+                    _logger.LogInformation("Room {RoomId} reset to Waiting state", room.RoomId);
+                }
+            }
+
+            // Persist match to database after room is reset (non-blocking for Play Again)
+            if (session.IsRanked && session.CompletedAt != null)
+                await PersistMatchAsync(session);
         });
 
         return session;
