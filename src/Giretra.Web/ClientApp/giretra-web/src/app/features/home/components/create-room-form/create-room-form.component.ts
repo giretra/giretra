@@ -176,24 +176,6 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
           </div>
         </div>
 
-        <!-- Rated -->
-        <div class="field">
-          <button
-            type="button"
-            class="invite-only-toggle"
-            [class.active]="isRanked"
-            [disabled]="submitting()"
-            (click)="isRanked = !isRanked"
-          >
-            <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-            <span>{{ t('createForm.rated') }}</span>
-            <span class="toggle-track">
-              <span class="toggle-thumb"></span>
-            </span>
-          </button>
-          <p class="hint">{{ t('createForm.ratedHint') }}</p>
-        </div>
-
         <!-- Invite only -->
         <div class="field">
           <button
@@ -210,6 +192,23 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             </span>
           </button>
           <p class="hint">{{ t('createForm.inviteOnlyHint') }}</p>
+        </div>
+
+        <!-- Rated (subtle) -->
+        <div class="rated-field">
+          <button
+            type="button"
+            class="rated-subtle"
+            [class.active]="isRanked"
+            [disabled]="submitting()"
+            (click)="isRanked = !isRanked"
+          >
+            <i-lucide [img]="TrophyIcon" [size]="10" [strokeWidth]="1.5"></i-lucide>
+            <span>{{ t('createForm.rated') }}</span>
+            <span class="toggle-track-sm">
+              <span class="toggle-thumb-sm"></span>
+            </span>
+          </button>
         </div>
 
         @if (error()) {
@@ -575,6 +574,67 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
     .timer-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    /* Rated toggle — subtle secondary option */
+    .rated-field {
+      margin-top: -0.5rem;
+    }
+
+    .rated-subtle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0;
+      background: none;
+      border: none;
+      color: hsl(var(--muted-foreground) / 0.55);
+      font-size: 0.6875rem;
+      font-weight: 400;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .rated-subtle:hover:not(:disabled) {
+      color: hsl(var(--muted-foreground));
+    }
+
+    .rated-subtle.active {
+      color: hsl(var(--muted-foreground) / 0.8);
+    }
+
+    .rated-subtle:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .toggle-track-sm {
+      width: 1.375rem;
+      height: 0.75rem;
+      border-radius: 9999px;
+      background: hsl(var(--muted) / 0.5);
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .rated-subtle.active .toggle-track-sm {
+      background: hsl(var(--muted-foreground) / 0.4);
+    }
+
+    .toggle-thumb-sm {
+      position: absolute;
+      top: 0.1rem;
+      left: 0.1rem;
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: hsl(var(--muted-foreground) / 0.4);
+      transition: transform 0.15s ease;
+    }
+
+    .rated-subtle.active .toggle-thumb-sm {
+      transform: translateX(0.625rem);
+      background: hsl(var(--muted-foreground) / 0.7);
     }
 
     /* Invite only toggle */
