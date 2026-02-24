@@ -16,19 +16,36 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
+        LoadDotEnv();
+
+        var loggerConfig = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
+            .Enrich.WithProperty("Host", Environment.MachineName)
             .Enrich.FromLogContext()
             .WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}      {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}      {Message:lj}{NewLine}{Exception}");
+
+        var seqUrl = Environment.GetEnvironmentVariable("SEQ_URL");
+        if (!string.IsNullOrEmpty(seqUrl))
+        {
+            loggerConfig.WriteTo.Seq(
+                seqUrl,
+                apiKey: Environment.GetEnvironmentVariable("SEQ_API_KEY"),
+                messageHandler: new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (_, _, _, _) => true,
+                    UseProxy = false,
+                },
+                restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information);
+        }
+
+        Log.Logger = loggerConfig.CreateLogger();
 
         try
         {
-            LoadDotEnv();
             Log.Information("Starting Giretra.Web");
             var builder = WebApplication.CreateBuilder(args);
 
@@ -216,7 +233,7 @@ public class Program
         }
         finally
         {
-            Log.CloseAndFlush();
+            await Log.CloseAndFlushAsync();
         }
     }
 
