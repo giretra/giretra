@@ -1,4 +1,4 @@
-import { Component, input, computed, output } from '@angular/core';
+import { Component, input, computed, output, HostListener } from '@angular/core';
 import { GameMode, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { TrickResponse } from '../../../../../core/services/api.service';
 import { toRelativePosition, RelativePosition } from '../../../../../core/utils/position-utils';
@@ -56,7 +56,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
         <!-- Click to continue prompt -->
         @if (showingCompletedTrick()) {
           <div class="continue-prompt">
-            Click to continue
+            Click or press Space to continue
           </div>
         }
       </div>
@@ -198,6 +198,14 @@ export class TrickAreaComponent {
     if (pos === 'left') return 'translateY(-50%)';
     if (pos === 'right') return 'translateY(-50%)';
     return '';
+  }
+
+  @HostListener('document:keydown.space', ['$event'])
+  onSpacePress(event: KeyboardEvent): void {
+    if (this.showingCompletedTrick()) {
+      event.preventDefault();
+      this.dismissCompletedTrick.emit();
+    }
   }
 
   onAreaClick(): void {
