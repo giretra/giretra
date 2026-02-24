@@ -75,8 +75,8 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
     }
 
     .dimmed {
-      filter: brightness(0.5);
-      opacity: 0.6;
+      filter: brightness(0.65);
+      opacity: 0.75;
     }
 
     .trump {

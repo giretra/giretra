@@ -57,8 +57,8 @@ import { CardComponent } from '../card/card.component';
     }
 
     .card-wrapper.dimmed-card {
-      filter: grayscale(0.5);
-      opacity: 0.55;
+      filter: grayscale(0.3);
+      opacity: 0.75;
     }
 
     @media (min-width: 640px) {
