@@ -13,6 +13,7 @@ interface BidButton {
   mode: GameMode | null;
   variant: 'default' | 'secondary' | 'destructive';
   suit?: CardSuit;
+  icon?: string;
 }
 
 @Component({
@@ -30,10 +31,13 @@ interface BidButton {
               hlmBtn
               [variant]="btn.variant"
               class="bid-btn suit-btn"
+              [title]="btn.label"
               (click)="selectAction(btn)"
             >
               @if (btn.suit) {
                 <app-suit-icon [suit]="btn.suit" size="1.5rem" />
+              } @else if (btn.icon) {
+                <span class="mode-icon">{{ btn.icon }}</span>
               } @else {
                 {{ btn.label }}
               }
@@ -166,6 +170,11 @@ interface BidButton {
       font-size: 0.75em;
     }
 
+    .mode-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
     .mode-hint {
       font-size: 0.6875rem;
       opacity: 0.8;
@@ -191,6 +200,13 @@ export class BidButtonRowComponent {
     [GameMode.ColourSpades]: CardSuit.Spades,
   };
 
+  private readonly modeToTranslationKey: Record<string, string> = {
+    [GameMode.ColourClubs]: 'game.modes.clubs',
+    [GameMode.ColourDiamonds]: 'game.modes.diamonds',
+    [GameMode.ColourHearts]: 'game.modes.hearts',
+    [GameMode.ColourSpades]: 'game.modes.spades',
+  };
+
   readonly suitButtons = computed<BidButton[]>(() => {
     const actions = this.validActions();
     const buttons: BidButton[] = [];
@@ -201,7 +217,7 @@ export class BidButtonRowComponent {
         const suit = this.modeToSuit[action.mode];
         if (suit) {
           buttons.push({
-            label: action.mode,
+            label: this.transloco.translate(this.modeToTranslationKey[action.mode]),
             actionType: action.actionType,
             mode: action.mode,
             variant: 'secondary',
@@ -221,6 +237,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.NoTrumps,
         variant: 'secondary',
+        icon: '\uD83C\uDD59',
       });
     }
 
@@ -234,6 +251,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.AllTrumps,
         variant: 'secondary',
+        icon: '\uD83C\uDD70\uFE0F',
       });
     }
 
