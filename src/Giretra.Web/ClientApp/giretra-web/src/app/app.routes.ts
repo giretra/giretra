@@ -34,15 +34,13 @@ export const confirmLeaveGameGuard = async () => {
   const phase = gameState.phase();
   const gameInProgress = gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 
-  if (!gameInProgress) {
-    return true;
+  if (gameInProgress) {
+    if (!confirm(transloco.translate('table.leaveConfirm'))) {
+      return false;
+    }
   }
 
-  if (!confirm(transloco.translate('table.leaveConfirm'))) {
-    return false;
-  }
-
-  // User confirmed — clean up session
+  // Always clean up session when leaving the table
   await gameState.leaveRoom();
   session.leaveRoom();
   return true;
