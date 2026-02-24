@@ -1,7 +1,8 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, inject } from '@angular/core';
 import { GameMode } from '../../../../api/generated/signalr-types.generated';
 import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-icon.component';
 import { CardSuit } from '../../../../api/generated/signalr-types.generated';
+import { TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-speech-bubble',
@@ -85,6 +86,7 @@ import { CardSuit } from '../../../../api/generated/signalr-types.generated';
   `],
 })
 export class SpeechBubbleComponent {
+  private readonly transloco = inject(TranslocoService);
   readonly actionType = input<string>('');
   readonly mode = input<GameMode | null>(null);
   readonly position = input<'top' | 'bottom' | 'left' | 'right'>('bottom');
@@ -112,14 +114,14 @@ export class SpeechBubbleComponent {
 
     switch (action) {
       case 'Accept':
-        return 'Accept';
+        return this.transloco.translate('negotiation.accept');
       case 'Double':
         return '\u00d72';
       case 'Redouble':
         return '\u00d74';
       case 'Announce':
-        if (m === GameMode.NoTrumps) return 'No Trumps';
-        if (m === GameMode.AllTrumps) return 'All Trumps';
+        if (m === GameMode.NoTrumps) return this.transloco.translate('game.modes.noTrumps');
+        if (m === GameMode.AllTrumps) return this.transloco.translate('game.modes.allTrumps');
         return '';
       default:
         return action;

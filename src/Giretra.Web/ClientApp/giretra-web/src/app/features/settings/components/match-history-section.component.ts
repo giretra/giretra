@@ -1,15 +1,16 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { LucideAngularModule, ChevronLeft, ChevronRight, Trophy } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-match-history-section',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="history">
+    <div class="history" *transloco="let t">
       @if (matches().length === 0 && !loading()) {
-        <div class="empty-state">No matches played yet.</div>
+        <div class="empty-state">{{ t('settings.history.noMatches') }}</div>
       }
 
       @for (match of matches(); track match.matchId) {
@@ -28,10 +29,10 @@ import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api
               @if (match.isWinner) {
                 <span class="badge badge-win">
                   <i-lucide [img]="TrophyIcon" [size]="10"></i-lucide>
-                  WIN
+                  {{ t('settings.history.win') }}
                 </span>
               } @else {
-                <span class="badge badge-loss">LOSS</span>
+                <span class="badge badge-loss">{{ t('settings.history.loss') }}</span>
               }
               @if (match.eloChange !== null) {
                 <span class="badge" [class.badge-elo-up]="match.eloChange > 0" [class.badge-elo-down]="match.eloChange < 0">
@@ -39,11 +40,11 @@ import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api
                 </span>
               }
               @if (match.wasAbandoned) {
-                <span class="badge badge-abandoned">ABD</span>
+                <span class="badge badge-abandoned">{{ t('settings.history.abandoned') }}</span>
               }
             </div>
             <div class="match-meta">
-              <span class="meta-item">{{ match.totalDeals }} deals</span>
+              <span class="meta-item">{{ t('settings.history.deals', { count: match.totalDeals }) }}</span>
               @if (match.durationSeconds !== null) {
                 <span class="meta-item">{{ formatDuration(match.durationSeconds) }}</span>
               }
@@ -58,7 +59,7 @@ import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api
                     <span class="player-pos">{{ player.position }}</span>
                     <span class="player-name">{{ player.displayName }}</span>
                     <span class="player-team" [class.team1]="player.team === 'Team1'" [class.team2]="player.team === 'Team2'">
-                      {{ player.team === 'Team1' ? 'Team 1' : 'Team 2' }}
+                      {{ player.team === 'Team1' ? t('settings.history.team1') : t('settings.history.team2') }}
                     </span>
                   </div>
                 }
@@ -77,15 +78,15 @@ import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api
             [disabled]="currentPage() <= 1"
           >
             <i-lucide [img]="ChevronLeftIcon" [size]="14"></i-lucide>
-            Prev
+            {{ t('settings.history.prev') }}
           </button>
-          <span class="page-info">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <span class="page-info">{{ t('settings.history.pageInfo', { page: currentPage(), total: totalPages() }) }}</span>
           <button
             class="btn btn-sm"
             (click)="nextPage()"
             [disabled]="currentPage() >= totalPages()"
           >
-            Next
+            {{ t('settings.history.next') }}
             <i-lucide [img]="ChevronRightIcon" [size]="14"></i-lucide>
           </button>
         </div>

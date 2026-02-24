@@ -1,14 +1,15 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Scissors } from 'lucide-angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-cut-stage',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="cut-stage">
+    <div class="cut-stage" *transloco="let t">
       <!-- Deck visual -->
       <div class="deck">
         <div class="deck-cards">
@@ -32,7 +33,7 @@ import { LucideAngularModule, Scissors } from 'lucide-angular';
           (click)="submitCut.emit()"
         >
           <i-lucide [img]="ScissorsIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          Cut the Deck
+          {{ t('cut.cutTheDeck') }}
         </button>
       } @else {
         <p class="waiting-text">{{ waitingText() }}</p>
@@ -96,6 +97,7 @@ import { LucideAngularModule, Scissors } from 'lucide-angular';
 })
 export class CutStageComponent {
   readonly ScissorsIcon = Scissors;
+  private readonly transloco = inject(TranslocoService);
 
   readonly activePlayer = input<PlayerPosition | null>(null);
   readonly myPosition = input<PlayerPosition | null>(null);
@@ -112,7 +114,7 @@ export class CutStageComponent {
 
   readonly waitingText = computed(() => {
     const player = this.activePlayer();
-    if (!player) return 'Waiting...';
-    return `${player} is cutting...`;
+    if (!player) return this.transloco.translate('cut.waiting');
+    return this.transloco.translate('cut.playerCutting', { player });
   });
 }

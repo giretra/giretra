@@ -3,16 +3,17 @@ import { RoomResponse, PlayerSlot } from '../../../../../core/services/api.servi
 import { PlayerPosition, SeatAccessMode } from '../../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-waiting-stage',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="waiting-stage">
+    <div class="waiting-stage" *transloco="let t">
       <i-lucide [img]="UsersIcon" [size]="32" [strokeWidth]="1.5" class="users-icon"></i-lucide>
 
-      <h2 class="title">Waiting for players</h2>
+      <h2 class="title">{{ t('waiting.title') }}</h2>
 
       <!-- Seat indicator circles -->
       <div class="seat-indicators">
@@ -31,12 +32,12 @@ import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-an
               <div class="seat-controls">
                 @if (slot.isOccupied && !slot.isAi) {
                   <!-- Kick button -->
-                  <button class="control-btn kick-btn" title="Kick player" (click)="onKickPlayer(slot.position)">
+                  <button class="control-btn kick-btn" [title]="t('waiting.kickPlayer')" (click)="onKickPlayer(slot.position)">
                     <i-lucide [img]="UserXIcon" [size]="12" [strokeWidth]="2"></i-lucide>
                   </button>
                 } @else if (!slot.isOccupied && !slot.isAi) {
                   <!-- Lock/unlock toggle -->
-                  <button class="control-btn mode-btn" [title]="slot.accessMode === 'InviteOnly' ? 'Set to Public' : 'Set to Invite-Only'" (click)="onToggleSeatMode(slot.position, slot.accessMode)">
+                  <button class="control-btn mode-btn" [title]="slot.accessMode === 'InviteOnly' ? t('waiting.setPublic') : t('waiting.setInviteOnly')" (click)="onToggleSeatMode(slot.position, slot.accessMode)">
                     @if (slot.accessMode === 'InviteOnly') {
                       <i-lucide [img]="UnlockIcon" [size]="12" [strokeWidth]="2"></i-lucide>
                     } @else {
@@ -45,7 +46,7 @@ import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-an
                   </button>
                   <!-- Invite link button (visible when invite-only) -->
                   @if (slot.accessMode === 'InviteOnly') {
-                    <button class="control-btn invite-btn" title="Copy invite link" (click)="onGenerateInvite(slot.position)">
+                    <button class="control-btn invite-btn" [title]="t('waiting.copyInvite')" (click)="onGenerateInvite(slot.position)">
                       <i-lucide [img]="LinkIcon" [size]="12" [strokeWidth]="2"></i-lucide>
                     </button>
                   }
@@ -65,13 +66,13 @@ import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-an
           class="start-button pulse-glow"
           (click)="startGame.emit()"
         >
-          Start Game
+          {{ t('waiting.startGame') }}
         </button>
-        <p class="hint">Empty slots will be filled by AI</p>
+        <p class="hint">{{ t('waiting.aiHint') }}</p>
       } @else if (isWatcher()) {
-        <p class="hint">Waiting for host to start...</p>
+        <p class="hint">{{ t('waiting.hostHint') }}</p>
       } @else {
-        <p class="hint">Waiting for more players...</p>
+        <p class="hint">{{ t('waiting.morePlayersHint') }}</p>
       }
     </div>
   `,

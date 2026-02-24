@@ -1,127 +1,130 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye } from 'lucide-angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ApiService, ProfileResponse } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-profile-section',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, TranslocoDirective],
   template: `
-    @if (profile(); as p) {
-      <div class="profile">
-        <!-- Avatar -->
-        <div class="avatar-section">
-          <div class="avatar-preview">
-            @if (p.avatarUrl) {
-              <img [src]="p.avatarUrl" alt="Avatar" class="avatar-img" />
-            } @else {
-              <span class="avatar-initial">{{ p.displayName.charAt(0).toUpperCase() }}</span>
-            }
-          </div>
-          <div class="avatar-actions">
-            <label class="btn btn-sm">
-              <i-lucide [img]="UploadIcon" [size]="14"></i-lucide>
-              Upload
-              <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
-            </label>
-            @if (p.avatarUrl) {
-              <button class="btn btn-sm btn-destructive" (click)="deleteAvatar()">
-                <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
-                Remove
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Display name -->
-        <div class="field">
-          <label class="field-label">Display Name</label>
-          @if (editingName()) {
-            <div class="name-edit">
-              <input
-                type="text"
-                class="name-input"
-                [(ngModel)]="nameValue"
-                (keydown.enter)="saveName()"
-                (keydown.escape)="cancelNameEdit()"
-                maxlength="100"
-              />
-              <div class="name-edit-actions">
-                @if (nameError()) {
-                  <span class="field-error">{{ nameError() }}</span>
-                }
-                <button class="btn btn-sm btn-primary" (click)="saveName()" [disabled]="!!nameError() || savingName()">Save</button>
-                <button class="btn btn-sm" (click)="cancelNameEdit()">Cancel</button>
-              </div>
-            </div>
-          } @else {
-            <div class="name-display">
-              <span class="name-value">{{ p.displayName }}</span>
-              <button class="btn-icon" (click)="startNameEdit()" title="Edit display name">
-                <i-lucide [img]="PencilIcon" [size]="14"></i-lucide>
-              </button>
-            </div>
-          }
-          <span class="field-hint">&#64;{{ p.username }}</span>
-        </div>
-
-        <!-- ELO visibility -->
-        <div class="field">
-          <label class="field-label">ELO Visibility</label>
-          <div class="toggle-row">
-            <button
-              class="toggle"
-              [class.toggle-on]="eloPublic()"
-              (click)="toggleEloVisibility()"
-              [attr.aria-pressed]="eloPublic()"
-            >
-              <span class="toggle-knob"></span>
-            </button>
-            <span class="toggle-label">
-              @if (eloPublic()) {
-                <i-lucide [img]="EyeIcon" [size]="14"></i-lucide>
-                Public
+    <ng-container *transloco="let t">
+      @if (profile(); as p) {
+        <div class="profile">
+          <!-- Avatar -->
+          <div class="avatar-section">
+            <div class="avatar-preview">
+              @if (p.avatarUrl) {
+                <img [src]="p.avatarUrl" [alt]="t('settings.profile.avatar')" class="avatar-img" />
               } @else {
-                <i-lucide [img]="EyeOffIcon" [size]="14"></i-lucide>
-                Hidden
+                <span class="avatar-initial">{{ p.displayName.charAt(0).toUpperCase() }}</span>
               }
-            </span>
+            </div>
+            <div class="avatar-actions">
+              <label class="btn btn-sm">
+                <i-lucide [img]="UploadIcon" [size]="14"></i-lucide>
+                {{ t('settings.profile.upload') }}
+                <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
+              </label>
+              @if (p.avatarUrl) {
+                <button class="btn btn-sm btn-destructive" (click)="deleteAvatar()">
+                  <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
+                  {{ t('settings.profile.remove') }}
+                </button>
+              }
+            </div>
           </div>
-        </div>
 
-        <!-- Stats grid -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-value">{{ p.eloRating }}</span>
-            <span class="stat-label">ELO Rating</span>
+          <!-- Display name -->
+          <div class="field">
+            <label class="field-label">{{ t('settings.profile.displayName') }}</label>
+            @if (editingName()) {
+              <div class="name-edit">
+                <input
+                  type="text"
+                  class="name-input"
+                  [(ngModel)]="nameValue"
+                  (keydown.enter)="saveName()"
+                  (keydown.escape)="cancelNameEdit()"
+                  maxlength="100"
+                />
+                <div class="name-edit-actions">
+                  @if (nameError()) {
+                    <span class="field-error">{{ nameError() }}</span>
+                  }
+                  <button class="btn btn-sm btn-primary" (click)="saveName()" [disabled]="!!nameError() || savingName()">{{ t('common.save') }}</button>
+                  <button class="btn btn-sm" (click)="cancelNameEdit()">{{ t('common.cancel') }}</button>
+                </div>
+              </div>
+            } @else {
+              <div class="name-display">
+                <span class="name-value">{{ p.displayName }}</span>
+                <button class="btn-icon" (click)="startNameEdit()" [title]="t('settings.profile.editDisplayName')">
+                  <i-lucide [img]="PencilIcon" [size]="14"></i-lucide>
+                </button>
+              </div>
+            }
+            <span class="field-hint">&#64;{{ p.username }}</span>
           </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ p.gamesPlayed }}</span>
-            <span class="stat-label">Games Played</span>
+
+          <!-- ELO visibility -->
+          <div class="field">
+            <label class="field-label">{{ t('settings.profile.eloVisibility') }}</label>
+            <div class="toggle-row">
+              <button
+                class="toggle"
+                [class.toggle-on]="eloPublic()"
+                (click)="toggleEloVisibility()"
+                [attr.aria-pressed]="eloPublic()"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+              <span class="toggle-label">
+                @if (eloPublic()) {
+                  <i-lucide [img]="EyeIcon" [size]="14"></i-lucide>
+                  {{ t('settings.profile.eloPublic') }}
+                } @else {
+                  <i-lucide [img]="EyeOffIcon" [size]="14"></i-lucide>
+                  {{ t('settings.profile.eloHidden') }}
+                }
+              </span>
+            </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ winRate() }}%</span>
-            <span class="stat-label">Win Rate</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ p.winStreak }}</span>
-            <span class="stat-label">Win Streak</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ p.bestWinStreak }}</span>
-            <span class="stat-label">Best Streak</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ memberSince() }}</span>
-            <span class="stat-label">Member Since</span>
+
+          <!-- Stats grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-value">{{ p.eloRating }}</span>
+              <span class="stat-label">{{ t('settings.profile.eloRating') }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ p.gamesPlayed }}</span>
+              <span class="stat-label">{{ t('settings.profile.gamesPlayed') }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ winRate() }}%</span>
+              <span class="stat-label">{{ t('settings.profile.winRate') }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ p.winStreak }}</span>
+              <span class="stat-label">{{ t('settings.profile.winStreak') }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ p.bestWinStreak }}</span>
+              <span class="stat-label">{{ t('settings.profile.bestStreak') }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value">{{ memberSince() }}</span>
+              <span class="stat-label">{{ t('settings.profile.memberSince') }}</span>
+            </div>
           </div>
         </div>
-      </div>
-    } @else {
-      <div class="loading">Loading profile...</div>
-    }
+      } @else {
+        <div class="loading">{{ t('settings.profile.loadingProfile') }}</div>
+      }
+    </ng-container>
   `,
   styles: [`
     .profile { display:flex; flex-direction:column; gap:1.5rem; }
@@ -175,6 +178,7 @@ export class ProfileSectionComponent implements OnInit {
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly transloco = inject(TranslocoService);
 
   readonly profile = signal<ProfileResponse | null>(null);
   readonly editingName = signal(false);
@@ -222,11 +226,11 @@ export class ProfileSectionComponent implements OnInit {
 
   private validateName(name: string): string | null {
     const trimmed = name.trim();
-    if (trimmed.length < 3) return 'Must be at least 3 characters';
-    if (trimmed.length > 100) return 'Must be 100 characters or less';
-    if (!/^[a-zA-Z0-9 \-_.]+$/.test(trimmed)) return 'Only letters, digits, spaces, hyphens, underscores, periods';
-    if (!/[a-zA-Z0-9]/.test(trimmed)) return 'Must contain at least one letter or digit';
-    if (/  /.test(trimmed)) return 'No consecutive spaces';
+    if (trimmed.length < 3) return this.transloco.translate('settings.profile.validation.tooShort');
+    if (trimmed.length > 100) return this.transloco.translate('settings.profile.validation.tooLong');
+    if (!/^[a-zA-Z0-9 \-_.]+$/.test(trimmed)) return this.transloco.translate('settings.profile.validation.invalidChars');
+    if (!/[a-zA-Z0-9]/.test(trimmed)) return this.transloco.translate('settings.profile.validation.needAlphanumeric');
+    if (/  /.test(trimmed)) return this.transloco.translate('settings.profile.validation.consecutiveSpaces');
     return null;
   }
 

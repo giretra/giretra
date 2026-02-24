@@ -4,12 +4,14 @@ import { PlayerPosition } from '../../../../api/generated/signalr-types.generate
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-room-card',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     <div class="room-card" [class.completed]="room().status === 'Completed'">
       <!-- Status strip -->
       <div class="status-strip" [class]="statusClass()"></div>
@@ -29,7 +31,7 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
             <!-- Seat picker mode -->
             <div class="seat-picker">
               <div class="picker-header">
-                <span class="picker-title">Choose your seat</span>
+                <span class="picker-title">{{ t('roomCard.chooseYourSeat') }}</span>
                 <button class="picker-cancel" (click)="cancelSelection()">
                   <i-lucide [img]="XIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
@@ -56,10 +58,10 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                       }
                     } @else if (isInviteOnly(getNorth())) {
                       <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">Invite only</span>
+                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
                     } @else {
-                      <span class="picker-pos">Top</span>
-                      <span class="picker-team team1">Your Team</span>
+                      <span class="picker-pos">{{ t('positions.top') }}</span>
+                      <span class="picker-team team1">{{ t('teams.yourTeam') }}</span>
                     }
                   </button>
                 </div>
@@ -84,14 +86,14 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                       }
                     } @else if (isInviteOnly(getWest())) {
                       <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">Invite only</span>
+                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
                     } @else {
-                      <span class="picker-pos">Left</span>
-                      <span class="picker-team team2">Opponents</span>
+                      <span class="picker-pos">{{ t('positions.left') }}</span>
+                      <span class="picker-team team2">{{ t('teams.opponents') }}</span>
                     }
                   </button>
                   <div class="picker-center">
-                    <span class="picker-you">You</span>
+                    <span class="picker-you">{{ t('common.you') }}</span>
                   </div>
                   <button
                     class="picker-seat"
@@ -112,10 +114,10 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                       }
                     } @else if (isInviteOnly(getEast())) {
                       <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">Invite only</span>
+                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
                     } @else {
-                      <span class="picker-pos">Right</span>
-                      <span class="picker-team team2">Opponents</span>
+                      <span class="picker-pos">{{ t('positions.right') }}</span>
+                      <span class="picker-team team2">{{ t('teams.opponents') }}</span>
                     }
                   </button>
                 </div>
@@ -140,10 +142,10 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                       }
                     } @else if (isInviteOnly(getSouth())) {
                       <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">Invite only</span>
+                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
                     } @else {
-                      <span class="picker-pos">Bottom</span>
-                      <span class="picker-team team1">Your Team</span>
+                      <span class="picker-pos">{{ t('positions.bottom') }}</span>
+                      <span class="picker-team team1">{{ t('teams.yourTeam') }}</span>
                     }
                   </button>
                 </div>
@@ -221,10 +223,10 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                   (click)="rejoinClicked.emit()"
                 >
                   <i-lucide [img]="RotateCcwIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  Rejoin
+                  {{ t('roomCard.rejoin') }}
                 </button>
               } @else if (isSeated()) {
-                <span class="seated-label">Seated</span>
+                <span class="seated-label">{{ t('roomCard.seated') }}</span>
               } @else {
                 <button
                   hlmBtn
@@ -235,20 +237,21 @@ import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide
                 >
                   @if (canJoin()) {
                     <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    Join
+                    {{ t('roomCard.join') }}
                   } @else {
                     <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    Watch
+                    {{ t('roomCard.watch') }}
                   }
                 </button>
               }
             } @else {
-              <span class="finished-label">Finished</span>
+              <span class="finished-label">{{ t('roomCard.finished') }}</span>
             }
           }
         </div>
       </div>
     </div>
+    </ng-container>
   `,
   styles: [`
     .room-card {

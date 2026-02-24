@@ -12,6 +12,7 @@ import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { AuthService } from './core/services/auth.service';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { provideAppTransloco } from './core/i18n';
 import {
   LUCIDE_ICONS,
   LucideIconProvider,
@@ -103,6 +104,7 @@ export const appConfig: ApplicationConfig = {
     },
     { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(usedIcons) },
+    provideAppTransloco(),
     provideHotToastConfig({
       position: 'bottom-center',
       dismissible: true,

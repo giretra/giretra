@@ -1,9 +1,10 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { CardPointsBreakdownResponse, CardSuit, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
 import { getTeamLabel } from '../../../../../core/utils';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
 import { HlmButton } from '@spartan-ng/helm/button';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 interface BreakdownRow {
   label: string;
@@ -17,11 +18,12 @@ interface BreakdownRow {
 @Component({
   selector: 'app-deal-summary',
   standalone: true,
-  imports: [GameModeBadgeComponent, SuitIconComponent, HlmButton],
+  imports: [GameModeBadgeComponent, SuitIconComponent, HlmButton, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     @if (summary(); as s) {
       <div class="deal-summary">
-        <h2 class="title">Deal Complete</h2>
+        <h2 class="title">{{ t('dealSummary.title') }}</h2>
 
         <div class="mode-display">
           <app-game-mode-badge [mode]="s.gameMode" size="1.5rem" />
@@ -31,9 +33,9 @@ interface BreakdownRow {
           <div class="team-column team1">
             <span class="team-label">{{ team1Label() }}</span>
             <span class="card-points">{{ s.team1CardPoints }}</span>
-            <span class="pts-label">pts</span>
+            <span class="pts-label">{{ t('dealSummary.pts') }}</span>
             <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
-              +{{ s.team1MatchPointsEarned }} match
+              +{{ s.team1MatchPointsEarned }} {{ t('dealSummary.match') }}
             </span>
           </div>
 
@@ -42,21 +44,21 @@ interface BreakdownRow {
           <div class="team-column team2">
             <span class="team-label">{{ team2Label() }}</span>
             <span class="card-points">{{ s.team2CardPoints }}</span>
-            <span class="pts-label">pts</span>
+            <span class="pts-label">{{ t('dealSummary.pts') }}</span>
             <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
-              +{{ s.team2MatchPointsEarned }} match
+              +{{ s.team2MatchPointsEarned }} {{ t('dealSummary.match') }}
             </span>
           </div>
         </div>
 
         <!-- Card Points Breakdown -->
         <div class="breakdown-section">
-          <h3 class="breakdown-title">Points Breakdown</h3>
+          <h3 class="breakdown-title">{{ t('dealSummary.pointsBreakdown') }}</h3>
           <table class="breakdown-table">
             <thead>
               <tr>
-                <th class="card-type">Card</th>
-                <th class="value-col">ea.</th>
+                <th class="card-type">{{ t('dealSummary.card') }}</th>
+                <th class="value-col">{{ t('dealSummary.each') }}</th>
                 <th class="team1-col">{{ team1Label() }}</th>
                 <th class="team2-col">{{ team2Label() }}</th>
               </tr>
@@ -80,12 +82,12 @@ interface BreakdownRow {
                 </tr>
               }
               <tr class="last-trick-row">
-                <td class="card-type" colspan="2">Last Trick</td>
+                <td class="card-type" colspan="2">{{ t('dealSummary.lastTrick') }}</td>
                 <td class="team1-col" [class.has-points]="s.team1Breakdown.lastTrickBonus > 0">{{ s.team1Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
                 <td class="team2-col" [class.has-points]="s.team2Breakdown.lastTrickBonus > 0">{{ s.team2Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
               </tr>
               <tr class="total-row">
-                <td class="card-type" colspan="2">Total</td>
+                <td class="card-type" colspan="2">{{ t('dealSummary.total') }}</td>
                 <td class="team1-col has-points">{{ s.team1Breakdown.total }}</td>
                 <td class="team2-col has-points">{{ s.team2Breakdown.total }}</td>
               </tr>
@@ -95,7 +97,7 @@ interface BreakdownRow {
 
         @if (s.wasSweep) {
           <div class="sweep-banner">
-            SWEEP by {{ sweepLabel() }}!
+            {{ t('dealSummary.sweepBy', { team: sweepLabel() }) }}
           </div>
         }
 
@@ -103,20 +105,21 @@ interface BreakdownRow {
         <div class="match-progress">
           <div class="progress-team team1-text">
             <span class="progress-score">{{ s.team1TotalMatchPoints }}</span>
-            <span class="progress-target">/ 150</span>
+            <span class="progress-target">{{ t('dealSummary.target') }}</span>
           </div>
-          <span class="progress-label">Match Score</span>
+          <span class="progress-label">{{ t('dealSummary.matchScore') }}</span>
           <div class="progress-team team2-text">
             <span class="progress-score">{{ s.team2TotalMatchPoints }}</span>
-            <span class="progress-target">/ 150</span>
+            <span class="progress-target">{{ t('dealSummary.target') }}</span>
           </div>
         </div>
 
         <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
-          Continue
+          {{ t('common.continue') }}
         </button>
       </div>
     }
+    </ng-container>
   `,
   styles: [`
     .deal-summary {
@@ -367,6 +370,7 @@ interface BreakdownRow {
   `],
 })
 export class DealSummaryComponent {
+  private readonly transloco = inject(TranslocoService);
   readonly myTeam = input<Team | null>(null);
 
   readonly summary = input<{
@@ -385,12 +389,12 @@ export class DealSummaryComponent {
 
   readonly dismissed = output<void>();
 
-  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
-  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));
   readonly sweepLabel = computed(() => {
     const s = this.summary();
     if (!s?.sweepingTeam) return '';
-    return getTeamLabel(s.sweepingTeam as 'Team1' | 'Team2', this.myTeam());
+    return getTeamLabel(s.sweepingTeam as 'Team1' | 'Team2', this.myTeam(), (k) => this.transloco.translate(k));
   });
 
   private static readonly modeToSuit: Record<string, CardSuit> = {
@@ -428,48 +432,48 @@ export class DealSummaryComponent {
 
       // Ordered by strongest: Trump J(20), Trump 9(14), A(11), 10(10), K(4), Q(3), other J(2)
       if (t1TrumpJ > 0 || t2TrumpJ > 0)
-        rows.push({ label: 'Jack', perCardValue: 20, team1Points: t1TrumpJ, team2Points: t2TrumpJ, isTrump: true, trumpSuit });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.jack'), perCardValue: 20, team1Points: t1TrumpJ, team2Points: t2TrumpJ, isTrump: true, trumpSuit });
       if (t1Trump9 > 0 || t2Trump9 > 0)
-        rows.push({ label: 'Nine', perCardValue: 14, team1Points: t1Trump9, team2Points: t2Trump9, isTrump: true, trumpSuit });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.nine'), perCardValue: 14, team1Points: t1Trump9, team2Points: t2Trump9, isTrump: true, trumpSuit });
       if (t1.aces > 0 || t2.aces > 0)
-        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.aces'), perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
       if (t1.tens > 0 || t2.tens > 0)
-        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.tens'), perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
       if (t1.kings > 0 || t2.kings > 0)
-        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.kings'), perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
       if (t1.queens > 0 || t2.queens > 0)
-        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.queens'), perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
       if (t1OtherJ > 0 || t2OtherJ > 0)
-        rows.push({ label: 'Jacks', perCardValue: 2, team1Points: t1OtherJ, team2Points: t2OtherJ, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.jacks'), perCardValue: 2, team1Points: t1OtherJ, team2Points: t2OtherJ, isTrump: false });
       // Non-trump nines = 0pts, skip
 
     } else if (mode === GameMode.AllTrumps) {
       // All trump ranking: J(20) > 9(14) > A(11) > 10(10) > K(4) > Q(3)
       if (t1.jacks > 0 || t2.jacks > 0)
-        rows.push({ label: 'Jacks', perCardValue: 20, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.jacks'), perCardValue: 20, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
       if (t1.nines > 0 || t2.nines > 0)
-        rows.push({ label: 'Nines', perCardValue: 14, team1Points: t1.nines, team2Points: t2.nines, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.nines'), perCardValue: 14, team1Points: t1.nines, team2Points: t2.nines, isTrump: false });
       if (t1.aces > 0 || t2.aces > 0)
-        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.aces'), perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
       if (t1.tens > 0 || t2.tens > 0)
-        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.tens'), perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
       if (t1.kings > 0 || t2.kings > 0)
-        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.kings'), perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
       if (t1.queens > 0 || t2.queens > 0)
-        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.queens'), perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
 
     } else {
       // NoTrumps: A(11) > 10(10) > K(4) > Q(3) > J(2) > 9(0, skip)
       if (t1.aces > 0 || t2.aces > 0)
-        rows.push({ label: 'Aces', perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.aces'), perCardValue: 11, team1Points: t1.aces, team2Points: t2.aces, isTrump: false });
       if (t1.tens > 0 || t2.tens > 0)
-        rows.push({ label: 'Tens', perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.tens'), perCardValue: 10, team1Points: t1.tens, team2Points: t2.tens, isTrump: false });
       if (t1.kings > 0 || t2.kings > 0)
-        rows.push({ label: 'Kings', perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.kings'), perCardValue: 4, team1Points: t1.kings, team2Points: t2.kings, isTrump: false });
       if (t1.queens > 0 || t2.queens > 0)
-        rows.push({ label: 'Queens', perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.queens'), perCardValue: 3, team1Points: t1.queens, team2Points: t2.queens, isTrump: false });
       if (t1.jacks > 0 || t2.jacks > 0)
-        rows.push({ label: 'Jacks', perCardValue: 2, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
+        rows.push({ label: this.transloco.translate('dealSummary.cards.jacks'), perCardValue: 2, team1Points: t1.jacks, team2Points: t2.jacks, isTrump: false });
     }
 
     return rows;

@@ -1,6 +1,7 @@
 import { Component, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule, ChevronLeft, Users, Ban, Trophy, Settings } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { ProfileSectionComponent } from './components/profile-section.component';
 import { FriendsSectionComponent } from './components/friends-section.component';
 import { BlockedSectionComponent } from './components/blocked-section.component';
@@ -13,13 +14,14 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
   standalone: true,
   imports: [
     LucideAngularModule,
+    TranslocoDirective,
     ProfileSectionComponent,
     FriendsSectionComponent,
     BlockedSectionComponent,
     MatchHistorySectionComponent,
   ],
   template: `
-    <div class="settings-shell">
+    <div class="settings-shell" *transloco="let t">
       <header class="settings-header">
         <div class="header-inner">
           <button class="back-btn" (click)="goBack()" title="Back to home">
@@ -27,7 +29,7 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
           </button>
           <h1 class="header-title">
             <i-lucide [img]="SettingsIcon" [size]="18"></i-lucide>
-            Settings
+            {{ t('settings.title') }}
           </h1>
         </div>
       </header>
@@ -42,7 +44,7 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
               (click)="activeTab.set('profile')"
             >
               <i-lucide [img]="SettingsIcon" [size]="14"></i-lucide>
-              Profile
+              {{ t('settings.tabs.profile') }}
             </button>
             <button
               class="tab"
@@ -50,7 +52,7 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
               (click)="activeTab.set('friends')"
             >
               <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
-              Friends
+              {{ t('settings.tabs.friends') }}
             </button>
             <button
               class="tab"
@@ -58,7 +60,7 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
               (click)="activeTab.set('blocked')"
             >
               <i-lucide [img]="BanIcon" [size]="14"></i-lucide>
-              Blocked
+              {{ t('settings.tabs.blocked') }}
             </button>
             <button
               class="tab"
@@ -66,7 +68,7 @@ type Tab = 'profile' | 'friends' | 'blocked' | 'history';
               (click)="activeTab.set('history')"
             >
               <i-lucide [img]="TrophyIcon" [size]="14"></i-lucide>
-              History
+              {{ t('settings.tabs.history') }}
             </button>
           </nav>
 

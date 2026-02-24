@@ -9,6 +9,8 @@ import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
 import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
   selector: 'app-home',
@@ -17,8 +19,11 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
     RoomListComponent,
     CreateRoomFormComponent,
     LucideAngularModule,
+    TranslocoDirective,
+    LanguageSwitcherComponent,
   ],
   template: `
+    <ng-container *transloco="let t">
     <div class="home-shell">
       <!-- Hero header with felt texture -->
       <header class="hero">
@@ -36,6 +41,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
               <div class="user-pill">
                 <span class="user-avatar">{{ user.displayName.charAt(0).toUpperCase() }}</span>
                 <span class="user-name">{{ user.displayName }}</span>
+                <app-language-switcher />
                 <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
@@ -57,8 +63,8 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
       <!-- Resume game banner -->
       @if (activeGameRoomId()) {
         <div class="resume-banner" (click)="resumeGame()">
-          <span class="resume-text">You have a game in progress</span>
-          <button class="resume-btn">Resume</button>
+          <span class="resume-text">{{ t('home.resumeBanner') }}</span>
+          <button class="resume-btn">{{ t('home.resume') }}</button>
         </div>
       }
 
@@ -81,8 +87,8 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
                   <i-lucide [img]="PlusIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
                 </span>
                 <span class="create-btn-text">
-                  <span class="create-btn-label">Create Room</span>
-                  <span class="create-btn-hint">Start a new game table</span>
+                  <span class="create-btn-label">{{ t('home.createRoom') }}</span>
+                  <span class="create-btn-hint">{{ t('home.createRoomHint') }}</span>
                 </span>
               </button>
             }
@@ -91,7 +97,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
           <!-- Room list section -->
           <section class="panel rooms-panel">
             <div class="panel-header">
-              <h2 class="panel-title">Open Tables</h2>
+              <h2 class="panel-title">{{ t('home.openTables') }}</h2>
               <span class="room-count-badge">{{ rooms().length }}</span>
             </div>
             <app-room-list
@@ -106,6 +112,7 @@ import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angu
       </main>
 
     </div>
+    </ng-container>
   `,
   styles: [`
     .home-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }

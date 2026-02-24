@@ -1,20 +1,21 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Ban, Shield } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { ApiService, BlockedUserResponse } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-blocked-section',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule],
+  imports: [FormsModule, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="blocked">
+    <div class="blocked" *transloco="let t">
       <!-- Block input -->
       <div class="block-form">
         <input
           type="text"
           class="block-input"
-          placeholder="Username to block..."
+          [placeholder]="t('settings.blocked.searchPlaceholder')"
           [(ngModel)]="blockUsername"
           (keydown.enter)="blockUser()"
         />
@@ -24,7 +25,7 @@ import { ApiService, BlockedUserResponse } from '../../../core/services/api.serv
           [disabled]="!blockUsername.trim()"
         >
           <i-lucide [img]="BanIcon" [size]="14"></i-lucide>
-          Block
+          {{ t('settings.blocked.block') }}
         </button>
       </div>
 
@@ -32,10 +33,10 @@ import { ApiService, BlockedUserResponse } from '../../../core/services/api.serv
       <div class="section">
         <h3 class="section-title">
           <i-lucide [img]="ShieldIcon" [size]="14"></i-lucide>
-          Blocked Users
+          {{ t('settings.blocked.blockedUsers') }}
         </h3>
         @if (blockedUsers().length === 0) {
-          <div class="empty-state">No blocked users.</div>
+          <div class="empty-state">{{ t('settings.blocked.noBlocked') }}</div>
         } @else {
           @for (user of blockedUsers(); track user.blockId) {
             <div class="user-row">
@@ -45,7 +46,7 @@ import { ApiService, BlockedUserResponse } from '../../../core/services/api.serv
                 <span class="user-username">&#64;{{ user.username }}</span>
               </div>
               <button class="btn btn-sm" (click)="unblockUser(user.blockId)">
-                Unblock
+                {{ t('settings.blocked.unblock') }}
               </button>
             </div>
           }

@@ -1,15 +1,16 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { Team } from '../../../../../api/generated/signalr-types.generated';
 import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Trophy } from 'lucide-angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-match-end-overlay',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="overlay">
+    <div class="overlay" *transloco="let t">
       <div class="modal">
         @if (isWinner()) {
           <div class="trophy-container">
@@ -19,14 +20,14 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
 
         <h1 class="title">
           @if (isWinner()) {
-            You Win!
+            {{ t('matchEnd.youWin') }}
           } @else {
-            Game Over
+            {{ t('matchEnd.gameOver') }}
           }
         </h1>
 
         <p class="winner-text">
-          {{ winnerLabel() }} Wins
+          {{ winnerLabel() }} {{ t('matchEnd.wins') }}
         </p>
 
         <div class="final-score">
@@ -41,7 +42,7 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
           </div>
         </div>
 
-        <p class="deals-played">{{ totalDeals() }} deals played</p>
+        <p class="deals-played">{{ t('matchEnd.dealsPlayed', { count: totalDeals() }) }}</p>
 
         <div class="actions">
           @if (isCreator()) {
@@ -50,7 +51,7 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
               variant="default"
               (click)="playAgain.emit()"
             >
-              Play Again
+              {{ t('matchEnd.playAgain') }}
             </button>
           }
           <button
@@ -58,7 +59,7 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
             [variant]="isCreator() ? 'secondary' : 'default'"
             (click)="leaveTable.emit()"
           >
-            Leave Table
+            {{ t('matchEnd.leaveTable') }}
           </button>
         </div>
       </div>
@@ -181,6 +182,7 @@ import { LucideAngularModule, Trophy } from 'lucide-angular';
   `],
 })
 export class MatchEndOverlayComponent {
+  private readonly transloco = inject(TranslocoService);
   readonly TrophyIcon = Trophy;
 
   readonly winner = input<Team | null>(null);
@@ -202,9 +204,9 @@ export class MatchEndOverlayComponent {
   readonly winnerLabel = computed(() => {
     const w = this.winner();
     if (!w) return '';
-    return getTeamLabel(w as 'Team1' | 'Team2', this.myTeam());
+    return getTeamLabel(w as 'Team1' | 'Team2', this.myTeam(), (k) => this.transloco.translate(k));
   });
 
-  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
-  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));
 }

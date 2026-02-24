@@ -1,4 +1,4 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { GameMode, Team } from '../../../../api/generated/signalr-types.generated';
 import { RoomResponse } from '../../../../core/services/api.service';
 import { getTeamLabel } from '../../../../core/utils';
@@ -8,13 +8,14 @@ import { MultiplierBadgeComponent } from '../../../../shared/components/multipli
 import { TurnTimerComponent } from '../../../../shared/components/turn-timer/turn-timer.component';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, LogOut } from 'lucide-angular';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-score-bar',
   standalone: true,
-  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, TurnTimerComponent, HlmButton, LucideAngularModule],
+  imports: [GameModeBadgeComponent, MultiplierBadgeComponent, TurnTimerComponent, HlmButton, LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="score-bar">
+    <div class="score-bar" *transloco="let t">
       <!-- Main row -->
       <div class="score-row main-row">
         <!-- Team 1 Score -->
@@ -33,11 +34,11 @@ import { LucideAngularModule, LogOut } from 'lucide-angular';
           }
           @if (isMyTurn() && turnTimeoutAt()) {
             <div class="your-turn-indicator">
-              <span class="your-turn-label">Your turn</span>
+              <span class="your-turn-label">{{ t('scoreBar.yourTurn') }}</span>
               <app-turn-timer [deadline]="turnTimeoutAt()" />
             </div>
           } @else if (dealNumber() > 0) {
-            <span class="deal-number">Deal {{ dealNumber() }}</span>
+            <span class="deal-number">{{ t('scoreBar.dealNumber', { number: dealNumber() }) }}</span>
           } @else {
             <span class="room-name">{{ room()?.name }}</span>
           }
@@ -56,7 +57,7 @@ import { LucideAngularModule, LogOut } from 'lucide-angular';
           size="sm"
           class="menu-button"
           (click)="leaveTable.emit()"
-          title="Leave Table"
+          [title]="t('scoreBar.leaveTable')"
         >
           <i-lucide [img]="LogOutIcon" [size]="18" [strokeWidth]="2"></i-lucide>
         </button>
@@ -262,6 +263,7 @@ import { LucideAngularModule, LogOut } from 'lucide-angular';
   `],
 })
 export class ScoreBarComponent {
+  private readonly transloco = inject(TranslocoService);
   readonly LogOutIcon = LogOut;
 
   readonly room = input<RoomResponse | null>(null);
@@ -282,8 +284,8 @@ export class ScoreBarComponent {
     return this.gameMode() !== null;
   });
 
-  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam()));
-  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam()));
+  readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
+  readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));
 
   readonly totalPoints = computed(() => {
     const mode = this.gameMode();

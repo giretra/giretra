@@ -2,21 +2,24 @@ import { Component, input, computed } from '@angular/core';
 import { CardSuit, GameMode } from '../../../api/generated/signalr-types.generated';
 import { getTrumpSuit, isRedSuit, getSuitSymbol } from '../../../core/utils/card-utils';
 import { SuitIconComponent } from '../suit-icon/suit-icon.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-game-mode-badge',
   standalone: true,
-  imports: [SuitIconComponent],
+  imports: [SuitIconComponent, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     @if (mode()) {
       <span class="badge" [class]="badgeClass()">
         @if (trumpSuit(); as suit) {
           <app-suit-icon [suit]="suit" [size]="size()" />
         } @else {
-          <span class="mode-text">{{ modeText() }}</span>
+          <span class="mode-text">{{ t('game.modes.' + modeTextKey()) }}</span>
         }
       </span>
     }
+    </ng-container>
   `,
   styles: [`
     .badge {
@@ -53,10 +56,10 @@ export class GameModeBadgeComponent {
     return m ? getTrumpSuit(m) : null;
   });
 
-  readonly modeText = computed(() => {
+  readonly modeTextKey = computed(() => {
     const m = this.mode();
-    if (m === GameMode.NoTrumps) return 'No Trumps';
-    if (m === GameMode.AllTrumps) return 'All Trumps';
+    if (m === GameMode.NoTrumps) return 'noTrumps';
+    if (m === GameMode.AllTrumps) return 'allTrumps';
     return '';
   });
 

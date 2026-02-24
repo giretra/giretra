@@ -3,6 +3,7 @@ import { RoomResponse } from '../../../../core/services/api.service';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { RoomCardComponent } from '../room-card/room-card.component';
 import { LucideAngularModule, Layers } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 export interface JoinRoomEvent {
   room: RoomResponse;
@@ -12,20 +13,21 @@ export interface JoinRoomEvent {
 @Component({
   selector: 'app-room-list',
   standalone: true,
-  imports: [RoomCardComponent, LucideAngularModule],
+  imports: [RoomCardComponent, LucideAngularModule, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     @if (loading()) {
       <div class="state-container">
         <div class="spinner"></div>
-        <span class="state-text">Looking for tables...</span>
+        <span class="state-text">{{ t('roomList.lookingForTables') }}</span>
       </div>
     } @else if (rooms().length === 0) {
       <div class="state-container empty">
         <div class="empty-icon">
           <i-lucide [img]="LayersIcon" [size]="28" [strokeWidth]="1.5"></i-lucide>
         </div>
-        <p class="state-text">No tables open</p>
-        <p class="state-hint">Create one and invite friends to play</p>
+        <p class="state-text">{{ t('roomList.noTables') }}</p>
+        <p class="state-hint">{{ t('roomList.noTablesHint') }}</p>
       </div>
     } @else {
       <div class="room-grid">
@@ -39,6 +41,7 @@ export interface JoinRoomEvent {
         }
       </div>
     }
+    </ng-container>
   `,
   styles: [`
     .room-grid {

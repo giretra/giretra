@@ -1,12 +1,14 @@
 import { Component, input, output, computed } from '@angular/core';
 import { PlayerProfileResponse } from '../../../core/services/api.service';
 import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } from 'lucide-angular';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-player-profile-popup',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     <div class="backdrop" (click)="closed.emit()"></div>
     <div class="popup-container" (click)="closed.emit()">
       <div class="popup-panel" [class]="teamClass()" (click)="$event.stopPropagation()">
@@ -27,21 +29,21 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
             </div>
             <div class="display-name">{{ profile().displayName }}</div>
             @if (milestone()) {
-              <span class="milestone-label">{{ milestone() }}</span>
+              <span class="milestone-label">{{ t('playerProfile.' + milestone()) }}</span>
             }
           </div>
 
           @if (profile().memberSince) {
             <div class="member-since">
               <i-lucide [img]="CalendarIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-              <span>Playing since {{ memberSinceText() }}</span>
+              <span>{{ t('playerProfile.playingSince', { date: memberSinceText() }) }}</span>
             </div>
           }
 
           <div class="stats-grid">
             <div class="stat-cell">
               <span class="stat-value">{{ profile().gamesPlayed }}</span>
-              <span class="stat-label">Played</span>
+              <span class="stat-label">{{ t('playerProfile.played') }}</span>
             </div>
             <div class="stat-cell">
               @if (profile().eloRating != null) {
@@ -51,7 +53,7 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
                   <i-lucide [img]="EyeOffIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </span>
               }
-              <span class="stat-label">ELO</span>
+              <span class="stat-label">{{ t('playerProfile.elo') }}</span>
             </div>
             <div class="stat-cell">
               <span class="stat-value streak-value">
@@ -60,7 +62,7 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
                   <i-lucide [img]="FlameIcon" [size]="14" [strokeWidth]="2" class="flame-icon"></i-lucide>
                 }
               </span>
-              <span class="stat-label">Streak</span>
+              <span class="stat-label">{{ t('playerProfile.streak') }}</span>
             </div>
             <div class="stat-cell">
               <span class="stat-value best-streak-value">
@@ -69,7 +71,7 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2" class="trophy-icon"></i-lucide>
                 }
               </span>
-              <span class="stat-label">Best</span>
+              <span class="stat-label">{{ t('playerProfile.best') }}</span>
             </div>
           </div>
         } @else {
@@ -107,11 +109,11 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
           <div class="stats-grid">
             <div class="stat-cell">
               <span class="stat-value">{{ profile().gamesPlayed }}</span>
-              <span class="stat-label">Played</span>
+              <span class="stat-label">{{ t('playerProfile.played') }}</span>
             </div>
             <div class="stat-cell">
               <span class="stat-value elo-value">{{ profile().botRating ?? '—' }}</span>
-              <span class="stat-label">Rating</span>
+              <span class="stat-label">{{ t('playerProfile.rating') }}</span>
             </div>
             <div class="stat-cell">
               <span class="stat-value streak-value">
@@ -120,7 +122,7 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
                   <i-lucide [img]="FlameIcon" [size]="14" [strokeWidth]="2" class="flame-icon"></i-lucide>
                 }
               </span>
-              <span class="stat-label">Streak</span>
+              <span class="stat-label">{{ t('playerProfile.streak') }}</span>
             </div>
             <div class="stat-cell">
               <span class="stat-value best-streak-value">
@@ -129,12 +131,13 @@ import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } fr
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2" class="trophy-icon"></i-lucide>
                 }
               </span>
-              <span class="stat-label">Best</span>
+              <span class="stat-label">{{ t('playerProfile.best') }}</span>
             </div>
           </div>
         }
       </div>
     </div>
+    </ng-container>
   `,
   styles: [`
     .backdrop {
@@ -390,8 +393,8 @@ export class PlayerProfilePopupComponent {
 
   readonly milestone = computed(() => {
     const played = this.profile().gamesPlayed;
-    if (played >= 500) return 'Expert';
-    if (played >= 100) return 'Veteran';
+    if (played >= 500) return 'expert';
+    if (played >= 100) return 'veteran';
     return null;
   });
 

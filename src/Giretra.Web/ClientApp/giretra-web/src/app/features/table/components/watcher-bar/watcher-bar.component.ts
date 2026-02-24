@@ -1,13 +1,15 @@
 import { Component, input } from '@angular/core';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { POSITIONS_CLOCKWISE } from '../../../../core/utils/position-utils';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-watcher-bar',
   standalone: true,
+  imports: [TranslocoDirective],
   template: `
-    <div class="watcher-bar">
-      <span class="spectating-label">Spectating</span>
+    <div class="watcher-bar" *transloco="let t">
+      <span class="spectating-label">{{ t('watcher.spectating') }}</span>
       <div class="card-counts">
         @for (pos of positions; track pos) {
           <span class="count-item">

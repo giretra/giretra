@@ -1,28 +1,30 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { GameMode, PlayerPosition, CardSuit } from '../../../../api/generated/signalr-types.generated';
 import { ValidAction, NegotiationAction } from '../../../../core/services/api.service';
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-icon.component';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent, SuitIconComponent],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, SuitIconComponent, TranslocoDirective],
   template: `
+    <ng-container *transloco="let t">
     <div class="backdrop"></div>
     <div class="dialog-container">
       <div class="dialog">
-        <h2 class="dialog-title">Your Turn to Bid</h2>
+        <h2 class="dialog-title">{{ t('bidDialog.title') }}</h2>
 
         <!-- Current bid -->
         @if (currentBid(); as bid) {
           <div class="current-bid">
             <app-game-mode-badge [mode]="bid.mode" size="1.5rem" />
-            <span class="bid-by">by {{ bid.player }}</span>
+            <span class="bid-by">{{ t('negotiation.bidBy', { player: bid.player }) }}</span>
           </div>
         } @else {
-          <p class="no-bid">No bid yet — you open</p>
+          <p class="no-bid">{{ t('bidDialog.noBidYouOpen') }}</p>
         }
 
         <!-- Bid history (newest first) -->
@@ -39,13 +41,13 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
                   } @else if (action.actionType === 'Announce') {
                     <span>{{ formatModeName(action.mode) }}</span>
                   } @else if (action.actionType === 'Double') {
-                    <span class="multiplier-symbol">×2</span>
-                    <span>Double</span>
+                    <span class="multiplier-symbol">\u00d72</span>
+                    <span>{{ t('negotiation.double') }}</span>
                   } @else if (action.actionType === 'Redouble') {
-                    <span class="multiplier-symbol">×4</span>
-                    <span>Redouble</span>
+                    <span class="multiplier-symbol">\u00d74</span>
+                    <span>{{ t('negotiation.redouble') }}</span>
                   } @else {
-                    <span>Accept</span>
+                    <span>{{ t('negotiation.accept') }}</span>
                   }
                 </span>
               </div>
@@ -60,6 +62,7 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
         />
       </div>
     </div>
+    </ng-container>
   `,
   styles: [`
     :host {
@@ -249,6 +252,7 @@ import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-
 })
 export class BidDialogComponent {
   readonly Math = Math;
+  private readonly transloco = inject(TranslocoService);
   readonly validActions = input<ValidAction[]>([]);
   readonly negotiationHistory = input<NegotiationAction[]>([]);
   readonly activePlayer = input<PlayerPosition | null>(null);
@@ -285,12 +289,12 @@ export class BidDialogComponent {
   formatModeName(mode: GameMode | null): string {
     if (!mode) return '?';
     switch (mode) {
-      case GameMode.ColourClubs: return 'Clubs';
-      case GameMode.ColourDiamonds: return 'Diamonds';
-      case GameMode.ColourHearts: return 'Hearts';
-      case GameMode.ColourSpades: return 'Spades';
-      case GameMode.NoTrumps: return 'No Trumps';
-      case GameMode.AllTrumps: return 'All Trumps';
+      case GameMode.ColourClubs: return this.transloco.translate('game.modes.clubs');
+      case GameMode.ColourDiamonds: return this.transloco.translate('game.modes.diamonds');
+      case GameMode.ColourHearts: return this.transloco.translate('game.modes.hearts');
+      case GameMode.ColourSpades: return this.transloco.translate('game.modes.spades');
+      case GameMode.NoTrumps: return this.transloco.translate('game.modes.noTrumps');
+      case GameMode.AllTrumps: return this.transloco.translate('game.modes.allTrumps');
       default: return mode;
     }
   }

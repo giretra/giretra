@@ -2,21 +2,22 @@ import { Component, input, computed } from '@angular/core';
 import { GameMode, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { NegotiationAction } from '../../../../../core/services/api.service';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-negotiation-stage',
   standalone: true,
-  imports: [GameModeBadgeComponent],
+  imports: [GameModeBadgeComponent, TranslocoDirective],
   template: `
-    <div class="negotiation-stage">
+    <div class="negotiation-stage" *transloco="let t">
       <!-- Current bid -->
       @if (currentBid(); as bid) {
         <div class="current-bid">
           <app-game-mode-badge [mode]="bid.mode" size="1.75rem" />
-          <span class="bid-by">by {{ bid.player }}</span>
+          <span class="bid-by">{{ t('negotiation.bidBy', { player: bid.player }) }}</span>
         </div>
       } @else {
-        <p class="no-bid">No bid yet</p>
+        <p class="no-bid">{{ t('negotiation.noBidYet') }}</p>
       }
 
       <!-- Compact bid timeline -->
@@ -38,7 +39,7 @@ import { GameModeBadgeComponent } from '../../../../../shared/components/game-mo
       @if (activePlayer()) {
         <p class="active-bidder">
           <span class="bidder-dot"></span>
-          {{ activePlayer() }} is bidding...
+          {{ t('negotiation.playerBidding', { player: activePlayer() }) }}
         </p>
       }
     </div>

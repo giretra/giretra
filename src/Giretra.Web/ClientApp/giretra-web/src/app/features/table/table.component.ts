@@ -13,6 +13,8 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
+import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-table',
@@ -24,8 +26,10 @@ import { environment } from '../../../environments/environment';
     MatchEndOverlayComponent,
     BidDialogComponent,
     PlayerProfilePopupComponent,
+    TranslocoDirective,
   ],
   template: `
+    <ng-container *transloco="let t">
     <div class="table-container"
          [class.bid-dialog-open]="gameState.phase() === 'negotiation' && gameState.isMyTurn() && gameState.pendingActionType() === 'Negotiate'"
          [class.deal-summary-open]="gameState.dealSummary()">
@@ -34,12 +38,12 @@ import { environment } from '../../../environments/environment';
       @if (hub.connectionStatus() === 'reconnecting') {
         <div class="connection-banner reconnecting">
           <span class="connection-spinner"></span>
-          Reconnecting...
+          {{ t('table.reconnecting') }}
         </div>
       } @else if (hub.connectionStatus() === 'disconnected' && gameState.gameId()) {
         <div class="connection-banner disconnected">
-          Connection lost
-          <button class="retry-btn" (click)="onRetryConnection()">Retry</button>
+          {{ t('table.connectionLost') }}
+          <button class="retry-btn" (click)="onRetryConnection()">{{ t('common.retry') }}</button>
         </div>
       }
 
@@ -140,6 +144,7 @@ import { environment } from '../../../environments/environment';
         />
       }
     </div>
+    </ng-container>
   `,
   styles: [`
     :host {
@@ -252,6 +257,7 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly transloco = inject(TranslocoService);
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
@@ -559,7 +565,7 @@ export class TableComponent implements OnInit, OnDestroy {
     const phase = this.gameState.phase();
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 
-    if (gameInProgress && !confirm('Leaving during a match may result in a rating loss. Are you sure?')) {
+    if (gameInProgress && !confirm(this.transloco.translate('table.leaveConfirm'))) {
       return;
     }
 
