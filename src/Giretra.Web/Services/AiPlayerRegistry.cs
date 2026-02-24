@@ -1,4 +1,5 @@
 using Giretra.Core.Players;
+using Giretra.Core.Players.Discovery;
 using Giretra.Core.Players.Factories;
 using Giretra.Model;
 using Microsoft.EntityFrameworkCore;
@@ -133,6 +134,43 @@ public sealed class AiPlayerRegistry : IDisposable
         _defaultAgentType = bots.FirstOrDefault()?.AgentType;
 
         _logger.LogInformation("Loaded {Count} active bot(s) from database", newBots.Count);
+    }
+
+    /// <summary>
+    /// Discovers and initializes all available bot factories via reflection and external-bots/ directory.
+    /// Used in offline mode (no database).
+    /// </summary>
+    public async Task InitializeOfflineAsync(CancellationToken cancellationToken = default)
+    {
+        var discovered = FactoryDiscovery.DiscoverAll(
+            msg => _logger.LogWarning("{Message}", msg));
+
+        var newBots = new Dictionary<string, CachedBot>(StringComparer.OrdinalIgnoreCase);
+        short difficulty = 0;
+
+        foreach (var (name, factory) in discovered)
+        {
+            try
+            {
+                await factory.InitializeAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize factory for bot {AgentType}, skipping", name);
+                if (factory is IDisposable disposable)
+                    disposable.Dispose();
+                continue;
+            }
+
+            newBots[name] = new CachedBot(
+                name, factory.DisplayName, difficulty++, 1000,
+                null, null, null, factory);
+        }
+
+        _bots = newBots;
+        _defaultAgentType = newBots.Values.MaxBy(b => b.Difficulty)?.AgentType;
+
+        _logger.LogInformation("Loaded {Count} bot(s) via offline discovery", newBots.Count);
     }
 
     /// <summary>

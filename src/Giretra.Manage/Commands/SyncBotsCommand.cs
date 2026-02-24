@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using Giretra.Manage.Data;
-using Giretra.Manage.Discovery;
+using Giretra.Core.Players.Discovery;
 using Giretra.Model;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -18,7 +18,7 @@ public sealed class SyncBotsCommand : AsyncCommand<SyncBotsSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SyncBotsSettings settings, CancellationToken cancellation)
     {
-        var factories = FactoryDiscovery.DiscoverAll().Values.ToList();
+        var factories = FactoryDiscovery.DiscoverAll(msg => AnsiConsole.MarkupLine($"[yellow]{msg}[/]")).Values.ToList();
 
         var table = new Table()
             .Border(TableBorder.Rounded)

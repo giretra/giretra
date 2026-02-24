@@ -1,7 +1,4 @@
-using System.Reflection;
-using Giretra.Core.Players;
-
-namespace Giretra.Manage.Discovery;
+namespace Giretra.Core.Players.Discovery;
 
 /// <summary>
 /// Discovers IPlayerAgentFactory implementations via reflection and external bot directories.
@@ -13,7 +10,7 @@ public static class FactoryDiscovery
     /// then merges any external bots found in the external-bots/ directory.
     /// External bot discovery uses the current working directory by default.
     /// </summary>
-    public static Dictionary<string, IPlayerAgentFactory> DiscoverAll()
+    public static Dictionary<string, IPlayerAgentFactory> DiscoverAll(Action<string>? onWarning = null)
     {
         var assembly = typeof(IPlayerAgentFactory).Assembly;
         var factoryType = typeof(IPlayerAgentFactory);
@@ -39,7 +36,7 @@ public static class FactoryDiscovery
         var repoRoot = ExternalBotDiscovery.FindRepoRoot();
         if (repoRoot is not null)
         {
-            var external = ExternalBotDiscovery.Discover(repoRoot, factories.Keys);
+            var external = ExternalBotDiscovery.Discover(repoRoot, factories.Keys, onWarning);
             foreach (var (name, factory) in external)
                 factories[name] = factory;
         }

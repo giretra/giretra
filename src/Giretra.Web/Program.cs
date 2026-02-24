@@ -5,6 +5,7 @@ using Giretra.Web.Middleware;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
 using Giretra.Web.Services.Elo;
+using Giretra.Web.Services.Offline;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +47,9 @@ public class Program
 
         try
         {
-            Log.Information("Starting Giretra.Web");
+            var offline = args.Contains("--offline");
+
+            Log.Information("Starting Giretra.Web{OfflineFlag}", offline ? " (OFFLINE mode)" : "");
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Host.UseSerilog();
@@ -108,95 +111,124 @@ public class Program
             builder.Services.AddSingleton<IGameService, GameService>();
             builder.Services.AddSingleton<IRoomService, RoomService>();
 
-            // Authentication
-            var keycloakSection = builder.Configuration.GetSection("Keycloak");
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = keycloakSection["Authority"];
-                    options.Audience = keycloakSection["Audience"];
-                    options.RequireHttpsMetadata = keycloakSection.GetValue<bool>("RequireHttpsMetadata");
-                    options.Events = new JwtBearerEvents
+            if (offline)
+            {
+                // Offline auth: simple username-based scheme
+                builder.Services.AddAuthentication("Offline")
+                    .AddScheme<AuthenticationSchemeOptions, OfflineAuthenticationHandler>("Offline", null);
+                builder.Services.AddAuthorization();
+
+                // Offline service stubs (no DB needed)
+                builder.Services.AddOfflineServices();
+            }
+            else
+            {
+                // Authentication
+                var keycloakSection = builder.Configuration.GetSection("Keycloak");
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        OnMessageReceived = context =>
+                        options.Authority = keycloakSection["Authority"];
+                        options.Audience = keycloakSection["Audience"];
+                        options.RequireHttpsMetadata = keycloakSection.GetValue<bool>("RequireHttpsMetadata");
+                        options.Events = new JwtBearerEvents
                         {
-                            // Extract access_token from query string for SignalR
-                            var accessToken = context.Request.Query["access_token"];
-                            var path = context.HttpContext.Request.Path;
-                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                            OnMessageReceived = context =>
                             {
-                                context.Token = accessToken;
+                                // Extract access_token from query string for SignalR
+                                var accessToken = context.Request.Query["access_token"];
+                                var path = context.HttpContext.Request.Path;
+                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                                {
+                                    context.Token = accessToken;
+                                }
+                                return Task.CompletedTask;
                             }
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
-            builder.Services.AddAuthorization();
-            builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
+                        };
+                    });
+                builder.Services.AddAuthorization();
+                builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
 
-            // Database
-            builder.Services.AddGiretraDb();
+                // Database
+                builder.Services.AddGiretraDb();
 
-            // User sync
-            builder.Services.AddScoped<IUserSyncService, UserSyncService>();
+                // User sync
+                builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 
-            // Persistence
-            builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
+                // Persistence
+                builder.Services.AddScoped<IMatchPersistenceService, MatchPersistenceService>();
 
-            // Elo
-            builder.Services.AddSingleton<EloCalculationService>();
-            builder.Services.AddScoped<IEloService, EloService>();
+                // Elo
+                builder.Services.AddSingleton<EloCalculationService>();
+                builder.Services.AddScoped<IEloService, EloService>();
 
-            // Settings
-            builder.Services.AddScoped<IProfileService, ProfileService>();
-            builder.Services.AddScoped<IFriendService, FriendService>();
-            builder.Services.AddScoped<IBlockService, BlockService>();
-            builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
-            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+                // Settings
+                builder.Services.AddScoped<IProfileService, ProfileService>();
+                builder.Services.AddScoped<IFriendService, FriendService>();
+                builder.Services.AddScoped<IBlockService, BlockService>();
+                builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
+                builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+            }
 
             var app = builder.Build();
 
-            // Auto-create database schema and seed bot Player rows
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
-                await db.Database.EnsureCreatedAsync();
+            // Auth config endpoint (tells frontend which auth mode to use)
+            app.MapGet("/api/auth/config", () => offline
+                ? Results.Ok(new { mode = "offline" })
+                : Results.Ok(new { mode = "keycloak" }))
+                .AllowAnonymous();
 
-                // Ensure each Bot has a corresponding Player row with synced rating
-                var allBots = await db.Bots
-                    .Include(b => b.Player)
-                    .ToListAsync();
-
-                foreach (var bot in allBots)
-                {
-                    if (bot.Player == null)
-                    {
-                        db.Players.Add(new Model.Entities.Player
-                        {
-                            PlayerType = Model.Enums.PlayerType.Bot,
-                            BotId = bot.Id,
-                            EloRating = bot.Rating,
-                            EloIsPublic = true,
-                            CreatedAt = DateTimeOffset.UtcNow,
-                            UpdatedAt = DateTimeOffset.UtcNow
-                        });
-                    }
-                    else if (bot.Player.EloRating != bot.Rating)
-                    {
-                        // Sync Player.EloRating with Bot.Rating
-                        bot.Player.EloRating = bot.Rating;
-                        bot.Player.UpdatedAt = DateTimeOffset.UtcNow;
-                    }
-                }
-
-                if (db.ChangeTracker.HasChanges())
-                    await db.SaveChangesAsync();
-            }
-
-            // Load active bots from database into the AI registry
             var aiRegistry = app.Services.GetRequiredService<AiPlayerRegistry>();
             var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-            await aiRegistry.InitializeAsync(lifetime.ApplicationStopping);
+
+            if (offline)
+            {
+                // Initialize AI registry via factory discovery (no database)
+                await aiRegistry.InitializeOfflineAsync(lifetime.ApplicationStopping);
+                Log.Information("Running in OFFLINE mode (no database, no Keycloak)");
+            }
+            else
+            {
+                // Auto-create database schema and seed bot Player rows
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<GiretraDbContext>();
+                    await db.Database.EnsureCreatedAsync();
+
+                    // Ensure each Bot has a corresponding Player row with synced rating
+                    var allBots = await db.Bots
+                        .Include(b => b.Player)
+                        .ToListAsync();
+
+                    foreach (var bot in allBots)
+                    {
+                        if (bot.Player == null)
+                        {
+                            db.Players.Add(new Model.Entities.Player
+                            {
+                                PlayerType = Model.Enums.PlayerType.Bot,
+                                BotId = bot.Id,
+                                EloRating = bot.Rating,
+                                EloIsPublic = true,
+                                CreatedAt = DateTimeOffset.UtcNow,
+                                UpdatedAt = DateTimeOffset.UtcNow
+                            });
+                        }
+                        else if (bot.Player.EloRating != bot.Rating)
+                        {
+                            // Sync Player.EloRating with Bot.Rating
+                            bot.Player.EloRating = bot.Rating;
+                            bot.Player.UpdatedAt = DateTimeOffset.UtcNow;
+                        }
+                    }
+
+                    if (db.ChangeTracker.HasChanges())
+                        await db.SaveChangesAsync();
+                }
+
+                // Load active bots from database into the AI registry
+                await aiRegistry.InitializeAsync(lifetime.ApplicationStopping);
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

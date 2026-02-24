@@ -1,10 +1,8 @@
 using System.Text.Json;
-using Giretra.Core.Players;
 using Giretra.Core.Players.Agents.Remote;
 using Giretra.Core.Players.Factories;
-using Spectre.Console;
 
-namespace Giretra.Manage.Discovery;
+namespace Giretra.Core.Players.Discovery;
 
 /// <summary>
 /// Scans the external-bots/ directory for bot subdirectories containing bot.meta.json
@@ -41,9 +39,10 @@ public static class ExternalBotDiscovery
     /// </summary>
     /// <param name="basePath">Repository root path containing the external-bots/ directory.</param>
     /// <param name="builtInNames">Names of built-in agents, used for collision warnings.</param>
+    /// <param name="onWarning">Optional callback for warning messages (plain text).</param>
     /// <returns>Dictionary of agent name to factory, empty if no external-bots/ directory exists.</returns>
     public static Dictionary<string, IPlayerAgentFactory> Discover(
-        string basePath, IReadOnlyCollection<string>? builtInNames = null)
+        string basePath, IReadOnlyCollection<string>? builtInNames = null, Action<string>? onWarning = null)
     {
         var externalBotsDir = Path.Combine(basePath, ExternalBotsDirectory);
         if (!Directory.Exists(externalBotsDir))
@@ -65,16 +64,16 @@ public static class ExternalBotDiscovery
             }
             catch (Exception ex) when (ex is JsonException or IOException)
             {
-                AnsiConsole.MarkupLine(
-                    $"[yellow]Warning:[/] Skipping [bold]{Path.GetFileName(botDir)}[/]: " +
+                onWarning?.Invoke(
+                    $"Warning: Skipping {Path.GetFileName(botDir)}: " +
                     $"malformed {MetadataFileName} ({ex.Message})");
                 continue;
             }
 
             if (metadata?.Launch is null)
             {
-                AnsiConsole.MarkupLine(
-                    $"[yellow]Warning:[/] Skipping [bold]{Path.GetFileName(botDir)}[/]: " +
+                onWarning?.Invoke(
+                    $"Warning: Skipping {Path.GetFileName(botDir)}: " +
                     $"missing 'launch' section in {MetadataFileName}");
                 continue;
             }
@@ -84,8 +83,8 @@ public static class ExternalBotDiscovery
             // Warn on name collision with built-in agents
             if (builtInNames?.Contains(agentName, StringComparer.OrdinalIgnoreCase) == true)
             {
-                AnsiConsole.MarkupLine(
-                    $"[yellow]Warning:[/] External bot [bold]{agentName}[/] " +
+                onWarning?.Invoke(
+                    $"Warning: External bot {agentName} " +
                     $"overrides a built-in agent of the same name.");
             }
 

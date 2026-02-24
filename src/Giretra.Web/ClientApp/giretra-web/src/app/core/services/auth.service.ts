@@ -11,6 +11,8 @@ export interface AuthUser {
   roles: string[];
 }
 
+const OFFLINE_USERNAME_KEY = 'giretra-offline-username';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -18,15 +20,105 @@ export class AuthService {
   private readonly api = inject(ApiService);
   private keycloak: Keycloak | null = null;
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
+  private offlineUsername: string | null = null;
 
   private readonly _authenticated = signal(false);
   private readonly _user = signal<AuthUser | null>(null);
+  private readonly _offlineMode = signal(false);
 
   readonly authenticated = this._authenticated.asReadonly();
   readonly user = this._user.asReadonly();
   readonly hasUser = computed(() => !!this._user());
+  readonly offlineMode = this._offlineMode.asReadonly();
 
   async init(): Promise<void> {
+    // Check auth mode from server
+    const authMode = await this.fetchAuthConfig();
+
+    if (authMode === 'offline') {
+      await this.initOffline();
+      return;
+    }
+
+    await this.initKeycloak();
+  }
+
+  async getToken(): Promise<string> {
+    if (this._offlineMode()) {
+      return this.offlineUsername ?? '';
+    }
+
+    if (!this.keycloak) {
+      throw new Error('Keycloak not initialized');
+    }
+
+    // Refresh if token expires within 30 seconds
+    try {
+      await this.keycloak.updateToken(30);
+    } catch {
+      // Token refresh failed, redirect to login
+      await this.keycloak.login();
+    }
+
+    return this.keycloak.token!;
+  }
+
+  logout(): void {
+    if (this._offlineMode()) {
+      localStorage.removeItem(OFFLINE_USERNAME_KEY);
+      window.location.reload();
+      return;
+    }
+
+    this.stopTokenRefresh();
+    this.keycloak?.logout({ redirectUri: window.location.origin });
+  }
+
+  updateLocalDisplayName(newName: string): void {
+    const current = this._user();
+    if (current) this._user.set({ ...current, displayName: newName });
+  }
+
+  private async fetchAuthConfig(): Promise<string> {
+    try {
+      const baseUrl = environment.apiBaseUrl || '';
+      const res = await fetch(`${baseUrl}/api/auth/config`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.mode ?? 'keycloak';
+      }
+    } catch {
+      console.warn('[Auth] Failed to fetch auth config, defaulting to keycloak');
+    }
+    return 'keycloak';
+  }
+
+  private async initOffline(): Promise<void> {
+    this._offlineMode.set(true);
+
+    // Try stored username first
+    let username = localStorage.getItem(OFFLINE_USERNAME_KEY);
+
+    if (!username) {
+      username = window.prompt('Enter your username:');
+      if (!username) {
+        username = 'Player';
+      }
+      localStorage.setItem(OFFLINE_USERNAME_KEY, username);
+    }
+
+    this.offlineUsername = username;
+    this._authenticated.set(true);
+    this._user.set({
+      keycloakId: '',
+      username: username,
+      displayName: username,
+      email: `${username}@offline`,
+      roles: [],
+    });
+  }
+
+  private async initKeycloak(): Promise<void> {
     this.keycloak = new Keycloak({
       url: environment.keycloak.url,
       realm: environment.keycloak.realm,
@@ -46,32 +138,6 @@ export class AuthService {
       this.fetchDisplayName();
       this.startTokenRefresh();
     }
-  }
-
-  async getToken(): Promise<string> {
-    if (!this.keycloak) {
-      throw new Error('Keycloak not initialized');
-    }
-
-    // Refresh if token expires within 30 seconds
-    try {
-      await this.keycloak.updateToken(30);
-    } catch {
-      // Token refresh failed, redirect to login
-      await this.keycloak.login();
-    }
-
-    return this.keycloak.token!;
-  }
-
-  logout(): void {
-    this.stopTokenRefresh();
-    this.keycloak?.logout({ redirectUri: window.location.origin });
-  }
-
-  updateLocalDisplayName(newName: string): void {
-    const current = this._user();
-    if (current) this._user.set({ ...current, displayName: newName });
   }
 
   private fetchDisplayName(): void {

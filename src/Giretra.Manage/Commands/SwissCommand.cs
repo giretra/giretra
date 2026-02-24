@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using Giretra.Manage.Data;
-using Giretra.Manage.Discovery;
+using Giretra.Core.Players.Discovery;
 using Giretra.Manage.Output;
 using Giretra.Manage.Swiss;
 using Giretra.Model;
@@ -63,7 +63,7 @@ public sealed class SwissCommand : AsyncCommand<SwissSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SwissSettings settings, CancellationToken cancellation)
     {
-        var available = FactoryDiscovery.DiscoverAll();
+        var available = FactoryDiscovery.DiscoverAll(msg => AnsiConsole.MarkupLine($"[yellow]{msg}[/]"));
 
         var factories = settings.Agents is { Length: > 0 }
             ? FactoryDiscovery.Resolve(settings.Agents, available)
