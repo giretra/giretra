@@ -28,10 +28,9 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       <!-- Hero header with felt texture -->
       <header class="hero">
         <div class="hero-felt"></div>
-        <div class="hero-vignette"></div>
         <div class="hero-content">
           <div class="brand">
-            <img src="icon-192x192.png" alt="Giretra" class="hero-icon" width="64" height="64" />
+            <img src="icon-192x192.png" alt="Giretra" class="hero-icon" width="28" height="28" />
             <h1 class="logo">giretra</h1>
           </div>
 
@@ -116,17 +115,16 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
   `,
   styles: [`
     .home-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
-    .hero { position:relative; overflow:hidden; padding:2.5rem 1rem 2rem; flex-shrink:0; }
+    .hero { position:relative; overflow:hidden; padding:0 1rem; height:48px; display:flex; align-items:center; flex-shrink:0; }
     .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
-    .hero-vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(0,0,0,0.35) 100%); }
-    .hero-content { position:relative; z-index:1; max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
-    .brand { display:flex; align-items:center; gap:0.625rem; }
-    .hero-icon { width:2.25rem; height:2.25rem; flex-shrink:0; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
-    .logo { font-family:'Urbanist',sans-serif; font-size:2rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+    .hero-content { position:relative; z-index:1; max-width:960px; width:100%; margin:0 auto; display:flex; justify-content:space-between; align-items:center; height:100%; }
+    .brand { display:flex; align-items:center; gap:0.5rem; }
+    .hero-icon { width:1.5rem; height:1.5rem; flex-shrink:0; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3)); }
+    .logo { font-family:'Urbanist',sans-serif; font-size:1.125rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 1px 4px rgba(0,0,0,0.3); }
     .user-area { display:flex; align-items:center; }
-    .user-pill { display:flex; align-items:center; gap:0.5rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.25rem 0.5rem 0.25rem 0.25rem; }
-    .user-avatar { width:2rem; height:2rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
-    .user-name { font-size:0.875rem; font-weight:600; color:hsl(var(--foreground)); }
+    .user-pill { display:flex; align-items:center; gap:0.375rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.2rem 0.4rem 0.2rem 0.2rem; }
+    .user-avatar { width:1.5rem; height:1.5rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.6875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
+    .user-name { font-size:0.8125rem; font-weight:600; color:hsl(var(--foreground)); }
     .pill-btn { position:relative; display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
     .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
@@ -144,9 +142,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .panel-title { font-size:0.8125rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.08em; margin:0; }
     .room-count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.5rem; border-radius:9999px; min-width:1.25rem; text-align:center; }
     @media (min-width:640px) {
-      .hero { padding:3rem 2rem 2.5rem; }
-      .hero-icon { width:2.75rem; height:2.75rem; }
-      .logo { font-size:2.5rem; }
+      .hero { padding:0 2rem; }
       .main { padding:2rem; }
     }
     .resume-banner { display:flex; align-items:center; justify-content:center; gap:0.75rem; padding:0.625rem 1rem; background:hsl(var(--primary)/0.1); border-bottom:1px solid hsl(var(--primary)/0.25); cursor:pointer; transition:background 0.15s ease; }
@@ -155,10 +151,8 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .resume-btn { padding:0.25rem 0.75rem; font-size:0.75rem; font-weight:600; background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); border:none; border-radius:9999px; cursor:pointer; transition:opacity 0.15s ease; }
     .resume-btn:hover { opacity:0.85; }
     @media (max-width:480px) {
-      .hero { padding:1.5rem 1rem; }
-      .hero-content { flex-direction:column; align-items:flex-start; gap:1rem; }
-      .hero-icon { width:2rem; height:2rem; }
-      .logo { font-size:1.75rem; }
+      .hero { padding:0 0.5rem; }
+      .hero-content { flex-wrap:wrap; gap:0.25rem; }
     }
   `],
 })
