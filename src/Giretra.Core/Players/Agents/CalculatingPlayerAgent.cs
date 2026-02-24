@@ -56,7 +56,7 @@ namespace Giretra.Core.Players.Agents;
 public class CalculatingPlayerAgent : IPlayerAgent
 {
     private readonly HashSet<Card> _playedCards = [];
-    private readonly Random _random = new();
+    private readonly Random _random;
 
     // Partner behavior tracking
     private readonly HashSet<CardSuit> _partnerDislikedSuits = [];
@@ -70,9 +70,10 @@ public class CalculatingPlayerAgent : IPlayerAgent
 
     public PlayerPosition Position { get; }
 
-    public CalculatingPlayerAgent(PlayerPosition position)
+    public CalculatingPlayerAgent(PlayerPosition position, int? seed = null)
     {
         Position = position;
+        _random = seed.HasValue ? new Random(seed.Value) : new Random();
     }
 
     public Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)

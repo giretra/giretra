@@ -42,6 +42,13 @@ public sealed class SwissRunner
         var totalStopwatch = Stopwatch.StartNew();
         var rounds = ImmutableList.CreateBuilder<SwissRoundResult>();
 
+        // Seed agent factories for reproducibility
+        if (_config.Seed.HasValue)
+        {
+            for (int i = 0; i < _participants.Count; i++)
+                _participants[i].Factory.Seed = _config.Seed.Value + i * 10000;
+        }
+
         var deckRandom = _config.Shuffle
             ? (_config.Seed.HasValue ? new Random(_config.Seed.Value + 50000) : new Random())
             : null;

@@ -26,6 +26,12 @@ public interface IPlayerAgentFactory
     string Pun => string.Empty;
 
     /// <summary>
+    /// Gets or sets a random seed for reproducibility. If null, agents use non-deterministic randomness.
+    /// Factories that don't support seeding ignore the setter (default no-op).
+    /// </summary>
+    int? Seed { get => null; set { } }
+
+    /// <summary>
     /// Performs any async initialization required before the factory can create agents
     /// (e.g. launching an external bot process and waiting for it to become healthy).
     /// The default implementation is a no-op.
