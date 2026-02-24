@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
@@ -110,6 +110,20 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
         </div>
       </main>
 
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="footer-links">
+            <a href="https://www.giretra.com" target="_blank" rel="noopener noreferrer" class="footer-link">Website</a>
+            <span class="footer-dot"></span>
+            <a href="https://github.com/giretra" target="_blank" rel="noopener noreferrer" class="footer-link footer-link-icon"><i-lucide [img]="GithubIcon" [size]="12" [strokeWidth]="2"></i-lucide> Source Code</a>
+            <span class="footer-dot"></span>
+            <a href="https://www.giretra.com/privacy-policy/" target="_blank" rel="noopener noreferrer" class="footer-link">Privacy Policy</a>
+          </div>
+          <span class="footer-copy">&copy; {{ currentYear }} Giretra</span>
+        </div>
+      </footer>
+
     </div>
     </ng-container>
   `,
@@ -154,6 +168,14 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       .hero { padding:0 0.5rem; }
       .hero-content { flex-wrap:wrap; gap:0.25rem; }
     }
+    .footer { flex-shrink:0; padding:0.5rem 1rem; border-top:1px solid hsl(var(--border)); }
+    .footer-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:0.75rem; }
+    .footer-links { display:flex; align-items:center; gap:0.625rem; }
+    .footer-link { font-size:0.75rem; color:hsl(var(--muted-foreground)); text-decoration:none; transition:color 0.15s ease; }
+    .footer-link:hover { color:hsl(var(--foreground)); }
+    .footer-link-icon { display:inline-flex; align-items:center; gap:0.25rem; }
+    .footer-dot { width:3px; height:3px; border-radius:50%; background:hsl(var(--muted-foreground)/0.4); }
+    .footer-copy { font-size:0.6875rem; color:hsl(var(--muted-foreground)/0.6); margin-left:auto; }
   `],
 })
 export class HomeComponent implements OnInit, OnDestroy {
@@ -161,6 +183,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly LogOutIcon = LogOut;
   readonly SettingsIcon = Settings;
   readonly TrophyIcon = Trophy;
+  readonly GithubIcon = Github;
+  readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
