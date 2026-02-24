@@ -201,7 +201,7 @@ export class TrickAreaComponent {
   }
 
   @HostListener('document:keydown.space', ['$event'])
-  onSpacePress(event: KeyboardEvent): void {
+  onSpacePress(event: Event): void {
     if (this.showingCompletedTrick()) {
       event.preventDefault();
       this.dismissCompletedTrick.emit();

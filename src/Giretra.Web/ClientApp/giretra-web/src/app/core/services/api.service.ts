@@ -246,19 +246,30 @@ export interface PendingCountResponse {
   count: number;
 }
 
-export interface LeaderboardEntryResponse {
+export interface LeaderboardPlayerEntry {
   rank: number;
   displayName: string;
   avatarUrl: string | null;
   rating: number;
   gamesPlayed: number;
   winRate: number;
-  isBot: boolean;
+}
+
+export interface LeaderboardBotEntry {
+  rank: number;
+  displayName: string;
+  rating: number;
+  gamesPlayed: number;
+  winRate: number;
+  author: string | null;
+  difficulty: number;
 }
 
 export interface LeaderboardResponse {
-  entries: LeaderboardEntryResponse[];
-  totalCount: number;
+  players: LeaderboardPlayerEntry[];
+  bots: LeaderboardBotEntry[];
+  playerCount: number;
+  botCount: number;
 }
 
 export interface PlayerProfileResponse {
