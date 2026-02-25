@@ -222,6 +222,7 @@
   "leaderboard.columns.games": "Games",
   "leaderboard.columns.winRate": "Win %",
   "leaderboard.yourRanking": "Your ranking",
+  "leaderboard.unrankedNotice": "Play at least 5 rated games to appear on the leaderboard.",
   "leaderboard.noPlayers": "No players with 5+ rated games yet.",
   "leaderboard.noBots": "No bots ranked yet.",
 
