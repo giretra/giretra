@@ -3,7 +3,7 @@ namespace Giretra.Web.Services.Elo;
 public static class EloConstants
 {
     public const double K_FACTOR = 32;
-    public const double BOT_GATE_THRESHOLD = 400.0;
+    public const double BOT_GATE_THRESHOLD = 4000.0;
 
     // Mixed-team multipliers: bot teammate
     public const double BOT_TEAMMATE_WIN_MULT = 1D;
@@ -18,7 +18,7 @@ public static class EloConstants
     public const double TWO_BOT_OPP_LOSS_MULT = 1D;
 
     // Weekly bot-Elo cap
-    public const int MAX_BOT_ELO_PER_WEEK = 600;
+    public const int MAX_BOT_ELO_PER_WEEK = 6000;
 
     // Abandonment
     public const int MAX_DECAY = 32;
