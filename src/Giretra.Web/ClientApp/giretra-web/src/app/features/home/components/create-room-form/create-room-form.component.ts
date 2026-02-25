@@ -42,19 +42,21 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
           />
         </div>
 
-        <!-- AI seats -->
+        <!-- Bot seats -->
         <div class="field">
-          <div class="ai-header">
-            <label class="field-label">{{ t('createForm.aiPlayers') }}</label>
-            <button
-              type="button"
-              class="toggle-all-btn"
-              [disabled]="submitting()"
-              (click)="toggleAllAi()"
-            >
-              {{ allAi ? t('createForm.clearAll') : t('createForm.fillAll') }}
-            </button>
-          </div>
+          <button
+            type="button"
+            class="fill-bots-toggle"
+            [class.active]="allAi"
+            [disabled]="submitting()"
+            (click)="toggleAllAi()"
+          >
+            <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+            <span>{{ t('createForm.aiPlayers') }}</span>
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+          </button>
 
           <!-- Visual compass seat selector -->
           <div class="seat-selector">
@@ -344,35 +346,6 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
       cursor: not-allowed;
     }
 
-    /* AI header */
-    .ai-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .toggle-all-btn {
-      padding: 0.1875rem 0.5rem;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: hsl(var(--primary));
-      background: hsl(var(--primary) / 0.1);
-      border: 1px solid hsl(var(--primary) / 0.25);
-      border-radius: 9999px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .toggle-all-btn:hover:not(:disabled) {
-      background: hsl(var(--primary) / 0.2);
-      border-color: hsl(var(--primary) / 0.4);
-    }
-
-    .toggle-all-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
     /* Seat selector */
     .seat-selector {
       display: flex;
@@ -495,6 +468,43 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
       font-size: 0.6875rem;
       color: hsl(var(--muted-foreground));
       text-align: center;
+    }
+
+    .fill-bots-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: hsl(var(--muted) / 0.2);
+      border: 1.5px solid hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .fill-bots-toggle:hover:not(:disabled) {
+      background: hsl(var(--muted) / 0.4);
+      border-color: hsl(var(--muted-foreground));
+    }
+
+    .fill-bots-toggle.active {
+      background: hsl(var(--gold) / 0.12);
+      border-color: hsl(var(--gold) / 0.5);
+      color: hsl(var(--gold));
+    }
+
+    .fill-bots-toggle.active:hover:not(:disabled) {
+      background: hsl(var(--gold) / 0.2);
+      border-color: hsl(var(--gold));
+    }
+
+    .fill-bots-toggle:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .error-msg {
@@ -685,7 +695,8 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
       transition: background 0.15s ease;
     }
 
-    .invite-only-toggle.active .toggle-track {
+    .invite-only-toggle.active .toggle-track,
+    .fill-bots-toggle.active .toggle-track {
       background: hsl(var(--gold));
     }
 
@@ -700,7 +711,8 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
       transition: transform 0.15s ease;
     }
 
-    .invite-only-toggle.active .toggle-thumb {
+    .invite-only-toggle.active .toggle-thumb,
+    .fill-bots-toggle.active .toggle-thumb {
       transform: translateX(0.875rem);
       background: hsl(var(--background));
     }
