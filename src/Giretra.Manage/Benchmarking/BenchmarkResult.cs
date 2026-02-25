@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Giretra.Core.GameModes;
+using Giretra.Core.Players;
 using Giretra.Manage.Stats;
 
 namespace Giretra.Manage.Benchmarking;
@@ -129,4 +131,43 @@ public sealed class BenchmarkResult
     /// All individual match results.
     /// </summary>
     public required ImmutableList<MatchResult> Matches { get; init; }
+
+    /// <summary>
+    /// Gets win statistics broken down by game mode and announcing team.
+    /// </summary>
+    public ImmutableList<GameModeStats> GetGameModeStats()
+    {
+        var allDeals = Matches.SelectMany(m => m.DealResults).ToList();
+
+        return Enum.GetValues<GameMode>()
+            .Select(mode =>
+            {
+                var deals = allDeals.Where(d => d.GameMode == mode).ToList();
+                var team1Announced = deals.Where(d => d.AnnouncerTeam == Team.Team1).ToList();
+                var team2Announced = deals.Where(d => d.AnnouncerTeam == Team.Team2).ToList();
+                return new GameModeStats(
+                    mode,
+                    deals.Count,
+                    new AnnouncerStats(team1Announced.Count, team1Announced.Count(d => d.AnnouncerWon)),
+                    new AnnouncerStats(team2Announced.Count, team2Announced.Count(d => d.AnnouncerWon)));
+            })
+            .ToImmutableList();
+    }
 }
+
+/// <summary>
+/// Win statistics for deals announced by a specific team.
+/// </summary>
+public sealed record AnnouncerStats(int Announced, int AnnouncerWins)
+{
+    public double AnnouncerWinRate => Announced == 0 ? 0 : (double)AnnouncerWins / Announced;
+}
+
+/// <summary>
+/// Win statistics for a single game mode, broken down by announcing team.
+/// </summary>
+public sealed record GameModeStats(
+    GameMode GameMode,
+    int TotalDeals,
+    AnnouncerStats Team1Announced,
+    AnnouncerStats Team2Announced);

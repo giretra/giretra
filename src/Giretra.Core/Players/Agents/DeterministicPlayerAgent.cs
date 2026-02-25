@@ -678,6 +678,13 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 // If we hold more trumps than opponents, lead trump to drain them
                 if (myTrumps.Count > remainingOpponentTrumps && remainingOpponentTrumps > 0)
                 {
+                    var trumpInHands = myTrumps.OrderByDescending(c => c.GetStrength(mode)).ToList();
+
+                    if (trumpInHands.Count > 1)
+                    {
+                        return trumpInHands.Skip(1).First();
+                    }
+                    
                     return myTrumps.OrderByDescending(c => c.GetStrength(mode)).First();
                 }
 
