@@ -661,7 +661,9 @@ export class ApiService {
     }
 
     console.error('API Error:', error);
-    this.toast.error(message);
+    if (error.status !== 404) {
+      this.toast.error(message);
+    }
     return throwError(() => new Error(message));
   };
 }
