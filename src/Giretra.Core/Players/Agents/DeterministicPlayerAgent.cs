@@ -722,12 +722,21 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (suitGroups.Count > 0)
             {
                 var longestGroup = suitGroups[0];
-                return longestGroup.OrderByDescending(c => c.GetStrength(mode)).First();
+
+                var candidates = longestGroup
+                    .OrderByDescending(c => c.GetStrength(mode)).ToList();
+
+                if (candidates.Count > 1)
+                {
+                     return candidates.Skip(1).First();
+                }
+
+                return candidates.First();
             }
         }
 
         // 5. Default - lowest value, lowest strength
-        return ChooseLeastValuableCard(validPlays, mode);
+        return ChooseLeastValuableCard(validPlays, mode, hand);
     }
 
     private Card ChooseLastTrickLead(
@@ -746,7 +755,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
         // If we already have enough points to win, play safe
         if (weAreAnnouncer && myPoints >= threshold)
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
 
         // If we need the last trick bonus, play strongest card to win
         if (weAreAnnouncer && myPoints + 10 >= threshold && myPoints < threshold)
@@ -796,8 +805,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         {
             1 => ChooseSecondSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             2 => ChooseThirdSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
-            3 => ChooseFourthSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
-            _ => ChooseFourthSeat(validPlays, trick, mode, teammateWinning, winningCard, isEndgame)
+            3 => ChooseFourthSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
+            _ => ChooseFourthSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame)
         };
     }
 
@@ -830,11 +839,11 @@ public class DeterministicPlayerAgent : IPlayerAgent
                     return minWinner.Value;
 
                 // Otherwise let teammate (4th seat) handle it - play cheap
-                return ChooseLeastValuableCard(validPlays, mode);
+                return ChooseLeastValuableCard(validPlays, mode, hand);
             }
 
             // Can't win, dump cheapest
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
         // Teammate led - play cheap to save strength
@@ -849,10 +858,10 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (highValueCards.Count > 0 && winningCard.HasValue && PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
                 return highValueCards[0]; // Load points on teammate's master
 
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
-        return ChooseLeastValuableCard(validPlays, mode);
+        return ChooseLeastValuableCard(validPlays, mode, hand);
     }
 
     /// <summary>
@@ -877,15 +886,15 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (fourthIsTeammate)
             {
                 // Both remaining are teammates - load max points
-                return ChooseMostValuableCard(validPlays, mode);
+                return ChooseMostValuableCard(validPlays, mode, hand);
             }
 
             // 4th is opponent - load points only if teammate's card is master
             if (PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
-                return ChooseMostValuableCard(validPlays, mode);
+                return ChooseMostValuableCard(validPlays, mode, hand);
 
             // Teammate winning but opponent can still overtake - hedge with medium
-            return ChooseMediumCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
         // Opponent winning
@@ -902,10 +911,10 @@ public class DeterministicPlayerAgent : IPlayerAgent
                         return minWinner.Value;
 
                     // Expensive to win, trust teammate
-                    return ChooseLeastValuableCard(validPlays, mode);
+                    return ChooseLeastValuableCard(validPlays, mode, hand);
                 }
 
-                return ChooseLeastValuableCard(validPlays, mode);
+                return ChooseLeastValuableCard(validPlays, mode, hand);
             }
 
             // 4th is opponent - must try to win
@@ -913,16 +922,17 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (winner.HasValue)
                 return winner.Value;
 
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
-        return ChooseLeastValuableCard(validPlays, mode);
+        return ChooseLeastValuableCard(validPlays, mode, hand);
     }
 
     /// <summary>
     /// 4th seat strategy (last to play - complete information).
     /// </summary>
     private Card ChooseFourthSeat(
+        IReadOnlyList<Card> hand,
         IReadOnlyList<Card> validPlays,
         TrickState trick,
         GameMode mode,
@@ -933,7 +943,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (teammateWinning)
         {
             // Load maximum points
-            return ChooseMostValuableCard(validPlays, mode);
+            return ChooseMostValuableCard(validPlays, mode, hand);
         }
 
         // Opponent winning - win with minimum card
@@ -946,7 +956,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         }
 
         // Can't win, dump cheapest
-        return ChooseLeastValuableCard(validPlays, mode);
+        return ChooseLeastValuableCard(validPlays, mode, hand);
     }
 
     #endregion
@@ -1016,7 +1026,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
             .ToList();
 
         if (suitGroups.Count == 0)
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
 
         // Prefer discarding from short side suits to create voids for future ruffing
         var shortSuits = suitGroups
@@ -1052,18 +1062,38 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     #region Card Selection Helpers
 
-    private Card ChooseMostValuableCard(IReadOnlyList<Card> validPlays, GameMode mode)
+    private Card ChooseMostValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
+        IReadOnlyList<Card>? hand = null)
     {
+        // Prefer non-master cards to preserve masters for leading
+        if (hand != null)
+        {
+            var nonMasters = validPlays
+                .Where(c => !PlayerAgentHelper.IsMasterCard(c, mode, hand, _playedCards))
+                .ToList();
+
+            if (nonMasters.Count > 0)
+            {
+                return nonMasters
+                    .OrderByDescending(c => c.GetPointValue(mode))
+                    .ThenByDescending(c => c.GetStrength(mode))
+                    .First();
+            }
+        }
+
+        // Fallback: all valid plays are masters (or no hand provided)
         return validPlays
             .OrderByDescending(c => c.GetPointValue(mode))
             .ThenByDescending(c => c.GetStrength(mode))
             .First();
     }
 
-    private Card ChooseLeastValuableCard(IReadOnlyList<Card> validPlays, GameMode mode)
+    private Card ChooseLeastValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
+        IReadOnlyList<Card>? hand = null)
     {
         return validPlays
             .OrderBy(c => c.GetPointValue(mode))
+            .ThenBy(c => hand != null && hand.Count(h => h.Suit == c.Suit) == 1 ? 0 : 1)
             .ThenBy(c => c.GetStrength(mode))
             .First();
     }
