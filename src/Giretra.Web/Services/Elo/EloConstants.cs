@@ -6,19 +6,19 @@ public static class EloConstants
     public const double BOT_GATE_THRESHOLD = 400.0;
 
     // Mixed-team multipliers: bot teammate
-    public const double BOT_TEAMMATE_WIN_MULT = 0.70;
-    public const double BOT_TEAMMATE_LOSS_MULT = 0.85;
+    public const double BOT_TEAMMATE_WIN_MULT = 1D;
+    public const double BOT_TEAMMATE_LOSS_MULT = 1;
 
     // Mixed-team multipliers: 1 bot opponent
-    public const double ONE_BOT_OPP_WIN_MULT = 0.85;
-    public const double ONE_BOT_OPP_LOSS_MULT = 1.15;
+    public const double ONE_BOT_OPP_WIN_MULT = 1D;
+    public const double ONE_BOT_OPP_LOSS_MULT = 1D;
 
     // Mixed-team multipliers: 2 bot opponents
-    public const double TWO_BOT_OPP_WIN_MULT = 0.70;
-    public const double TWO_BOT_OPP_LOSS_MULT = 1.30;
+    public const double TWO_BOT_OPP_WIN_MULT = 1D;
+    public const double TWO_BOT_OPP_LOSS_MULT = 1D;
 
     // Weekly bot-Elo cap
-    public const int MAX_BOT_ELO_PER_WEEK = 50;
+    public const int MAX_BOT_ELO_PER_WEEK = 600;
 
     // Abandonment
     public const int MAX_DECAY = 32;
