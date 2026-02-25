@@ -712,7 +712,8 @@ export class GameStateService {
 
       // For non-last tricks, auto-dismiss after delay
       // For last trick, wait for user to click (no timeout)
-      if (!isLastTrick) {
+      // Watchers always auto-dismiss (they don't interact)
+      if (!isLastTrick || this.session.isWatcher()) {
         this._completedTrickTimeoutId = setTimeout(() => {
           this._completedTrickTimeoutId = null;
           this._showingCompletedTrick.set(false);

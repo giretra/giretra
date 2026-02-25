@@ -54,6 +54,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [currentTrick]="currentTrick()"
             [completedTrickToShow]="completedTrickToShow()"
             [showingCompletedTrick]="showingCompletedTrick()"
+            [isWatcher]="isWatcher()"
             [myPosition]="myPosition()"
             [gameMode]="gameMode()"
             (dismissCompletedTrick)="dismissCompletedTrick.emit()"
