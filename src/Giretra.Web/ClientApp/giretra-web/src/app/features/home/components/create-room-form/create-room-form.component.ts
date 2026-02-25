@@ -545,6 +545,24 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
 
     .submit-btn {
       flex: 2;
+      background: transparent;
+      color: hsl(var(--gold));
+      border: 1.5px solid hsl(var(--gold));
+      font-weight: 700;
+      font-size: 0.9375rem;
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.15s ease;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: hsl(var(--gold) / 0.1);
+      border-color: hsl(var(--gold) / 0.8);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     /* Timer presets */
