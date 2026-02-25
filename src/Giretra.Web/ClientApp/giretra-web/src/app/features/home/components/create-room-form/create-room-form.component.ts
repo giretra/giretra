@@ -52,7 +52,7 @@ const DEFAULT_AI_TYPE = 'DeterministicPlayer';
             (click)="toggleAllAi()"
           >
             <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-            <span>{{ t('createForm.aiPlayers') }}</span>
+            <span>{{ allAi ? t('createForm.clearAll') : t('createForm.fillAll') }}</span>
             <span class="toggle-track">
               <span class="toggle-thumb"></span>
             </span>
