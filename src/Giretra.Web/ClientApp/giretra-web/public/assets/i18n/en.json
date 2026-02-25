@@ -32,6 +32,12 @@
   "home.openTables": "Open Tables",
   "home.resumeBanner": "You have a game in progress",
   "home.resume": "Resume",
+  "home.inviteFriends": "Invite Friends",
+  "home.inviteFriendsHint": "Share a link to play together",
+  "home.shareTitle": "Giretra",
+  "home.shareText": "Come play Giretra with me!",
+  "home.linkCopied": "Link copied!",
+  "home.linkCopyFailed": "Failed to copy link",
 
   "createForm.title": "New Table",
   "createForm.tableName": "Table Name",

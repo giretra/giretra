@@ -32,6 +32,12 @@
   "home.openTables": "Latabatra Misokatra",
   "home.resumeBanner": "Mbola misy lalao mandeha",
   "home.resume": "Hiverina",
+  "home.inviteFriends": "Asao ny Namana",
+  "home.inviteFriendsHint": "Zarao ny rohy mba hilalaovana miaraka",
+  "home.shareTitle": "Giretra",
+  "home.shareText": "Andeha hilalao Giretra isika!",
+  "home.linkCopied": "Rohy voatadidy!",
+  "home.linkCopyFailed": "Tsy nahomby ny fandikana ny rohy",
 
   "createForm.title": "Latabatra Vaovao",
   "createForm.tableName": "Anaran'ny Latabatra",
