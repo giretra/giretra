@@ -114,4 +114,9 @@ public sealed class GameStateResponse
     /// When the pending action will time out (if any).
     /// </summary>
     public DateTime? PendingActionTimeoutAt { get; init; }
+
+    /// <summary>
+    /// Elo rating changes per position (only present for completed ranked matches).
+    /// </summary>
+    public IReadOnlyDictionary<PlayerPosition, EloChangeResponse>? EloChanges { get; init; }
 }

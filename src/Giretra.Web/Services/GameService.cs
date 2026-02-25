@@ -455,7 +455,15 @@ public sealed class GameService : IGameService
             Winner = matchState.Winner,
             PendingActionType = session.PendingAction?.ActionType,
             PendingActionPlayer = session.PendingAction?.Player,
-            PendingActionTimeoutAt = session.PendingAction?.TimeoutAt
+            PendingActionTimeoutAt = session.PendingAction?.TimeoutAt,
+            EloChanges = session.EloResults?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new EloChangeResponse
+                {
+                    EloBefore = kvp.Value.EloBefore,
+                    EloAfter = kvp.Value.EloAfter,
+                    EloChange = kvp.Value.EloChange
+                })
         };
     }
 

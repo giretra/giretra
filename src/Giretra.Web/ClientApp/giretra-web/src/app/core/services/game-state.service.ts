@@ -9,7 +9,7 @@ import {
   PendingActionType,
 } from '../../api/generated/signalr-types.generated';
 import { GameHubService } from '../../api/game-hub.service';
-import { ApiService, GameStateResponse, PlayerStateResponse, RoomResponse, ValidAction, TrickResponse, NegotiationAction } from './api.service';
+import { ApiService, EloChangeResponse, GameStateResponse, PlayerStateResponse, RoomResponse, ValidAction, TrickResponse, NegotiationAction } from './api.service';
 import { ClientSessionService } from './client-session.service';
 import { environment } from '../../../environments/environment';
 import { getTeam } from '../utils/position-utils';
@@ -327,6 +327,17 @@ export class GameStateService {
 
   /** Match winner */
   readonly matchWinner = computed(() => this._gameState()?.winner ?? null);
+
+  /** Elo change for the current player */
+  readonly myEloChange = computed<EloChangeResponse | null>(() => {
+    const pos = this.myPosition();
+    const changes = this._gameState()?.eloChanges;
+    if (!pos || !changes) return null;
+    return changes[pos] ?? null;
+  });
+
+  /** Whether the current room is ranked */
+  readonly isRanked = computed(() => this._currentRoom()?.isRanked ?? false);
 
   /** Is watcher mode? */
   readonly isWatcher = computed(() => this.session.isWatcher());

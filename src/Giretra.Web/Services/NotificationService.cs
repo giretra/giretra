@@ -9,6 +9,7 @@ using Giretra.Web.Hubs;
 using Giretra.Web.Models.Events;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Repositories;
+using Giretra.Web.Services.Elo;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Giretra.Web.Services;
@@ -20,11 +21,19 @@ public sealed class NotificationService : INotificationService
 {
     private readonly IHubContext<GameHub> _hubContext;
     private readonly IGameRepository _gameRepository;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(IHubContext<GameHub> hubContext, IGameRepository gameRepository)
+    public NotificationService(
+        IHubContext<GameHub> hubContext,
+        IGameRepository gameRepository,
+        IServiceProvider serviceProvider,
+        ILogger<NotificationService> logger)
     {
         _hubContext = hubContext;
         _gameRepository = gameRepository;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     public async Task NotifyYourTurnAsync(string gameId, string clientId, PlayerPosition position, PendingActionType actionType, DateTime timeoutAt)
@@ -258,6 +267,22 @@ public sealed class NotificationService : INotificationService
     {
         var session = _gameRepository.GetById(gameId);
         if (session == null) return;
+
+        // Eagerly compute Elo preview so it's available when clients refresh state
+        if (session.IsRanked && session.EloResults == null && matchState.Winner != null)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var eloService = scope.ServiceProvider.GetRequiredService<IEloService>();
+                var preview = await eloService.PreviewMatchEloAsync(session);
+                session.EloResults = preview;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to compute Elo preview for game {GameId}", gameId);
+            }
+        }
 
         var ev = new MatchEndedEvent
         {

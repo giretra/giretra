@@ -130,6 +130,8 @@ import { TranslocoService } from '@jsverse/transloco';
           [team2Points]="gameState.team2MatchPoints()"
           [totalDeals]="gameState.dealNumber() - 1"
           [isCreator]="gameState.isCreator()"
+          [eloChange]="gameState.myEloChange()"
+          [isRanked]="gameState.isRanked()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
         />

@@ -127,6 +127,7 @@
   "matchEnd.dealsPlayed": "{{count}} deals played",
   "matchEnd.playAgain": "Play Again",
   "matchEnd.leaveTable": "Leave Table",
+  "matchEnd.rating": "Rating",
 
   "scoreBar.yourTurn": "Your turn",
   "scoreBar.dealNumber": "Deal {{number}}",
