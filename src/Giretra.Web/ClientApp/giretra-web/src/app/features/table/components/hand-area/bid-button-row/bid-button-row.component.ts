@@ -3,6 +3,7 @@ import { GameMode } from '../../../../../api/generated/signalr-types.generated';
 import { ValidAction } from '../../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
+import { ShieldIconComponent } from '../../../../../shared/components/shield-icon/shield-icon.component';
 import { CardSuit } from '../../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, Check, ChevronsUp } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -13,13 +14,13 @@ interface BidButton {
   mode: GameMode | null;
   variant: 'default' | 'secondary' | 'destructive';
   suit?: CardSuit;
-  icon?: string;
+  shield?: 'no-trumps' | 'all-trumps';
 }
 
 @Component({
   selector: 'app-bid-button-row',
   standalone: true,
-  imports: [HlmButton, SuitIconComponent, LucideAngularModule, TranslocoDirective],
+  imports: [HlmButton, SuitIconComponent, ShieldIconComponent, LucideAngularModule, TranslocoDirective],
   template: `
     <div class="bid-buttons" *transloco="let t">
       <!-- Announce section -->
@@ -36,8 +37,8 @@ interface BidButton {
             >
               @if (btn.suit) {
                 <app-suit-icon [suit]="btn.suit" size="1.5rem" />
-              } @else if (btn.icon) {
-                <span class="mode-icon">{{ btn.icon }}</span>
+              } @else if (btn.shield) {
+                <app-shield-icon [type]="btn.shield" size="1.5rem" />
               } @else {
                 {{ btn.label }}
               }
@@ -170,11 +171,6 @@ interface BidButton {
       font-size: 0.75em;
     }
 
-    .mode-icon {
-      font-size: 1.5rem;
-      line-height: 1;
-    }
-
     .mode-hint {
       font-size: 0.6875rem;
       opacity: 0.8;
@@ -237,7 +233,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.NoTrumps,
         variant: 'secondary',
-        icon: '\uD83C\uDD70\uFE0F',
+        shield: 'no-trumps',
       });
     }
 
@@ -251,7 +247,7 @@ export class BidButtonRowComponent {
         actionType: 'Announce',
         mode: GameMode.AllTrumps,
         variant: 'secondary',
-        icon: '\uD83C\uDD59',
+        shield: 'all-trumps',
       });
     }
 
