@@ -56,6 +56,10 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                   <span class="my-rank-rating-label">{{ t('leaderboard.columns.rating') }}</span>
                 </span>
               </div>
+            } @else if (auth.user()) {
+              <div class="my-rank-banner my-rank-banner-unranked">
+                <span class="my-rank-unranked-text">{{ t('leaderboard.unrankedNotice') }}</span>
+              </div>
             }
             <div class="columns">
 
@@ -200,6 +204,8 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     .my-rank-divider { width:1px; height:1.25rem; background:hsl(var(--border)); }
     .my-rank-rating { font-size:1.125rem; font-weight:800; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
     .my-rank-rating-label { font-size:0.6875rem; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
+    .my-rank-banner-unranked { border-color:hsl(var(--border)); }
+    .my-rank-unranked-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
 
     /* Columns */
     .columns { display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start; }
@@ -265,7 +271,7 @@ export class LeaderboardComponent implements OnInit {
   readonly UsersIcon = Users;
 
   private readonly api = inject(ApiService);
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly players = signal<LeaderboardPlayerEntry[]>([]);
