@@ -260,6 +260,53 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
+
+    /* Mobile: compact score bar so leave button stays accessible */
+    @media (max-width: 480px) {
+      .score-bar {
+        padding: 0.375rem 0.5rem;
+      }
+
+      .score-row {
+        gap: 0.375rem;
+      }
+
+      .team-pill {
+        min-width: auto;
+        padding: 0.25rem 0.5rem;
+      }
+
+      .team-label {
+        display: none;
+      }
+
+      .match-points {
+        font-size: 1rem;
+      }
+
+      .center-info {
+        gap: 0.25rem;
+      }
+
+      .mode-glow {
+        padding: 0.125rem 0.375rem;
+        gap: 0.25rem;
+      }
+
+      .your-turn-indicator {
+        padding: 0.125rem 0.5rem;
+        gap: 0.25rem;
+      }
+
+      .your-turn-label {
+        font-size: 0.625rem;
+      }
+
+      .deal-number,
+      .room-name {
+        font-size: 0.75rem;
+      }
+    }
   `],
 })
 export class ScoreBarComponent {
