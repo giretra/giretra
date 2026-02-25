@@ -70,9 +70,9 @@ public sealed class EloCalculationServiceTests
     [Fact]
     public void BotGate_At400PlusGap_ZeroGain()
     {
-        // Player 1400 vs opponents 1000 → gap=400, gate=1-400/400=0
+        // Player 5000 vs opponents 1000 → gap=4000, gate=1-4000/4000=0
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
-            currentElo: 1400,
+            currentElo: 5000,
             opponentCompositeElo: 1000,
             isWinner: true,
             involvedBots: true));
@@ -135,11 +135,11 @@ public sealed class EloCalculationServiceTests
     [Fact]
     public void WeeklyCap_LimitsGain()
     {
-        // Already gained 595 this week, max is 600 → only 5 remaining
+        // Already gained 5995 this week, max is 6000 → only 5 remaining
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
             involvedBots: true,
-            weeklyBotEloGained: 595));
+            weeklyBotEloGained: 5995));
 
         Assert.True(result.EloChange <= 5);
         Assert.True(result.EloChange >= 0);
@@ -151,7 +151,7 @@ public sealed class EloCalculationServiceTests
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
             involvedBots: true,
-            weeklyBotEloGained: 600));
+            weeklyBotEloGained: 6000));
 
         Assert.Equal(0, result.EloChange);
     }
