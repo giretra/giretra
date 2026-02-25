@@ -226,6 +226,16 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.rooms.set(response.rooms);
         this.loading.set(false);
+
+        // Detect active game from room list (works even without localStorage session)
+        if (!this.activeGameRoomId()) {
+          const disconnectedRoom = response.rooms.find(
+            (r) => r.status === 'Playing' && r.isDisconnectedPlayer,
+          );
+          if (disconnectedRoom) {
+            this.activeGameRoomId.set(disconnectedRoom.roomId);
+          }
+        }
       },
       error: (err) => {
         console.error('Failed to load rooms', err);
@@ -308,8 +318,29 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   resumeGame(): void {
     const roomId = this.activeGameRoomId();
-    if (roomId) {
+    if (!roomId || this.joining()) return;
+
+    if (this.session.clientId()) {
+      // Session intact — navigate directly
       this.router.navigate(['/table', roomId]);
+    } else {
+      // No clientId (new device / cleared storage) — rejoin via API first
+      this.joining.set(true);
+      this.api.rejoinRoom(roomId).subscribe({
+        next: async (response) => {
+          if (response.position) {
+            this.session.joinRoom(roomId, response.clientId, response.position);
+          }
+          await this.gameState.enterRoom(response.room, response.room.isOwner);
+          this.router.navigate(['/table', roomId]);
+          this.joining.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to rejoin room', err);
+          this.activeGameRoomId.set(null);
+          this.joining.set(false);
+        },
+      });
     }
   }
 

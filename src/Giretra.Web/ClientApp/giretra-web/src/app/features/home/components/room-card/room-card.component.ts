@@ -226,7 +226,20 @@ import { TranslocoDirective } from '@jsverse/transloco';
                   {{ t('roomCard.rejoin') }}
                 </button>
               } @else if (isSeated()) {
-                <span class="seated-label">{{ t('roomCard.seated') }}</span>
+                @if (room().status === 'Playing') {
+                  <button
+                    hlmBtn
+                    variant="default"
+                    size="sm"
+                    class="action-btn return-btn"
+                    (click)="rejoinClicked.emit()"
+                  >
+                    <i-lucide [img]="RotateCcwIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                    {{ t('roomCard.return') }}
+                  </button>
+                } @else {
+                  <span class="seated-label">{{ t('roomCard.seated') }}</span>
+                }
               } @else {
                 <button
                   hlmBtn
@@ -445,13 +458,15 @@ import { TranslocoDirective } from '@jsverse/transloco';
       color: hsl(var(--primary));
     }
 
-    .rejoin-btn {
+    .rejoin-btn,
+    .return-btn {
       background: hsl(var(--gold) / 0.15);
       color: hsl(var(--gold));
       border: 1px solid hsl(var(--gold) / 0.3);
     }
 
-    .rejoin-btn:hover {
+    .rejoin-btn:hover,
+    .return-btn:hover {
       background: hsl(var(--gold) / 0.25);
     }
 

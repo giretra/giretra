@@ -3,11 +3,13 @@ import { inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientSessionService } from './core/services/client-session.service';
 import { GameStateService } from './core/services/game-state.service';
+import { AuthService } from './core/services/auth.service';
 import { TranslocoService } from '@jsverse/transloco';
 
-// Guard to ensure user has a clientId or invite token before accessing table
+// Guard to ensure user has a clientId, invite token, or is authenticated before accessing table
 export const hasClientIdGuard = () => {
   const session = inject(ClientSessionService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
   if (session.clientId()) {
@@ -21,7 +23,12 @@ export const hasClientIdGuard = () => {
     return true;
   }
 
-  // Redirect to home if no client session and no invite
+  // Allow authenticated users — TableComponent will handle rejoin
+  if (auth.user()) {
+    return true;
+  }
+
+  // Redirect to home if no client session, no invite, and not authenticated
   return router.createUrlTree(['/']);
 };
 

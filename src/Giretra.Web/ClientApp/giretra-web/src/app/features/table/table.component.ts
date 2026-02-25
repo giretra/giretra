@@ -311,6 +311,19 @@ export class TableComponent implements OnInit, OnDestroy {
             this.router.navigate(['/']);
           },
         });
+      } else if (!this.session.clientId()) {
+        // Rejoin flow: authenticated user without a clientId (new tab / device)
+        this.api.rejoinRoom(roomId).subscribe({
+          next: async (response) => {
+            if (response.position) {
+              this.session.joinRoom(roomId, response.clientId, response.position);
+            }
+            await this.gameState.enterRoom(response.room, response.room.isOwner);
+          },
+          error: () => {
+            this.router.navigate(['/']);
+          },
+        });
       } else {
         // Normal flow: fetch room and initialize
         this.api.getRoom(roomId).subscribe({
