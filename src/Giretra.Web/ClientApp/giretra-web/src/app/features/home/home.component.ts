@@ -166,7 +166,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .resume-btn:hover { opacity:0.85; }
     @media (max-width:480px) {
       .hero { padding:0 0.5rem; }
-      .hero-content { flex-wrap:wrap; gap:0.25rem; }
+      .user-name { display:none; }
     }
     .footer { flex-shrink:0; padding:0.5rem 1rem; border-top:1px solid hsl(var(--border)); }
     .footer-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:0.75rem; }
