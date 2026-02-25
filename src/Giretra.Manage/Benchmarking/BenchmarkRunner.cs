@@ -88,7 +88,7 @@ public sealed class BenchmarkRunner
                 ? () => Deck.CreateShuffled(deckRandom)
                 : Deck.CreateShuffled;
 
-            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
+            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore, colourSweepMatchPoints: 25);
             var matchState = await gameManager.PlayMatchAsync();
 
             matchStopwatch.Stop();

@@ -35,12 +35,17 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal. Defaults to standard deck.</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
+    /// <param name="colourSweepMatchPoints">
+    /// When set, Colour sweeps award this many base match points (× multiplier)
+    /// instead of triggering an instant match win. Null = normal rules.
+    /// </param>
     /// <param name="logger">Optional logger for game flow diagnostics.</param>
     public GameManager(
         IReadOnlyDictionary<PlayerPosition, IPlayerAgent> players,
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null,
         int targetScore = 150,
+        int? colourSweepMatchPoints = null,
         ILogger<GameManager>? logger = null)
     {
         if (players.Count != 4)
@@ -65,7 +70,7 @@ public sealed class GameManager
 
         _players = players;
         _deckProvider = deckProvider ?? Deck.CreateShuffled;
-        _matchState = MatchState.Create(firstDealer, targetScore);
+        _matchState = MatchState.Create(firstDealer, targetScore, colourSweepMatchPoints);
         _logger = logger ?? NullLogger<GameManager>.Instance;
     }
 
@@ -79,6 +84,10 @@ public sealed class GameManager
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="deckProvider">Optional function to provide the deck for each deal.</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
+    /// <param name="colourSweepMatchPoints">
+    /// When set, Colour sweeps award this many base match points (× multiplier)
+    /// instead of triggering an instant match win. Null = normal rules.
+    /// </param>
     /// <param name="logger">Optional logger for game flow diagnostics.</param>
     public GameManager(
         IPlayerAgent bottom,
@@ -88,6 +97,7 @@ public sealed class GameManager
         PlayerPosition firstDealer,
         Func<Deck>? deckProvider = null,
         int targetScore = 150,
+        int? colourSweepMatchPoints = null,
         ILogger<GameManager>? logger = null)
         : this(
             new Dictionary<PlayerPosition, IPlayerAgent>
@@ -100,6 +110,7 @@ public sealed class GameManager
             firstDealer,
             deckProvider,
             targetScore,
+            colourSweepMatchPoints,
             logger)
     {
     }

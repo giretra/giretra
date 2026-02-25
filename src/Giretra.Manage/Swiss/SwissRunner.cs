@@ -115,7 +115,7 @@ public sealed class SwissRunner
         Core.State.MatchState matchState;
         try
         {
-            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore);
+            var gameManager = new GameManager(bottom, left, top, right, firstDealer, deckProvider, _config.TargetScore, colourSweepMatchPoints: 25);
             matchState = await gameManager.PlayMatchAsync();
         }
         catch (Exception ex)
