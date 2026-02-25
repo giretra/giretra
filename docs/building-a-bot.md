@@ -598,6 +598,6 @@ Before testing your bot against the engine:
 
 ## Further Reference
 
-- Full API specification: [`docs/remote-bot-api.md`](docs/remote-bot-api.md)
+- Full API specification: [`bot-api-reference.md`](bot-api-reference.md)
 - Source code: `Giretra.Core/Players/Agents/Remote/` (RemoteBotClient, RemotePlayerAgent, BotProcessConfig)
 - Built-in bot examples: `Giretra.Core/Players/Agents/` (RandomPlayerAgent, CalculatingPlayerAgent, DeterministicPlayerAgent)
