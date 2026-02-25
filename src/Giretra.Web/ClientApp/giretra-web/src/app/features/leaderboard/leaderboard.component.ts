@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   ApiService,
@@ -6,6 +6,7 @@ import {
   LeaderboardBotEntry,
   PlayerProfileResponse,
 } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
@@ -41,6 +42,21 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
           @if (loading()) {
             <div class="loading-state">{{ t('common.loading') }}</div>
           } @else {
+            @if (currentUserEntry(); as me) {
+              <div class="my-rank-banner">
+                <span class="my-rank-label">{{ t('leaderboard.yourRanking') }}</span>
+                <span class="my-rank-stat">
+                  <span class="my-rank-value">#{{ me.rank }}</span>
+                  <span class="my-rank-sep">/</span>
+                  <span class="my-rank-total">{{ playerCount() }}</span>
+                </span>
+                <span class="my-rank-divider"></span>
+                <span class="my-rank-stat">
+                  <span class="my-rank-rating">{{ me.rating }}</span>
+                  <span class="my-rank-rating-label">{{ t('leaderboard.columns.rating') }}</span>
+                </span>
+              </div>
+            }
             <div class="columns">
 
               <!-- Players Column -->
@@ -174,6 +190,17 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
 
     .loading-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
 
+    /* My rank banner */
+    .my-rank-banner { display:flex; align-items:center; gap:0.75rem; background:hsl(var(--card)); border:1px solid hsl(var(--gold)/0.3); border-radius:0.75rem; padding:0.625rem 1rem; margin-bottom:1rem; }
+    .my-rank-label { font-size:0.75rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
+    .my-rank-stat { display:flex; align-items:baseline; gap:0.25rem; }
+    .my-rank-value { font-size:1.125rem; font-weight:800; color:hsl(var(--gold)); font-variant-numeric:tabular-nums; }
+    .my-rank-sep { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
+    .my-rank-total { font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
+    .my-rank-divider { width:1px; height:1.25rem; background:hsl(var(--border)); }
+    .my-rank-rating { font-size:1.125rem; font-weight:800; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
+    .my-rank-rating-label { font-size:0.6875rem; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
+
     /* Columns */
     .columns { display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start; }
 
@@ -238,6 +265,7 @@ export class LeaderboardComponent implements OnInit {
   readonly UsersIcon = Users;
 
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly players = signal<LeaderboardPlayerEntry[]>([]);
@@ -246,6 +274,12 @@ export class LeaderboardComponent implements OnInit {
   readonly botCount = signal<number>(0);
   readonly loading = signal<boolean>(true);
   readonly profileData = signal<PlayerProfileResponse | null>(null);
+
+  readonly currentUserEntry = computed(() => {
+    const name = this.auth.user()?.displayName;
+    if (!name) return null;
+    return this.players().find((p) => p.displayName === name) ?? null;
+  });
 
   ngOnInit(): void {
     this.api.getLeaderboard().subscribe({

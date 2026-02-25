@@ -221,6 +221,7 @@
   "leaderboard.columns.rating": "Classement",
   "leaderboard.columns.games": "Parties",
   "leaderboard.columns.winRate": "Vict. %",
+  "leaderboard.yourRanking": "Votre classement",
   "leaderboard.noPlayers": "Aucun joueur avec 5+ parties classées.",
   "leaderboard.noBots": "Aucun bot classé.",
 
