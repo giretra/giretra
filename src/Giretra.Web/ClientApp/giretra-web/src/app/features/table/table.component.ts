@@ -15,6 +15,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
 import { environment } from '../../../environments/environment';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
+import { HotToastService } from '@ngxpert/hot-toast';
 
 @Component({
   selector: 'app-table',
@@ -262,6 +263,7 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly toast = inject(HotToastService);
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
@@ -546,17 +548,40 @@ export class TableComponent implements OnInit, OnDestroy {
 
   onGenerateInvite(position: PlayerPosition): void {
     const roomId = this.gameState.currentRoom()?.roomId;
-    if (roomId) {
-      this.api.generateInvite(roomId, position).subscribe({
-        next: (response) => {
-          const inviteUrl = `${window.location.origin}/table/${roomId}?invite=${response.token}`;
-          navigator.clipboard.writeText(inviteUrl).then(
-            () => console.log('[Table] Invite URL copied to clipboard'),
-            () => console.warn('[Table] Failed to copy invite URL')
-          );
-        },
-        error: (err) => console.error('Failed to generate invite', err),
-      });
+    if (!roomId) return;
+
+    this.api.generateInvite(roomId, position).subscribe({
+      next: (response) => {
+        const inviteUrl = `${window.location.origin}/table/${roomId}?invite=${response.token}`;
+        this.shareOrCopy(inviteUrl);
+      },
+      error: (err) => console.error('Failed to generate invite', err),
+    });
+  }
+
+  private async shareOrCopy(url: string): Promise<void> {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: this.transloco.translate('waiting.shareTitle'),
+          text: this.transloco.translate('waiting.shareText'),
+          url,
+        });
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        await this.copyToClipboard(url);
+      }
+    } else {
+      await this.copyToClipboard(url);
+    }
+  }
+
+  private async copyToClipboard(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      this.toast.success(this.transloco.translate('waiting.linkCopied'));
+    } catch {
+      this.toast.error(this.transloco.translate('waiting.linkCopyFailed'));
     }
   }
 

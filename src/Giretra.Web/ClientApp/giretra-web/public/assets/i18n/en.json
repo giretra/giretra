@@ -78,6 +78,10 @@
   "waiting.setPublic": "Set to Public",
   "waiting.setInviteOnly": "Set to Invite-Only",
   "waiting.copyInvite": "Copy invite link",
+  "waiting.shareTitle": "Giretra",
+  "waiting.shareText": "Join my Giretra table!",
+  "waiting.linkCopied": "Link copied!",
+  "waiting.linkCopyFailed": "Failed to copy link",
   "waiting.autoClose": "Auto-close in",
 
   "cut.cutTheDeck": "Cut the Deck",

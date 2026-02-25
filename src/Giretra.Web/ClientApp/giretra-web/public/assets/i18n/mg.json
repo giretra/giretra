@@ -78,6 +78,10 @@
   "waiting.setPublic": "Asio ho an'ny rehetra",
   "waiting.setInviteOnly": "Fanasana ihany",
   "waiting.copyInvite": "Adikao ny rohy fanasana",
+  "waiting.shareTitle": "Giretra",
+  "waiting.shareText": "Midira ato amin'ny latabatro Giretra!",
+  "waiting.linkCopied": "Rohy voatadidy!",
+  "waiting.linkCopyFailed": "Tsy nahomby ny fandikana ny rohy",
   "waiting.autoClose": "Hikatona ao anatin'ny",
 
   "cut.cutTheDeck": "Tapaho ny Katra",
