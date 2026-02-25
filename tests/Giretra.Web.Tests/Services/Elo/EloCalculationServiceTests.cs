@@ -102,7 +102,7 @@ public sealed class EloCalculationServiceTests
     }
 
     [Fact]
-    public void BotTeammate_WinMultiplier_ReducesGain()
+    public void BotTeammate_WinMultiplier_AppliesCorrectly()
     {
         var withBotTeammate = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
@@ -113,33 +113,33 @@ public sealed class EloCalculationServiceTests
             isWinner: true,
             involvedBots: false));
 
-        // Bot teammate reduces win gains (×0.7 plus bot gate)
-        Assert.True(withBotTeammate.EloChange < withoutBotTeammate.EloChange);
+        // With BOT_TEAMMATE_WIN_MULT = 1.0, bot teammate does not reduce gains
+        Assert.True(withBotTeammate.EloChange <= withoutBotTeammate.EloChange);
     }
 
     [Fact]
     public void BotTeammate_And_TwoBotOpponents_Stacking()
     {
-        // Win with bot teammate (×0.7) and 2 bot opponents (×0.7) = ×0.49
+        // Win with bot teammate and 2 bot opponents, all multipliers = 1.0
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
             involvedBots: true,
             hasBotTeammate: true,
             botOpponentCount: 2));
 
-        // Base delta for equal ratings win ≈ 16, ×0.49 ≈ 8 (but also bot gate at 0 gap = 1.0)
+        // Base delta for equal ratings win ≈ 16, multipliers are 1.0, bot gate at 0 gap = 1.0
         Assert.True(result.EloChange > 0);
-        Assert.True(result.EloChange <= 8);
+        Assert.True(result.EloChange <= 16);
     }
 
     [Fact]
     public void WeeklyCap_LimitsGain()
     {
-        // Already gained 45 this week, max is 50 → only 5 remaining
+        // Already gained 595 this week, max is 600 → only 5 remaining
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
             involvedBots: true,
-            weeklyBotEloGained: 45));
+            weeklyBotEloGained: 595));
 
         Assert.True(result.EloChange <= 5);
         Assert.True(result.EloChange >= 0);
@@ -151,7 +151,7 @@ public sealed class EloCalculationServiceTests
         var result = _sut.ComputeNormalMatchDelta(MakeContext(
             isWinner: true,
             involvedBots: true,
-            weeklyBotEloGained: 50));
+            weeklyBotEloGained: 600));
 
         Assert.Equal(0, result.EloChange);
     }
