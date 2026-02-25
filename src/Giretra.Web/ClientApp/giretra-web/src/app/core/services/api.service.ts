@@ -107,6 +107,12 @@ export interface TrickResponse {
   winner: PlayerPosition | null;
 }
 
+export interface EloChangeResponse {
+  eloBefore: number;
+  eloAfter: number;
+  eloChange: number;
+}
+
 export interface GameStateResponse {
   gameId: string;
   roomId: string;
@@ -129,6 +135,7 @@ export interface GameStateResponse {
   pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | 'ContinueDeal' | 'ContinueMatch' | null;
   pendingActionPlayer: PlayerPosition | null;
   pendingActionTimeoutAt: string | null;
+  eloChanges: Record<string, EloChangeResponse> | null;
 }
 
 export interface PlayerStateResponse {

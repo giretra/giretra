@@ -1,8 +1,9 @@
 import { Component, input, output, computed, inject } from '@angular/core';
 import { Team } from '../../../../../api/generated/signalr-types.generated';
+import { EloChangeResponse } from '../../../../../core/services/api.service';
 import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, Trophy } from 'lucide-angular';
+import { LucideAngularModule, Trophy, ArrowUp, ArrowDown } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
@@ -43,6 +44,22 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
         </div>
 
         <p class="deals-played">{{ t('matchEnd.dealsPlayed', { count: totalDeals() }) }}</p>
+
+        @if (showElo()) {
+          <div class="elo-card" [class.elo-positive]="eloIsPositive()" [class.elo-negative]="eloIsNegative()">
+            <div class="elo-change-row">
+              <span class="elo-change-value">{{ eloChange()!.eloChange >= 0 ? '+' : '' }}{{ eloChange()!.eloChange }}</span>
+              @if (eloIsPositive()) {
+                <i-lucide [img]="ArrowUpIcon" [size]="18" [strokeWidth]="2.5" class="elo-arrow-icon"></i-lucide>
+              } @else if (eloIsNegative()) {
+                <i-lucide [img]="ArrowDownIcon" [size]="18" [strokeWidth]="2.5" class="elo-arrow-icon"></i-lucide>
+              }
+            </div>
+            <div class="elo-rating-label">
+              {{ t('matchEnd.rating') }}: {{ eloChange()!.eloAfter }}
+            </div>
+          </div>
+        }
 
         <div class="actions">
           @if (isCreator()) {
@@ -171,7 +188,54 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
     .deals-played {
       font-size: 0.875rem;
       color: hsl(var(--muted-foreground));
-      margin: 0 0 1.5rem 0;
+      margin: 0 0 1rem 0;
+    }
+
+    .elo-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid hsl(var(--border));
+      margin-bottom: 1.5rem;
+    }
+
+    .elo-card.elo-positive {
+      background: hsl(142 70% 45% / 0.1);
+      border-color: hsl(142 70% 45% / 0.3);
+    }
+
+    .elo-card.elo-negative {
+      background: hsl(0 72% 51% / 0.1);
+      border-color: hsl(0 72% 51% / 0.3);
+    }
+
+    .elo-change-row {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .elo-change-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .elo-positive .elo-change-value,
+    .elo-positive .elo-arrow-icon {
+      color: hsl(142 70% 45%);
+    }
+
+    .elo-negative .elo-change-value,
+    .elo-negative .elo-arrow-icon {
+      color: hsl(0 72% 51%);
+    }
+
+    .elo-rating-label {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
     }
 
     .actions {
@@ -184,6 +248,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 export class MatchEndOverlayComponent {
   private readonly transloco = inject(TranslocoService);
   readonly TrophyIcon = Trophy;
+  readonly ArrowUpIcon = ArrowUp;
+  readonly ArrowDownIcon = ArrowDown;
 
   readonly winner = input<Team | null>(null);
   readonly myTeam = input<Team | null>(null);
@@ -191,9 +257,15 @@ export class MatchEndOverlayComponent {
   readonly team2Points = input<number>(0);
   readonly totalDeals = input<number>(0);
   readonly isCreator = input<boolean>(false);
+  readonly eloChange = input<EloChangeResponse | null>(null);
+  readonly isRanked = input<boolean>(false);
 
   readonly playAgain = output<void>();
   readonly leaveTable = output<void>();
+
+  readonly showElo = computed(() => this.isRanked() && this.eloChange() !== null);
+  readonly eloIsPositive = computed(() => (this.eloChange()?.eloChange ?? 0) > 0);
+  readonly eloIsNegative = computed(() => (this.eloChange()?.eloChange ?? 0) < 0);
 
   readonly isWinner = computed(() => {
     const w = this.winner();

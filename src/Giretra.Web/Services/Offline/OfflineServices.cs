@@ -68,6 +68,8 @@ public sealed class OfflineEloService : IEloService
 {
     public Task StageMatchEloAsync(Guid matchId, GameSession session) => Task.CompletedTask;
     public Task StageAbandonEloAsync(Guid matchId, GameSession session, PlayerPosition abandonerPosition) => Task.CompletedTask;
+    public Task<IReadOnlyDictionary<PlayerPosition, EloChangePreview>?> PreviewMatchEloAsync(GameSession session)
+        => Task.FromResult<IReadOnlyDictionary<PlayerPosition, EloChangePreview>?>(null);
 }
 
 /// <summary>

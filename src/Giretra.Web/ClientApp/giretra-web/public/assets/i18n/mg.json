@@ -127,6 +127,7 @@
   "matchEnd.dealsPlayed": "{{count}} fizarana natao",
   "matchEnd.playAgain": "Milalao Indray",
   "matchEnd.leaveTable": "Hiala amin'ny Latabatra",
+  "matchEnd.rating": "Laharana",
 
   "scoreBar.yourTurn": "Anjaranao",
   "scoreBar.dealNumber": "Fizarana {{number}}",

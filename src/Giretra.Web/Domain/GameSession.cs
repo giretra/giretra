@@ -6,6 +6,11 @@ using Giretra.Web.Players;
 namespace Giretra.Web.Domain;
 
 /// <summary>
+/// Preview of Elo rating changes for a player, computed before persistence.
+/// </summary>
+public sealed record EloChangePreview(int EloBefore, int EloAfter, int EloChange);
+
+/// <summary>
 /// Represents an active game session.
 /// </summary>
 public sealed class GameSession
@@ -75,6 +80,12 @@ public sealed class GameSession
     /// When the game completed (null if still running).
     /// </summary>
     public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// Elo rating change previews for each position (computed eagerly at match end, before persistence).
+    /// Null for unranked or offline games.
+    /// </summary>
+    public IReadOnlyDictionary<PlayerPosition, EloChangePreview>? EloResults { get; set; }
 
     /// <summary>
     /// Gets the current match state.

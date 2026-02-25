@@ -49,6 +49,8 @@ import {
   Star,
   RotateCcw,
   Github,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -87,6 +89,8 @@ const usedIcons = {
   Star,
   RotateCcw,
   Github,
+  ArrowUp,
+  ArrowDown,
 };
 
 function initializeKeycloak(auth: AuthService) {

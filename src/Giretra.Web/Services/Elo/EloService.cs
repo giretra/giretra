@@ -226,6 +226,84 @@ public sealed class EloService : IEloService
             matchId, abandonerPosition);
     }
 
+    public async Task<IReadOnlyDictionary<PlayerPosition, EloChangePreview>?> PreviewMatchEloAsync(GameSession session)
+    {
+        var matchState = session.MatchState;
+        if (matchState?.Winner == null)
+            return null;
+
+        var winnerTeam = matchState.Winner.Value;
+        var now = DateTimeOffset.UtcNow;
+
+        var playerMap = await ResolvePlayersAsync(session.PlayerComposition);
+        var involvedBots = session.PlayerComposition.Values.Any(p => p.IsBot);
+
+        var currentElos = playerMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.EloRating);
+
+        var weeklyBotGains = new Dictionary<PlayerPosition, int>();
+        if (involvedBots)
+        {
+            var sevenDaysAgo = now.AddDays(-7);
+            var humanPlayerIds = playerMap
+                .Where(kvp => !session.PlayerComposition[kvp.Key].IsBot)
+                .Select(kvp => kvp.Value.Id)
+                .ToList();
+
+            if (humanPlayerIds.Count > 0)
+            {
+                var gains = await _db.EloHistories
+                    .Where(eh => humanPlayerIds.Contains(eh.PlayerId)
+                        && eh.InvolvedBots
+                        && eh.EloChange > 0
+                        && eh.RecordedAt >= sevenDaysAgo)
+                    .GroupBy(eh => eh.PlayerId)
+                    .Select(g => new { PlayerId = g.Key, Total = g.Sum(eh => eh.EloChange) })
+                    .ToListAsync();
+
+                var gainsByPlayerId = gains.ToDictionary(g => g.PlayerId, g => g.Total);
+
+                foreach (var (pos, player) in playerMap)
+                {
+                    if (!session.PlayerComposition[pos].IsBot)
+                        weeklyBotGains[pos] = gainsByPlayerId.GetValueOrDefault(player.Id, 0);
+                }
+            }
+        }
+
+        var result = new Dictionary<PlayerPosition, EloChangePreview>();
+
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            var info = session.PlayerComposition[position];
+            var player = playerMap[position];
+            var isWinner = position.GetTeam() == winnerTeam;
+
+            var oppTeam = position.GetTeam() == Team.Team1 ? Team.Team2 : Team.Team1;
+            var oppPositions = Enum.GetValues<PlayerPosition>().Where(p => p.GetTeam() == oppTeam).ToList();
+            var oppComposite = oppPositions.Average(p => (double)currentElos[p]);
+
+            var hasBotTeammate = session.PlayerComposition[position.Teammate()].IsBot;
+            var botOpponentCount = oppPositions.Count(p => session.PlayerComposition[p].IsBot);
+
+            var ctx = new PlayerContext(
+                PlayerId: player.Id,
+                CurrentElo: currentElos[position],
+                IsBot: info.IsBot,
+                IsWinner: isWinner,
+                OpponentCompositeElo: oppComposite,
+                InvolvedBots: involvedBots,
+                HasBotTeammate: hasBotTeammate,
+                BotOpponentCount: botOpponentCount,
+                WeeklyBotEloGained: weeklyBotGains.GetValueOrDefault(position, 0)
+            );
+
+            var eloResult = _calc.ComputeNormalMatchDelta(ctx);
+            result[position] = new EloChangePreview(eloResult.EloBefore, eloResult.EloAfter, eloResult.EloChange);
+        }
+
+        return result;
+    }
+
     private async Task<Dictionary<PlayerPosition, ModelEntities.Player>> ResolvePlayersAsync(
         IReadOnlyDictionary<PlayerPosition, MatchPlayerInfo> composition)
     {
