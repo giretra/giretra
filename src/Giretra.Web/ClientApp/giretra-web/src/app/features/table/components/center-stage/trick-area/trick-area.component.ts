@@ -27,7 +27,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
       <!-- Card play area -->
       <div
         class="trick-area"
-        [class.clickable]="showingCompletedTrick()"
+        [class.clickable]="showingCompletedTrick() && !isWatcher()"
         (click)="onAreaClick()"
       >
         <!-- Card positions -->
@@ -53,8 +53,8 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
           </div>
         }
 
-        <!-- Click to continue prompt -->
-        @if (showingCompletedTrick()) {
+        <!-- Click to continue prompt (hidden for watchers) -->
+        @if (showingCompletedTrick() && !isWatcher()) {
           <div class="continue-prompt">
             Click or press Space to continue
           </div>
@@ -157,6 +157,7 @@ export class TrickAreaComponent {
   readonly currentTrick = input<TrickResponse | null>(null);
   readonly completedTrickToShow = input<TrickResponse | null>(null);
   readonly showingCompletedTrick = input<boolean>(false);
+  readonly isWatcher = input<boolean>(false);
   readonly myPosition = input<PlayerPosition | null>(null);
   readonly gameMode = input<GameMode | null>(null);
   readonly dismissCompletedTrick = output<void>();
@@ -202,14 +203,14 @@ export class TrickAreaComponent {
 
   @HostListener('document:keydown.space', ['$event'])
   onSpacePress(event: Event): void {
-    if (this.showingCompletedTrick()) {
+    if (this.showingCompletedTrick() && !this.isWatcher()) {
       event.preventDefault();
       this.dismissCompletedTrick.emit();
     }
   }
 
   onAreaClick(): void {
-    if (this.showingCompletedTrick()) {
+    if (this.showingCompletedTrick() && !this.isWatcher()) {
       this.dismissCompletedTrick.emit();
     }
   }
