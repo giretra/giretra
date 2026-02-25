@@ -190,6 +190,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     /* Row layout */
     .row { display:flex; align-items:center; padding:0.5rem 0.5rem; border-radius:0.375rem; gap:0.5rem; }
     .row-header { font-size:0.625rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:hsl(var(--muted-foreground)); border-radius:0; margin-bottom:0.125rem; padding-bottom:0.375rem; }
+    .row-header > div { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .row:not(.row-header):hover { background:hsl(var(--foreground)/0.03); }
     .row-top3 { background:hsl(var(--foreground)/0.02); }
     .row-clickable { cursor:pointer; }
