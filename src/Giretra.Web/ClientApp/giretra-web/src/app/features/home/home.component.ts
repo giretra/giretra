@@ -118,7 +118,10 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
             <span class="footer-dot"></span>
             <a href="https://github.com/giretra" target="_blank" rel="noopener noreferrer" class="footer-link footer-link-icon"><i-lucide [img]="GithubIcon" [size]="12" [strokeWidth]="2"></i-lucide> Source Code</a>
             <span class="footer-dot"></span>
-            <a href="https://www.giretra.com/privacy-policy/" target="_blank" rel="noopener noreferrer" class="footer-link">Privacy Policy</a>
+            <a class="best-player-link" (click)="goToLeaderboard()">
+              <i-lucide [img]="TrophyIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+              {{ t('home.bestPlayers') }}
+            </a>
           </div>
           <span class="footer-copy">&copy; {{ currentYear }} Giretra</span>
         </div>
@@ -175,6 +178,8 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .footer-link:hover { color:hsl(var(--foreground)); }
     .footer-link-icon { display:inline-flex; align-items:center; gap:0.25rem; }
     .footer-dot { width:3px; height:3px; border-radius:50%; background:hsl(var(--muted-foreground)/0.4); }
+    .best-player-link { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:600; color:hsl(var(--gold)); cursor:pointer; text-decoration:none; transition:opacity 0.15s ease; }
+    .best-player-link:hover { opacity:0.8; }
     .footer-copy { font-size:0.6875rem; color:hsl(var(--muted-foreground)/0.6); margin-left:auto; }
   `],
 })

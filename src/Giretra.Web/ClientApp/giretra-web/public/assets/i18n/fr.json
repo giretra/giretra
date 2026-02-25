@@ -225,6 +225,7 @@
   "leaderboard.unrankedNotice": "Jouez au moins 5 parties classées pour apparaître au classement.",
   "leaderboard.noPlayers": "Aucun joueur avec 5+ parties classées.",
   "leaderboard.noBots": "Aucun bot classé.",
+  "home.bestPlayers": "Meilleurs joueurs",
 
   "playerProfile.expert": "Expert",
   "playerProfile.veteran": "Vétéran",
