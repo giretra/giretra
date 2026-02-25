@@ -794,8 +794,11 @@ public class DeterministicPlayerAgent : IPlayerAgent
         int trickNumber = handState.CompletedTricks.Count + 1;
         bool isEndgame = trickNumber >= 7;
 
+        var lostTrick = trick.PlayedCards.Where(s => s.Team != _myTeam)
+            .Any(c => PlayerAgentHelper.IsMasterCard(c.Card, mode, [], _playedCards));
+
         if (discarding)
-            return ChooseSmartDiscard(hand, validPlays, mode);
+            return ChooseSmartDiscard(hand, validPlays, mode, lostTrick);
 
         if (playingTrump)
             return ChooseSmartTrump(validPlays, trick, mode, teammateWinning, winningCard);
@@ -806,7 +809,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
             1 => ChooseSecondSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             2 => ChooseThirdSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             3 => ChooseFourthSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
-            _ => ChooseFourthSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame)
+            _ => throw new InvalidOperationException("Should not happen")
         };
     }
 
@@ -978,18 +981,21 @@ public class DeterministicPlayerAgent : IPlayerAgent
             ? validPlays.Where(c => c.Suit != trumpSuit.Value).ToList()
             : new List<Card>();
 
+        var lostTrick = trick.PlayedCards.Where(s => s.Team != _myTeam)
+            .Any(c => PlayerAgentHelper.IsMasterCard(c.Card, mode, [], _playedCards));
+
         // Teammate winning with non-trump - discard rather than trump
         if (teammateWinning && winningCard.HasValue &&
             trumpSuit.HasValue && winningCard.Value.Suit != trumpSuit.Value)
         {
             // Validator may allow discarding; if we have non-trump options, prefer them
             if (nonTrumpPlays.Count > 0)
-                return ChooseSmartDiscard(validPlays, nonTrumpPlays, mode);
+                return ChooseSmartDiscard(validPlays, nonTrumpPlays, mode, lostTrick);
             // Otherwise must play trump (validator forced)
         }
 
         if (trumpPlays.Count == 0)
-            return ChooseSmartDiscard(validPlays, validPlays, mode);
+            return ChooseSmartDiscard(validPlays, validPlays, mode, lostTrick);
 
         // Check if we need to overtrump
         if (winningCard.HasValue && trumpSuit.HasValue && winningCard.Value.Suit == trumpSuit.Value)
@@ -1015,7 +1021,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private Card ChooseSmartDiscard(
         IReadOnlyList<Card> hand,
         IReadOnlyList<Card> validPlays,
-        GameMode mode)
+        GameMode mode, bool lostTrick)
     {
         var trumpSuit = mode.GetTrumpSuit();
 
@@ -1025,7 +1031,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
             .GroupBy(c => c.Suit)
             .ToList();
 
-        if (suitGroups.Count == 0)
+        if (suitGroups.Count == 0 || lostTrick)
             return ChooseLeastValuableCard(validPlays, mode, hand);
 
         // Prefer discarding from short side suits to create voids for future ruffing
