@@ -225,6 +225,7 @@
   "leaderboard.unrankedNotice": "Play at least 5 rated games to appear on the leaderboard.",
   "leaderboard.noPlayers": "No players with 5+ rated games yet.",
   "leaderboard.noBots": "No bots ranked yet.",
+  "home.bestPlayers": "Best Players",
 
   "playerProfile.expert": "Expert",
   "playerProfile.veteran": "Veteran",
