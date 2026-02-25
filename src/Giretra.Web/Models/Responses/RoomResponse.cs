@@ -66,4 +66,9 @@ public sealed class RoomResponse
     /// Whether games in this room affect player ratings.
     /// </summary>
     public bool IsRanked { get; init; }
+
+    /// <summary>
+    /// When the room will be auto-closed due to idle timeout (null if no timeout active).
+    /// </summary>
+    public DateTime? IdleDeadline { get; init; }
 }

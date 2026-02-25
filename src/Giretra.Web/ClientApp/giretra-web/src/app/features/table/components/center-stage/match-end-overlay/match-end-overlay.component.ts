@@ -5,11 +5,12 @@ import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Trophy, ArrowUp, ArrowDown } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/turn-timer.component';
 
 @Component({
   selector: 'app-match-end-overlay',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective, TurnTimerComponent],
   template: `
     <div class="overlay" *transloco="let t">
       <div class="modal">
@@ -58,6 +59,13 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
             <div class="elo-rating-label">
               {{ t('matchEnd.rating') }}: {{ eloChange()!.eloAfter }}
             </div>
+          </div>
+        }
+
+        @if (idleDeadline()) {
+          <div class="idle-timer">
+            <span class="idle-label">{{ t('matchEnd.autoClose') }}</span>
+            <app-turn-timer [deadline]="idleDeadline()" />
           </div>
         }
 
@@ -238,6 +246,19 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       color: hsl(var(--muted-foreground));
     }
 
+    .idle-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .idle-label {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+    }
+
     .actions {
       display: flex;
       gap: 0.75rem;
@@ -259,6 +280,7 @@ export class MatchEndOverlayComponent {
   readonly isCreator = input<boolean>(false);
   readonly eloChange = input<EloChangeResponse | null>(null);
   readonly isRanked = input<boolean>(false);
+  readonly idleDeadline = input<Date | null>(null);
 
   readonly playAgain = output<void>();
   readonly leaveTable = output<void>();

@@ -70,4 +70,9 @@ public interface INotificationService
     /// Notifies all clients in a room that a match was abandoned.
     /// </summary>
     Task NotifyMatchAbandonedAsync(string gameId, string roomId, PlayerPosition abandoner, Team winnerTeam);
+
+    /// <summary>
+    /// Notifies all clients in a room that the room was closed due to idle timeout.
+    /// </summary>
+    Task NotifyRoomIdleClosedAsync(string roomId);
 }

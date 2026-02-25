@@ -38,6 +38,7 @@ public sealed class RoomToGameFlowTests
         var serviceProvider = Substitute.For<IServiceProvider>();
         _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, logger, loggerFactory);
         _roomService = new RoomService(_roomRepository, _gameService, _notifications, aiRegistry, Substitute.For<ILogger<RoomService>>());
+        serviceProvider.GetService(typeof(IRoomService)).Returns(_roomService);
     }
 
     #region Complete Flow Tests

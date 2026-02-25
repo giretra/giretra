@@ -367,6 +367,11 @@ public sealed class NotificationService : INotificationService
         await _hubContext.Clients.Group($"room_{roomId}").SendAsync("MatchAbandoned", ev);
     }
 
+    public async Task NotifyRoomIdleClosedAsync(string roomId)
+    {
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("RoomIdleClosed", new { RoomId = roomId });
+    }
+
     private static TrickResponse MapToTrickResponse(TrickState trick, GameMode gameMode, PlayerPosition winner)
     {
         return new TrickResponse

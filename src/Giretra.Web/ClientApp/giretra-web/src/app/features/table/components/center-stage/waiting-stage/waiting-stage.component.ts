@@ -4,11 +4,12 @@ import { PlayerPosition, SeatAccessMode } from '../../../../../api/generated/sig
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/turn-timer.component';
 
 @Component({
   selector: 'app-waiting-stage',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
+  imports: [HlmButton, LucideAngularModule, TranslocoDirective, TurnTimerComponent],
   template: `
     <div class="waiting-stage" *transloco="let t">
       <i-lucide [img]="UsersIcon" [size]="32" [strokeWidth]="1.5" class="users-icon"></i-lucide>
@@ -73,6 +74,13 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <p class="hint">{{ t('waiting.hostHint') }}</p>
       } @else {
         <p class="hint">{{ t('waiting.morePlayersHint') }}</p>
+      }
+
+      @if (idleDeadline()) {
+        <div class="idle-timer">
+          <span class="idle-label">{{ t('waiting.autoClose') }}</span>
+          <app-turn-timer [deadline]="idleDeadline()" />
+        </div>
       }
     </div>
   `,
@@ -224,6 +232,18 @@ import { TranslocoDirective } from '@jsverse/transloco';
       color: hsl(var(--muted-foreground));
       margin: 0;
     }
+
+    .idle-timer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .idle-label {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+    }
   `],
 })
 export class WaitingStageComponent {
@@ -236,6 +256,7 @@ export class WaitingStageComponent {
   readonly room = input<RoomResponse | null>(null);
   readonly isCreator = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
+  readonly idleDeadline = input<Date | null>(null);
 
   readonly startGame = output<void>();
   readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();

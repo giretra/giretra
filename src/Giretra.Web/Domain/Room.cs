@@ -91,6 +91,11 @@ public sealed class Room
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     /// <summary>
+    /// When the room will be auto-closed due to idle timeout (null if no timeout active).
+    /// </summary>
+    public DateTime? IdleDeadline { get; set; }
+
+    /// <summary>
     /// Gets the number of human players currently in the room.
     /// </summary>
     public int PlayerCount => PlayerSlots.Values.Count(p => p != null);

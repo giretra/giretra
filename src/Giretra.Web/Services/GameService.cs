@@ -157,16 +157,10 @@ public sealed class GameService : IGameService
             }
             finally
             {
-                // Reset room status immediately so "Play Again" works without
-                // waiting for database persistence to complete.
-                var roomToReset = _roomRepository.GetById(room.RoomId);
-                if (roomToReset != null)
-                {
-                    roomToReset.Status = RoomStatus.Waiting;
-                    roomToReset.GameSessionId = null;
-                    _roomRepository.Update(roomToReset);
-                    _logger.LogInformation("Room {RoomId} reset to Waiting state", room.RoomId);
-                }
+                // Reset room status and start idle timeout so "Play Again" works
+                // without waiting for database persistence to complete.
+                var roomService = _serviceProvider.GetRequiredService<IRoomService>();
+                roomService.ResetToWaiting(room.RoomId);
             }
 
             // Persist match to database after room is reset (non-blocking for Play Again)
@@ -679,15 +673,9 @@ public sealed class GameService : IGameService
 
         await _notifications.NotifyMatchAbandonedAsync(gameId, session.RoomId, abandonerPosition, winnerTeam);
 
-        // Reset room to Waiting
-        var room = _roomRepository.GetById(session.RoomId);
-        if (room != null)
-        {
-            room.Status = RoomStatus.Waiting;
-            room.GameSessionId = null;
-            _roomRepository.Update(room);
-            _logger.LogInformation("Room {RoomId} reset to Waiting after abandonment", session.RoomId);
-        }
+        // Reset room to Waiting and start idle timeout
+        var roomService = _serviceProvider.GetRequiredService<IRoomService>();
+        roomService.ResetToWaiting(session.RoomId);
     }
 
     private async Task PersistMatchAsync(GameSession session)

@@ -184,6 +184,10 @@ export interface SeatModeChangedEvent {
   accessMode: SeatAccessMode;
 }
 
+export interface RoomIdleClosedEvent {
+  roomId: string;
+}
+
 // ============================================================================
 // Hub Methods (Client -> Server)
 // ============================================================================
@@ -210,6 +214,7 @@ export interface GameHubEvents {
   onMatchEnded(callback: (event: MatchEndedEvent) => void): void;
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
+  onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
 }
 
 // ============================================================================
@@ -229,6 +234,7 @@ export const GameHubEventNames = {
   MatchEnded: 'MatchEnded',
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',
+  RoomIdleClosed: 'RoomIdleClosed',
 } as const;
 
 export type GameHubEventName = (typeof GameHubEventNames)[keyof typeof GameHubEventNames];

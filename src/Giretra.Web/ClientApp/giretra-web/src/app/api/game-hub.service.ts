@@ -20,6 +20,7 @@ import {
   PlayerKickedEvent,
   PlayerLeftEvent,
   PlayerTurnEvent,
+  RoomIdleClosedEvent,
   SeatModeChangedEvent,
   TrickCompletedEvent,
   YourTurnEvent,
@@ -51,6 +52,7 @@ export class GameHubService implements OnDestroy {
   readonly matchEnded$ = new Subject<MatchEndedEvent>();
   readonly playerKicked$ = new Subject<PlayerKickedEvent>();
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
+  readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
@@ -114,6 +116,7 @@ export class GameHubService implements OnDestroy {
     this.matchEnded$.complete();
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
+    this.roomIdleClosed$.complete();
   }
 
   private registerConnectionHandlers(): void {
@@ -199,6 +202,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.SeatModeChanged, (event: SeatModeChangedEvent) => {
       console.log('[Hub] SeatModeChanged', event);
       this.ngZone.run(() => this.seatModeChanged$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.RoomIdleClosed, (event: RoomIdleClosedEvent) => {
+      console.log('[Hub] RoomIdleClosed', event);
+      this.ngZone.run(() => this.roomIdleClosed$.next(event));
     });
   }
 }

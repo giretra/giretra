@@ -59,6 +59,7 @@ export interface RoomResponse {
   isOwner: boolean;
   isDisconnectedPlayer?: boolean;
   isRanked: boolean;
+  idleDeadline?: string | null;
 }
 
 export interface InviteTokenResponse {
