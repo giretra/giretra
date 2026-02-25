@@ -112,7 +112,8 @@ public sealed class BenchmarkRunner
                 Team1EloAfter = newTeam1Elo,
                 Team2EloAfter = newTeam2Elo,
                 Team1EloChange = eloChange,
-                Duration = matchStopwatch.Elapsed
+                Duration = matchStopwatch.Elapsed,
+                DealResults = matchState.CompletedDeals
             };
 
             results.Add(matchResult);

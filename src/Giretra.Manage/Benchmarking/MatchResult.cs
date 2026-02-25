@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using Giretra.Core.Players;
+using Giretra.Core.Scoring;
 
 namespace Giretra.Manage.Benchmarking;
 
@@ -51,4 +53,9 @@ public sealed class MatchResult
     /// Duration of the match.
     /// </summary>
     public required TimeSpan Duration { get; init; }
+
+    /// <summary>
+    /// Results of each deal played in this match.
+    /// </summary>
+    public required ImmutableList<DealResult> DealResults { get; init; }
 }

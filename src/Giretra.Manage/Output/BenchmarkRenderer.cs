@@ -1,4 +1,5 @@
 using Giretra.Manage.Benchmarking;
+using Giretra.Core.GameModes;
 using Giretra.Core.Players;
 using Spectre.Console;
 
@@ -143,9 +144,90 @@ public sealed class BenchmarkRenderer
 
         AnsiConsole.Write(statsPanel);
 
+        // Game mode win rate breakdown
+        RenderGameModeStats(result);
+
         // Adjusted ELO (normalized so RandomPlayer = 1000)
         RenderAdjustedElo(result, team1AgentName, team2AgentName);
     }
+
+    private void RenderGameModeStats(BenchmarkResult result)
+    {
+        var stats = result.GetGameModeStats();
+
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .Title("[bold]Win Rate by Game Mode[/]")
+            .AddColumn(new TableColumn("[bold]Game Mode[/]"))
+            .AddColumn(new TableColumn("[bold]Announcer[/]"))
+            .AddColumn(new TableColumn("[bold]Deals[/]").RightAligned())
+            .AddColumn(new TableColumn("[bold]Ann. Win Rate[/]").RightAligned());
+
+        foreach (var s in stats)
+        {
+            if (s.TotalDeals == 0)
+            {
+                table.AddRow(FormatGameMode(s.GameMode), "", "[dim]0[/]", "[dim]-[/]");
+                continue;
+            }
+
+            table.AddRow(
+                FormatGameMode(s.GameMode),
+                $"[blue]{_team1Name}[/]",
+                FormatAnnouncerDeals(s.Team1Announced),
+                FormatAnnouncerWinRate(s.Team1Announced, "blue"));
+
+            table.AddRow(
+                "",
+                $"[green]{_team2Name}[/]",
+                FormatAnnouncerDeals(s.Team2Announced),
+                FormatAnnouncerWinRate(s.Team2Announced, "green"));
+        }
+
+        // Total row
+        var totalTeam1 = stats.Aggregate(
+            new AnnouncerStats(0, 0),
+            (acc, s) => new AnnouncerStats(
+                acc.Announced + s.Team1Announced.Announced,
+                acc.AnnouncerWins + s.Team1Announced.AnnouncerWins));
+        var totalTeam2 = stats.Aggregate(
+            new AnnouncerStats(0, 0),
+            (acc, s) => new AnnouncerStats(
+                acc.Announced + s.Team2Announced.Announced,
+                acc.AnnouncerWins + s.Team2Announced.AnnouncerWins));
+
+        table.AddEmptyRow();
+        table.AddRow(
+            "[bold]Total[/]",
+            $"[bold blue]{_team1Name}[/]",
+            $"[bold]{totalTeam1.Announced}[/]",
+            $"[bold blue]{totalTeam1.AnnouncerWinRate:P1}[/]");
+        table.AddRow(
+            "",
+            $"[bold green]{_team2Name}[/]",
+            $"[bold]{totalTeam2.Announced}[/]",
+            $"[bold green]{totalTeam2.AnnouncerWinRate:P1}[/]");
+
+        AnsiConsole.Write(table);
+    }
+
+    private static string FormatAnnouncerDeals(AnnouncerStats stats)
+        => stats.Announced == 0 ? "[dim]0[/]" : stats.Announced.ToString();
+
+    private static string FormatAnnouncerWinRate(AnnouncerStats stats, string color)
+        => stats.Announced == 0 ? "[dim]-[/]" : $"[{color}]{stats.AnnouncerWinRate:P1}[/]";
+
+    private static string FormatGameMode(GameMode mode)
+        => mode switch
+        {
+            GameMode.ColourClubs => "Clubs",
+            GameMode.ColourDiamonds => "Diamonds",
+            GameMode.ColourHearts => "Hearts",
+            GameMode.ColourSpades => "Spades",
+            GameMode.NoTrumps => "No Trumps",
+            GameMode.AllTrumps => "All Trumps",
+            _ => mode.ToString()
+        };
 
     private static void RenderAdjustedElo(BenchmarkResult result, string? team1AgentName, string? team2AgentName)
     {
