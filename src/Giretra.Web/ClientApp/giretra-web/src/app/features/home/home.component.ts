@@ -40,8 +40,8 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
           <div class="user-area">
             @if (auth.user(); as user) {
               <div class="user-pill">
-                <span class="user-avatar">{{ user.displayName.charAt(0).toUpperCase() }}</span>
-                <span class="user-name">{{ user.displayName }}</span>
+                <span class="user-avatar" (click)="goToSettings()">{{ user.displayName.charAt(0).toUpperCase() }}</span>
+                <span class="user-name" (click)="goToSettings()">{{ user.displayName }}</span>
                 <app-language-switcher />
                 <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
@@ -156,8 +156,8 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .logo { font-family:'Urbanist',sans-serif; font-size:1.125rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 1px 4px rgba(0,0,0,0.3); }
     .user-area { display:flex; align-items:center; }
     .user-pill { display:flex; align-items:center; gap:0.375rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.2rem 0.4rem 0.2rem 0.2rem; }
-    .user-avatar { width:1.5rem; height:1.5rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.6875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
-    .user-name { font-size:0.8125rem; font-weight:600; color:hsl(var(--foreground)); }
+    .user-avatar { width:1.5rem; height:1.5rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.6875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; cursor:pointer; }
+    .user-name { font-size:0.8125rem; font-weight:600; color:hsl(var(--foreground)); cursor:pointer; }
     .pill-btn { position:relative; display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
     .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
