@@ -10,7 +10,7 @@ services:
       - ConnectionStrings__GiretraDb=Host=postgres;Port=5432;Database=giretra;Username=giretra_app;Password=${GIRETRA_DB_PASSWORD}
       - Keycloak__Authority=${KC_AUTHORITY:-https://auth.giretra.com/realms/giretra}
       - Keycloak__Audience=giretra-web
-      - TZ=Indian/Antananarivo
+      - TZ=Europe/Paris
     env_file:
       - docker/.env
     networks:
