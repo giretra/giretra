@@ -224,6 +224,8 @@
   "leaderboard.yourRanking": "Votre classement",
   "leaderboard.unrankedNotice": "Jouez au moins 5 parties classées pour apparaître au classement.",
   "leaderboard.noPlayers": "Aucun joueur avec 5+ parties classées.",
+  "leaderboard.columns.author": "Auteur",
+  "leaderboard.builtIn": "Intégré",
   "leaderboard.noBots": "Aucun bot classé.",
   "home.bestPlayers": "Meilleurs joueurs",
 

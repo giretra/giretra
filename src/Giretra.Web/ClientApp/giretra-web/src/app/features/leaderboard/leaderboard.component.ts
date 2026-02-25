@@ -126,8 +126,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                     <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
                     <div class="col-name">{{ t('leaderboard.columns.bot') }}</div>
                     <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                    <div class="col-games">{{ t('leaderboard.columns.games') }}</div>
-                    <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
+                    <div class="col-author">{{ t('leaderboard.columns.author') }}</div>
                   </div>
 
                   @for (b of bots(); track b.rank) {
@@ -147,16 +146,10 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                         <span class="avatar avatar-placeholder avatar-bot">
                           <i-lucide [img]="BotIcon" [size]="12" [strokeWidth]="2"></i-lucide>
                         </span>
-                        <div class="name-group">
-                          <span class="entry-name">{{ b.displayName }}</span>
-                          @if (b.author) {
-                            <span class="bot-author">by {{ b.author }}</span>
-                          }
-                        </div>
+                        <span class="entry-name">{{ b.displayName }}</span>
                       </div>
                       <div class="col-rating">{{ b.rating }}</div>
-                      <div class="col-games">{{ b.gamesPlayed }}</div>
-                      <div class="col-winrate">{{ b.winRate }}%</div>
+                      <div class="col-author">{{ b.author || t('leaderboard.builtIn') }}</div>
                     </div>
                   }
                 }
@@ -234,6 +227,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     .col-rating { width:3.25rem; flex-shrink:0; text-align:right; font-weight:700; font-size:0.8125rem; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
     .col-games { width:2.75rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
     .col-winrate { width:3rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
+    .col-author { width:5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* Medal */
     .medal { display:inline-flex; align-items:center; justify-content:center; width:1.375rem; height:1.375rem; border-radius:50%; font-size:0.625rem; font-weight:800; }
