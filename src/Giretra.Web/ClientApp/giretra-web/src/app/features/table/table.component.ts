@@ -87,6 +87,7 @@ import { TranslocoService } from '@jsverse/transloco';
         [team2Tricks]="gameState.team2TricksWon()"
         [myTeam]="gameState.myTeam()"
         [tricksWonByPosition]="gameState.tricksWonByPosition()"
+        [idleDeadline]="gameState.idleDeadline()"
         (startGame)="onStartGame()"
         (submitCut)="onSubmitCut()"
         (hideDealSummary)="onHideDealSummary()"
@@ -132,6 +133,7 @@ import { TranslocoService } from '@jsverse/transloco';
           [isCreator]="gameState.isCreator()"
           [eloChange]="gameState.myEloChange()"
           [isRanked]="gameState.isRanked()"
+          [idleDeadline]="gameState.idleDeadline()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
         />
@@ -279,6 +281,15 @@ export class TableComponent implements OnInit, OnDestroy {
     // Watch for kick — navigate home
     effect(() => {
       if (this.gameState.wasKicked()) {
+        this.gameState.leaveRoom();
+        this.session.leaveRoom();
+        this.router.navigate(['/']);
+      }
+    });
+
+    // Watch for idle close — navigate home
+    effect(() => {
+      if (this.gameState.roomIdleClosed()) {
         this.gameState.leaveRoom();
         this.session.leaveRoom();
         this.router.navigate(['/']);

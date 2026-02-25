@@ -100,6 +100,7 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
             [team1Tricks]="team1Tricks()"
             [team2Tricks]="team2Tricks()"
             [myTeam]="myTeam()"
+            [idleDeadline]="idleDeadline()"
             (startGame)="startGame.emit()"
             (submitCut)="submitCut.emit()"
             (hideDealSummary)="hideDealSummary.emit()"
@@ -319,6 +320,7 @@ export class TableSurfaceComponent {
   readonly team2Tricks = input<number>(0);
   readonly myTeam = input<Team | null>(null);
   readonly tricksWonByPosition = input<Record<PlayerPosition, number> | null>(null);
+  readonly idleDeadline = input<Date | null>(null);
 
   readonly startGame = output<void>();
   readonly submitCut = output<void>();

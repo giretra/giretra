@@ -26,6 +26,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [room]="room()"
             [isCreator]="isCreator()"
             [isWatcher]="isWatcher()"
+            [idleDeadline]="idleDeadline()"
             (startGame)="startGame.emit()"
             (setSeatMode)="setSeatMode.emit($event)"
             (generateInvite)="generateInvite.emit($event)"
@@ -98,6 +99,7 @@ export class CenterStageComponent {
   readonly team1Tricks = input<number>(0);
   readonly team2Tricks = input<number>(0);
   readonly myTeam = input<Team | null>(null);
+  readonly idleDeadline = input<Date | null>(null);
 
   readonly startGame = output<void>();
   readonly submitCut = output<void>();

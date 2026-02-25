@@ -116,6 +116,15 @@ export class GameStateService {
   readonly turnTimeoutAt = this._turnTimeoutAt.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Idle Timeout State
+  // ─────────────────────────────────────────────────────────────────────────
+  private readonly _idleDeadline = signal<Date | null>(null);
+  readonly idleDeadline = this._idleDeadline.asReadonly();
+
+  private readonly _roomIdleClosed = signal<boolean>(false);
+  readonly roomIdleClosed = this._roomIdleClosed.asReadonly();
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Computed Signals: Derived State
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -376,6 +385,7 @@ export class GameStateService {
     this._currentRoom.set(room);
     this._isCreator.set(room.isOwner ?? isCreator);
     this._gameId.set(room.gameId);
+    this._idleDeadline.set(room.idleDeadline ? new Date(room.idleDeadline) : null);
 
     // Connect to SignalR hub
     await this.hub.connect(environment.hubUrl);
@@ -417,11 +427,13 @@ export class GameStateService {
     this._playerCardCounts.set(null);
     this._isCreator.set(false);
     this._wasKicked.set(false);
+    this._roomIdleClosed.set(false);
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
     this._hasPendingDealSummary.set(false);
     this._pendingDealSummary = null;
     this._turnTimeoutAt.set(null);
+    this._idleDeadline.set(null);
   }
 
   /**
@@ -630,6 +642,7 @@ export class GameStateService {
     this.hub.gameStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: gameStarted', event);
       this._gameId.set(event.gameId);
+      this._idleDeadline.set(null);
       // Also refresh the room to get updated status
       const room = this._currentRoom();
       if (room) {
@@ -742,6 +755,14 @@ export class GameStateService {
       console.log('[GameState] Hub event: matchEnded', event);
       this._turnTimeoutAt.set(null);
       this.refreshState();
+      // Refresh room to pick up new idleDeadline (room resets to Waiting after match)
+      const room = this._currentRoom();
+      if (room) {
+        this.api.getRoom(room.roomId).subscribe((r) => {
+          this._currentRoom.set(r);
+          this._idleDeadline.set(r.idleDeadline ? new Date(r.idleDeadline) : null);
+        });
+      }
     });
 
     // Player kicked
@@ -769,6 +790,15 @@ export class GameStateService {
         this.api.getRoom(event.roomId).subscribe((r) => {
           this._currentRoom.set(r);
         });
+      }
+    });
+
+    // Room idle closed
+    this.hub.roomIdleClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: roomIdleClosed', event);
+      const room = this._currentRoom();
+      if (room && room.roomId === event.roomId) {
+        this._roomIdleClosed.set(true);
       }
     });
   }

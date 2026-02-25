@@ -14,6 +14,7 @@ namespace Giretra.Web.Services;
 public sealed class RoomService : IRoomService
 {
     private static readonly TimeSpan RoomCleanupDelay = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan RoomIdleTimeout = TimeSpan.FromMinutes(2);
 
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
@@ -21,6 +22,7 @@ public sealed class RoomService : IRoomService
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly ILogger<RoomService> _logger;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingIdleCleanups = new();
     private static int _roomCounter;
 
     public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger)
@@ -108,6 +110,7 @@ public sealed class RoomService : IRoomService
         }
 
         _roomRepository.Add(room);
+        ScheduleIdleCleanup(roomId);
 
         return (new JoinRoomResponse
         {
@@ -127,6 +130,7 @@ public sealed class RoomService : IRoomService
         if (!room.IsOwner(userId) || room.Status != RoomStatus.Waiting)
             return false;
 
+        CancelIdleCleanup(roomId);
         return _roomRepository.Remove(roomId);
     }
 
@@ -332,6 +336,9 @@ public sealed class RoomService : IRoomService
         // Need at least 1 human player
         if (room.PlayerCount == 0)
             return (null, "No human players in the room");
+
+        // Cancel idle timeout since the game is starting
+        CancelIdleCleanup(roomId);
 
         // Start the game (fills empty slots with AI)
         var gameSession = _gameService.CreateGame(room);
@@ -573,6 +580,82 @@ public sealed class RoomService : IRoomService
         ScheduleDelayedRemoval(room.RoomId, client.ClientId);
     }
 
+    public void ResetToWaiting(string roomId)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null) return;
+
+        room.Status = RoomStatus.Waiting;
+        room.GameSessionId = null;
+        _roomRepository.Update(room);
+        _logger.LogInformation("Room {RoomId} reset to Waiting state", roomId);
+
+        ScheduleIdleCleanup(roomId);
+    }
+
+    private void ScheduleIdleCleanup(string roomId)
+    {
+        CancelIdleCleanup(roomId);
+
+        var room = _roomRepository.GetById(roomId);
+        if (room == null) return;
+
+        room.IdleDeadline = DateTime.UtcNow.Add(RoomIdleTimeout);
+        _roomRepository.Update(room);
+
+        var cts = new CancellationTokenSource();
+        _pendingIdleCleanups[roomId] = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(RoomIdleTimeout, cts.Token);
+                _pendingIdleCleanups.TryRemove(roomId, out _);
+                cts.Dispose();
+
+                var roomToClose = _roomRepository.GetById(roomId);
+                if (roomToClose == null || roomToClose.Status != RoomStatus.Waiting)
+                    return;
+
+                _logger.LogInformation("Room {RoomId} idle timeout expired, closing room", roomId);
+
+                // Notify all clients before removing them
+                await _notifications.NotifyRoomIdleClosedAsync(roomId);
+
+                // Leave all players and watchers
+                var allClientIds = roomToClose.AllClients.Select(c => c.ClientId).ToList();
+                foreach (var clientId in allClientIds)
+                {
+                    LeaveRoom(roomId, clientId);
+                }
+
+                // Delete the room if it still exists
+                _roomRepository.Remove(roomId);
+            }
+            catch (OperationCanceledException)
+            {
+                // Timer was cancelled (game started or room manually closed)
+            }
+        });
+    }
+
+    private void CancelIdleCleanup(string roomId)
+    {
+        if (_pendingIdleCleanups.TryRemove(roomId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+
+        var room = _roomRepository.GetById(roomId);
+        if (room != null)
+        {
+            room.IdleDeadline = null;
+            _roomRepository.Update(room);
+        }
+    }
+
     private void ScheduleDelayedRemoval(string roomId, string clientId)
     {
         var key = $"{roomId}_{clientId}";
@@ -689,7 +772,8 @@ public sealed class RoomService : IRoomService
             TurnTimerSeconds = room.TurnTimerSeconds,
             IsOwner = isOwner,
             IsRanked = room.IsRanked,
-            IsDisconnectedPlayer = isDisconnectedPlayer
+            IsDisconnectedPlayer = isDisconnectedPlayer,
+            IdleDeadline = room.IdleDeadline
         };
     }
 }

@@ -79,6 +79,7 @@
   "waiting.setPublic": "Asio ho an'ny rehetra",
   "waiting.setInviteOnly": "Fanasana ihany",
   "waiting.copyInvite": "Adikao ny rohy fanasana",
+  "waiting.autoClose": "Hikatona ao anatin'ny",
 
   "cut.cutTheDeck": "Tapaho ny Katra",
   "cut.playerCutting": "{{player}} manapaka...",
@@ -128,6 +129,7 @@
   "matchEnd.playAgain": "Milalao Indray",
   "matchEnd.leaveTable": "Hiala amin'ny Latabatra",
   "matchEnd.rating": "Laharana",
+  "matchEnd.autoClose": "Hikatona ao anatin'ny",
 
   "scoreBar.yourTurn": "Anjaranao",
   "scoreBar.dealNumber": "Fizarana {{number}}",

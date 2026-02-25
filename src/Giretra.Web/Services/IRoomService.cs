@@ -88,4 +88,9 @@ public interface IRoomService
     /// Allows a disconnected player to rejoin an active game by userId.
     /// </summary>
     (JoinRoomResponse? Response, string? Error) RejoinRoom(string roomId, string displayName, Guid userId);
+
+    /// <summary>
+    /// Resets a room to Waiting state (after game ends) and starts the idle timeout timer.
+    /// </summary>
+    void ResetToWaiting(string roomId);
 }

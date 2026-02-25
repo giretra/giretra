@@ -79,6 +79,7 @@
   "waiting.setPublic": "Rendre public",
   "waiting.setInviteOnly": "Sur invitation uniquement",
   "waiting.copyInvite": "Copier le lien d'invitation",
+  "waiting.autoClose": "Fermeture auto dans",
 
   "cut.cutTheDeck": "Couper le Jeu",
   "cut.playerCutting": "{{player}} coupe...",
@@ -128,6 +129,7 @@
   "matchEnd.playAgain": "Rejouer",
   "matchEnd.leaveTable": "Quitter la Table",
   "matchEnd.rating": "Classement",
+  "matchEnd.autoClose": "Fermeture auto dans",
 
   "scoreBar.yourTurn": "À vous",
   "scoreBar.dealNumber": "Donne {{number}}",
