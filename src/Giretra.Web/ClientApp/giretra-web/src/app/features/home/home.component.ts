@@ -8,8 +8,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2 } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoService } from '@jsverse/transloco';
+import { HotToastService } from '@ngxpert/hot-toast';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 
 @Component({
@@ -78,18 +80,32 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
                 (cancelled)="showCreateForm.set(false)"
               />
             } @else {
-              <button
-                class="create-btn"
-                (click)="showCreateForm.set(true)"
-              >
-                <span class="create-btn-icon">
-                  <i-lucide [img]="PlusIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
-                </span>
-                <span class="create-btn-text">
-                  <span class="create-btn-label">{{ t('home.createRoom') }}</span>
-                  <span class="create-btn-hint">{{ t('home.createRoomHint') }}</span>
-                </span>
-              </button>
+              <div class="create-actions">
+                <button
+                  class="create-btn"
+                  (click)="showCreateForm.set(true)"
+                >
+                  <span class="create-btn-icon">
+                    <i-lucide [img]="PlusIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
+                  </span>
+                  <span class="create-btn-text">
+                    <span class="create-btn-label">{{ t('home.createRoom') }}</span>
+                    <span class="create-btn-hint">{{ t('home.createRoomHint') }}</span>
+                  </span>
+                </button>
+                <button
+                  class="invite-btn"
+                  (click)="inviteFriends()"
+                >
+                  <span class="invite-btn-icon">
+                    <i-lucide [img]="Share2Icon" [size]="18" [strokeWidth]="2"></i-lucide>
+                  </span>
+                  <span class="invite-btn-text">
+                    <span class="invite-btn-label">{{ t('home.inviteFriends') }}</span>
+                    <span class="invite-btn-hint">{{ t('home.inviteFriendsHint') }}</span>
+                  </span>
+                </button>
+              </div>
             }
           </section>
 
@@ -148,13 +164,22 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .main { flex:1; padding:1.5rem 1rem; }
     .main-inner { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
-    .create-btn { width:100%; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px dashed hsl(var(--primary)/0.4); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
+    .create-actions { display:flex; flex-direction:column; gap:0.625rem; }
+    @media (min-width:540px) { .create-actions { flex-direction:row; } }
+    .create-btn { flex:1; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px dashed hsl(var(--primary)/0.4); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
     .create-btn:hover { border-color:hsl(var(--primary)); border-style:solid; background:hsl(var(--primary)/0.06); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
     .create-btn:active { transform:translateY(0); }
     .create-btn-icon { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:0.625rem; background:hsl(var(--primary)/0.15); color:hsl(var(--primary)); flex-shrink:0; }
     .create-btn-text { display:flex; flex-direction:column; gap:0.125rem; }
     .create-btn-label { font-size:1rem; font-weight:600; color:hsl(var(--foreground)); }
     .create-btn-hint { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
+    .invite-btn { flex:1; display:flex; align-items:center; gap:0.75rem; padding:0.875rem 1.125rem; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
+    .invite-btn:hover { border-color:hsl(var(--foreground)/0.25); background:hsl(var(--foreground)/0.04); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
+    .invite-btn:active { transform:translateY(0); }
+    .invite-btn-icon { display:flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:0.5rem; background:hsl(var(--muted)/0.5); color:hsl(var(--muted-foreground)); flex-shrink:0; }
+    .invite-btn-text { display:flex; flex-direction:column; gap:0.125rem; }
+    .invite-btn-label { font-size:0.875rem; font-weight:600; color:hsl(var(--foreground)); }
+    .invite-btn-hint { font-size:0.6875rem; color:hsl(var(--muted-foreground)); }
     .panel-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
     .panel-title { font-size:0.8125rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.08em; margin:0; }
     .room-count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.5rem; border-radius:9999px; min-width:1.25rem; text-align:center; }
@@ -189,6 +214,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly SettingsIcon = Settings;
   readonly TrophyIcon = Trophy;
   readonly GithubIcon = Github;
+  readonly Share2Icon = Share2;
   readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
@@ -196,6 +222,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   private readonly gameState = inject(GameStateService);
   private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
+  private readonly toast = inject(HotToastService);
 
   private pollSubscription: Subscription | null = null;
   private friendPollSubscription: Subscription | null = null;
@@ -361,6 +389,33 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.session.leaveRoom();
       }
     });
+  }
+
+  async inviteFriends(): Promise<void> {
+    const url = window.location.origin;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: this.transloco.translate('home.shareTitle'),
+          text: this.transloco.translate('home.shareText'),
+          url,
+        });
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        await this.copyToClipboard(url);
+      }
+    } else {
+      await this.copyToClipboard(url);
+    }
+  }
+
+  private async copyToClipboard(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      this.toast.success(this.transloco.translate('home.linkCopied'));
+    } catch {
+      this.toast.error(this.transloco.translate('home.linkCopyFailed'));
+    }
   }
 
   private async navigateToTable(room: RoomResponse, isCreator: boolean): Promise<void> {

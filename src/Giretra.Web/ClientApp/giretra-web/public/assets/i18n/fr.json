@@ -32,6 +32,12 @@
   "home.openTables": "Tables Ouvertes",
   "home.resumeBanner": "Vous avez une partie en cours",
   "home.resume": "Reprendre",
+  "home.inviteFriends": "Inviter des amis",
+  "home.inviteFriendsHint": "Partagez un lien pour jouer ensemble",
+  "home.shareTitle": "Giretra",
+  "home.shareText": "Viens jouer à Giretra avec moi !",
+  "home.linkCopied": "Lien copié !",
+  "home.linkCopyFailed": "Échec de la copie du lien",
 
   "createForm.title": "Nouvelle Table",
   "createForm.tableName": "Nom de la Table",
