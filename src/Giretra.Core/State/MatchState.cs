@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Giretra.Core.Cards;
+using Giretra.Core.GameModes;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 
@@ -50,6 +51,12 @@ public sealed class MatchState
     /// </summary>
     public Team? Winner { get; }
 
+    /// <summary>
+    /// When set, Colour sweeps award this many base match points (× multiplier)
+    /// instead of triggering an instant match win. Null = normal rules (instant win).
+    /// </summary>
+    public int? ColourSweepMatchPoints { get; }
+
     private MatchState(
         int targetScore,
         int team1MatchPoints,
@@ -58,7 +65,8 @@ public sealed class MatchState
         DealState? currentDeal,
         ImmutableList<DealResult> completedDeals,
         bool isComplete,
-        Team? winner)
+        Team? winner,
+        int? colourSweepMatchPoints = null)
     {
         TargetScore = targetScore;
         Team1MatchPoints = team1MatchPoints;
@@ -68,6 +76,7 @@ public sealed class MatchState
         CompletedDeals = completedDeals;
         IsComplete = isComplete;
         Winner = winner;
+        ColourSweepMatchPoints = colourSweepMatchPoints;
     }
 
     /// <summary>
@@ -75,7 +84,11 @@ public sealed class MatchState
     /// </summary>
     /// <param name="firstDealer">The position of the first dealer.</param>
     /// <param name="targetScore">The target score to win (default 150).</param>
-    public static MatchState Create(PlayerPosition firstDealer, int targetScore = 150)
+    /// <param name="colourSweepMatchPoints">
+    /// When set, Colour sweeps award this many base match points (× multiplier)
+    /// instead of triggering an instant match win. Null = normal rules.
+    /// </param>
+    public static MatchState Create(PlayerPosition firstDealer, int targetScore = 150, int? colourSweepMatchPoints = null)
     {
         return new MatchState(
             targetScore,
@@ -85,7 +98,8 @@ public sealed class MatchState
             null,
             ImmutableList<DealResult>.Empty,
             false,
-            null);
+            null,
+            colourSweepMatchPoints);
     }
 
     /// <summary>
@@ -113,7 +127,8 @@ public sealed class MatchState
             deal,
             CompletedDeals,
             false,
-            null);
+            null,
+            ColourSweepMatchPoints);
     }
 
     /// <summary>
@@ -140,7 +155,8 @@ public sealed class MatchState
             deal,
             CompletedDeals,
             false,
-            null);
+            null,
+            ColourSweepMatchPoints);
     }
 
     private MatchState ApplyDealResult(DealState completedDeal)
@@ -150,6 +166,21 @@ public sealed class MatchState
         // Check for instant win (Colour sweep)
         if (result.IsInstantWin)
         {
+            if (ColourSweepMatchPoints.HasValue)
+            {
+                // Override: convert instant win to a point bonus
+                var sweepPoints = ColourSweepMatchPoints.Value * result.Multiplier.GetMultiplier();
+                var sweepT1 = Team1MatchPoints + (result.SweepingTeam == Team.Team1 ? sweepPoints : 0);
+                var sweepT2 = Team2MatchPoints + (result.SweepingTeam == Team.Team2 ? sweepPoints : 0);
+                var sweepState = DetermineMatchState(sweepT1, sweepT2);
+
+                return new MatchState(
+                    sweepState.NewTarget, sweepT1, sweepT2,
+                    CurrentDealer.Next(), null,
+                    CompletedDeals.Add(result),
+                    sweepState.IsComplete, sweepState.Winner, ColourSweepMatchPoints);
+            }
+
             return new MatchState(
                 TargetScore,
                 Team1MatchPoints + result.Team1MatchPoints,
@@ -175,7 +206,8 @@ public sealed class MatchState
             null,
             CompletedDeals.Add(result),
             isComplete,
-            winner);
+            winner,
+            ColourSweepMatchPoints);
     }
 
     private (bool IsComplete, Team? Winner, int NewTarget) DetermineMatchState(int team1Points, int team2Points)
