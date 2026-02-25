@@ -369,3 +369,6 @@ docker/.env
 
 CLAUDE.md
 /external-bots/random-java-bot/target
+
+# JetBrains IDEs
+.idea/
