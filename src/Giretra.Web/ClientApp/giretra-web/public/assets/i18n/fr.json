@@ -78,6 +78,10 @@
   "waiting.setPublic": "Rendre public",
   "waiting.setInviteOnly": "Sur invitation uniquement",
   "waiting.copyInvite": "Copier le lien d'invitation",
+  "waiting.shareTitle": "Giretra",
+  "waiting.shareText": "Rejoins ma table Giretra !",
+  "waiting.linkCopied": "Lien copié !",
+  "waiting.linkCopyFailed": "Échec de la copie du lien",
   "waiting.autoClose": "Fermeture auto dans",
 
   "cut.cutTheDeck": "Couper le Jeu",
