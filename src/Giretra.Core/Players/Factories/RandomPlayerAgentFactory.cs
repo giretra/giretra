@@ -13,7 +13,7 @@ public sealed class RandomPlayerAgentFactory : IPlayerAgentFactory
     public Guid Identifier { get; } = Guid.Parse("55c0e9ae-bd69-4c48-6a93-8187ea811929");
 
     public string AgentName => "RandomPlayer";
-    public string DisplayName => "Baomijijy";
+    public string DisplayName => "Kialasoa";
 
     public int? Seed
     {

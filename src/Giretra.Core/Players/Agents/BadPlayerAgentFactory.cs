@@ -11,7 +11,7 @@ public sealed class BadPlayerAgentFactory : IPlayerAgentFactory
 
     public string AgentName => "BadPlayer";
     
-    public string DisplayName => "Masaymasay";
+    public string DisplayName => "Sakabelou";
 
     public IPlayerAgent Create(PlayerPosition position)
     {
