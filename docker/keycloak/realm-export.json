@@ -6,6 +6,9 @@
   "loginWithEmailAllowed": true,
   "rememberMe": true,
   "sslRequired": "external",
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 2592000,
+  "accessTokenLifespan": 300,
   "defaultDefaultClientScopes": [
     "openid",
     "profile",
