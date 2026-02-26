@@ -679,20 +679,12 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 if (myTrumps.Count > remainingOpponentTrumps && remainingOpponentTrumps > 0)
                 {
                     var trumpInHands = myTrumps.OrderByDescending(c => c.GetStrength(mode)).ToList();
+                    var strongestTrump = trumpInHands.First();
 
-                    if (trumpInHands.Count > 1)
+                    if (PlayerAgentHelper.IsMasterCard(strongestTrump, mode, hand, _playedCards))
                     {
-                        return trumpInHands.Skip(1).First();
+                        return myTrumps.OrderByDescending(c => c.GetStrength(mode)).First();
                     }
-                    
-                    return myTrumps.OrderByDescending(c => c.GetStrength(mode)).First();
-                }
-
-                // Lead trump if we have J or 9 to force out opponents' big trumps
-                bool hasJorNine = myTrumps.Any(c => c.Rank == CardRank.Jack || c.Rank == CardRank.Nine);
-                if (hasJorNine && remainingOpponentTrumps > 0)
-                {
-                    return myTrumps.OrderByDescending(c => c.GetStrength(mode)).First();
                 }
             }
         }
