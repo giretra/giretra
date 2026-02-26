@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false twoColumn=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}" lang="${lang!'en'}">
 <head>
@@ -32,7 +32,7 @@
 </head>
 
 <body class="${properties.kcBodyClass!}" data-page-id="${pageId!''}">
-    <#if (pageId!'') == "login.ftl">
+    <#if twoColumn>
         <div class="${properties.kcLoginClass!}">
             <div class="giretra-two-col">
                 <div class="giretra-auth-col">
