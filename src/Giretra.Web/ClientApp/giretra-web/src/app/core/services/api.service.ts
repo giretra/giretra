@@ -296,9 +296,11 @@ export interface PlayerProfileResponse {
   // Bot-only
   description: string | null;
   author: string | null;
+  authorGithubUrl: string | null;
   pun: string | null;
   difficulty: number | null;
   botRating: number | null;
+  botType: string | null;
 }
 
 // ============================================================================

@@ -242,5 +242,12 @@
   "playerProfile.elo": "ELO",
   "playerProfile.rating": "Laharana",
   "playerProfile.streak": "Mifanesisesy",
-  "playerProfile.best": "Tsara indrindra"
+  "playerProfile.best": "Tsara indrindra",
+  "playerProfile.botType.deterministic": "Algoritmika",
+  "playerProfile.botType.ml": "Fianarana ataon'ny milina",
+  "playerProfile.botType.deterministicDesc": "Milalao araka tetika voafaritra sy fanombanana ny katra",
+  "playerProfile.botType.mlDesc": "Nofanina tamin'ny angon-drakitra lalao amin'ny réseaux de neurones",
+  "playerProfile.builtIn": "Voarafitra",
+  "playerProfile.author": "Mpanoratra",
+  "playerProfile.viewOnGithub": "Jereo ao amin'ny GitHub"
 }

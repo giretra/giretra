@@ -242,5 +242,12 @@
   "playerProfile.elo": "ELO",
   "playerProfile.rating": "Classement",
   "playerProfile.streak": "Série",
-  "playerProfile.best": "Meilleure"
+  "playerProfile.best": "Meilleure",
+  "playerProfile.botType.deterministic": "Algorithmique",
+  "playerProfile.botType.ml": "Apprentissage automatique",
+  "playerProfile.botType.deterministicDesc": "Joue selon une stratégie fixe et l'évaluation de la main",
+  "playerProfile.botType.mlDesc": "Entraîné sur des données de jeu par réseaux de neurones",
+  "playerProfile.builtIn": "Intégré",
+  "playerProfile.author": "Auteur",
+  "playerProfile.viewOnGithub": "Voir sur GitHub"
 }
