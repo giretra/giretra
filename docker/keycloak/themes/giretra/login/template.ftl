@@ -32,7 +32,7 @@
 </head>
 
 <body class="${properties.kcBodyClass!}" data-page-id="${pageId!''}">
-    <#if pageId == "login.ftl">
+    <#if (pageId!'') == "login.ftl">
         <div class="${properties.kcLoginClass!}">
             <div class="giretra-two-col">
                 <div class="giretra-auth-col">
