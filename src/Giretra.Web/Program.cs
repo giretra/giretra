@@ -248,6 +248,19 @@ public class Program
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.GetLevel = (httpContext, _, ex) =>
+                {
+                    if (ex != null || httpContext.Response.StatusCode >= 500)
+                        return Serilog.Events.LogEventLevel.Error;
+
+                    return httpContext.Response.StatusCode is 401 or 404
+                        ? Serilog.Events.LogEventLevel.Verbose
+                        : Serilog.Events.LogEventLevel.Information;
+                };
+            });
+
             app.UseCors();
             app.UseAuthentication();
             app.UseMiddleware<UserSyncMiddleware>();
