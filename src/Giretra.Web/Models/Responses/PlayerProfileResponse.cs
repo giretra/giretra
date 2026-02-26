@@ -18,7 +18,9 @@ public sealed class PlayerProfileResponse
     // Bot-only (null for humans)
     public string? Description { get; init; }
     public string? Author { get; init; }
+    public string? AuthorGithubUrl { get; init; }
     public string? Pun { get; init; }
     public short? Difficulty { get; init; }
     public int? BotRating { get; init; }
+    public string? BotType { get; init; }
 }

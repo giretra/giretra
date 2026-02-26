@@ -54,9 +54,11 @@ public sealed class LeaderboardService : ILeaderboardService
                 BestWinStreak = player.BestWinStreak,
                 Description = player.Bot?.Description,
                 Author = player.Bot?.Author,
+                AuthorGithubUrl = player.Bot?.AuthorGithubUrl,
                 Pun = player.Bot?.Pun,
                 Difficulty = player.Bot?.Difficulty,
                 BotRating = player.Bot?.Rating,
+                BotType = player.Bot?.BotType.ToString().ToLowerInvariant(),
             };
         }
 
