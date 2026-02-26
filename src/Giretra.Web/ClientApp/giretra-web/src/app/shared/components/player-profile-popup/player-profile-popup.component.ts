@@ -1,6 +1,16 @@
 import { Component, input, output, computed } from '@angular/core';
 import { PlayerProfileResponse } from '../../../core/services/api.service';
-import { LucideAngularModule, Trophy, Flame, Calendar, Star, EyeOff, Bot, X } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Trophy,
+  Flame,
+  Calendar,
+  Star,
+  EyeOff,
+  Bot,
+  X,
+  Github,
+} from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -98,41 +108,31 @@ import { TranslocoDirective } from '@jsverse/transloco';
             <div class="pun-quote">"{{ profile().pun }}"</div>
           }
 
+          @if (botTypeKey()) {
+            <div class="bot-type-section">
+              <span class="bot-type-badge">{{ t('playerProfile.botType.' + botTypeKey()) }}</span>
+              <span class="bot-type-desc">{{ t('playerProfile.botType.' + botTypeKey() + 'Desc') }}</span>
+            </div>
+          }
+
           @if (profile().description) {
             <p class="bot-description">{{ profile().description }}</p>
           }
 
-          @if (profile().author) {
-            <p class="bot-author">by {{ profile().author }}</p>
-          }
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">{{ t('playerProfile.author') }}</span>
+              <span class="info-value">{{ profile().author || t('playerProfile.builtIn') }}</span>
+            </div>
+            <a class="github-link" [href]="githubUrl()" target="_blank" rel="noopener noreferrer">
+              <i-lucide [img]="GithubIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+              <span>{{ t('playerProfile.viewOnGithub') }}</span>
+            </a>
+          </div>
 
-          <div class="stats-grid">
-            <div class="stat-cell">
-              <span class="stat-value">{{ profile().gamesPlayed }}</span>
-              <span class="stat-label">{{ t('playerProfile.played') }}</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-value elo-value">{{ profile().botRating ?? '—' }}</span>
-              <span class="stat-label">{{ t('playerProfile.rating') }}</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-value streak-value">
-                {{ profile().winStreak }}
-                @if (profile().winStreak >= 3) {
-                  <i-lucide [img]="FlameIcon" [size]="14" [strokeWidth]="2" class="flame-icon"></i-lucide>
-                }
-              </span>
-              <span class="stat-label">{{ t('playerProfile.streak') }}</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-value best-streak-value">
-                {{ profile().bestWinStreak }}
-                @if (profile().bestWinStreak >= 5) {
-                  <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2" class="trophy-icon"></i-lucide>
-                }
-              </span>
-              <span class="stat-label">{{ t('playerProfile.best') }}</span>
-            </div>
+          <div class="bot-rating-section">
+            <span class="stat-value elo-value">{{ profile().botRating ?? '—' }}</span>
+            <span class="stat-label">{{ t('playerProfile.rating') }}</span>
           </div>
         }
       </div>
@@ -287,6 +287,31 @@ import { TranslocoDirective } from '@jsverse/transloco';
       line-height: 1.4;
     }
 
+    /* Bot type */
+    .bot-type-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .bot-type-badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      background: hsl(var(--muted));
+      color: hsl(var(--foreground));
+    }
+
+    .bot-type-desc {
+      font-size: 0.6875rem;
+      color: hsl(var(--muted-foreground));
+      text-align: center;
+    }
+
     .bot-description {
       font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
@@ -295,10 +320,59 @@ import { TranslocoDirective } from '@jsverse/transloco';
       line-height: 1.4;
     }
 
-    .bot-author {
-      font-size: 0.6875rem;
-      color: hsl(var(--muted-foreground) / 0.7);
-      margin: 0;
+    /* Info row */
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding-top: 0.5rem;
+      border-top: 1px solid hsl(var(--border));
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .info-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .info-value {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+    }
+
+    .github-link {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .github-link:hover {
+      color: hsl(var(--foreground));
+    }
+
+    /* Bot rating */
+    .bot-rating-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.125rem;
+      width: 100%;
+      padding-top: 0.5rem;
+      border-top: 1px solid hsl(var(--border));
     }
 
     /* Stats grid */
@@ -380,6 +454,7 @@ export class PlayerProfilePopupComponent {
   readonly StarIcon = Star;
   readonly EyeOffIcon = EyeOff;
   readonly BotIcon = Bot;
+  readonly GithubIcon = Github;
 
   readonly profile = input.required<PlayerProfileResponse>();
   readonly teamClass = input<'team1' | 'team2'>('team1');
@@ -413,5 +488,18 @@ export class PlayerProfilePopupComponent {
   readonly emptyStars = computed(() => {
     const d = this.profile().difficulty ?? 0;
     return Array.from({ length: Math.max(0, 3 - d) }, (_, i) => i);
+  });
+
+  readonly isBuiltIn = computed(() => !this.profile().author);
+
+  readonly githubUrl = computed(
+    () => this.profile().authorGithubUrl || 'https://github.com/giretra/giretra',
+  );
+
+  readonly botTypeKey = computed(() => {
+    const bt = this.profile().botType;
+    if (bt === 'deterministic') return 'deterministic';
+    if (bt === 'ml') return 'ml';
+    return null;
   });
 }

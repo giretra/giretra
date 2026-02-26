@@ -242,5 +242,12 @@
   "playerProfile.elo": "ELO",
   "playerProfile.rating": "Rating",
   "playerProfile.streak": "Streak",
-  "playerProfile.best": "Best"
+  "playerProfile.best": "Best",
+  "playerProfile.botType.deterministic": "Algorithmic",
+  "playerProfile.botType.ml": "Machine learning",
+  "playerProfile.botType.deterministicDesc": "Plays by fixed strategy and hand evaluation",
+  "playerProfile.botType.mlDesc": "Trained on game data using neural networks",
+  "playerProfile.builtIn": "Built-in",
+  "playerProfile.author": "Author",
+  "playerProfile.viewOnGithub": "View on GitHub"
 }

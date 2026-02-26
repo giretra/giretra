@@ -119,9 +119,11 @@ public sealed class ProfileService : IProfileService
                 BestWinStreak = bot.Player?.BestWinStreak ?? 0,
                 Description = bot.Description,
                 Author = bot.Author,
+                AuthorGithubUrl = bot.AuthorGithubUrl,
                 Pun = bot.Pun,
                 Difficulty = bot.Difficulty,
                 BotRating = bot.Rating,
+                BotType = bot.BotType.ToString().ToLowerInvariant(),
             };
         }
 
