@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Giretra.Core.Players;
 using Microsoft.EntityFrameworkCore;
 
 namespace Giretra.Model.Entities;
@@ -25,6 +26,11 @@ public class Bot
 
     [MaxLength(512)]
     public string? Pun { get; set; }
+
+    [MaxLength(512)]
+    public string? AuthorGithubUrl { get; set; }
+
+    public BotType BotType { get; set; }
 
     public short Difficulty { get; set; }
 

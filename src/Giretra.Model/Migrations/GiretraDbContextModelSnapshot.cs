@@ -94,6 +94,19 @@ namespace Giretra.Model.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("author");
 
+                    b.Property<string>("AuthorGithubUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("author_github_url");
+
+                    b.Property<string>("BotType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("deterministic")
+                        .HasColumnName("bot_type");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")

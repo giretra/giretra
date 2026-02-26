@@ -26,6 +26,16 @@ public interface IPlayerAgentFactory
     string Pun => string.Empty;
 
     /// <summary>
+    /// Gets the GitHub URL of the bot's author.
+    /// </summary>
+    string AuthorGithubUrl => string.Empty;
+
+    /// <summary>
+    /// Gets the bot type (e.g. deterministic or ML-based).
+    /// </summary>
+    BotType BotType => BotType.Deterministic;
+
+    /// <summary>
     /// Gets or sets a random seed for reproducibility. If null, agents use non-deterministic randomness.
     /// Factories that don't support seeding ignore the setter (default no-op).
     /// </summary>
