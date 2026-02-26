@@ -73,7 +73,8 @@ public static class BotRatingUpdater
     {
         bot.DisplayName = factory.DisplayName;
         bot.AgentTypeFactory = factory.GetType().FullName!;
-        bot.Pun = string.IsNullOrEmpty(factory.Pun) ? null : factory.Pun;
+        if (!string.IsNullOrEmpty(factory.Pun))
+            bot.Pun = factory.Pun;
     }
 
     private static Bot CreateBot(IPlayerAgentFactory factory, int rating) => new()
