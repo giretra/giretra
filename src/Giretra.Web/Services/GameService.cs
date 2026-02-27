@@ -66,7 +66,9 @@ public sealed class GameService : IGameService
             else
             {
                 // Unassigned slot — use strongest active bot as default
-                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: _aiRegistry.GetDefaultAgentType());
+                var defaultType = _aiRegistry.GetDefaultAgentType();
+                playerComposition[position] = new MatchPlayerInfo(position, IsBot: true, UserId: null, AiAgentType: defaultType);
+                room.AiSlots[position] = defaultType;
             }
         }
 
@@ -95,15 +97,10 @@ public sealed class GameService : IGameService
                     _notifications,
                     TimeSpan.FromSeconds(room.TurnTimerSeconds));
             }
-            else if (room.AiSlots.TryGetValue(position, out var aiType))
-            {
-                // AI player with specified type
-                agents[position] = _aiRegistry.CreateAgent(aiType, position);
-            }
             else
             {
-                // Unassigned slot — use strongest active bot as default
-                agents[position] = _aiRegistry.CreateAgent(_aiRegistry.GetDefaultAgentType(), position);
+                // AI player (explicitly assigned or default-filled above)
+                agents[position] = _aiRegistry.CreateAgent(room.AiSlots[position], position);
             }
         }
 
