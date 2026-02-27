@@ -75,14 +75,14 @@ public static class NegotiationEngine
         var playerTeam = state.CurrentPlayer.GetTeam();
         var modes = new List<GameMode>();
 
-        // Find the index of first announcement by the current player (if any)
-        // If the player has announced, they implicitly passed on all earlier opponent bids
-        int playerFirstAnnouncementIndex = -1;
+        // Find the index of first announcement or accept by the current player (if any)
+        // If the player has announced or accepted, they implicitly passed on doubling all earlier opponent bids
+        int playerFirstPassIndex = -1;
         for (int i = 0; i < state.Actions.Count; i++)
         {
-            if (state.Actions[i] is AnnouncementAction a && a.Player == state.CurrentPlayer)
+            if (state.Actions[i].Player == state.CurrentPlayer && state.Actions[i] is AnnouncementAction or AcceptAction)
             {
-                playerFirstAnnouncementIndex = i;
+                playerFirstPassIndex = i;
                 break;
             }
         }
@@ -98,9 +98,9 @@ public static class NegotiationEngine
                     // Check if not already doubled
                     if (!state.DoubledModes.ContainsKey(announcement.Mode))
                     {
-                        // If player has announced, they can only double bids made AFTER their announcement
-                        // (they passed on earlier bids by announcing)
-                        if (playerFirstAnnouncementIndex == -1 || i > playerFirstAnnouncementIndex)
+                        // If player has announced or accepted, they can only double bids made AFTER that action
+                        // (they passed on earlier bids)
+                        if (playerFirstPassIndex == -1 || i > playerFirstPassIndex)
                         {
                             modes.Add(announcement.Mode);
                         }
@@ -304,20 +304,20 @@ public static class NegotiationEngine
             return $"{action.TargetMode} has already been doubled.";
         }
 
-        // Check if player has announced - if so, they can only double bids made after their announcement
-        int playerFirstAnnouncementIndex = -1;
+        // Check if player has announced or accepted - if so, they can only double bids made after that action
+        int playerFirstPassIndex = -1;
         for (int i = 0; i < state.Actions.Count; i++)
         {
-            if (state.Actions[i] is AnnouncementAction a && a.Player == action.Player)
+            if (state.Actions[i].Player == action.Player && state.Actions[i] is AnnouncementAction or AcceptAction)
             {
-                playerFirstAnnouncementIndex = i;
+                playerFirstPassIndex = i;
                 break;
             }
         }
 
-        if (playerFirstAnnouncementIndex != -1 && targetModeIndex < playerFirstAnnouncementIndex)
+        if (playerFirstPassIndex != -1 && targetModeIndex < playerFirstPassIndex)
         {
-            return $"Cannot double {action.TargetMode}: you passed on this bid when you announced.";
+            return $"Cannot double {action.TargetMode}: you implicitly passed on this bid.";
         }
 
         return null;
