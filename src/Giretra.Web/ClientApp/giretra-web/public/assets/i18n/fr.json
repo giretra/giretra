@@ -106,6 +106,8 @@
   "bidDialog.title": "À vous d'enchérir",
   "bidDialog.noBidYouOpen": "Pas d'annonce — à vous d'ouvrir",
 
+  "gameModePopup.playing": "On joue",
+
   "handArea.notStarted": "La partie n'a pas encore commencé",
   "handArea.waitingForCut": "En attente de la coupe...",
   "handArea.dealComplete": "Donne terminée",

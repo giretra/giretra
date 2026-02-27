@@ -106,6 +106,8 @@
   "bidDialog.title": "Your Turn to Bid",
   "bidDialog.noBidYouOpen": "No bid yet — you open",
 
+  "gameModePopup.playing": "Playing",
+
   "handArea.notStarted": "Game hasn't started yet",
   "handArea.waitingForCut": "Waiting for cut...",
   "handArea.dealComplete": "Deal complete",

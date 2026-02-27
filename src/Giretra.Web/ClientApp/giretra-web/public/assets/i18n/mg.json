@@ -106,6 +106,8 @@
   "bidDialog.title": "Anjaranao ny milaza",
   "bidDialog.noBidYouOpen": "Mbola tsy misy — ianao no manokatra",
 
+  "gameModePopup.playing": "Milalao",
+
   "handArea.notStarted": "Mbola tsy nanomboka ny lalao",
   "handArea.waitingForCut": "Miandry ny fanapahana...",
   "handArea.dealComplete": "Vita ny fizarana",
