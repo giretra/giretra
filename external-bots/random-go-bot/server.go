@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -129,8 +130,18 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// ── Launcher watchdog ─────────────────────────────────────────
+	// If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
+	// This prevents orphan bot processes when the launcher crashes.
+
+	if pidStr := os.Getenv("LAUNCHER_PID"); pidStr != "" {
+		if pid, err := strconv.Atoi(pidStr); err == nil {
+			startLauncherWatchdog(pid)
+		}
+	}
+
 	fmt.Printf("random-go-bot listening on port %s\n", port)
-	http.ListenAndServe(":"+port, mux)
+	http.ListenAndServe("localhost:"+port, mux)
 }
 
 func newSessionID() string {
