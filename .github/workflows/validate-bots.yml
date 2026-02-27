@@ -1,0 +1,63 @@
+name: Validate External Bots
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - bot: random-dotnet-bot
+          - bot: random-go-bot
+            go-version: '1.23'
+          - bot: random-java-bot
+            java-version: '17'
+          - bot: random-node-bot
+            node-version: '20'
+          - bot: random-python-bot
+            python-version: '3.x'
+
+    name: ${{ matrix.bot }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Go
+        if: matrix.go-version
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Setup Java
+        if: matrix.java-version
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java-version }}
+
+      - name: Setup Node.js
+        if: matrix.node-version
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Python
+        if: matrix.python-version
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Validate
+        run: sh giretra-manage.sh validate ${{ matrix.bot }} -n 10
