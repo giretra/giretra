@@ -1,17 +1,16 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { GameMode } from '../../../../api/generated/signalr-types.generated';
-import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-icon.component';
-import { CardSuit } from '../../../../api/generated/signalr-types.generated';
+import { GameModeIconComponent } from '../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-speech-bubble',
   standalone: true,
-  imports: [SuitIconComponent],
+  imports: [GameModeIconComponent],
   template: `
     <div class="speech-bubble" [class]="positionClass()">
-      @if (suitDisplay(); as suit) {
-        <app-suit-icon [suit]="suit" size="1.25rem" />
+      @if (actionType() === 'Announce' && mode()) {
+        <app-game-mode-icon [mode]="mode()!" size="1.25rem" />
       } @else {
         <span class="text">{{ textDisplay() }}</span>
       }
@@ -91,27 +90,10 @@ export class SpeechBubbleComponent {
   readonly mode = input<GameMode | null>(null);
   readonly position = input<'top' | 'bottom' | 'left' | 'right'>('bottom');
 
-  private readonly modeToSuit: Record<string, CardSuit> = {
-    [GameMode.ColourClubs]: CardSuit.Clubs,
-    [GameMode.ColourDiamonds]: CardSuit.Diamonds,
-    [GameMode.ColourHearts]: CardSuit.Hearts,
-    [GameMode.ColourSpades]: CardSuit.Spades,
-  };
-
   readonly positionClass = computed(() => this.position());
-
-  readonly suitDisplay = computed(() => {
-    const m = this.mode();
-    if (m && this.modeToSuit[m]) {
-      return this.modeToSuit[m];
-    }
-    return null;
-  });
 
   readonly textDisplay = computed(() => {
     const action = this.actionType();
-    const m = this.mode();
-
     switch (action) {
       case 'Accept':
         return this.transloco.translate('negotiation.accept');
@@ -119,10 +101,6 @@ export class SpeechBubbleComponent {
         return '\u00d72';
       case 'Redouble':
         return '\u00d74';
-      case 'Announce':
-        if (m === GameMode.NoTrumps) return this.transloco.translate('game.modes.noTrumps');
-        if (m === GameMode.AllTrumps) return this.transloco.translate('game.modes.allTrumps');
-        return '';
       default:
         return action;
     }

@@ -1,15 +1,15 @@
 import { Component, input, output, computed, inject } from '@angular/core';
-import { GameMode, PlayerPosition, CardSuit } from '../../../../api/generated/signalr-types.generated';
+import { GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { ValidAction, NegotiationAction } from '../../../../core/services/api.service';
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
-import { SuitIconComponent } from '../../../../shared/components/suit-icon/suit-icon.component';
+import { GameModeIconComponent } from '../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent, SuitIconComponent, TranslocoDirective],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, TranslocoDirective],
   template: `
     <ng-container *transloco="let t">
     <div class="backdrop"></div>
@@ -35,10 +35,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
                 <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ getInitial(action.player) }}</span>
                 <span class="player-name" [class.latest-name]="$index === 0">{{ action.player }}</span>
                 <span class="action-badge" [class]="getActionBadgeClass(action)">
-                  @if (action.actionType === 'Announce' && getAnnounceSuit(action.mode); as suit) {
-                    <app-suit-icon [suit]="suit" size="0.875rem" />
-                    <span>{{ formatModeName(action.mode) }}</span>
-                  } @else if (action.actionType === 'Announce') {
+                  @if (action.actionType === 'Announce') {
+                    <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
                     <span>{{ formatModeName(action.mode) }}</span>
                   } @else if (action.actionType === 'Double') {
                     <span class="multiplier-symbol">\u00d72</span>
@@ -259,13 +257,6 @@ export class BidDialogComponent {
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
 
-  private readonly modeToSuit: Record<string, CardSuit> = {
-    [GameMode.ColourClubs]: CardSuit.Clubs,
-    [GameMode.ColourDiamonds]: CardSuit.Diamonds,
-    [GameMode.ColourHearts]: CardSuit.Hearts,
-    [GameMode.ColourSpades]: CardSuit.Spades,
-  };
-
   readonly currentBid = computed(() => {
     const history = this.negotiationHistory();
     for (let i = history.length - 1; i >= 0; i--) {
@@ -282,10 +273,6 @@ export class BidDialogComponent {
     return player.charAt(0).toUpperCase();
   }
 
-  getAnnounceSuit(mode: GameMode | null): CardSuit | null {
-    return mode ? (this.modeToSuit[mode] ?? null) : null;
-  }
-
   formatModeName(mode: GameMode | null): string {
     if (!mode) return '?';
     switch (mode) {
@@ -297,10 +284,6 @@ export class BidDialogComponent {
       case GameMode.AllTrumps: return this.transloco.translate('game.modes.allTrumps');
       default: return mode;
     }
-  }
-
-  getActionClass(action: NegotiationAction): string {
-    return '';
   }
 
   getActionBadgeClass(action: NegotiationAction): string {
