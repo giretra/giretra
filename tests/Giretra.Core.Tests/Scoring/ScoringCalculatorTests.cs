@@ -136,7 +136,7 @@ public class ScoringCalculatorTests
     #region NoTrumps Scoring Tests
 
     [Fact]
-    public void NoTrumps_AnnouncerWins_Gets52Points()
+    public void NoTrumps_AnnouncerWins_Gets26Points()
     {
         var result = _calculator.Calculate(
             GameMode.NoTrumps,
@@ -146,12 +146,12 @@ public class ScoringCalculatorTests
             50,
             sweepingTeam: null);
 
-        Assert.Equal(52, result.Team1MatchPoints);
+        Assert.Equal(26, result.Team1MatchPoints);
         Assert.Equal(0, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void NoTrumps_AnnouncerLoses_DefenderGets52Points()
+    public void NoTrumps_AnnouncerLoses_DefenderGets26Points()
     {
         var result = _calculator.Calculate(
             GameMode.NoTrumps,
@@ -162,7 +162,7 @@ public class ScoringCalculatorTests
             sweepingTeam: null);
 
         Assert.Equal(0, result.Team1MatchPoints);
-        Assert.Equal(52, result.Team2MatchPoints);
+        Assert.Equal(26, result.Team2MatchPoints);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void NoTrumps_Doubled_104Points()
+    public void NoTrumps_Doubled_52Points()
     {
         var result = _calculator.Calculate(
             GameMode.NoTrumps,
@@ -191,7 +191,7 @@ public class ScoringCalculatorTests
             50,
             sweepingTeam: null);
 
-        Assert.Equal(104, result.Team1MatchPoints);  // 52 × 2
+        Assert.Equal(52, result.Team1MatchPoints);  // 26 × 2
     }
 
     #endregion
