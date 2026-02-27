@@ -75,4 +75,9 @@ public interface INotificationService
     /// Notifies all clients in a room that the room was closed due to idle timeout.
     /// </summary>
     Task NotifyRoomIdleClosedAsync(string roomId);
+
+    /// <summary>
+    /// Notifies all lobby members that the room list has changed.
+    /// </summary>
+    Task NotifyRoomsChangedAsync();
 }

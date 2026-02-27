@@ -195,6 +195,8 @@ export interface RoomIdleClosedEvent {
 export interface GameHubMethods {
   joinRoom(roomId: string, clientId: string): Promise<void>;
   leaveRoom(roomId: string, clientId: string): Promise<void>;
+  joinLobby(): Promise<void>;
+  leaveLobby(): Promise<void>;
 }
 
 // ============================================================================
@@ -215,6 +217,7 @@ export interface GameHubEvents {
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
+  onRoomsChanged(callback: () => void): void;
 }
 
 // ============================================================================
@@ -235,6 +238,7 @@ export const GameHubEventNames = {
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',
   RoomIdleClosed: 'RoomIdleClosed',
+  RoomsChanged: 'RoomsChanged',
 } as const;
 
 export type GameHubEventName = (typeof GameHubEventNames)[keyof typeof GameHubEventNames];
