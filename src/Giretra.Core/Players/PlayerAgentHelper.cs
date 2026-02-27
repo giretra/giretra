@@ -32,6 +32,21 @@ public static class PlayerAgentHelper
         return true;
     }
 
+    public static bool IsMasterCardExcludeTrump(Card card, GameMode mode, IReadOnlyList<Card> hand, HashSet<Card> playedCards)
+    {
+        if (!mode.IsColourMode())
+            return IsMasterCard(card, mode, hand, playedCards);
+
+        var tempPlayedCards = playedCards.ToHashSet();
+
+        foreach (var trumpCard in Deck.CreateStandard().Cards.ToList().Where(t => t.Suit == mode.GetTrumpSuit()!.Value))
+        {
+            tempPlayedCards.Add(trumpCard);
+        }
+       
+        return IsMasterCard(card, mode, hand, tempPlayedCards);
+    }
+
     /// <summary>
     /// Gets all master cards from the given hand.
     /// </summary>

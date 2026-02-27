@@ -28,6 +28,16 @@ public class DeterministicPlayerAgent : IPlayerAgent
         [PlayerPosition.Right] = [],
     };
 
+    // Opponent void tracking (populated from completed tricks)
+    private readonly Dictionary<PlayerPosition, HashSet<CardSuit>> _opponentVoidSuits = new()
+    {
+        [PlayerPosition.Bottom] = [],
+        [PlayerPosition.Left] = [],
+        [PlayerPosition.Top] = [],
+        [PlayerPosition.Right] = [],
+    };
+    private readonly HashSet<PlayerPosition> _opponentNoTrump = [];
+
     // Partner observation
     private readonly HashSet<CardSuit> _partnerPreferredSuits = [];
     private readonly HashSet<CardSuit> _partnerDislikedSuits = [];
@@ -184,6 +194,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     public Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
     {
+        InferOpponentVoids(completedTrick, handState.GameMode);
+
         _currentTrickLeader = null;
         _currentTrickLeadSuit = null;
         _currentTrickWinner = null;
@@ -208,12 +220,62 @@ public class DeterministicPlayerAgent : IPlayerAgent
         foreach (var key in _knownVoids.Keys)
             _knownVoids[key].Clear();
 
+        foreach (var key in _opponentVoidSuits.Keys)
+            _opponentVoidSuits[key].Clear();
+        _opponentNoTrump.Clear();
+
         _partnerPreferredSuits.Clear();
         _partnerDislikedSuits.Clear();
         _currentTrickLeader = null;
         _currentTrickLeadSuit = null;
         _currentTrickWinner = null;
         _currentGameMode = null;
+    }
+
+    private void InferOpponentVoids(TrickState trick, GameMode mode)
+    {
+        if (trick.PlayedCards.Count < 2) return;
+
+        var leadSuit = trick.LeadSuit!.Value;
+        var trumpSuit = mode.GetTrumpSuit();
+
+        // Replay trick to determine winner at each point (needed for teammate exception)
+        for (int i = 1; i < trick.PlayedCards.Count; i++)
+        {
+            var played = trick.PlayedCards[i];
+            var player = played.Player;
+
+            // Only track opponents
+            if (player.GetTeam() == _myTeam) continue;
+
+            if (played.Card.Suit != leadSuit)
+            {
+                // Opponent is void in lead suit
+                _opponentVoidSuits[player].Add(leadSuit);
+
+                // In colour mode, check if opponent has no trump
+                if (trumpSuit.HasValue && played.Card.Suit != trumpSuit.Value)
+                {
+                    // Check teammate exception: was opponent's teammate winning with non-trump
+                    // at the time this opponent played?
+                    bool teammateException = false;
+
+                    var currentWinner = trick.PlayedCards[0];
+                    for (int j = 1; j < i; j++)
+                    {
+                        if (CardComparer.Beats(trick.PlayedCards[j].Card, currentWinner.Card, leadSuit, mode))
+                            currentWinner = trick.PlayedCards[j];
+                    }
+
+                    if (currentWinner.Player.GetTeam() == player.GetTeam()
+                        && currentWinner.Card.Suit != trumpSuit.Value)
+                        teammateException = true;
+
+                    if (!teammateException)
+                        _opponentNoTrump.Add(player);
+                }
+            }
+        }
     }
 
     private void ObservePartnerPlay(PlayerPosition partner, Card card, GameMode mode)
@@ -256,6 +318,16 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private bool IsPlayerVoidIn(PlayerPosition player, CardSuit suit)
     {
         return _knownVoids[player].Contains(suit);
+    }
+
+    private bool IsOpponentVoidIn(PlayerPosition opponent, CardSuit suit)
+    {
+        return _opponentVoidSuits[opponent].Contains(suit);
+    }
+
+    private bool IsOpponentOutOfTrump(PlayerPosition opponent)
+    {
+        return _opponentNoTrump.Contains(opponent);
     }
 
     private List<Card> GetRemainingInSuit(CardSuit suit)
@@ -652,6 +724,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // 1. Cash master cards (guaranteed winners)
         var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
             .Where(c => validPlays.Contains(c)).ToList();
+
         if (masterCards.Count > 0)
         {
             // Prefer high-point masters in partner's preferred suit
@@ -705,6 +778,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var nonDislikedPlays = validPlays
             .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
             .ToList();
+
         var playsToConsider = nonDislikedPlays.Count > 0 ? nonDislikedPlays : validPlays.ToList();
 
         var nonTrumpPlays = trumpSuit.HasValue
@@ -805,7 +879,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // Following suit - use positional play
         return seatPosition switch
         {
-            1 => ChooseSecondSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
+            1 => ChooseSecondSeat(hand, validPlays, trick, mode, teammateWinning, winningCard!.Value, isEndgame),
             2 => ChooseThirdSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             3 => ChooseFourthSeat(hand, validPlays, trick, mode, teammateWinning, winningCard, isEndgame),
             _ => throw new InvalidOperationException("Should not happen")
@@ -821,48 +895,50 @@ public class DeterministicPlayerAgent : IPlayerAgent
         TrickState trick,
         GameMode mode,
         bool teammateWinning,
-        Card? winningCard,
+        Card winningCard,
         bool isEndgame)
     {
         var leadSuit = trick.LeadSuit!.Value;
         var leader = trick.Leader;
         bool leaderIsOpponent = leader.GetTeam() != _myTeam;
 
-        if (leaderIsOpponent && winningCard.HasValue)
-        {
-            int trickPoints = GetTrickPointsSoFar(trick, mode);
-            var minWinner = FindMinimumWinningCard(validPlays, winningCard.Value, leadSuit, mode);
+        int trickPoints = GetTrickPointsSoFar(trick, mode);
+        var minWinner = FindMinimumWinningCard(validPlays, winningCard, leadSuit, mode);
 
-            if (minWinner.HasValue)
+        var coulourModeSuit = mode.GetTrumpSuit();
+
+        if (coulourModeSuit != null && coulourModeSuit.Value != leadSuit && minWinner != null)
+        {
+            // coulour mode. 
+            var leadSuitHasNeverBeenPlayed = _playedCards.Count(c => c.Suit == leadSuit) < 3;
+
+            if (leadSuitHasNeverBeenPlayed)
             {
-                int winnerCost = minWinner.Value.GetPointValue(mode);
-                // Win if trick has good value or winning is cheap
-                if (trickPoints >= 10 || winnerCost <= 4)
-                    return minWinner.Value;
+                var subMasterCard =
+                    validPlays.Where(c => PlayerAgentHelper.IsMasterCardExcludeTrump(c, mode, hand, _playedCards))
+                        .OrderByDescending(c => c.GetStrength(mode))
+                        .FirstOrDefault();
 
-                // Otherwise let teammate (4th seat) handle it - play cheap
-                return ChooseLeastValuableCard(validPlays, mode, hand);
+                if (subMasterCard != default)
+                {
+                    return subMasterCard;
+                }
             }
-
-            // Can't win, dump cheapest
-            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
-        // Teammate led - play cheap to save strength
-        if (teammateWinning)
+
+        if (minWinner.HasValue)
         {
-            // Exception: load points if we have high-value card teammate can protect
-            var highValueCards = validPlays
-                .Where(c => c.GetPointValue(mode) >= 10)
-                .OrderByDescending(c => c.GetPointValue(mode))
-                .ToList();
+            int winnerCost = minWinner.Value.GetPointValue(mode);
+            // Win if trick has good value or winning is cheap
+            if (trickPoints >= 10 || winnerCost <= 4)
+                return minWinner.Value;
 
-            if (highValueCards.Count > 0 && winningCard.HasValue && PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
-                return highValueCards[0]; // Load points on teammate's master
-
+            // Otherwise let teammate (4th seat) handle it - play cheap
             return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
+        // Can't win, dump cheapest
         return ChooseLeastValuableCard(validPlays, mode, hand);
     }
 
@@ -885,18 +961,21 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
         if (teammateWinning && winningCard.HasValue)
         {
-            if (fourthIsTeammate)
-            {
-                // Both remaining are teammates - load max points
-                return ChooseMostValuableCard(validPlays, mode, hand);
-            }
-
             // 4th is opponent - load points only if teammate's card is master
             if (PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, hand, _playedCards))
-                return ChooseMostValuableCard(validPlays, mode, hand);
+                return ChooseMostValuableUselessCard(validPlays, mode, hand);
+
+            if (IsPlayerVoidIn(fourthPlayer, leadSuit))
+            {
+                // Opponent can't follow suit - load points if we have a high-value card
+                if (!mode.IsColourMode() || IsOpponentOutOfTrump(fourthPlayer))
+                {
+                    return ChooseMostValuableUselessCard(validPlays, mode, hand);
+                }
+            }
 
             // Teammate winning but opponent can still overtake - hedge with medium
-            return ChooseLeastValuableCard(validPlays, mode, hand);
+            return ChooseLeastValuableCard(validPlays, mode);
         }
 
         // Opponent winning
@@ -945,7 +1024,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (teammateWinning)
         {
             // Load maximum points
-            return ChooseMostValuableCard(validPlays, mode, hand);
+            return ChooseMostValuableUselessCard(validPlays, mode, hand);
         }
 
         // Opponent winning - win with minimum card
@@ -1067,24 +1146,25 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     #region Card Selection Helpers
 
-    private Card ChooseMostValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
-        IReadOnlyList<Card>? hand = null)
+    private Card ChooseMostValuableUselessCard(IReadOnlyList<Card> validPlays, GameMode mode,
+        IReadOnlyList<Card> hand)
     {
         // Prefer non-master cards to preserve masters for leading
-        if (hand != null)
-        {
-            var nonMasters = validPlays
-                .Where(c => !PlayerAgentHelper.IsMasterCard(c, mode, hand, _playedCards))
-                .ToList();
+        var nonMasters = validPlays
+            .Where(c => !PlayerAgentHelper.IsMasterCard(c, mode, hand, _playedCards)
+            //|| (mode.IsColourMode() && mode.GetTrumpSuit()!.Value != c.Suit  && c.Rank == CardRank.Ace)
+            
+            )
+            .ToList();
 
-            if (nonMasters.Count > 0)
-            {
-                return nonMasters
-                    .OrderByDescending(c => c.GetPointValue(mode))
-                    .ThenByDescending(c => c.GetStrength(mode))
-                    .First();
-            }
+        if (nonMasters.Count > 0)
+        {
+            return nonMasters
+                .OrderByDescending(c => c.GetPointValue(mode))
+                .ThenByDescending(c => c.GetStrength(mode))
+                .First();
         }
+        
 
         // Fallback: all valid plays are masters (or no hand provided)
         return validPlays
