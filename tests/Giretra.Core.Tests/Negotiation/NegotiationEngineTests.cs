@@ -328,6 +328,38 @@ public class NegotiationEngineTests
     }
 
     [Fact]
+    public void CannotDouble_AfterAcceptingPassed()
+    {
+        // Dealer is Top, so Right speaks first
+        // │ # │ Player │ Action             │
+        // │ 1 │ Right  │ Announces Hearts ♥ │
+        // │ 2 │ Bottom │ Accept             │  <- Bottom implicitly passed on doubling Hearts
+        // │ 3 │ Left   │ Announces AT       │
+        // │ 4 │ Top    │ Accept             │
+        // │ 5 │ Right  │ Accept             │
+        // │ 6 │ Bottom │ ???                │
+
+        var state = NegotiationState.Create(PlayerPosition.Top);
+
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourHearts));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.AllTrumps));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+
+        // Bottom's choices should be: Accept, Double AllTrumps
+        // Double Hearts should NOT be available (Bottom already accepted it)
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        Assert.Equal(2, validActions.Count);
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.AllTrumps });
+
+        // Explicitly verify Hearts cannot be doubled
+        Assert.DoesNotContain(validActions, a => a is DoubleAction { TargetMode: GameMode.ColourHearts });
+    }
+
+    [Fact]
     public void CannotDouble_AfterAnnouncingPassed()
     {
         // Dealer is Right, so Bottom speaks first
