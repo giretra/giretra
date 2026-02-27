@@ -75,8 +75,8 @@ import { TranslocoDirective } from '@jsverse/transloco';
         transparent
       ) 1;
       padding: 0.75rem 1rem;
-      min-height: 160px;
-      max-height: 220px;
+      min-height: 170px;
+      max-height: 240px;
       display: flex;
       flex-direction: column;
       align-items: center;

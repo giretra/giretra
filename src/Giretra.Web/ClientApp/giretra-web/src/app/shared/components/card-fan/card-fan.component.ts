@@ -42,7 +42,7 @@ import { CardComponent } from '../card/card.component';
     }
 
     .card-wrapper {
-      margin-left: -36px;
+      margin-left: -40px;
       transform-origin: bottom center;
       transition: transform 0.15s ease, filter 0.15s ease;
     }
@@ -80,11 +80,11 @@ export class CardFanComponent {
     const count = this.cards().length;
     const isMobile = window.innerWidth < 640;
     if (isMobile) {
-      if (count > 6) return 56;
-      return 64;
+      if (count > 6) return 66;
+      return 76;
     }
-    if (count > 6) return 68;
-    return 80;
+    if (count > 6) return 76;
+    return 88;
   });
 
   private readonly rotationStep = computed(() => {
