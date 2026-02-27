@@ -53,6 +53,9 @@ interface BidButton {
               @if (btn.actionType === 'Accept') {
                 <i-lucide [img]="CheckIcon" [size]="16" [strokeWidth]="2.5"></i-lucide>
                 {{ t('negotiation.accept') }}
+                @if (btn.mode) {
+                  <app-game-mode-icon [mode]="btn.mode" size="1rem" />
+                }
               } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>{{ t('negotiation.double') }} <span class="multiplier">\u00d72</span></span>
@@ -164,6 +167,7 @@ export class BidButtonRowComponent {
   private readonly transloco = inject(TranslocoService);
 
   readonly validActions = input<ValidAction[]>([]);
+  readonly currentBidMode = input<GameMode | null>(null);
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
 
@@ -199,7 +203,7 @@ export class BidButtonRowComponent {
       buttons.push({
         label: 'Accept',
         actionType: 'Accept',
-        mode: null,
+        mode: this.currentBidMode(),
         variant: 'default',
       });
     }
