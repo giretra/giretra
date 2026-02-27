@@ -163,16 +163,36 @@ public sealed class BenchmarkRenderer
             .AddColumn(new TableColumn("[bold]Deals[/]").RightAligned())
             .AddColumn(new TableColumn("[bold]Ann. Win Rate[/]").RightAligned());
 
-        foreach (var s in stats)
+        // Aggregate all colour modes into a single row
+        var colourStats = stats.Where(s => s.GameMode is GameMode.ColourClubs or GameMode.ColourDiamonds
+            or GameMode.ColourHearts or GameMode.ColourSpades).ToList();
+        var colourAggregated = new GameModeStats(
+            GameMode.ColourClubs,
+            colourStats.Sum(s => s.TotalDeals),
+            new AnnouncerStats(
+                colourStats.Sum(s => s.Team1Announced.Announced),
+                colourStats.Sum(s => s.Team1Announced.AnnouncerWins)),
+            new AnnouncerStats(
+                colourStats.Sum(s => s.Team2Announced.Announced),
+                colourStats.Sum(s => s.Team2Announced.AnnouncerWins)));
+
+        var displayRows = new (string Name, GameModeStats Stats)[]
+        {
+            ("Colour", colourAggregated),
+            ("No Trumps", stats.First(s => s.GameMode == GameMode.NoTrumps)),
+            ("All Trumps", stats.First(s => s.GameMode == GameMode.AllTrumps))
+        };
+
+        foreach (var (name, s) in displayRows)
         {
             if (s.TotalDeals == 0)
             {
-                table.AddRow(FormatGameMode(s.GameMode), "", "[dim]0[/]", "[dim]-[/]");
+                table.AddRow(name, "", "[dim]0[/]", "[dim]-[/]");
                 continue;
             }
 
             table.AddRow(
-                FormatGameMode(s.GameMode),
+                name,
                 $"[blue]{_team1Name}[/]",
                 FormatAnnouncerDeals(s.Team1Announced),
                 FormatAnnouncerWinRate(s.Team1Announced, "blue"));
