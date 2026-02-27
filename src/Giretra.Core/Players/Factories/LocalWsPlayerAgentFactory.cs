@@ -33,6 +33,7 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
         var envVars = new Dictionary<string, string>(
             metadata.Launch.EnvironmentVariables ?? []);
         envVars.TryAdd("PORT", port.ToString());
+        envVars.TryAdd("LAUNCHER_PID", Environment.ProcessId.ToString());
 
         // Resolve relative file paths (e.g. "./random-go-bot") against the bot directory.
         // Process.Start with UseShellExecute=false resolves FileName relative to the
