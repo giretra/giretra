@@ -135,7 +135,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      background: hsl(var(--gold) / 0.08);
+      background: transparent;
       border: 1px solid hsl(var(--gold) / 0.2);
       border-radius: 0.5rem;
     }
