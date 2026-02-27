@@ -31,7 +31,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "5063"));
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
 
         server.createContext("/health", exchange -> {
             if (!"GET".equals(exchange.getRequestMethod())) {
@@ -52,6 +52,24 @@ public class Server {
                 exchange.close();
             }
         });
+
+        // ── Launcher watchdog ─────────────────────────────────────────
+        // If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
+        // This prevents orphan bot processes when the launcher crashes.
+
+        String launcherPid = System.getenv("LAUNCHER_PID");
+        if (launcherPid != null) {
+            try {
+                long pid = Long.parseLong(launcherPid);
+                ProcessHandle.of(pid).ifPresent(handle -> {
+                    handle.onExit().thenRun(() -> {
+                        System.out.println("Launcher process exited, shutting down.");
+                        System.exit(0);
+                    });
+                });
+            } catch (NumberFormatException ignored) {
+            }
+        }
 
         server.setExecutor(null);
         server.start();

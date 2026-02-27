@@ -3,6 +3,9 @@
 # Requires Python 3.8+ and aiohttp (`pip install aiohttp`).
 
 import os
+import signal
+import threading
+import time
 import uuid
 
 from aiohttp import web
@@ -81,6 +84,31 @@ app.router.add_post("/api/sessions/{session_id}/choose-negotiation-action", choo
 app.router.add_post("/api/sessions/{session_id}/choose-card", choose_card)
 app.router.add_post("/api/sessions/{session_id}/notify/{event}", notify)
 
+
+# ── Launcher watchdog ─────────────────────────────────────────────
+# If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
+# This prevents orphan bot processes when the launcher crashes.
+
+def _watch_launcher(pid: int) -> None:
+    while True:
+        time.sleep(2)
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            print("Launcher process exited, shutting down.")
+            os.kill(os.getpid(), signal.SIGTERM)
+            return
+
+
+launcher_pid = os.environ.get("LAUNCHER_PID")
+if launcher_pid:
+    try:
+        _launcher_pid_int = int(launcher_pid)
+        _watchdog = threading.Thread(target=_watch_launcher, args=(_launcher_pid_int,), daemon=True)
+        _watchdog.start()
+    except ValueError:
+        pass
+
 if __name__ == "__main__":
     print(f"random-python-bot listening on port {PORT}")
-    web.run_app(app, host="0.0.0.0", port=PORT, print=None)
+    web.run_app(app, host="localhost", port=PORT, print=None)

@@ -2,14 +2,16 @@
 // All game logic lives in Bot.cs.
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RandomDotnetBot;
 
 var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "5062");
+var launcherPid = Environment.GetEnvironmentVariable("LAUNCHER_PID");
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.UseUrls($"http://localhost:{port}");
 builder.Logging.ClearProviders();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -110,6 +112,29 @@ app.MapPost("/api/sessions/{sessionId}/notify/{eventName}",
 
         return Results.Ok();
     });
+
+// ── Launcher watchdog ───────────────────────────────────────────────
+// If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
+// This prevents orphan bot processes when the launcher crashes.
+
+if (launcherPid is not null && int.TryParse(launcherPid, out var pid))
+{
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            using var launcher = Process.GetProcessById(pid);
+            await launcher.WaitForExitAsync();
+        }
+        catch (ArgumentException)
+        {
+            // Process doesn't exist — launcher already gone.
+        }
+
+        Console.WriteLine("Launcher process exited, shutting down.");
+        Environment.Exit(0);
+    });
+}
 
 Console.WriteLine($"random-dotnet-bot listening on port {port}");
 app.Run();
