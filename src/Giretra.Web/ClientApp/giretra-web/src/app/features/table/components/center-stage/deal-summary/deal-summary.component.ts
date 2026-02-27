@@ -2,7 +2,7 @@ import { Component, input, output, computed, inject } from '@angular/core';
 import { CardPointsBreakdownResponse, CardSuit, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
 import { getTeamLabel } from '../../../../../core/utils';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
-import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
+import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -18,7 +18,7 @@ interface BreakdownRow {
 @Component({
   selector: 'app-deal-summary',
   standalone: true,
-  imports: [GameModeBadgeComponent, SuitIconComponent, HlmButton, TranslocoDirective],
+  imports: [GameModeBadgeComponent, GameModeIconComponent, HlmButton, TranslocoDirective],
   template: `
     <ng-container *transloco="let t">
     @if (summary(); as s) {
@@ -69,7 +69,7 @@ interface BreakdownRow {
                   <td class="card-type">
                     @if (row.isTrump && row.trumpSuit) {
                       <span class="trump-label">
-                        <app-suit-icon [suit]="row.trumpSuit" size="0.75rem" />
+                        <app-game-mode-icon [suit]="row.trumpSuit" size="0.75rem" />
                         <span>{{ row.label }}</span>
                       </span>
                     } @else {

@@ -2,9 +2,7 @@ import { Component, input, output, computed, inject } from '@angular/core';
 import { GameMode } from '../../../../../api/generated/signalr-types.generated';
 import { ValidAction } from '../../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { SuitIconComponent } from '../../../../../shared/components/suit-icon/suit-icon.component';
-import { ShieldIconComponent } from '../../../../../shared/components/shield-icon/shield-icon.component';
-import { CardSuit } from '../../../../../api/generated/signalr-types.generated';
+import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { LucideAngularModule, Check, ChevronsUp } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -13,14 +11,12 @@ interface BidButton {
   actionType: string;
   mode: GameMode | null;
   variant: 'default' | 'secondary' | 'destructive';
-  suit?: CardSuit;
-  shield?: 'no-trumps' | 'all-trumps';
 }
 
 @Component({
   selector: 'app-bid-button-row',
   standalone: true,
-  imports: [HlmButton, SuitIconComponent, ShieldIconComponent, LucideAngularModule, TranslocoDirective],
+  imports: [HlmButton, GameModeIconComponent, LucideAngularModule, TranslocoDirective],
   template: `
     <div class="bid-buttons" *transloco="let t">
       <!-- Announce section -->
@@ -35,13 +31,7 @@ interface BidButton {
               [title]="btn.label"
               (click)="selectAction(btn)"
             >
-              @if (btn.suit) {
-                <app-suit-icon [suit]="btn.suit" size="1.5rem" />
-              } @else if (btn.shield) {
-                <app-shield-icon [type]="btn.shield" size="1.5rem" />
-              } @else {
-                {{ btn.label }}
-              }
+              <app-game-mode-icon [mode]="btn.mode!" size="1.5rem" />
             </button>
           }
         </div>
@@ -66,18 +56,14 @@ interface BidButton {
               } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>{{ t('negotiation.double') }} <span class="multiplier">\u00d72</span></span>
-                @if (getModeHintSuit(btn.mode); as suit) {
-                  <app-suit-icon [suit]="suit" size="1rem" />
-                } @else if (getModeHintText(btn.mode); as text) {
-                  <span class="mode-hint">{{ text }}</span>
+                @if (btn.mode) {
+                  <app-game-mode-icon [mode]="btn.mode" size="1rem" />
                 }
               } @else if (btn.actionType === 'Redouble') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>{{ t('negotiation.redouble') }} <span class="multiplier">\u00d74</span></span>
-                @if (getModeHintSuit(btn.mode); as suit) {
-                  <app-suit-icon [suit]="suit" size="1rem" />
-                } @else if (getModeHintText(btn.mode); as text) {
-                  <span class="mode-hint">{{ text }}</span>
+                @if (btn.mode) {
+                  <app-game-mode-icon [mode]="btn.mode" size="1rem" />
                 }
               } @else {
                 {{ btn.label }}
@@ -146,36 +132,29 @@ interface BidButton {
     }
 
     .accept-btn {
-      background: hsl(142, 50%, 35%);
-      color: white;
+      background: transparent;
+      color: hsl(142, 50%, 50%);
       border-color: hsl(142, 50%, 40%);
     }
 
     .accept-btn:hover {
-      background: hsl(142, 50%, 40%);
+      background: hsl(142, 50%, 40% / 0.15);
     }
 
     .double-btn {
-      background: hsl(0, 72%, 45%);
-      color: white;
+      background: transparent;
+      color: hsl(0, 72%, 60%);
       border-color: hsl(0, 72%, 50%);
     }
 
     .double-btn:hover {
-      background: hsl(0, 72%, 50%);
+      background: hsl(0, 72%, 50% / 0.15);
     }
 
     .multiplier {
       font-weight: 800;
       opacity: 0.7;
       font-size: 0.75em;
-    }
-
-    .mode-hint {
-      font-size: 0.6875rem;
-      opacity: 0.8;
-      font-weight: 600;
-      padding-left: 0.125rem;
     }
   `],
 })
@@ -188,70 +167,27 @@ export class BidButtonRowComponent {
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
 
-  // Map game modes to suits
-  private readonly modeToSuit: Record<string, CardSuit> = {
-    [GameMode.ColourClubs]: CardSuit.Clubs,
-    [GameMode.ColourDiamonds]: CardSuit.Diamonds,
-    [GameMode.ColourHearts]: CardSuit.Hearts,
-    [GameMode.ColourSpades]: CardSuit.Spades,
-  };
-
-  private readonly modeToTranslationKey: Record<string, string> = {
+  private static readonly modeTranslationKeys: Record<string, string> = {
     [GameMode.ColourClubs]: 'game.modes.clubs',
     [GameMode.ColourDiamonds]: 'game.modes.diamonds',
     [GameMode.ColourHearts]: 'game.modes.hearts',
     [GameMode.ColourSpades]: 'game.modes.spades',
+    [GameMode.NoTrumps]: 'game.modes.noTrumps',
+    [GameMode.AllTrumps]: 'game.modes.allTrumps',
   };
 
   readonly suitButtons = computed<BidButton[]>(() => {
     const actions = this.validActions();
-    const buttons: BidButton[] = [];
-
-    // Suit announce buttons
-    for (const action of actions) {
-      if (action.actionType === 'Announce' && action.mode) {
-        const suit = this.modeToSuit[action.mode];
-        if (suit) {
-          buttons.push({
-            label: this.transloco.translate(this.modeToTranslationKey[action.mode]),
-            actionType: action.actionType,
-            mode: action.mode,
-            variant: 'secondary',
-            suit,
-          });
-        }
-      }
-    }
-
-    // No Trumps button
-    const noTrumps = actions.find(
-      (a) => a.actionType === 'Announce' && a.mode === GameMode.NoTrumps
-    );
-    if (noTrumps) {
-      buttons.push({
-        label: this.transloco.translate('game.modes.noTrumps'),
-        actionType: 'Announce',
-        mode: GameMode.NoTrumps,
-        variant: 'secondary',
-        shield: 'no-trumps',
-      });
-    }
-
-    // All Trumps button
-    const allTrumps = actions.find(
-      (a) => a.actionType === 'Announce' && a.mode === GameMode.AllTrumps
-    );
-    if (allTrumps) {
-      buttons.push({
-        label: this.transloco.translate('game.modes.allTrumps'),
-        actionType: 'Announce',
-        mode: GameMode.AllTrumps,
-        variant: 'secondary',
-        shield: 'all-trumps',
-      });
-    }
-
-    return buttons;
+    return actions
+      .filter((a) => a.actionType === 'Announce' && a.mode)
+      .map((a) => ({
+        label: this.transloco.translate(
+          BidButtonRowComponent.modeTranslationKeys[a.mode!] ?? a.mode!,
+        ),
+        actionType: a.actionType,
+        mode: a.mode,
+        variant: 'secondary' as const,
+      }));
   });
 
   readonly actionButtons = computed<BidButton[]>(() => {
@@ -292,16 +228,6 @@ export class BidButtonRowComponent {
 
     return buttons;
   });
-
-  getModeHintSuit(mode: GameMode | null): CardSuit | null {
-    return mode ? this.modeToSuit[mode] ?? null : null;
-  }
-
-  getModeHintText(mode: GameMode | null): string | null {
-    if (mode === GameMode.NoTrumps) return this.transloco.translate('game.modes.noTrumps');
-    if (mode === GameMode.AllTrumps) return this.transloco.translate('game.modes.allTrumps');
-    return null;
-  }
 
   selectAction(btn: BidButton): void {
     this.actionSelected.emit({

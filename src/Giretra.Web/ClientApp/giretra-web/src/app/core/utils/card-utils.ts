@@ -80,19 +80,6 @@ export function isTrump(card: Card, gameMode: GameMode | null): boolean {
 }
 
 /**
- * Get suit symbol for display
- */
-export function getSuitSymbol(suit: CardSuit): string {
-  const symbols: Record<CardSuit, string> = {
-    [CardSuit.Clubs]: '\u2663',
-    [CardSuit.Diamonds]: '\u2666',
-    [CardSuit.Hearts]: '\u2665',
-    [CardSuit.Spades]: '\u2660',
-  };
-  return symbols[suit];
-}
-
-/**
  * Get rank display string
  */
 export function getRankDisplay(rank: CardRank): string {

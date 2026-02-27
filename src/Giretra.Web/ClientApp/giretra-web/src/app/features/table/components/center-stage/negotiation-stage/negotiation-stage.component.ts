@@ -2,12 +2,13 @@ import { Component, input, computed } from '@angular/core';
 import { GameMode, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { NegotiationAction } from '../../../../../core/services/api.service';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
+import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-negotiation-stage',
   standalone: true,
-  imports: [GameModeBadgeComponent, TranslocoDirective],
+  imports: [GameModeBadgeComponent, GameModeIconComponent, TranslocoDirective],
   template: `
     <div class="negotiation-stage" *transloco="let t">
       <!-- Current bid -->
@@ -26,7 +27,11 @@ import { TranslocoDirective } from '@jsverse/transloco';
           @for (action of negotiationHistory(); track $index; let last = $last) {
             <div class="timeline-item" [class.active]="last">
               <span class="timeline-initial">{{ getInitial(action.player) }}</span>
-              <span class="timeline-action">{{ formatAction(action) }}</span>
+              @if (action.actionType === 'Announce' && action.mode) {
+                <app-game-mode-icon [mode]="action.mode" size="0.75rem" />
+              } @else {
+                <span class="timeline-action">{{ formatAction(action) }}</span>
+              }
             </div>
             @if (!last) {
               <span class="timeline-arrow">\u203a</span>
@@ -167,30 +172,8 @@ export class NegotiationStageComponent {
         return '\u00d72';
       case 'Redouble':
         return '\u00d74';
-      case 'Announce':
-        return this.formatMode(action.mode);
       default:
         return action.actionType;
-    }
-  }
-
-  private formatMode(mode: GameMode | null): string {
-    if (!mode) return '?';
-    switch (mode) {
-      case GameMode.ColourClubs:
-        return '\u2663';
-      case GameMode.ColourDiamonds:
-        return '\u2666';
-      case GameMode.ColourHearts:
-        return '\u2665';
-      case GameMode.ColourSpades:
-        return '\u2660';
-      case GameMode.NoTrumps:
-        return 'SA';
-      case GameMode.AllTrumps:
-        return 'TA';
-      default:
-        return mode;
     }
   }
 }
