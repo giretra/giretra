@@ -117,6 +117,7 @@ export const appConfig: ApplicationConfig = {
       position: 'bottom-center',
       dismissible: true,
       autoClose: true,
+      duration: 2000,
       theme: 'snackbar',
       style: {
         background: 'hsl(220 20% 14%)',
