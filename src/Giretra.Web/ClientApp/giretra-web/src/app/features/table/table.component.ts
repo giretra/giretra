@@ -365,6 +365,14 @@ export class TableComponent implements OnInit, OnDestroy {
 
     const roomId = this.route.snapshot.paramMap.get('roomId');
     const inviteToken = this.route.snapshot.queryParamMap.get('invite');
+    const quickstart = this.route.snapshot.queryParamMap.get('quickstart') === 'true';
+
+    // Quick game: room already loaded from home, auto-start
+    if (quickstart && this.gameState.currentRoom()) {
+      this.onStartGame();
+      // Remove query param to avoid re-trigger on refresh
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
 
     if (roomId && !this.gameState.currentRoom()) {
       if (inviteToken && !this.session.clientId()) {

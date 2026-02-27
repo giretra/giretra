@@ -27,7 +27,7 @@
   "game.modes.hearts": "Kera",
   "game.modes.spades": "Pika",
 
-  "home.createRoom": "Hanokatra Latabatra",
+  "home.createRoom": "Hanokatra Latabatra Manokana",
   "home.createRoomHint": "Manomboka lalao vaovao",
   "home.openTables": "Latabatra Misokatra",
   "home.resumeBanner": "Mbola misy lalao mandeha",
@@ -236,6 +236,16 @@
   "leaderboard.builtIn": "Voarafitra",
   "leaderboard.noBots": "Mbola tsy misy bot voaisa.",
   "home.bestPlayers": "Mpilalao tsara indrindra",
+
+  "quickGame.title": "Lalao Haingana",
+  "quickGame.subtitle": "Milalaova amin'ny bot",
+  "quickGame.chooseDifficulty": "Fidio ny mpifanandrina",
+  "quickGame.rated": "Voaisa",
+  "quickGame.unrated": "Tsy voaisa",
+  "quickGame.turnTimer": "1 min isaky ny fihodinana",
+  "quickGame.play": "Milalao!",
+  "quickGame.starting": "Manomboka...",
+  "quickGame.customGame": "Safidy hafa? Manokafa latabatra",
 
   "playerProfile.expert": "Manam-pahaizana",
   "playerProfile.veteran": "Zokiolona",

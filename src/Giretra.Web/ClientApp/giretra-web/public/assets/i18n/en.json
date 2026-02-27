@@ -27,7 +27,7 @@
   "game.modes.hearts": "Hearts",
   "game.modes.spades": "Spades",
 
-  "home.createRoom": "Create Room",
+  "home.createRoom": "Create Custom Table",
   "home.createRoomHint": "Start a new game table",
   "home.openTables": "Open Tables",
   "home.resumeBanner": "You have a game in progress",
@@ -236,6 +236,16 @@
   "leaderboard.builtIn": "Built-in",
   "leaderboard.noBots": "No bots ranked yet.",
   "home.bestPlayers": "Best Players",
+
+  "quickGame.title": "Quick Game",
+  "quickGame.subtitle": "Play now against bots",
+  "quickGame.chooseDifficulty": "Choose your opponent",
+  "quickGame.rated": "Rated",
+  "quickGame.unrated": "Unrated",
+  "quickGame.turnTimer": "1 min per turn",
+  "quickGame.play": "Play!",
+  "quickGame.starting": "Starting...",
+  "quickGame.customGame": "Looking for more options? Create a room",
 
   "playerProfile.expert": "Expert",
   "playerProfile.veteran": "Veteran",

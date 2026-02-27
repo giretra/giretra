@@ -27,7 +27,7 @@
   "game.modes.hearts": "Cœur",
   "game.modes.spades": "Pique",
 
-  "home.createRoom": "Créer une Table",
+  "home.createRoom": "Créer une Table Personnalisée",
   "home.createRoomHint": "Lancer une nouvelle partie",
   "home.openTables": "Tables Ouvertes",
   "home.resumeBanner": "Vous avez une partie en cours",
@@ -236,6 +236,16 @@
   "leaderboard.builtIn": "Intégré",
   "leaderboard.noBots": "Aucun bot classé.",
   "home.bestPlayers": "Meilleurs joueurs",
+
+  "quickGame.title": "Partie Rapide",
+  "quickGame.subtitle": "Jouez contre des bots",
+  "quickGame.chooseDifficulty": "Choisissez votre adversaire",
+  "quickGame.rated": "Class\u00e9e",
+  "quickGame.unrated": "Non class\u00e9e",
+  "quickGame.turnTimer": "1 min par tour",
+  "quickGame.play": "Jouer !",
+  "quickGame.starting": "Lancement...",
+  "quickGame.customGame": "Plus d'options ? Cr\u00e9ez une table",
 
   "playerProfile.expert": "Expert",
   "playerProfile.veteran": "Vétéran",
