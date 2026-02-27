@@ -139,6 +139,25 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+// ── Launcher watchdog ─────────────────────────────────────────────
+// If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
+// This prevents orphan bot processes when the launcher crashes.
+
+const launcherPid = process.env.LAUNCHER_PID;
+if (launcherPid) {
+  const pid = parseInt(launcherPid, 10);
+  if (!isNaN(pid)) {
+    setInterval(() => {
+      try {
+        process.kill(pid, 0);
+      } catch {
+        console.log("Launcher process exited, shutting down.");
+        process.exit(0);
+      }
+    }, 2000);
+  }
+}
+
+server.listen(PORT, "localhost", () => {
   console.log(`random-node-bot listening on port ${PORT}`);
 });
