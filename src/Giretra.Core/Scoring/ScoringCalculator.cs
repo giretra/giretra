@@ -96,7 +96,7 @@ public class ScoringCalculator
 
         // AllTrumps sweep = 35, NoTrumps sweep = 90
         var sweepBonus = gameMode.GetSweepBonus();
-        var points = sweepBonus * multiplier.GetMultiplier();
+        var points = sweepBonus * multiplier.GetEffectiveMultiplier(gameMode);
 
         return new DealResult
         {
@@ -183,8 +183,8 @@ public class ScoringCalculator
         }
 
         // Apply multiplier
-        announcerMatchPoints *= multiplier.GetMultiplier();
-        defenderMatchPoints *= multiplier.GetMultiplier();
+        announcerMatchPoints *= multiplier.GetEffectiveMultiplier(gameMode);
+        defenderMatchPoints *= multiplier.GetEffectiveMultiplier(gameMode);
 
         return new DealResult
         {
@@ -264,8 +264,8 @@ public class ScoringCalculator
         }
 
         // Apply multiplier
-        announcerMatchPoints *= multiplier.GetMultiplier();
-        defenderMatchPoints *= multiplier.GetMultiplier();
+        announcerMatchPoints *= multiplier.GetEffectiveMultiplier(gameMode);
+        defenderMatchPoints *= multiplier.GetEffectiveMultiplier(gameMode);
 
         return new DealResult
         {

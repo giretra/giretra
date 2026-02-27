@@ -82,7 +82,6 @@ public static class GameModeExtensions
         {
             GameMode.AllTrumps => 26,
             GameMode.NoTrumps => 26,
-            GameMode.ColourClubs => 32,  // Clubs count double
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
@@ -105,7 +104,7 @@ public static class GameModeExtensions
     /// Redouble is NOT allowed for NoTrumps and ColourClubs (already implicitly doubled on accept).
     /// </summary>
     public static bool CanRedouble(this GameMode mode)
-        => mode is not (GameMode.NoTrumps or GameMode.ColourClubs);
+        => mode is not GameMode.NoTrumps;
 
     /// <summary>
     /// Checks if accepting this mode by opponent causes automatic double.

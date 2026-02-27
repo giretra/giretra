@@ -169,7 +169,7 @@ public sealed class MatchState
             if (ColourSweepMatchPoints.HasValue)
             {
                 // Override: convert instant win to a point bonus
-                var sweepPoints = ColourSweepMatchPoints.Value * result.Multiplier.GetMultiplier();
+                var sweepPoints = ColourSweepMatchPoints.Value * result.Multiplier.GetEffectiveMultiplier(result.GameMode);
                 var sweepT1 = Team1MatchPoints + (result.SweepingTeam == Team.Team1 ? sweepPoints : 0);
                 var sweepT2 = Team2MatchPoints + (result.SweepingTeam == Team.Team2 ? sweepPoints : 0);
                 var sweepState = DetermineMatchState(sweepT1, sweepT2);
