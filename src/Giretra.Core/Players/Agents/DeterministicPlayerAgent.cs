@@ -330,6 +330,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return _opponentNoTrump.Contains(opponent);
     }
 
+
     private List<Card> GetRemainingInSuit(CardSuit suit)
     {
         return _remainingCards.Where(c => c.Suit == suit).ToList();
@@ -366,6 +367,28 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return winningCards.Count > 0 ? winningCards[0] : null;
     }
 
+    private Card? FindMaximumWinningCardMaster(IReadOnlyList<Card> validPlays, Card currentWinner, CardSuit leadSuit, GameMode mode)
+    {
+        var winningCards = validPlays
+            .Where(c => CardComparer.Beats(c, currentWinner, leadSuit, mode))
+            .OrderByDescending(c => c.GetStrength(mode))
+            .ToList();
+
+        if (winningCards.Any()
+            && PlayerAgentHelper.IsMasterCard(winningCards[0], mode, validPlays, _playedCards)
+           )
+        {
+            return winningCards[0];
+        }
+
+        var card =  FindMinimumWinningCard(validPlays, currentWinner, leadSuit, mode);
+
+        if (card != null && card.Value.GetPointValue(mode) < 10)
+            return card;
+
+        return null;
+    }
+
     private int GetTrickPointsSoFar(TrickState trick, GameMode mode)
     {
         return trick.PlayedCards.Sum(pc => pc.Card.GetPointValue(mode));
@@ -377,13 +400,13 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     private record struct HandEvaluation(int GuaranteedTricks, int ProbableTricks, double Score);
 
-    private HandEvaluation EvaluateHand(IReadOnlyList<Card> hand, GameMode mode)
+    private HandEvaluation EvaluateHand(IReadOnlyList<Card> hand, GameMode mode, bool isStarter)
     {
         var category = mode.GetCategory();
         return category switch
         {
             GameModeCategory.Colour => EvaluateColourHand(hand, mode),
-            GameModeCategory.NoTrumps => EvaluateNoTrumpsHand(hand, mode),
+            GameModeCategory.NoTrumps => EvaluateNoTrumpsHand(hand, mode, isStarter),
             GameModeCategory.AllTrumps => EvaluateAllTrumpsHand(hand, mode),
             _ => new HandEvaluation(0, 0, 0)
         };
@@ -461,7 +484,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return new HandEvaluation(guaranteed, probable, Math.Min(100, Math.Max(0, score)));
     }
 
-    private HandEvaluation EvaluateNoTrumpsHand(IReadOnlyList<Card> hand, GameMode mode)
+    private HandEvaluation EvaluateNoTrumpsHand(IReadOnlyList<Card> hand, GameMode mode, bool isStarter)
     {
         int guaranteed = 0;
         int probable = 0;
@@ -480,8 +503,20 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 if (hasTen)
                 {
                     guaranteed++; // A+10 guaranteed
-                    if (hasKing)
-                        guaranteed++; // A+10+K
+
+                    if (isStarter)
+                    {
+                        if (hasKing || suitGroup.Count() >= 4)
+                            guaranteed++; // A+10+K
+                    }
+                }
+                else
+                {
+                    //if (isStarter)
+                    //{
+                    //    if (hasKing && suitGroup.Count() >= 5)
+                    //        probable++; // A+10+K
+                    //}
                 }
             }
 
@@ -489,14 +524,14 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (cards.Count >= 3)
                 probable++;
         }
-
+        
         int handPoints = hand.Sum(c => c.GetPointValue(mode));
         int totalPoints = mode.GetTotalPoints();
         double rawPointPercentage = (double)handPoints / totalPoints * 100;
 
         double score = guaranteed * 18
                      + probable * 8
-                     + rawPointPercentage * 0.30
+                     + rawPointPercentage * 0.15
                      + hand.Count(c => c.Rank == CardRank.Ace) * 5;
 
         return new HandEvaluation(guaranteed, probable, Math.Min(100, Math.Max(0, score)));
@@ -553,10 +588,12 @@ public class DeterministicPlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<NegotiationAction> validActions)
     {
+        var isStarter = negotiationState.Dealer.Next() == Position;
+
         // Evaluate hand for all modes
         var modeEvals = new Dictionary<GameMode, HandEvaluation>();
         foreach (var mode in Enum.GetValues<GameMode>())
-            modeEvals[mode] = EvaluateHand(hand, mode);
+            modeEvals[mode] = EvaluateHand(hand, mode, isStarter);
 
         // Match context aggressiveness
         double aggressiveness = ComputeAggressiveness(matchState);
@@ -774,6 +811,46 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 return preferredSuitCards.OrderByDescending(c => c.GetStrength(mode)).First();
         }
 
+        if (!mode.IsColourMode())
+        {
+            // opponent hated suits 
+            var opponents = new List<PlayerPosition> 
+                { Position.Next(), Position.Previous() };
+
+            var allCardSuits = Enum.GetValues<CardSuit>();
+
+            var opponentDislikedSuits = new HashSet<CardSuit>();
+
+            foreach (var opponent in opponents)
+            {
+                foreach (var suit in allCardSuits)
+                {
+                    if (IsPlayerVoidIn(opponent, suit) )
+                    {
+                        opponentDislikedSuits.Add(suit);
+                    }
+                }
+            }
+
+            var opponentDislikedCards = validPlays
+                .Where(c => opponentDislikedSuits.Contains(c.Suit))
+                .ToList();
+
+            if (opponentDislikedCards.Count > 0)
+            {
+                var candidates = opponentDislikedCards.GroupBy(g => g.Suit)
+                    .OrderBy(r => r.Count())
+                    .First();
+
+                if (candidates.Count() > 1)
+                {
+                    return candidates.OrderByDescending(c => c.GetStrength(mode)).Skip(1).First();
+                }
+
+                return candidates.First();
+            }
+        }
+
         // 4. Long suit - lead from longest non-trump suit
         var nonDislikedPlays = validPlays
             .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
@@ -981,25 +1058,10 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // Opponent winning
         if (winningCard.HasValue)
         {
-            if (fourthIsTeammate)
-            {
-                // Try to beat cheaply, if too expensive let teammate handle it
-                var minWinner = FindMinimumWinningCard(validPlays, winningCard.Value, leadSuit, mode);
-                if (minWinner.HasValue)
-                {
-                    int cost = minWinner.Value.GetPointValue(mode);
-                    if (cost <= 10)
-                        return minWinner.Value;
+            // 4th is opponent - must try to win // barrage
+            var winner =
+                    FindMaximumWinningCardMaster(validPlays, winningCard.Value, leadSuit, mode);
 
-                    // Expensive to win, trust teammate
-                    return ChooseLeastValuableCard(validPlays, mode, hand);
-                }
-
-                return ChooseLeastValuableCard(validPlays, mode, hand);
-            }
-
-            // 4th is opponent - must try to win
-            var winner = FindMinimumWinningCard(validPlays, winningCard.Value, leadSuit, mode);
             if (winner.HasValue)
                 return winner.Value;
 
@@ -1146,31 +1208,107 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     #region Card Selection Helpers
 
+    /// <summary>
+    /// Chooses the best card to load onto a trick the team is winning.
+    /// Maximizes points loaded now while minimizing future tactical cost.
+    /// </summary>
     private Card ChooseMostValuableUselessCard(IReadOnlyList<Card> validPlays, GameMode mode,
         IReadOnlyList<Card> hand)
     {
-        // Prefer non-master cards to preserve masters for leading
-        var nonMasters = validPlays
-            .Where(c => !PlayerAgentHelper.IsMasterCard(c, mode, hand, _playedCards)
-            //|| (mode.IsColourMode() && mode.GetTrumpSuit()!.Value != c.Suit  && c.Rank == CardRank.Ace)
-            
-            )
-            .ToList();
+        if (validPlays.Count == 1)
+            return validPlays[0];
 
-        if (nonMasters.Count > 0)
-        {
-            return nonMasters
-                .OrderByDescending(c => c.GetPointValue(mode))
-                .ThenByDescending(c => c.GetStrength(mode))
-                .First();
-        }
-        
+        var trumpSuit = mode.GetTrumpSuit();
+        int tricksRemaining = 8 - _playedCards.Count / 4;
 
-        // Fallback: all valid plays are masters (or no hand provided)
         return validPlays
-            .OrderByDescending(c => c.GetPointValue(mode))
-            .ThenByDescending(c => c.GetStrength(mode))
+            .OrderByDescending(c => ComputeLoadingScore(c, mode, hand, trumpSuit, tricksRemaining))
+            .ThenByDescending(c => c.GetPointValue(mode))
             .First();
+    }
+
+    private double ComputeLoadingScore(Card card, GameMode mode, IReadOnlyList<Card> hand,
+        CardSuit? trumpSuit, int tricksRemaining)
+    {
+        var pointValue = card.GetPointValue(mode);
+
+        double score = pointValue * (pointValue < 10 ? 1.5 : 3);
+
+        bool isMaster = PlayerAgentHelper.IsMasterCard(card, mode, hand, _playedCards);
+        bool isTrump = trumpSuit.HasValue && card.Suit == trumpSuit.Value;
+        var suitCards = hand.Where(c => c.Suit == card.Suit).ToList();
+        int suitLength = suitCards.Count;
+        var remaining = GetRemainingInSuit(card.Suit);
+
+        // Master cards: heavy penalty, reduced in endgame
+        if (isMaster)
+            score -= tricksRemaining <= 1 ? 5 : 25;
+
+        // Near-master: becomes master once the current master is played
+        if (!isMaster && remaining.Count > 0
+            && remaining.All(c => c.GetStrength(mode) <= card.GetStrength(mode)))
+            score -= 10;
+
+        // Trump preservation
+        if (isTrump)
+        {
+            score -= 12;
+            if (card.Rank == CardRank.Jack) score -= 20;
+            //if (card.Rank == CardRank.Nine) score -= 15;
+        }
+
+        // Singleton: dumping creates a void
+        if (suitLength == 1 && card.GetPointValue(mode) > 0)
+        {
+            bool voidIsDesirable = trumpSuit.HasValue
+                && !isTrump
+                && hand.Any(c => c.Suit == trumpSuit.Value);
+
+            if (voidIsDesirable)
+                score += 3;
+            else if (tricksRemaining > 2)
+                score -= 6;
+        }
+
+        // Doubleton: dumping exposes a high-value card as singleton
+        if (suitLength == 2)
+        {
+            var otherCard = suitCards.First(c => !c.Equals(card));
+            if (otherCard.GetPointValue(mode) >= 10
+                && !PlayerAgentHelper.IsMasterCard(otherCard, mode, hand, _playedCards))
+                score -= 5;
+        }
+
+        // Opponent void in this suit: future leads get ruffed — dump points now
+        var opponents = new[] { Position.Next(), Position.Next().Next().Next() };
+        foreach (var opp in opponents)
+        {
+            if (IsPlayerVoidIn(opp, card.Suit))
+            {
+                score += 5;
+                if (trumpSuit.HasValue && !IsOpponentOutOfTrump(opp))
+                    score += 3;
+            }
+        }
+
+        // Opponent holds master in this suit: our card can't win future tricks
+        if (!isMaster && remaining.Any(c => c.GetStrength(mode) > card.GetStrength(mode)))
+        {
+            bool partnerLikelyVoid = IsPlayerVoidIn(Position.Teammate(), card.Suit);
+            score += partnerLikelyVoid ? 4 : 2;
+        }
+
+        // Partner suit signals
+        if (_partnerPreferredSuits.Contains(card.Suit) && !isTrump)
+            score -= 3;
+        if (_partnerDislikedSuits.Contains(card.Suit))
+            score += 3;
+
+        // Endgame: fewer tricks left, maximize points loaded
+        if (tricksRemaining <= 2)
+            score += card.GetPointValue(mode);
+
+        return score;
     }
 
     private Card ChooseLeastValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
