@@ -1,16 +1,17 @@
 import { Component, inject, OnInit, OnDestroy, effect, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { GameStateService } from '../../core/services/game-state.service';
+import { GameStateService, GamePhase } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { GameHubService } from '../../api/game-hub.service';
-import { PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
+import { GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
+import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -26,6 +27,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     HandAreaComponent,
     MatchEndOverlayComponent,
     BidDialogComponent,
+    GameModePopupComponent,
     PlayerProfilePopupComponent,
     TranslocoDirective,
   ],
@@ -120,6 +122,15 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [negotiationHistory]="gameState.negotiationHistory()"
           [activePlayer]="gameState.activePlayer()"
           (actionSelected)="onSubmitNegotiation($event)"
+        />
+      }
+
+      <!-- Game Mode Popup (shown briefly after negotiation ends) -->
+      @if (gameModePopup(); as popup) {
+        <app-game-mode-popup
+          [gameMode]="popup.mode"
+          [multiplier]="popup.multiplier"
+          (dismissed)="dismissGameModePopup()"
         />
       }
 
@@ -268,6 +279,13 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
 
+  readonly gameModePopup = signal<{
+    mode: GameMode;
+    multiplier: 'Normal' | 'Doubled' | 'Redoubled';
+  } | null>(null);
+  private gameModePopupTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private previousPhase: GamePhase | null = null;
+
   private readonly beforeUnloadHandler = (e: BeforeUnloadEvent) => {
     const phase = this.gameState.phase();
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
@@ -304,6 +322,42 @@ export class TableComponent implements OnInit, OnDestroy {
         this.profilePopupData.set(null);
       }
     });
+
+    // Show game mode popup when negotiation ends
+    effect(() => {
+      const phase = this.gameState.phase();
+      const prevPhase = this.previousPhase;
+      this.previousPhase = phase;
+
+      if (prevPhase === 'negotiation' && phase === 'playing') {
+        const mode = this.gameState.gameMode();
+        if (mode) {
+          this.showGameModePopup(mode, this.gameState.multiplier());
+        }
+      }
+    });
+  }
+
+  private showGameModePopup(
+    mode: GameMode,
+    multiplier: 'Normal' | 'Doubled' | 'Redoubled'
+  ): void {
+    if (this.gameModePopupTimeoutId) {
+      clearTimeout(this.gameModePopupTimeoutId);
+    }
+    this.gameModePopup.set({ mode, multiplier });
+    this.gameModePopupTimeoutId = setTimeout(() => {
+      this.gameModePopup.set(null);
+      this.gameModePopupTimeoutId = null;
+    }, 4000);
+  }
+
+  dismissGameModePopup(): void {
+    if (this.gameModePopupTimeoutId) {
+      clearTimeout(this.gameModePopupTimeoutId);
+      this.gameModePopupTimeoutId = null;
+    }
+    this.gameModePopup.set(null);
   }
 
   ngOnInit(): void {
@@ -356,6 +410,9 @@ export class TableComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    if (this.gameModePopupTimeoutId) {
+      clearTimeout(this.gameModePopupTimeoutId);
+    }
   }
 
   onStartGame(): void {
