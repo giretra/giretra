@@ -82,6 +82,7 @@ public static class GameModeExtensions
         {
             GameMode.AllTrumps => 26,
             GameMode.NoTrumps => 26,
+            GameMode.ColourClubs => 32,
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
