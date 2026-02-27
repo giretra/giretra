@@ -46,6 +46,9 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
                     <span>{{ t('negotiation.redouble') }}</span>
                   } @else {
                     <span>{{ t('negotiation.accept') }}</span>
+                    @if (currentBid()?.mode) {
+                      <app-game-mode-icon [mode]="currentBid()!.mode!" size="0.875rem" />
+                    }
                   }
                 </span>
               </div>
@@ -56,6 +59,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
         <!-- Bid buttons -->
         <app-bid-button-row
           [validActions]="validActions()"
+          [currentBidMode]="currentBid()?.mode ?? null"
           (actionSelected)="onAction($event)"
         />
       </div>
