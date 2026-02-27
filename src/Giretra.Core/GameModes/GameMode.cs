@@ -81,7 +81,7 @@ public static class GameModeExtensions
         => mode switch
         {
             GameMode.AllTrumps => 26,
-            GameMode.NoTrumps => 52,
+            GameMode.NoTrumps => 26,
             GameMode.ColourClubs => 32,  // Clubs count double
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))

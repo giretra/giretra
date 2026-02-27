@@ -192,7 +192,7 @@ public class SpecExamplesTests
     }
 
     [Fact]
-    public void NoTrumpsMode_WinThreshold65_MatchPoints52()
+    public void NoTrumpsMode_WinThreshold65_MatchPoints26()
     {
         var calculator = new ScoringCalculator();
 
@@ -217,7 +217,7 @@ public class SpecExamplesTests
             64,
             sweepingTeam: null);
 
-        Assert.Equal(52, result.Team1MatchPoints);
+        Assert.Equal(26, result.Team1MatchPoints);
     }
 
     [Fact]

@@ -73,7 +73,7 @@ public class GameModeTests
 
     [Theory]
     [InlineData(GameMode.AllTrumps, 26)]
-    [InlineData(GameMode.NoTrumps, 52)]
+    [InlineData(GameMode.NoTrumps, 26)]
     [InlineData(GameMode.ColourSpades, 16)]
     [InlineData(GameMode.ColourHearts, 16)]
     [InlineData(GameMode.ColourDiamonds, 16)]
