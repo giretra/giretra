@@ -1,18 +1,20 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
-import { ApiService, RoomResponse } from '../../core/services/api.service';
+import { ApiService, RoomResponse, AiTypeInfo, AiSeat } from '../../core/services/api.service';
 import { JoinRoomEvent } from './components/room-list/room-list.component';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2 } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
+import { QuickGameDialogComponent } from './components/quick-game-dialog/quick-game-dialog.component';
+import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 
 @Component({
   selector: 'app-home',
@@ -23,6 +25,7 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     LucideAngularModule,
     TranslocoDirective,
     LanguageSwitcherComponent,
+    QuickGameDialogComponent,
   ],
   template: `
     <ng-container *transloco="let t">
@@ -72,6 +75,31 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
       <!-- Main body -->
       <main class="main">
         <div class="main-inner">
+          <!-- Quick Game -->
+          <section class="panel">
+            <button class="quick-game-btn" (click)="showQuickGame.set(true)">
+              <span class="quick-game-icon">
+                <i-lucide [img]="ZapIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
+              </span>
+              <span class="quick-game-text">
+                <span class="quick-game-label">{{ t('quickGame.title') }}</span>
+                <span class="quick-game-hint">{{ t('quickGame.subtitle') }}</span>
+              </span>
+              <span class="quick-game-arrow">
+                <i-lucide [img]="BotIcon" [size]="18" [strokeWidth]="2"></i-lucide>
+              </span>
+            </button>
+          </section>
+
+          <!-- Quick Game Dialog -->
+          <app-quick-game-dialog
+            [open]="showQuickGame()"
+            [aiTypes]="aiTypes()"
+            (play)="quickGame($event)"
+            (closed)="showQuickGame.set(false)"
+            (createRoom)="showQuickGame.set(false); showCreateForm.set(true)"
+          />
+
           <!-- Create room panel -->
           <section class="panel create-panel">
             @if (showCreateForm()) {
@@ -164,6 +192,14 @@ import { LanguageSwitcherComponent } from '../../shared/components/language-swit
     .main { flex:1; padding:1.5rem 1rem; }
     .main-inner { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
+    .quick-game-btn { width:100%; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--gold)/0.08); border:2px solid hsl(var(--gold)/0.35); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
+    .quick-game-btn:hover { border-color:hsl(var(--gold)/0.7); background:hsl(var(--gold)/0.12); transform:translateY(-1px); box-shadow:0 4px 20px hsl(var(--gold)/0.15); }
+    .quick-game-btn:active { transform:translateY(0); }
+    .quick-game-icon { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:0.625rem; background:hsl(var(--gold)/0.2); color:hsl(var(--gold)); flex-shrink:0; }
+    .quick-game-text { display:flex; flex-direction:column; gap:0.125rem; flex:1; }
+    .quick-game-label { font-size:1.0625rem; font-weight:700; color:hsl(var(--gold)); }
+    .quick-game-hint { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
+    .quick-game-arrow { color:hsl(var(--gold)/0.5); flex-shrink:0; }
     .create-actions { display:flex; flex-direction:column; gap:0.625rem; }
     @media (min-width:540px) { .create-actions { flex-direction:row; } }
     .create-btn { flex:1; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px dashed hsl(var(--primary)/0.4); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
@@ -215,6 +251,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly TrophyIcon = Trophy;
   readonly GithubIcon = Github;
   readonly Share2Icon = Share2;
+  readonly ZapIcon = Zap;
+  readonly BotIcon = Bot;
   readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
@@ -231,6 +269,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly rooms = signal<RoomResponse[]>([]);
   readonly loading = signal<boolean>(true);
   readonly showCreateForm = signal<boolean>(false);
+  readonly showQuickGame = signal<boolean>(false);
+  readonly aiTypes = signal<AiTypeInfo[]>([]);
   readonly pendingFriendCount = signal<number>(0);
   readonly activeGameRoomId = signal<string | null>(null);
   private readonly joining = signal(false);
@@ -238,6 +278,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadRooms();
     this.loadPendingFriendCount();
+    this.loadAiTypes();
     this.checkActiveSession();
 
     this.pollSubscription = interval(5000).subscribe(() => {
@@ -280,6 +321,36 @@ export class HomeComponent implements OnInit, OnDestroy {
   private loadPendingFriendCount(): void {
     this.api.getPendingFriendCount().subscribe({
       next: (res) => this.pendingFriendCount.set(res.count),
+    });
+  }
+
+  private loadAiTypes(): void {
+    this.api.getAiTypes().subscribe({
+      next: (types) => this.aiTypes.set(types),
+    });
+  }
+
+  quickGame(event: { aiType: string; isRanked: boolean }): void {
+    if (this.joining()) return;
+    this.joining.set(true);
+    this.showQuickGame.set(false);
+
+    const aiSeats: AiSeat[] = [
+      { position: PlayerPosition.Left, aiType: event.aiType },
+      { position: PlayerPosition.Top, aiType: event.aiType },
+      { position: PlayerPosition.Right, aiType: event.aiType },
+    ];
+
+    this.api.createRoom(null, aiSeats, 60, false, event.isRanked).subscribe({
+      next: async (response) => {
+        this.session.joinRoom(response.room.roomId, response.clientId, response.position);
+        await this.gameState.enterRoom(response.room, true);
+        this.router.navigate(['/table', response.room.roomId], { queryParams: { quickstart: 'true' } });
+        this.joining.set(false);
+      },
+      error: () => {
+        this.joining.set(false);
+      },
     });
   }
 

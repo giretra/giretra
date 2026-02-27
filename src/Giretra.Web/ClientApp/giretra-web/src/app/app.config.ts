@@ -52,6 +52,7 @@ import {
   ArrowUp,
   ArrowDown,
   Share2,
+  Zap,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -93,6 +94,7 @@ const usedIcons = {
   ArrowUp,
   ArrowDown,
   Share2,
+  Zap,
 };
 
 function initializeKeycloak(auth: AuthService) {
