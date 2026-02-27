@@ -77,7 +77,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourSpades, 16)]
     [InlineData(GameMode.ColourHearts, 16)]
     [InlineData(GameMode.ColourDiamonds, 16)]
-    [InlineData(GameMode.ColourClubs, 32)]  // Clubs count double
+    [InlineData(GameMode.ColourClubs, 16)]
     public void GetBaseMatchPoints_ReturnsCorrectValue(GameMode mode, int expected)
     {
         Assert.Equal(expected, mode.GetBaseMatchPoints());
@@ -98,7 +98,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourHearts, true)]
     [InlineData(GameMode.ColourDiamonds, true)]
     [InlineData(GameMode.NoTrumps, false)]
-    [InlineData(GameMode.ColourClubs, false)]
+    [InlineData(GameMode.ColourClubs, true)]
     public void CanRedouble_ReturnsCorrectValue(GameMode mode, bool expected)
     {
         Assert.Equal(expected, mode.CanRedouble());

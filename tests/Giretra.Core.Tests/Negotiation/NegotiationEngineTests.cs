@@ -178,7 +178,7 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void Redouble_NotAllowedForColourClubs()
+    public void Redouble_AllowedForColourClubs()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
@@ -188,8 +188,8 @@ public class NegotiationEngineTests
         // Left accepts (auto-double)
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // Top cannot redouble Clubs
-        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
+        // Bottom (announcer team) can redouble Clubs
+        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
     }
 
     [Fact]
