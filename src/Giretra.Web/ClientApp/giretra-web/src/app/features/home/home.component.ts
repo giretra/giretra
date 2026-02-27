@@ -6,6 +6,7 @@ import { JoinRoomEvent } from './components/room-list/room-list.component';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GameStateService } from '../../core/services/game-state.service';
+import { GameHubService } from '../../api/game-hub.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
 import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot } from 'lucide-angular';
@@ -15,6 +16,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { QuickGameDialogComponent } from './components/quick-game-dialog/quick-game-dialog.component';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -259,11 +261,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly session = inject(ClientSessionService);
   readonly auth = inject(AuthService);
   private readonly gameState = inject(GameStateService);
+  private readonly hub = inject(GameHubService);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly toast = inject(HotToastService);
 
-  private pollSubscription: Subscription | null = null;
+  private roomsChangedSubscription: Subscription | null = null;
+  private reconnectedSubscription: Subscription | null = null;
   private friendPollSubscription: Subscription | null = null;
 
   readonly rooms = signal<RoomResponse[]>([]);
@@ -281,9 +285,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadAiTypes();
     this.checkActiveSession();
 
-    this.pollSubscription = interval(5000).subscribe(() => {
-      this.loadRooms();
-    });
+    this.connectToLobby();
 
     this.friendPollSubscription = interval(30000).subscribe(() => {
       this.loadPendingFriendCount();
@@ -291,8 +293,28 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.pollSubscription?.unsubscribe();
+    this.roomsChangedSubscription?.unsubscribe();
+    this.reconnectedSubscription?.unsubscribe();
     this.friendPollSubscription?.unsubscribe();
+    this.hub.leaveLobby().catch(() => {});
+  }
+
+  private async connectToLobby(): Promise<void> {
+    try {
+      await this.hub.connect(environment.hubUrl);
+      await this.hub.joinLobby();
+    } catch (err) {
+      console.error('[Home] Failed to connect to lobby', err);
+    }
+
+    this.roomsChangedSubscription = this.hub.roomsChanged$.subscribe(() => {
+      this.loadRooms();
+    });
+
+    this.reconnectedSubscription = this.hub.reconnected$.subscribe(() => {
+      this.hub.joinLobby().catch(() => {});
+      this.loadRooms();
+    });
   }
 
   private loadRooms(): void {

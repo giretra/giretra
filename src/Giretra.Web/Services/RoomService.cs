@@ -632,6 +632,8 @@ public sealed class RoomService : IRoomService
 
                 // Delete the room if it still exists
                 _roomRepository.Remove(roomId);
+
+                await _notifications.NotifyRoomsChangedAsync();
             }
             catch (OperationCanceledException)
             {
@@ -692,7 +694,10 @@ public sealed class RoomService : IRoomService
                 // Room is Waiting — remove the player normally
                 var (removed, playerName, leftPosition) = LeaveRoom(roomId, clientId);
                 if (removed && playerName != null && leftPosition.HasValue)
+                {
                     await _notifications.NotifyPlayerLeftAsync(roomId, playerName, leftPosition.Value);
+                    await _notifications.NotifyRoomsChangedAsync();
+                }
             }
             catch (OperationCanceledException)
             {

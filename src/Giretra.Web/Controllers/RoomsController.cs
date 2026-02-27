@@ -57,12 +57,13 @@ public class RoomsController : ControllerBase
     /// Creates a new room.
     /// </summary>
     [HttpPost]
-    public ActionResult<JoinRoomResponse> CreateRoom([FromBody] CreateRoomRequest request)
+    public async Task<ActionResult<JoinRoomResponse>> CreateRoom([FromBody] CreateRoomRequest request)
     {
         var user = GetAuthenticatedUser();
         var (response, error) = _roomService.CreateRoom(request, user.EffectiveDisplayName, user.Id);
         if (response == null)
             return BadRequest(new { error = error ?? "Unable to create room" });
+        await _notifications.NotifyRoomsChangedAsync();
         return CreatedAtAction(nameof(GetRoom), new { roomId = response.Room.RoomId }, response);
     }
 
@@ -70,12 +71,13 @@ public class RoomsController : ControllerBase
     /// Deletes a room.
     /// </summary>
     [HttpDelete("{roomId}")]
-    public ActionResult DeleteRoom(string roomId)
+    public async Task<ActionResult> DeleteRoom(string roomId)
     {
         var user = GetAuthenticatedUser();
         if (!_roomService.DeleteRoom(roomId, user.Id))
             return NotFound();
 
+        await _notifications.NotifyRoomsChangedAsync();
         return NoContent();
     }
 
@@ -93,6 +95,7 @@ public class RoomsController : ControllerBase
         if (response.Position.HasValue)
             await _notifications.NotifyPlayerJoinedAsync(roomId, user.EffectiveDisplayName, response.Position.Value);
 
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok(response);
     }
 
@@ -100,13 +103,14 @@ public class RoomsController : ControllerBase
     /// Joins a room as a watcher.
     /// </summary>
     [HttpPost("{roomId}/watch")]
-    public ActionResult<JoinRoomResponse> WatchRoom(string roomId, [FromBody] JoinRoomRequest request)
+    public async Task<ActionResult<JoinRoomResponse>> WatchRoom(string roomId, [FromBody] JoinRoomRequest request)
     {
         var user = GetAuthenticatedUser();
         var response = _roomService.WatchRoom(roomId, request, user.EffectiveDisplayName);
         if (response == null)
             return NotFound();
 
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok(response);
     }
 
@@ -123,6 +127,7 @@ public class RoomsController : ControllerBase
         if (playerName != null && position.HasValue)
             await _notifications.NotifyPlayerLeftAsync(roomId, playerName, position.Value);
 
+        await _notifications.NotifyRoomsChangedAsync();
         return NoContent();
     }
 
@@ -130,13 +135,14 @@ public class RoomsController : ControllerBase
     /// Starts the game in a room.
     /// </summary>
     [HttpPost("{roomId}/start")]
-    public ActionResult<StartGameResponse> StartGame(string roomId, [FromBody] StartGameRequest request)
+    public async Task<ActionResult<StartGameResponse>> StartGame(string roomId, [FromBody] StartGameRequest request)
     {
         var user = GetAuthenticatedUser();
         var (response, error) = _roomService.StartGame(roomId, user.Id);
         if (response == null)
             return BadRequest(new { error = error ?? "Unable to start game" });
 
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok(response);
     }
 
@@ -152,6 +158,7 @@ public class RoomsController : ControllerBase
             return BadRequest(new { error });
 
         await _notifications.NotifySeatModeChangedAsync(roomId, position, request.AccessMode);
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok();
     }
 
@@ -167,6 +174,7 @@ public class RoomsController : ControllerBase
             return BadRequest(new { error = "Unable to generate invite. Check that you are the room owner and the room is waiting." });
 
         await _notifications.NotifySeatModeChangedAsync(roomId, position, Domain.SeatAccessMode.InviteOnly);
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok(response);
     }
 
@@ -184,6 +192,7 @@ public class RoomsController : ControllerBase
         if (kickedPosition.HasValue && playerName != null)
             await _notifications.NotifyPlayerKickedAsync(roomId, playerName, kickedPosition.Value);
 
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok();
     }
 
@@ -215,6 +224,7 @@ public class RoomsController : ControllerBase
         if (response.Position.HasValue)
             await _notifications.NotifyPlayerJoinedAsync(roomId, user.EffectiveDisplayName, response.Position.Value);
 
+        await _notifications.NotifyRoomsChangedAsync();
         return Ok(response);
     }
 

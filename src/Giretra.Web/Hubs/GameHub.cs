@@ -41,6 +41,22 @@ public sealed class GameHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"client_{clientId}");
     }
 
+    /// <summary>
+    /// Joins the lobby group for room list updates.
+    /// </summary>
+    public async Task JoinLobby()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "lobby");
+    }
+
+    /// <summary>
+    /// Leaves the lobby group.
+    /// </summary>
+    public async Task LeaveLobby()
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "lobby");
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         _roomService.HandleDisconnect(Context.ConnectionId);

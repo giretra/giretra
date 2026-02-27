@@ -53,6 +53,7 @@ export class GameHubService implements OnDestroy {
   readonly playerKicked$ = new Subject<PlayerKickedEvent>();
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
   readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
+  readonly roomsChanged$ = new Subject<void>();
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
@@ -97,6 +98,20 @@ export class GameHubService implements OnDestroy {
     await this.hubConnection.invoke('LeaveRoom', roomId, clientId);
   }
 
+  async joinLobby(): Promise<void> {
+    if (!this.hubConnection) {
+      throw new Error('Not connected to hub');
+    }
+    await this.hubConnection.invoke('JoinLobby');
+  }
+
+  async leaveLobby(): Promise<void> {
+    if (!this.hubConnection) {
+      throw new Error('Not connected to hub');
+    }
+    await this.hubConnection.invoke('LeaveLobby');
+  }
+
   get connectionState(): HubConnectionState {
     return this.hubConnection?.state ?? HubConnectionState.Disconnected;
   }
@@ -117,6 +132,7 @@ export class GameHubService implements OnDestroy {
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
     this.roomIdleClosed$.complete();
+    this.roomsChanged$.complete();
   }
 
   private registerConnectionHandlers(): void {
@@ -207,6 +223,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.RoomIdleClosed, (event: RoomIdleClosedEvent) => {
       console.log('[Hub] RoomIdleClosed', event);
       this.ngZone.run(() => this.roomIdleClosed$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.RoomsChanged, () => {
+      console.log('[Hub] RoomsChanged');
+      this.ngZone.run(() => this.roomsChanged$.next());
     });
   }
 }
