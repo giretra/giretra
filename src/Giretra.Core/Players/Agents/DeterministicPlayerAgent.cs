@@ -1242,7 +1242,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
         // Master cards: heavy penalty, reduced in endgame
         if (isMaster)
-            score -= tricksRemaining <= 1 ? 5 : 25;
+            score -= tricksRemaining <= 1 ? 20 : 25;
 
         // Near-master: becomes master once the current master is played
         if (!isMaster && remaining.Count > 0
@@ -1266,6 +1266,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
             if (voidIsDesirable)
                 score += 3;
+
             else if (tricksRemaining > 2)
                 score -= 6;
         }
@@ -1314,11 +1315,26 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private Card ChooseLeastValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
         IReadOnlyList<Card>? hand = null)
     {
+        var trumpSuit = mode.GetTrumpSuit();
+        int tricksRemaining = 8 - _playedCards.Count / 4;
+
         return validPlays
             .OrderBy(c => c.GetPointValue(mode))
-            .ThenBy(c => hand != null && hand.Count(h => h.Suit == c.Suit) == 1 ? 0 : 1)
-            .ThenBy(c => c.GetStrength(mode))
+            .ThenBy(c => ComputeLoadingScore(c, mode, hand ?? [], trumpSuit, tricksRemaining))
             .First();
+
+        //var suitCounts = 
+        //    validPlays.GroupBy(g => g.Suit).ToDictionary(t => t.Key, t => t.Count());
+
+
+
+
+
+        //return validPlays
+        //    .OrderBy(c => c.GetPointValue(mode))
+        //    .ThenBy(c => hand != null && hand.Count(h => h.Suit == c.Suit) == 1 ? 0 : 1)
+        //    .ThenBy(c => c.GetStrength(mode))
+        //    .First();
     }
 
     private Card ChooseMediumCard(IReadOnlyList<Card> validPlays, GameMode mode)
