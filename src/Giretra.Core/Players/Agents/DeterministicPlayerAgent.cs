@@ -260,6 +260,17 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 }
             }
         }
+
+        foreach (var cardSuit in Enum.GetValues<CardSuit>())
+        {
+            if (
+                IsPlayerVoidIn(Position.Next(), cardSuit) &&
+                IsPlayerVoidIn(Position.Teammate().Next(), cardSuit) &&
+                cardSuit != mode.GetTrumpSuit())
+            {
+                _partnerPrioritySuits.Add(cardSuit);
+            }
+        }
         
         _currentTrickLeader = null;
         _currentTrickLeadSuit = null;
