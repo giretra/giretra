@@ -372,3 +372,4 @@ CLAUDE.md
 
 # JetBrains IDEs
 .idea/
+/external-bots/random-go-bot/random-go-bot.exe
