@@ -238,6 +238,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
                     if (played[0].GetStrength(mode) < played[1].GetStrength(mode))
                     {
                         _partnerPrioritySuits.Add(group.Key);
+                        _partnerPreferredSuits.Add(group.Key);
                         _partnerDislikedSuits.Remove(group.Key);
                     }
                     else
@@ -841,20 +842,38 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
         if (masterCards.Count > 0)
         {
-            // Prefer high-point masters in partner's preferred suit
-            var preferredMasters = masterCards
-                .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
-                .OrderByDescending(c => _partnerPreferredSuits.Contains(c.Suit))
-                .ThenByDescending(c => c.GetPointValue(mode))
-                .ToList();
+            var avoidLeadingMaster = false;
 
-            if (preferredMasters.Count > 0)
-                return preferredMasters[0];
+            if (trickNumber <= 3 && trumpSuit == null)
+            {
+                var groupedByColor =
+                    masterCards.GroupBy(g => g.Suit).ToDictionary(t => t.Key, t => t.ToList());
 
-            return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
+                if (groupedByColor.Count >= 3
+                    && (masterCards.Count / (8D - (trickNumber - 1))) < 0.4)
+                {
+                    avoidLeadingMaster = true;
+                }
+
+            }
+
+            if (!avoidLeadingMaster)
+            {
+                // Prefer high-point masters in partner's preferred suit
+                var preferredMasters = masterCards
+                    .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
+                    .OrderByDescending(c => _partnerPrioritySuits.Contains(c.Suit) || _partnerPreferredSuits.Contains(c.Suit))
+                    .ThenByDescending(c => c.GetPointValue(mode))
+                    .ToList();
+
+                if (preferredMasters.Count > 0)
+                    return preferredMasters[0];
+
+                return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
+            }
         }
 
-        if (!trumpSuit.HasValue)
+        if (true)
         {
             if (_partnerPrioritySuits.Any())
             {
@@ -894,7 +913,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (_partnerPreferredSuits.Count > 0)
         {
             var preferredSuitCards = validPlays
-                .Where(c => _partnerPreferredSuits.Contains(c.Suit))
+                .Where(c => _partnerPreferredSuits.Contains(c.Suit) || _partnerPrioritySuits.Contains(c.Suit))
                 .Where(c => !trumpSuit.HasValue || c.Suit != trumpSuit.Value)
                 .ToList();
 
@@ -1286,7 +1305,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // Prefer discarding from short side suits to create voids for future ruffing
         var shortSuits = suitGroups
             .OrderBy(g => g.Count())
-            .ThenBy(g => _partnerPreferredSuits.Contains(g.Key) ? 1 : 0) // Avoid partner's preferred
+            .ThenBy(g => _partnerPreferredSuits.Contains(g.Key) || _partnerPrioritySuits.Contains(g.Key)) // Avoid partner's preferred
             .ToList();
 
         // Among equal-length suits, prefer suits where opponents hold masters
