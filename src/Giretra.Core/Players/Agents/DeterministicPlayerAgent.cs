@@ -211,6 +211,18 @@ public class DeterministicPlayerAgent : IPlayerAgent
             }
         }
 
+        var teamMateLeadingNotWinning =
+            handState.CompletedTricks.Where(r => r.Leader == Position.Teammate() &&
+                                                 GetCurrentWinningCard(r, mode) != r.PlayedCards
+                                                     .First(f => f.Player == Position.Teammate()).Card
+            );
+
+        foreach (var suit in teamMateLeadingNotWinning.Select(s => s.LeadSuit).Distinct()) 
+        {
+            if (suit != null)
+                _partnerPreferredSuits.Add(suit.Value);
+        }
+
         // analyze complete tricks 
 
         var teamMateCannotFollowTricks = 
@@ -844,7 +856,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         {
             var avoidLeadingMaster = false;
 
-            if (trickNumber <= 3 && trumpSuit == null)
+            if (trickNumber <= 3 && mode == GameMode.NoTrumps)
             {
                 var groupedByColor =
                     masterCards.GroupBy(g => g.Suit).ToDictionary(t => t.Key, t => t.ToList());
@@ -854,7 +866,6 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 {
                     avoidLeadingMaster = true;
                 }
-
             }
 
             if (!avoidLeadingMaster)
