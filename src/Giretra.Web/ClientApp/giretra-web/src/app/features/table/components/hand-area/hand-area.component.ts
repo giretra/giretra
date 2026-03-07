@@ -66,6 +66,9 @@ import { TranslocoDirective } from '@jsverse/transloco';
   `,
   styles: [`
     .hand-area {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
       background: hsl(var(--card));
       border-top: 2px solid transparent;
       border-image: linear-gradient(
