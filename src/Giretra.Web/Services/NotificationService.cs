@@ -391,7 +391,8 @@ public sealed class NotificationService : INotificationService
                 })
                 .ToList(),
             IsComplete = trick.IsComplete,
-            Winner = winner
+            Winner = winner,
+            WinningPlayer = winner
         };
     }
 }

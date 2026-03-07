@@ -31,4 +31,10 @@ public sealed class TrickResponse
     /// The winner of the trick (null if not complete).
     /// </summary>
     public PlayerPosition? Winner { get; init; }
+
+    /// <summary>
+    /// The player currently winning the trick (available even mid-trick).
+    /// Null only when no cards have been played.
+    /// </summary>
+    public PlayerPosition? WinningPlayer { get; init; }
 }
