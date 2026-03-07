@@ -397,4 +397,31 @@ public class NegotiationEngineTests
         var error = NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Left, GameMode.ColourDiamonds));
         Assert.NotNull(error);
     }
+
+    [Fact]
+    public void AvailableChoices_AcceptAndDoubleOptions_AfterOvercall()
+    {
+        // Dealer is Bottom, so Left speaks first
+        // │ # │ Player │ Action             │
+        // │ 1 │ Left   │ Announces Hearts ♥ │
+        // │ 2 │ Top    │ Accept             │
+        // │ 3 │ Right  │ Announces AT       │
+        // │ 4 │ Bottom │ ???                │
+        //
+        // Bottom (Team1) should have: Accept, Double AllTrumps, Double Hearts
+
+        var state = NegotiationState.Create(PlayerPosition.Bottom);
+
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourHearts));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.AllTrumps));
+
+        // Bottom's choices: Accept, Double AllTrumps (Right/Team2), Double Hearts (Left/Team2)
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        Assert.Equal(3, validActions.Count);
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.AllTrumps });
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.ColourHearts });
+    }
 }

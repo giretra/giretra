@@ -208,24 +208,22 @@ export class BidButtonRowComponent {
       });
     }
 
-    // Double button
-    const doubleAction = actions.find((a) => a.actionType === 'Double');
-    if (doubleAction) {
+    // Double buttons (one per doubleable mode)
+    for (const a of actions.filter((a) => a.actionType === 'Double')) {
       buttons.push({
         label: '\u00d72',
         actionType: 'Double',
-        mode: doubleAction.mode,
+        mode: a.mode,
         variant: 'destructive',
       });
     }
 
-    // Redouble button
-    const redoubleAction = actions.find((a) => a.actionType === 'Redouble');
-    if (redoubleAction) {
+    // Redouble buttons (one per redoubleable mode)
+    for (const a of actions.filter((a) => a.actionType === 'Redouble')) {
       buttons.push({
         label: '\u00d74',
         actionType: 'Redouble',
-        mode: redoubleAction.mode,
+        mode: a.mode,
         variant: 'destructive',
       });
     }
