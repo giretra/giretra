@@ -461,9 +461,16 @@ public sealed class GameService : IGameService
     private static TrickResponse MapToTrickResponse(TrickState trick, GameMode gameMode)
     {
         PlayerPosition? winner = null;
+        PlayerPosition? winningPlayer = null;
+
+        if (trick.PlayedCards.Count > 0 && trick.LeadSuit.HasValue)
+        {
+            winningPlayer = DetermineWinner(trick, gameMode);
+        }
+
         if (trick.IsComplete)
         {
-            winner = DetermineWinner(trick, gameMode);
+            winner = winningPlayer;
         }
 
         return new TrickResponse
@@ -478,7 +485,8 @@ public sealed class GameService : IGameService
                 })
                 .ToList(),
             IsComplete = trick.IsComplete,
-            Winner = winner
+            Winner = winner,
+            WinningPlayer = winningPlayer
         };
     }
 

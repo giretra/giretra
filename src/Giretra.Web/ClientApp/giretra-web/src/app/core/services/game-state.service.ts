@@ -700,6 +700,7 @@ export class GameStateService {
         playedCards: event.trick.playedCards,
         isComplete: event.trick.isComplete,
         winner: event.trick.winner ?? null,
+        winningPlayer: (event.trick as any).winningPlayer ?? event.trick.winner ?? null,
       };
 
       // Detect if this is the last trick (trick 8)

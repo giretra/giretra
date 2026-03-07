@@ -106,6 +106,7 @@ export interface TrickResponse {
   playedCards: Array<{ player: PlayerPosition; card: CardResponse }>;
   isComplete: boolean;
   winner: PlayerPosition | null;
+  winningPlayer: PlayerPosition | null;
 }
 
 export interface EloChangeResponse {

@@ -9,6 +9,7 @@ interface PositionedCard {
   card: Card;
   player: PlayerPosition;
   relativePosition: RelativePosition;
+  isWinning: boolean;
 }
 
 const ROTATION_MAP: Record<RelativePosition, number> = {
@@ -40,6 +41,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
             @if (getCardAtPosition(pos); as posCard) {
               <div
                 class="card-throw"
+                [class.winning]="posCard.isWinning && hasMultipleCards()"
                 [style.--rotation]="getRotation(posCard.relativePosition) + 'deg'"
               >
                 <app-card
@@ -118,6 +120,14 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
       transform: rotate(var(--rotation));
       filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
       animation: throwIn 0.2s ease-out;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-throw.winning {
+      border-color: hsl(var(--gold));
+      box-shadow: 0 0 10px 2px hsl(var(--gold) / 0.5);
     }
 
     @keyframes throwIn {
@@ -181,12 +191,19 @@ export class TrickAreaComponent {
 
     if (!trick?.playedCards) return [];
 
+    const winningPlayer = trick.winningPlayer;
+
     return trick.playedCards.map((pc) => ({
       card: pc.card,
       player: pc.player,
       relativePosition: toRelativePosition(pc.player, myPos),
+      isWinning: winningPlayer != null && pc.player === winningPlayer,
     }));
   });
+
+  hasMultipleCards(): boolean {
+    return this.positionedCards().length > 1;
+  }
 
   getCardAtPosition(pos: RelativePosition): PositionedCard | null {
     return this.positionedCards().find((pc) => pc.relativePosition === pos) ?? null;
