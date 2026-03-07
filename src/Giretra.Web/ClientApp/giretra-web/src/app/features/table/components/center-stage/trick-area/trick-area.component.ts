@@ -74,6 +74,9 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
       position: relative;
       width: 240px;
       height: 240px;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .trick-area.clickable {

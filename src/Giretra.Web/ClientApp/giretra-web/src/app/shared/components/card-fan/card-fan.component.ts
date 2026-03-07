@@ -39,6 +39,9 @@ import { CardComponent } from '../card/card.component';
       padding: 0.5rem;
       gap: 0;
       position: relative;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .card-wrapper {
