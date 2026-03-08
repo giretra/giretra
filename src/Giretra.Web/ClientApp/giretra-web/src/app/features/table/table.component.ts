@@ -349,7 +349,7 @@ export class TableComponent implements OnInit, OnDestroy {
     this.gameModePopupTimeoutId = setTimeout(() => {
       this.gameModePopup.set(null);
       this.gameModePopupTimeoutId = null;
-    }, 4000);
+    }, 1250);
   }
 
   dismissGameModePopup(): void {
