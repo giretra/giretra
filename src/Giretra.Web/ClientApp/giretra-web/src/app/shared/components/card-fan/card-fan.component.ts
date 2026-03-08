@@ -118,7 +118,7 @@ export class CardFanComponent {
         nextPos = (currentPos + 1) % validIndices.length;
       }
       this.focusedIndex.set(validIndices[nextPos]);
-    } else if (event.key === 'Enter' || event.key === ' ') {
+    } else if (event.key === 'Enter') {
       event.preventDefault();
       const idx = this.focusedIndex();
       if (idx >= 0 && idx < this.cards().length && this.isPlayable(this.cards()[idx])) {
