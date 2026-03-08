@@ -118,7 +118,7 @@ public sealed class GameService : IGameService
         var hasHumanPlayers = room.PlayerSlots.Values.Any(client => client != null);
         if (hasHumanPlayers)
         {
-            var botDelay = TimeSpan.FromMilliseconds(825);
+            var botDelay = TimeSpan.FromMilliseconds(425);
             foreach (var position in Enum.GetValues<PlayerPosition>())
             {
                 if (room.PlayerSlots[position] == null)
