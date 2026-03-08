@@ -114,6 +114,16 @@ public sealed class GameService : IGameService
             }
         }
 
+        // Wrap AI agents with delay decorator so humans can follow the game
+        var botDelay = TimeSpan.FromMilliseconds(825);
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            if (room.PlayerSlots[position] == null)
+            {
+                agents[position] = new DelayedPlayerAgent(agents[position], botDelay);
+            }
+        }
+
         // Wrap all agents with recording decorator
         var recorder = new ActionRecorder();
         session.ActionRecorder = recorder;
