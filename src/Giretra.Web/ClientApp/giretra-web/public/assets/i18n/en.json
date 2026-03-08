@@ -132,6 +132,8 @@
   "dealSummary.cards.nines": "Nines",
   "dealSummary.cards.jack": "Jack",
   "dealSummary.cards.nine": "Nine",
+  "dealSummary.viewTrickHistory": "View Tricks",
+  "dealSummary.trickHistory": "Trick History",
 
   "matchEnd.youWin": "You Win!",
   "matchEnd.gameOver": "Game Over",
