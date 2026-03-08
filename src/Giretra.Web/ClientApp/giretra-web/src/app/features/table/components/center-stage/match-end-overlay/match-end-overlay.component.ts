@@ -65,7 +65,7 @@ import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/
         @if (idleDeadline()) {
           <div class="idle-timer">
             <span class="idle-label">{{ t('matchEnd.autoClose') }}</span>
-            <app-turn-timer [deadline]="idleDeadline()" />
+            <app-turn-timer [deadline]="idleDeadline()" (expired)="leaveTable.emit()" />
           </div>
         }
 

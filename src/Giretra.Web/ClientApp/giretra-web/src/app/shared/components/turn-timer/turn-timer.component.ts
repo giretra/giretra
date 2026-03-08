@@ -1,4 +1,4 @@
-import { Component, input, OnDestroy, signal, effect } from '@angular/core';
+import { Component, input, output, OnDestroy, signal, effect } from '@angular/core';
 
 @Component({
   selector: 'app-turn-timer',
@@ -48,14 +48,17 @@ import { Component, input, OnDestroy, signal, effect } from '@angular/core';
 })
 export class TurnTimerComponent implements OnDestroy {
   readonly deadline = input<Date | null>(null);
+  readonly expired = output<void>();
   readonly remaining = signal<number>(0);
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private hasExpired = false;
 
   constructor() {
     effect(() => {
       const d = this.deadline();
       this.clearInterval();
+      this.hasExpired = false;
       if (d) {
         this.updateRemaining(d);
         this.intervalId = setInterval(() => this.updateRemaining(d), 1000);
@@ -72,6 +75,10 @@ export class TurnTimerComponent implements OnDestroy {
   private updateRemaining(deadline: Date): void {
     const diff = Math.max(0, Math.ceil((deadline.getTime() - Date.now()) / 1000));
     this.remaining.set(diff);
+    if (diff === 0 && !this.hasExpired) {
+      this.hasExpired = true;
+      this.expired.emit();
+    }
   }
 
   private clearInterval(): void {
