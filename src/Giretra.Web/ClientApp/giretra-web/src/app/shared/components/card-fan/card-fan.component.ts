@@ -1,4 +1,4 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, signal, effect, HostListener } from '@angular/core';
 import { CardResponse, GameMode } from '../../../api/generated/signalr-types.generated';
 import { Card, cardEquals } from '../../../core/models';
 import { CardComponent } from '../card/card.component';
@@ -23,6 +23,7 @@ import { CardComponent } from '../card/card.component';
             [playable]="isPlayable(card)"
             [dimmed]="isDimmed(card)"
             [lifted]="false"
+            [focused]="isFocused(card)"
             [gameMode]="gameMode()"
             [width]="cardWidth()"
             (cardClicked)="onCardClicked($event)"
@@ -78,6 +79,68 @@ export class CardFanComponent {
   readonly interactive = input<boolean>(true);
 
   readonly cardSelected = output<Card>();
+
+  private readonly focusedIndex = signal<number>(-1);
+
+  constructor() {
+    // Auto-focus first valid card when interactive becomes true
+    effect(() => {
+      const interactive = this.interactive();
+      const validCards = this.validCards();
+      const cards = this.cards();
+      if (interactive && validCards.length > 0) {
+        const firstValidIdx = cards.findIndex((c) => validCards.some((vc) => cardEquals(vc, c)));
+        this.focusedIndex.set(firstValidIdx);
+      } else {
+        this.focusedIndex.set(-1);
+      }
+    });
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent): void {
+    if (!this.interactive()) return;
+
+    const validIndices = this.getValidIndices();
+    if (validIndices.length === 0) return;
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const currentFocused = this.focusedIndex();
+      const currentPos = validIndices.indexOf(currentFocused);
+
+      let nextPos: number;
+      if (currentPos === -1) {
+        nextPos = event.key === 'ArrowLeft' ? validIndices.length - 1 : 0;
+      } else if (event.key === 'ArrowLeft') {
+        nextPos = (currentPos - 1 + validIndices.length) % validIndices.length;
+      } else {
+        nextPos = (currentPos + 1) % validIndices.length;
+      }
+      this.focusedIndex.set(validIndices[nextPos]);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const idx = this.focusedIndex();
+      if (idx >= 0 && idx < this.cards().length && this.isPlayable(this.cards()[idx])) {
+        this.onCardClicked(this.cards()[idx] as Card);
+      }
+    }
+  }
+
+  private getValidIndices(): number[] {
+    const cards = this.cards();
+    const validCards = this.validCards();
+    return cards
+      .map((c, i) => (validCards.some((vc) => cardEquals(vc, c)) ? i : -1))
+      .filter((i) => i !== -1);
+  }
+
+  isFocused(card: CardResponse): boolean {
+    const idx = this.focusedIndex();
+    if (idx < 0) return false;
+    const cards = this.cards();
+    return idx < cards.length && cardEquals(cards[idx], card);
+  }
 
   readonly cardWidth = computed(() => {
     const count = this.cards().length;
