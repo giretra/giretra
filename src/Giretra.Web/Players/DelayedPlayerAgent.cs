@@ -23,11 +23,8 @@ public sealed class DelayedPlayerAgent : IPlayerAgent
 
     public PlayerPosition Position => _inner.Position;
 
-    public async Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
-    {
-        await Task.Delay(_delay);
-        return await _inner.ChooseCutAsync(deckSize, matchState);
-    }
+    public Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
+        => _inner.ChooseCutAsync(deckSize, matchState);
 
     public Task<NegotiationAction> ChooseNegotiationActionAsync(
         IReadOnlyList<Card> hand,
