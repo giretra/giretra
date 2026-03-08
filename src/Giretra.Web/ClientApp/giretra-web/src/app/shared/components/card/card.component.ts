@@ -15,6 +15,7 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
       [class.dimmed]="dimmed()"
       [class.lifted]="lifted()"
       [class.trump]="showTrumpGlow()"
+      [class.focused]="focused()"
       [class.clickable]="playable() && faceUp()"
       [style.width.px]="width()"
       [style.height.px]="height()"
@@ -86,6 +87,13 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
     .trump.lifted {
       box-shadow: 0 0 12px 3px hsl(var(--gold));
     }
+
+    @media (min-width: 640px) {
+      .focused {
+        outline: 2px solid hsl(var(--primary));
+        outline-offset: 2px;
+      }
+    }
   `],
 })
 export class CardComponent {
@@ -95,6 +103,7 @@ export class CardComponent {
   readonly playable = input<boolean>(false);
   readonly dimmed = input<boolean>(false);
   readonly lifted = input<boolean>(false);
+  readonly focused = input<boolean>(false);
   readonly trumpSuit = input<CardSuit | null>(null);
   readonly gameMode = input<GameMode | null>(null);
   readonly width = input<number>(96);
