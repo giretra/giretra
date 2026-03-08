@@ -1,6 +1,8 @@
-import { Component, input, output, computed, inject } from '@angular/core';
-import { CardPointsBreakdownResponse, CardSuit, GameMode, Team } from '../../../../../api/generated/signalr-types.generated';
-import { getTeamLabel } from '../../../../../core/utils';
+import { Component, input, output, computed, inject, signal } from '@angular/core';
+import { CardPointsBreakdownResponse, CardSuit, GameMode, PlayerPosition, Team } from '../../../../../api/generated/signalr-types.generated';
+import { getTeamLabel, isRedSuit, toRelativePosition, getTeam } from '../../../../../core/utils';
+import { cardToString } from '../../../../../core/models/card.model';
+import { TrickHistoryEntry } from '../../../../../core/services/game-state.service';
 import { GameModeBadgeComponent } from '../../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
 import { HlmButton } from '@spartan-ng/helm/button';
@@ -23,100 +25,146 @@ interface BreakdownRow {
     <ng-container *transloco="let t">
     @if (summary(); as s) {
       <div class="deal-summary">
-        <h2 class="title">{{ t('dealSummary.title') }}</h2>
+        @if (!showingTrickHistory()) {
+          <!-- ═══ Summary View ═══ -->
+          <h2 class="title">{{ t('dealSummary.title') }}</h2>
 
-        <div class="mode-display">
-          <app-game-mode-badge [mode]="s.gameMode" size="1.5rem" />
-        </div>
-
-        <div class="scores-section">
-          <div class="team-column team1">
-            <span class="team-label">{{ team1Label() }}</span>
-            <span class="card-points">{{ s.team1CardPoints }}</span>
-            <span class="pts-label">{{ t('dealSummary.pts') }}</span>
-            <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
-              +{{ s.team1MatchPointsEarned }} {{ t('dealSummary.match') }}
-            </span>
+          <div class="mode-display">
+            <app-game-mode-badge [mode]="s.gameMode" size="1.5rem" />
           </div>
 
-          <div class="divider"></div>
+          <div class="scores-section">
+            <div class="team-column team1">
+              <span class="team-label">{{ team1Label() }}</span>
+              <span class="card-points">{{ s.team1CardPoints }}</span>
+              <span class="pts-label">{{ t('dealSummary.pts') }}</span>
+              <span class="earned" [class.winner]="s.team1MatchPointsEarned > 0">
+                +{{ s.team1MatchPointsEarned }} {{ t('dealSummary.match') }}
+              </span>
+            </div>
 
-          <div class="team-column team2">
-            <span class="team-label">{{ team2Label() }}</span>
-            <span class="card-points">{{ s.team2CardPoints }}</span>
-            <span class="pts-label">{{ t('dealSummary.pts') }}</span>
-            <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
-              +{{ s.team2MatchPointsEarned }} {{ t('dealSummary.match') }}
-            </span>
+            <div class="divider"></div>
+
+            <div class="team-column team2">
+              <span class="team-label">{{ team2Label() }}</span>
+              <span class="card-points">{{ s.team2CardPoints }}</span>
+              <span class="pts-label">{{ t('dealSummary.pts') }}</span>
+              <span class="earned" [class.winner]="s.team2MatchPointsEarned > 0">
+                +{{ s.team2MatchPointsEarned }} {{ t('dealSummary.match') }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <!-- Card Points Breakdown -->
-        <div class="breakdown-section">
-          <h3 class="breakdown-title">{{ t('dealSummary.pointsBreakdown') }}</h3>
-          <table class="breakdown-table">
-            <thead>
-              <tr>
-                <th class="card-type">{{ t('dealSummary.card') }}</th>
-                <th class="value-col">{{ t('dealSummary.each') }}</th>
-                <th class="team1-col">{{ team1Label() }}</th>
-                <th class="team2-col">{{ team2Label() }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of breakdownRows(); track row.label + row.perCardValue) {
-                <tr [class.trump-row]="row.isTrump">
-                  <td class="card-type">
-                    @if (row.isTrump && row.trumpSuit) {
-                      <span class="trump-label">
-                        <app-game-mode-icon [suit]="row.trumpSuit" size="0.75rem" />
-                        <span>{{ row.label }}</span>
-                      </span>
-                    } @else {
-                      {{ row.label }}
-                    }
-                  </td>
-                  <td class="value-col">{{ row.perCardValue }}</td>
-                  <td class="team1-col" [class.has-points]="row.team1Points > 0">{{ row.team1Points }}</td>
-                  <td class="team2-col" [class.has-points]="row.team2Points > 0">{{ row.team2Points }}</td>
+          <!-- Card Points Breakdown -->
+          <div class="breakdown-section">
+            <h3 class="breakdown-title">{{ t('dealSummary.pointsBreakdown') }}</h3>
+            <table class="breakdown-table">
+              <thead>
+                <tr>
+                  <th class="card-type">{{ t('dealSummary.card') }}</th>
+                  <th class="value-col">{{ t('dealSummary.each') }}</th>
+                  <th class="team1-col">{{ team1Label() }}</th>
+                  <th class="team2-col">{{ team2Label() }}</th>
                 </tr>
-              }
-              <tr class="last-trick-row">
-                <td class="card-type" colspan="2">{{ t('dealSummary.lastTrick') }}</td>
-                <td class="team1-col" [class.has-points]="s.team1Breakdown.lastTrickBonus > 0">{{ s.team1Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
-                <td class="team2-col" [class.has-points]="s.team2Breakdown.lastTrickBonus > 0">{{ s.team2Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
-              </tr>
-              <tr class="total-row">
-                <td class="card-type" colspan="2">{{ t('dealSummary.total') }}</td>
-                <td class="team1-col has-points">{{ s.team1Breakdown.total }}</td>
-                <td class="team2-col has-points">{{ s.team2Breakdown.total }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        @if (s.wasSweep) {
-          <div class="sweep-banner">
-            {{ t('dealSummary.sweepBy', { team: sweepLabel() }) }}
+              </thead>
+              <tbody>
+                @for (row of breakdownRows(); track row.label + row.perCardValue) {
+                  <tr [class.trump-row]="row.isTrump">
+                    <td class="card-type">
+                      @if (row.isTrump && row.trumpSuit) {
+                        <span class="trump-label">
+                          <app-game-mode-icon [suit]="row.trumpSuit" size="0.75rem" />
+                          <span>{{ row.label }}</span>
+                        </span>
+                      } @else {
+                        {{ row.label }}
+                      }
+                    </td>
+                    <td class="value-col">{{ row.perCardValue }}</td>
+                    <td class="team1-col" [class.has-points]="row.team1Points > 0">{{ row.team1Points }}</td>
+                    <td class="team2-col" [class.has-points]="row.team2Points > 0">{{ row.team2Points }}</td>
+                  </tr>
+                }
+                <tr class="last-trick-row">
+                  <td class="card-type" colspan="2">{{ t('dealSummary.lastTrick') }}</td>
+                  <td class="team1-col" [class.has-points]="s.team1Breakdown.lastTrickBonus > 0">{{ s.team1Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
+                  <td class="team2-col" [class.has-points]="s.team2Breakdown.lastTrickBonus > 0">{{ s.team2Breakdown.lastTrickBonus > 0 ? '+10' : '-' }}</td>
+                </tr>
+                <tr class="total-row">
+                  <td class="card-type" colspan="2">{{ t('dealSummary.total') }}</td>
+                  <td class="team1-col has-points">{{ s.team1Breakdown.total }}</td>
+                  <td class="team2-col has-points">{{ s.team2Breakdown.total }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+
+          @if (s.wasSweep) {
+            <div class="sweep-banner">
+              {{ t('dealSummary.sweepBy', { team: sweepLabel() }) }}
+            </div>
+          }
+
+          <!-- Match progress -->
+          <div class="match-progress">
+            <div class="progress-team team1-text">
+              <span class="progress-score">{{ s.team1TotalMatchPoints }}</span>
+              <span class="progress-target">{{ t('dealSummary.target') }}</span>
+            </div>
+            <span class="progress-label">{{ t('dealSummary.matchScore') }}</span>
+            <div class="progress-team team2-text">
+              <span class="progress-score">{{ s.team2TotalMatchPoints }}</span>
+              <span class="progress-target">{{ t('dealSummary.target') }}</span>
+            </div>
+          </div>
+
+          <div class="button-row">
+            @if (hasTrickHistory()) {
+              <button hlmBtn variant="outline" class="history-btn" (click)="showingTrickHistory.set(true)">
+                {{ t('dealSummary.viewTrickHistory') }}
+              </button>
+            }
+            <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
+              {{ t('common.continue') }}
+            </button>
+          </div>
+
+        } @else {
+          <!-- ═══ Trick History View ═══ -->
+          <div class="history-top">
+            <button class="back-btn" (click)="showingTrickHistory.set(false)">
+              <span class="back-arrow">&#8592;</span>
+            </button>
+            <h2 class="title">{{ t('dealSummary.trickHistory') }}</h2>
+            <div class="history-mode">
+              <app-game-mode-badge [mode]="s.gameMode" size="1.25rem" />
+            </div>
+          </div>
+
+          <div class="trick-list">
+            @for (trick of trickRows(); track trick.trickNumber) {
+              <div class="trick-row" [class.trick-mine]="trick.isMyTeam === true" [class.trick-theirs]="trick.isMyTeam === false">
+                <div class="trick-head">
+                  <span class="trick-num">#{{ trick.trickNumber }}</span>
+                  <span class="trick-winner">{{ trick.winnerLabel }}</span>
+                  <span class="trick-pts">{{ trick.pointsWon }}</span>
+                </div>
+                <div class="trick-cards">
+                  @for (card of trick.cards; track $index) {
+                    <div class="tc-card" [class.tc-winner]="card.isWinner">
+                      <span class="tc-rank" [class.tc-red]="card.isRed">{{ card.cardText }}</span>
+                      <span class="tc-player">{{ card.playerLabel }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
+            {{ t('common.continue') }}
+          </button>
         }
-
-        <!-- Match progress -->
-        <div class="match-progress">
-          <div class="progress-team team1-text">
-            <span class="progress-score">{{ s.team1TotalMatchPoints }}</span>
-            <span class="progress-target">{{ t('dealSummary.target') }}</span>
-          </div>
-          <span class="progress-label">{{ t('dealSummary.matchScore') }}</span>
-          <div class="progress-team team2-text">
-            <span class="progress-score">{{ s.team2TotalMatchPoints }}</span>
-            <span class="progress-target">{{ t('dealSummary.target') }}</span>
-          </div>
-        </div>
-
-        <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
-          {{ t('common.continue') }}
-        </button>
       </div>
     }
     </ng-container>
@@ -363,15 +411,184 @@ interface BreakdownRow {
       text-transform: uppercase;
     }
 
-    .continue-button {
+    /* ═══ Button Row ═══ */
+    .button-row {
+      display: flex;
+      gap: 0.5rem;
       width: 100%;
       margin-top: 0.5rem;
+    }
+
+    .history-btn {
+      flex: 1;
+    }
+
+    .continue-button {
+      flex: 1;
+      margin-top: 0.5rem;
+    }
+
+    .button-row .continue-button {
+      margin-top: 0;
+    }
+
+    /* ═══ Trick History View ═══ */
+    .history-top {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      margin-bottom: 0.75rem;
+    }
+
+    .history-top .title {
+      flex: 1;
+      margin: 0;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: none;
+      background: hsl(var(--muted) / 0.3);
+      border-radius: 0.375rem;
+      cursor: pointer;
+      color: hsl(var(--foreground));
+      font-size: 1rem;
+      transition: background 0.15s;
+    }
+
+    .back-btn:hover {
+      background: hsl(var(--muted) / 0.5);
+    }
+
+    .history-mode {
+      width: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .trick-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      max-height: min(50vh, 420px);
+      overflow-y: auto;
+      margin-bottom: 0.5rem;
+      padding-right: 0.25rem;
+    }
+
+    .trick-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .trick-list::-webkit-scrollbar-thumb {
+      background: hsl(var(--muted-foreground) / 0.3);
+      border-radius: 2px;
+    }
+
+    .trick-row {
+      padding: 0.375rem 0.5rem;
+      border-radius: 0.375rem;
+      background: hsl(var(--muted) / 0.15);
+      border-left: 3px solid transparent;
+    }
+
+    .trick-row.trick-mine {
+      background: hsl(var(--team1) / 0.08);
+      border-left-color: hsl(var(--team1));
+    }
+
+    .trick-row.trick-theirs {
+      background: hsl(var(--team2) / 0.08);
+      border-left-color: hsl(var(--team2));
+    }
+
+    .trick-head {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.75rem;
+    }
+
+    .trick-num {
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      font-size: 0.8rem;
+    }
+
+    .trick-winner {
+      flex: 1;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .trick-pts {
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .trick-cards {
+      display: flex;
+      justify-content: center;
+      gap: 0.375rem;
+    }
+
+    .tc-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 3.5rem;
+      padding: 0.25rem 0.375rem;
+      border-radius: 0.25rem;
+      border: 1px solid hsl(var(--border) / 0.5);
+      background: hsl(var(--card));
+    }
+
+    .tc-card.tc-winner {
+      border-color: hsl(var(--gold));
+      background: hsl(var(--gold) / 0.08);
+    }
+
+    .tc-rank {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: hsl(var(--foreground));
+      line-height: 1.2;
+    }
+
+    .tc-rank.tc-red {
+      color: #ef4444;
+    }
+
+    .tc-player {
+      font-size: 0.5625rem;
+      color: hsl(var(--muted-foreground));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.2;
+    }
+
+    .tc-card.tc-winner .tc-player {
+      color: hsl(var(--gold));
+      font-weight: 500;
     }
   `],
 })
 export class DealSummaryComponent {
   private readonly transloco = inject(TranslocoService);
   readonly myTeam = input<Team | null>(null);
+  readonly myPosition = input<PlayerPosition | null>(null);
 
   readonly summary = input<{
     gameMode: GameMode;
@@ -385,9 +602,12 @@ export class DealSummaryComponent {
     sweepingTeam: Team | null;
     team1Breakdown: CardPointsBreakdownResponse;
     team2Breakdown: CardPointsBreakdownResponse;
+    trickHistory: TrickHistoryEntry[];
   } | null>(null);
 
   readonly dismissed = output<void>();
+
+  readonly showingTrickHistory = signal(false);
 
   readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
   readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));
@@ -395,6 +615,46 @@ export class DealSummaryComponent {
     const s = this.summary();
     if (!s?.sweepingTeam) return '';
     return getTeamLabel(s.sweepingTeam as 'Team1' | 'Team2', this.myTeam(), (k) => this.transloco.translate(k));
+  });
+
+  readonly hasTrickHistory = computed(() => {
+    const s = this.summary();
+    return !!s?.trickHistory?.length;
+  });
+
+  readonly trickRows = computed(() => {
+    const s = this.summary();
+    const myPos = this.myPosition() ?? PlayerPosition.Bottom;
+    if (!s?.trickHistory?.length) return [];
+
+    return s.trickHistory.map((entry, i) => {
+      const prevT1 = i > 0 ? s.trickHistory[i - 1].team1CumulativePoints : 0;
+      const prevT2 = i > 0 ? s.trickHistory[i - 1].team2CumulativePoints : 0;
+      const pointsWon = (entry.team1CumulativePoints - prevT1) + (entry.team2CumulativePoints - prevT2);
+
+      const winnerRel = toRelativePosition(entry.winner, myPos);
+
+      const cards = entry.playedCards.map(pc => {
+        const relPos = toRelativePosition(pc.player, myPos);
+        return {
+          cardText: cardToString(pc.card),
+          playerLabel: this.transloco.translate(`positions.${relPos}`),
+          isRed: isRedSuit(pc.card.suit),
+          isWinner: pc.player === entry.winner,
+        };
+      });
+
+      const winnerTeam = getTeam(entry.winner);
+      const myTeam = this.myTeam();
+
+      return {
+        trickNumber: entry.trickNumber,
+        winnerLabel: this.transloco.translate(`positions.${winnerRel}`),
+        pointsWon,
+        cards,
+        isMyTeam: myTeam ? winnerTeam === myTeam : null,
+      };
+    });
   });
 
   private static readonly modeToSuit: Record<string, CardSuit> = {

@@ -132,6 +132,8 @@
   "dealSummary.cards.nines": "Neuf",
   "dealSummary.cards.jack": "Valet",
   "dealSummary.cards.nine": "Neuf",
+  "dealSummary.viewTrickHistory": "Voir les Plis",
+  "dealSummary.trickHistory": "Historique des Plis",
 
   "matchEnd.youWin": "Victoire !",
   "matchEnd.gameOver": "Fin de Partie",

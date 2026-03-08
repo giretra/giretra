@@ -64,6 +64,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
           <app-deal-summary
             [summary]="dealSummary()"
             [myTeam]="myTeam()"
+            [myPosition]="myPosition()"
             (dismissed)="hideDealSummary.emit()"
           />
         }

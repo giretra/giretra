@@ -14,6 +14,15 @@ import { ClientSessionService } from './client-session.service';
 import { environment } from '../../../environments/environment';
 import { getTeam } from '../utils/position-utils';
 
+export interface TrickHistoryEntry {
+  trickNumber: number;
+  leader: PlayerPosition;
+  winner: PlayerPosition;
+  playedCards: { player: PlayerPosition; card: CardResponse }[];
+  team1CumulativePoints: number;
+  team2CumulativePoints: number;
+}
+
 export type GamePhase =
   | 'waiting'
   | 'cut'
@@ -75,7 +84,9 @@ export class GameStateService {
     sweepingTeam: Team | null;
     team1Breakdown: CardPointsBreakdownResponse;
     team2Breakdown: CardPointsBreakdownResponse;
+    trickHistory: TrickHistoryEntry[];
   } | null>(null);
+  private readonly _dealTrickHistory = signal<TrickHistoryEntry[]>([]);
 
   readonly showingDealSummary = this._showingDealSummary.asReadonly();
   readonly dealSummary = this._dealSummary.asReadonly();
@@ -102,6 +113,7 @@ export class GameStateService {
     sweepingTeam: Team | null;
     team1Breakdown: CardPointsBreakdownResponse;
     team2Breakdown: CardPointsBreakdownResponse;
+    trickHistory: TrickHistoryEntry[];
   } | null = null;
   private readonly _hasPendingDealSummary = signal(false);
 
@@ -430,6 +442,7 @@ export class GameStateService {
     this._roomIdleClosed.set(false);
     this._showingDealSummary.set(false);
     this._dealSummary.set(null);
+    this._dealTrickHistory.set([]);
     this._hasPendingDealSummary.set(false);
     this._pendingDealSummary = null;
     this._turnTimeoutAt.set(null);
@@ -570,6 +583,7 @@ export class GameStateService {
     sweepingTeam: Team | null;
     team1Breakdown: CardPointsBreakdownResponse;
     team2Breakdown: CardPointsBreakdownResponse;
+    trickHistory: TrickHistoryEntry[];
   }): void {
     this._dealSummary.set(summary);
     this._showingDealSummary.set(true);
@@ -658,6 +672,7 @@ export class GameStateService {
     this.hub.dealStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealStarted', event);
       this._turnTimeoutAt.set(null);
+      this._dealTrickHistory.set([]);
       this.hideDealSummary();
       this.refreshState();
     });
@@ -707,6 +722,16 @@ export class GameStateService {
       const isLastTrick = trick.trickNumber === 8;
       this._isLastTrick.set(isLastTrick);
 
+      // Accumulate trick history for deal summary
+      this._dealTrickHistory.update(history => [...history, {
+        trickNumber: event.trick.trickNumber,
+        leader: event.trick.leader,
+        winner: event.winner,
+        playedCards: event.trick.playedCards,
+        team1CumulativePoints: event.team1CardPoints,
+        team2CumulativePoints: event.team2CardPoints,
+      }]);
+
       // Store the completed trick and show it
       this._completedTrickToShow.set(trick);
       this._showingCompletedTrick.set(true);
@@ -741,6 +766,7 @@ export class GameStateService {
         sweepingTeam: event.sweepingTeam ?? null,
         team1Breakdown: event.team1Breakdown,
         team2Breakdown: event.team2Breakdown,
+        trickHistory: this._dealTrickHistory(),
       };
 
       // If last trick is still showing, store the summary to show after user dismisses it
