@@ -11,10 +11,10 @@
   "teams.team1": "Équipe 1",
   "teams.team2": "Équipe 2",
 
-  "positions.bottom": "Sud",
-  "positions.left": "Ouest",
-  "positions.top": "Nord",
-  "positions.right": "Est",
+  "positions.bottom": "Vous",
+  "positions.left": "Adversaire ←",
+  "positions.top": "Partenaire",
+  "positions.right": "Adversaire →",
 
   "errors.connectionIssue": "Problème de connexion — votre action n'a peut-être pas été envoyée",
   "errors.serverError": "Erreur serveur — veuillez réessayer",
