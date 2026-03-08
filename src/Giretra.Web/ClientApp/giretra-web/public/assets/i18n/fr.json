@@ -142,7 +142,7 @@
   "matchEnd.playAgain": "Rejouer",
   "matchEnd.leaveTable": "Quitter la Table",
   "matchEnd.rating": "Classement",
-  "matchEnd.autoClose": "Fermeture auto dans",
+  "matchEnd.autoClose": "Départ auto dans",
 
   "scoreBar.yourTurn": "À vous",
   "scoreBar.dealNumber": "Donne {{number}}",
