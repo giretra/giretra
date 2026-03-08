@@ -100,8 +100,8 @@ export function toRelativePosition(
 }
 
 /**
- * Position display names
+ * Get the i18n translation key for a player position.
  */
-export function getPositionDisplayName(position: PlayerPosition): string {
-  return position; // Already readable: "Bottom", "Left", "Top", "Right"
+export function getPositionTranslationKey(position: PlayerPosition): string {
+  return `positions.${position.toLowerCase()}`;
 }

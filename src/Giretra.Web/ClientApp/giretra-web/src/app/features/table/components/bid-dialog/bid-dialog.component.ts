@@ -4,12 +4,13 @@ import { ValidAction, NegotiationAction } from '../../../../core/services/api.se
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { GameModeIconComponent } from '../../../../shared/components/game-mode-icon/game-mode-icon.component';
-import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, TranslocoDirective],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, TranslocoDirective, TranslocoPipe],
   template: `
     <ng-container *transloco="let t">
     <div class="backdrop"></div>
@@ -21,7 +22,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
         @if (currentBid(); as bid) {
           <div class="current-bid">
             <app-game-mode-badge [mode]="bid.mode" size="1.5rem" />
-            <span class="bid-by">{{ t('negotiation.bidBy', { player: bid.player }) }}</span>
+            <span class="bid-by">{{ t('negotiation.bidBy', { player: t(positionKey(bid.player)) }) }}</span>
           </div>
         } @else {
           <p class="no-bid">{{ t('bidDialog.noBidYouOpen') }}</p>
@@ -32,8 +33,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
           <div class="history-list">
             @for (action of reversedHistory(); track $index) {
               <div class="history-row" [class.latest]="$index === 0" [style.opacity]="$index === 0 ? 1 : Math.max(0.4, 1 - $index * 0.15)">
-                <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ getInitial(action.player) }}</span>
-                <span class="player-name" [class.latest-name]="$index === 0">{{ action.player }}</span>
+                <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ translatedInitial(action.player) }}</span>
+                <span class="player-name" [class.latest-name]="$index === 0">{{ positionKey(action.player) | transloco }}</span>
                 <span class="action-badge" [class]="getActionBadgeClass(action)">
                   @if (action.actionType === 'Announce') {
                     <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
@@ -273,8 +274,12 @@ export class BidDialogComponent {
 
   readonly reversedHistory = computed(() => [...this.negotiationHistory()].reverse());
 
-  getInitial(player: PlayerPosition): string {
-    return player.charAt(0).toUpperCase();
+  positionKey(position: PlayerPosition): string {
+    return getPositionTranslationKey(position);
+  }
+
+  translatedInitial(player: PlayerPosition): string {
+    return this.transloco.translate(getPositionTranslationKey(player)).charAt(0).toUpperCase();
   }
 
   formatModeName(mode: GameMode | null): string {
