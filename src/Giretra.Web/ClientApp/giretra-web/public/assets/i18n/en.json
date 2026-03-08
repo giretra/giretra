@@ -11,10 +11,10 @@
   "teams.team1": "Team 1",
   "teams.team2": "Team 2",
 
-  "positions.bottom": "Bottom",
-  "positions.left": "Left",
-  "positions.top": "Top",
-  "positions.right": "Right",
+  "positions.bottom": "You",
+  "positions.left": "Opponent ←",
+  "positions.top": "Teammate",
+  "positions.right": "Opponent →",
 
   "errors.connectionIssue": "Connection issue — your action may not have been sent",
   "errors.serverError": "Server error — please try again",

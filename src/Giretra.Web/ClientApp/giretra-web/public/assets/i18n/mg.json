@@ -11,10 +11,10 @@
   "teams.team1": "Ekipa 1",
   "teams.team2": "Ekipa 2",
 
-  "positions.bottom": "Atsimo",
-  "positions.left": "Andrefana",
-  "positions.top": "Avaratra",
-  "positions.right": "Atsinanana",
+  "positions.bottom": "Ianao",
+  "positions.left": "Mpifaninana ←",
+  "positions.top": "Namana",
+  "positions.right": "Mpifaninana →",
 
   "errors.connectionIssue": "Olana amin'ny fifandraisana — mety tsy lasa ny fihetsikao",
   "errors.serverError": "Fahadisoana amin'ny serveur — andramo indray",
@@ -22,8 +22,8 @@
 
   "game.modes.noTrumps": "Sans A",
   "game.modes.allTrumps": "Tout A",
-  "game.modes.clubs": "Boty",
-  "game.modes.diamonds": "Derne",
+  "game.modes.clubs": "Trefla",
+  "game.modes.diamonds": "Karo",
   "game.modes.hearts": "Kera",
   "game.modes.spades": "Pika",
 
