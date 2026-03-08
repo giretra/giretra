@@ -1,9 +1,10 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { RoomResponse, PlayerSlot } from '../../../../../core/services/api.service';
 import { PlayerPosition, SeatAccessMode } from '../../../../../api/generated/signalr-types.generated';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { LucideAngularModule, Users, Lock, Unlock, Link, UserX } from 'lucide-angular';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { getPositionTranslationKey } from '../../../../../core/utils/position-utils';
 import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/turn-timer.component';
 
 @Component({
@@ -20,7 +21,7 @@ import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/
       <div class="seat-indicators">
         @for (slot of seatSlots(); track slot.position) {
           <div class="seat-wrapper">
-            <div class="seat-circle" [class.filled]="slot.isOccupied" [class.invite-only]="slot.accessMode === 'InviteOnly' && !slot.isOccupied" [title]="slot.position">
+            <div class="seat-circle" [class.filled]="slot.isOccupied" [class.invite-only]="slot.accessMode === 'InviteOnly' && !slot.isOccupied" [title]="translatePosition(slot.position)">
               @if (slot.isOccupied) {
                 <span class="seat-initial">{{ slot.initial }}</span>
               } @else if (slot.accessMode === 'InviteOnly') {
@@ -247,6 +248,8 @@ import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/
   `],
 })
 export class WaitingStageComponent {
+  private readonly transloco = inject(TranslocoService);
+
   readonly UsersIcon = Users;
   readonly LockIcon = Lock;
   readonly UnlockIcon = Unlock;
@@ -281,6 +284,10 @@ export class WaitingStageComponent {
       hasInvite: slot.hasInvite,
     }));
   });
+
+  translatePosition(position: PlayerPosition): string {
+    return this.transloco.translate(getPositionTranslationKey(position));
+  }
 
   onToggleSeatMode(position: PlayerPosition, currentMode: SeatAccessMode): void {
     const newMode = currentMode === SeatAccessMode.InviteOnly

@@ -1,10 +1,11 @@
-import { Component, input, output, computed, signal, effect } from '@angular/core';
+import { Component, input, output, computed, signal, effect, inject } from '@angular/core';
 import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
 import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
+import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
 import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide-angular';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-room-card',
@@ -659,6 +660,8 @@ import { TranslocoDirective } from '@jsverse/transloco';
   `],
 })
 export class RoomCardComponent {
+  private readonly transloco = inject(TranslocoService);
+
   readonly LogInIcon = LogIn;
   readonly EyeIcon = Eye;
   readonly BotIcon = Bot;
@@ -732,9 +735,10 @@ export class RoomCardComponent {
   }
 
   getSlotTitle(slot: PlayerSlot): string {
-    if (!slot.isOccupied) return `${slot.position} (Open)`;
-    if (slot.isAi) return `${slot.position}: AI`;
-    return `${slot.position}: ${slot.playerName}`;
+    const pos = this.transloco.translate(getPositionTranslationKey(slot.position));
+    if (!slot.isOccupied) return `${pos} (Open)`;
+    if (slot.isAi) return `${pos}: AI`;
+    return `${pos}: ${slot.playerName}`;
   }
 
   handleAction(): void {

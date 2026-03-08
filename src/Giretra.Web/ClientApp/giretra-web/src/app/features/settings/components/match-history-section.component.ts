@@ -1,12 +1,13 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { LucideAngularModule, ChevronLeft, ChevronRight, Trophy } from 'lucide-angular';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, TranslocoPipe } from '@jsverse/transloco';
 import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api.service';
+import { getPositionTranslationKey } from '../../../core/utils/position-utils';
 
 @Component({
   selector: 'app-match-history-section',
   standalone: true,
-  imports: [LucideAngularModule, TranslocoDirective],
+  imports: [LucideAngularModule, TranslocoDirective, TranslocoPipe],
   template: `
     <div class="history" *transloco="let t">
       @if (matches().length === 0 && !loading()) {
@@ -56,7 +57,7 @@ import { ApiService, MatchHistoryItemResponse } from '../../../core/services/api
               <div class="players-grid">
                 @for (player of match.players; track player.position) {
                   <div class="player-detail" [class.player-winner]="player.isWinner">
-                    <span class="player-pos">{{ player.position }}</span>
+                    <span class="player-pos">{{ positionKey(player.position) | transloco }}</span>
                     <span class="player-name">{{ player.displayName }}</span>
                     <span class="player-team" [class.team1]="player.team === 'Team1'" [class.team2]="player.team === 'Team2'">
                       {{ player.team === 'Team1' ? t('settings.history.team1') : t('settings.history.team2') }}
@@ -188,6 +189,10 @@ export class MatchHistorySectionComponent implements OnInit {
       this.currentPage.set(this.currentPage() + 1);
       this.loadMatches();
     }
+  }
+
+  positionKey(position: string): string {
+    return getPositionTranslationKey(position as any);
   }
 
   formatDate(iso: string): string {
