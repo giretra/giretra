@@ -127,6 +127,12 @@ public sealed class ValidatingPlayerAgent : IPlayerAgent
         await TimeNotificationAsync(nameof(OnDealStartedAsync), () => _inner.OnDealStartedAsync(matchState));
     }
 
+    public async Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+    {
+        await TimeNotificationAsync(nameof(OnNegotiationCompletedAsync),
+            () => _inner.OnNegotiationCompletedAsync(negotiationState, matchState));
+    }
+
     public async Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         await TimeNotificationAsync(nameof(OnDealEndedAsync),

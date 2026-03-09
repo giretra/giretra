@@ -173,6 +173,10 @@ public sealed class GameManager
         // Negotiation phase
         await PerformNegotiationAsync();
 
+        // Notify all players that negotiation completed
+        await NotifyAllPlayersAsync(p => p.OnNegotiationCompletedAsync(
+            _matchState.CurrentDeal!.Negotiation!, _matchState));
+
         // Final distribution (3 more cards each)
         deal = _matchState.CurrentDeal!.PerformFinalDistribution();
         _matchState = _matchState.WithDeal(deal);

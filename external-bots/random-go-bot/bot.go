@@ -42,6 +42,9 @@ func (b *Bot) ChooseCard(ctx ChooseCardContext) Card {
 // OnDealStarted is called when a new deal begins.
 func (b *Bot) OnDealStarted(ctx DealStartedContext) {}
 
+// OnNegotiationCompleted is called when negotiation completes, before trick-playing begins.
+func (b *Bot) OnNegotiationCompleted(ctx NegotiationCompletedContext) {}
+
 // OnCardPlayed is called after any player (including you) plays a card.
 func (b *Bot) OnCardPlayed(ctx CardPlayedContext) {}
 

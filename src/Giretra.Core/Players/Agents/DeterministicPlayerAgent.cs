@@ -96,6 +96,9 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return Task.CompletedTask;
     }
 
+    public Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+        => Task.CompletedTask;
+
     public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
         => Task.CompletedTask;
 
@@ -727,7 +730,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
         // 1. Cash master cards (guaranteed winners)
         var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
-            .Where(c => validPlays.Contains(c)).ToList();
+            .Where(validPlays.Contains).ToList();
 
         if (masterCards.Count > 0 && !ShouldHoldBackMasters(masterCards, trickNumber, mode))
         {
@@ -799,7 +802,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         int suitCount = masterCards.Select(c => c.Suit).Distinct().Count();
         double masterRatio = masterCards.Count / (8.0 - (trickNumber - 1));
 
-        return suitCount >= 3 && masterRatio < 0.4;
+        return (suitCount >= 3 && masterRatio < 0.4);
     }
 
     /// <summary>

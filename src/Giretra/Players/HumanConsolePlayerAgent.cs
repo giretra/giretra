@@ -141,6 +141,36 @@ public sealed class HumanConsolePlayerAgent : IPlayerAgent
         return Task.CompletedTask;
     }
 
+    public Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+    {
+        var deal = matchState.CurrentDeal!;
+        var modeText = deal.ResolvedMode!.Value.ToString();
+        var announcerTeam = deal.AnnouncerTeam!.Value;
+        var multiplier = deal.Multiplier!.Value;
+
+        var teamText = announcerTeam == Team.Team1 ? "[blue]Team 1 (You + Partner)[/]" : "[green]Team 2 (Left + Right)[/]";
+        var multiplierText = multiplier switch
+        {
+            MultiplierState.Doubled => " [red](Doubled)[/]",
+            MultiplierState.Redoubled => " [red bold](Redoubled)[/]",
+            _ => ""
+        };
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(
+            new Panel(
+                new Markup($"[bold]Game Mode:[/] {modeText}{multiplierText}\n[bold]Announced by:[/] {teamText}"))
+            .Header("[bold yellow]NEGOTIATION RESULT[/]")
+            .Border(BoxBorder.Rounded)
+            .Padding(2, 1));
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[dim]Press any key to continue...[/]");
+        Console.ReadKey(true);
+
+        return Task.CompletedTask;
+    }
+
     public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         AnsiConsole.Clear();

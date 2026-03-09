@@ -15,6 +15,7 @@ from bot_types import (
     ChooseCardContext,
     Card,
     DealStartedContext,
+    NegotiationCompletedContext,
     CardPlayedContext,
     TrickCompletedContext,
     DealEndedContext,
@@ -53,6 +54,9 @@ class Bot:
 
     def on_deal_started(self, ctx: DealStartedContext) -> None:
         """Called when a new deal begins."""
+
+    def on_negotiation_completed(self, ctx: NegotiationCompletedContext) -> None:
+        """Called when negotiation completes, before trick-playing begins."""
 
     def on_card_played(self, ctx: CardPlayedContext) -> None:
         """Called after any player (including you) plays a card."""

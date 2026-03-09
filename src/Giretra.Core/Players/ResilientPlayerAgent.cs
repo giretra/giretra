@@ -102,6 +102,13 @@ public sealed class ResilientPlayerAgent : IPlayerAgent
         catch (Exception ex) { LogObservationError(ex, nameof(OnDealStartedAsync)); }
     }
 
+    public async Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+    {
+        if (_permanentFallback) return;
+        try { await _inner.OnNegotiationCompletedAsync(negotiationState, matchState); }
+        catch (Exception ex) { LogObservationError(ex, nameof(OnNegotiationCompletedAsync)); }
+    }
+
     public async Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState)
     {
         if (_permanentFallback) return;

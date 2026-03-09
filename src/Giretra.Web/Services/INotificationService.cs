@@ -1,4 +1,5 @@
 using Giretra.Core.Cards;
+using Giretra.Core.Negotiation;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
@@ -20,6 +21,11 @@ public interface INotificationService
     /// Notifies all clients that a deal has started.
     /// </summary>
     Task NotifyDealStartedAsync(string gameId, MatchState matchState);
+
+    /// <summary>
+    /// Notifies all clients that negotiation has completed.
+    /// </summary>
+    Task NotifyNegotiationCompletedAsync(string gameId, NegotiationState negotiationState, MatchState matchState);
 
     /// <summary>
     /// Notifies all clients that a deal has ended.
