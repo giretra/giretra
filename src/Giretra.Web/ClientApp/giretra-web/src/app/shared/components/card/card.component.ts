@@ -6,9 +6,13 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
 @Component({
   selector: 'app-card',
   standalone: true,
+  host: {
+    '[class.fluid]': 'width() == null',
+  },
   template: `
     <div
       class="card-container"
+      [class.fluid]="width() == null"
       [class.face-up]="faceUp()"
       [class.face-down]="!faceUp()"
       [class.playable]="playable()"
@@ -34,6 +38,19 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
   styles: [`
     :host {
       display: inline-block;
+    }
+
+    :host(.fluid) {
+      display: block;
+    }
+
+    .card-container.fluid {
+      aspect-ratio: 169.075 / 244.64;
+    }
+
+    .fluid .card-svg {
+      width: 100%;
+      height: 100%;
     }
 
     .card-container {
@@ -106,7 +123,7 @@ export class CardComponent {
   readonly focused = input<boolean>(false);
   readonly trumpSuit = input<CardSuit | null>(null);
   readonly gameMode = input<GameMode | null>(null);
-  readonly width = input<number>(96);
+  readonly width = input<number | null>(96);
 
   // Outputs
   readonly cardClicked = output<Card>();
@@ -117,7 +134,8 @@ export class CardComponent {
 
   // Computed
   readonly height = computed(() => {
-    return Math.round(this.width() * (this.svgHeight / this.svgWidth));
+    const w = this.width();
+    return w != null ? Math.round(w * (this.svgHeight / this.svgWidth)) : null;
   });
 
   readonly svgHref = computed(() => {

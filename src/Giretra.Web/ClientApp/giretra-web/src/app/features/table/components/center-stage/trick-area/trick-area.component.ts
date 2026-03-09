@@ -48,7 +48,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
                   [card]="posCard.card"
                   [faceUp]="true"
                   [gameMode]="gameMode()"
-                  [width]="80"
+                  [width]="null"
                 />
               </div>
             }
@@ -74,8 +74,8 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
 
     .trick-area {
       position: relative;
-      width: 240px;
-      height: 240px;
+      width: 300px;
+      height: 300px;
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
@@ -87,9 +87,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
 
     .card-slot {
       position: absolute;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 33%;
     }
 
     .card-slot.top {
@@ -117,6 +115,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
     }
 
     .card-throw {
+      width: 100%;
       transform: rotate(var(--rotation));
       filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
       animation: throwIn 0.2s ease-out;
