@@ -143,7 +143,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [team1Points]="gameState.team1MatchPoints()"
           [team2Points]="gameState.team2MatchPoints()"
           [totalDeals]="gameState.dealNumber() - 1"
-          [isCreator]="gameState.isCreator()"
           [eloChange]="gameState.myEloChange()"
           [isRanked]="gameState.isRanked()"
           [idleDeadline]="gameState.idleDeadline()"
@@ -594,26 +593,14 @@ export class TableComponent implements OnInit, OnDestroy {
     const clientId = this.session.clientId();
     const pendingAction = this.gameState.pendingActionType();
 
-    // If waiting for ContinueMatch confirmation, call the API first
     if (pendingAction === PendingActionType.ContinueMatch && gameId && clientId) {
-      console.log('[Table] Submitting continue match confirmation');
       this.waitingForContinue.set(true);
       this.api.submitContinueMatch(gameId, clientId).subscribe({
-        next: () => {
-          console.log('[Table] Continue match submitted successfully');
-          // After confirming, start a new game
-          this.onStartGame();
-        },
         error: (err) => {
           console.error('Failed to submit continue match', err);
           this.waitingForContinue.set(false);
-          // On error, still try to start new game
-          this.onStartGame();
         },
       });
-    } else {
-      // No ContinueMatch action pending, just start new game
-      this.onStartGame();
     }
   }
 

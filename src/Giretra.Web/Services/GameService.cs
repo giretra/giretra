@@ -177,6 +177,13 @@ public sealed class GameService : IGameService
             // Persist match to database after room is reset (non-blocking for Play Again)
             if (session.IsRanked && session.CompletedAt != null)
                 await PersistMatchAsync(session);
+
+            // Auto-restart if any human player actively clicked "Play Again"
+            if (!session.ContinueMatchConfirmed.IsEmpty)
+            {
+                var roomService = _serviceProvider.GetRequiredService<IRoomService>();
+                roomService.AutoStartGame(room.RoomId);
+            }
         });
 
         return session;
@@ -365,6 +372,9 @@ public sealed class GameService : IGameService
 
         if (pending.ActionType != PendingActionType.ContinueMatch)
             return false;
+
+        // Record that this player actively confirmed (clicked "Play Again")
+        session.ContinueMatchConfirmed[playerPosition.Value] = true;
 
         // Complete the pending action
         pending.ContinueMatchTcs?.TrySetResult(true);

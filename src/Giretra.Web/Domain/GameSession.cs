@@ -53,6 +53,12 @@ public sealed class GameSession
     public ConcurrentDictionary<PlayerPosition, PendingAction> PendingActions { get; } = new();
 
     /// <summary>
+    /// Tracks which human players actively clicked "Play Again" (vs timing out).
+    /// Used to decide whether to auto-restart a new game.
+    /// </summary>
+    public ConcurrentDictionary<PlayerPosition, bool> ContinueMatchConfirmed { get; } = new();
+
+    /// <summary>
     /// Gets the first pending action, if any (backward compat for game state responses).
     /// </summary>
     public PendingAction? PendingAction => PendingActions.Values.FirstOrDefault();

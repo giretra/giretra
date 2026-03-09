@@ -93,4 +93,9 @@ public interface IRoomService
     /// Resets a room to Waiting state (after game ends) and starts the idle timeout timer.
     /// </summary>
     void ResetToWaiting(string roomId);
+
+    /// <summary>
+    /// Auto-starts a new game without owner check (used when players click "Play Again").
+    /// </summary>
+    (StartGameResponse? Response, string? Error) AutoStartGame(string roomId);
 }
