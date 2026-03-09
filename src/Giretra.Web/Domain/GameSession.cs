@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Giretra.Core;
 using Giretra.Core.Players;
 using Giretra.Core.State;
@@ -47,9 +48,14 @@ public sealed class GameSession
     public GameManager? GameManager { get; set; }
 
     /// <summary>
-    /// The current pending action, if any.
+    /// Per-player pending actions (supports concurrent confirms for multiple humans).
     /// </summary>
-    public PendingAction? PendingAction { get; set; }
+    public ConcurrentDictionary<PlayerPosition, PendingAction> PendingActions { get; } = new();
+
+    /// <summary>
+    /// Gets the first pending action, if any (backward compat for game state responses).
+    /// </summary>
+    public PendingAction? PendingAction => PendingActions.Values.FirstOrDefault();
 
     /// <summary>
     /// The background task running the game loop.

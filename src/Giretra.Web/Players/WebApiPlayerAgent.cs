@@ -48,16 +48,17 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         var tcs = new TaskCompletionSource<(int position, bool fromTop)>();
 
-        _session.PendingAction = new PendingAction
+        var pending = new PendingAction
         {
             ActionType = PendingActionType.Cut,
             Player = Position,
             CutTcs = tcs,
             TimeoutDuration = _timeout
         };
+        _session.PendingActions[Position] = pending;
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut, _session.PendingAction.TimeoutAt);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut, pending.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -73,7 +74,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         }
         finally
         {
-            _session.PendingAction = null;
+            _session.PendingActions.TryRemove(Position, out _);
         }
     }
 
@@ -85,7 +86,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         var tcs = new TaskCompletionSource<NegotiationAction>();
 
-        _session.PendingAction = new PendingAction
+        var pending = new PendingAction
         {
             ActionType = PendingActionType.Negotiate,
             Player = Position,
@@ -93,9 +94,10 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             ValidNegotiationActions = validActions,
             TimeoutDuration = _timeout
         };
+        _session.PendingActions[Position] = pending;
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate, _session.PendingAction.TimeoutAt);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate, pending.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -112,7 +114,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         }
         finally
         {
-            _session.PendingAction = null;
+            _session.PendingActions.TryRemove(Position, out _);
         }
     }
 
@@ -124,7 +126,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         var tcs = new TaskCompletionSource<Card>();
 
-        _session.PendingAction = new PendingAction
+        var pending = new PendingAction
         {
             ActionType = PendingActionType.PlayCard,
             Player = Position,
@@ -132,9 +134,10 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             ValidCards = validPlays,
             TimeoutDuration = _timeout
         };
+        _session.PendingActions[Position] = pending;
 
         // Notify the player it's their turn
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard, _session.PendingAction.TimeoutAt);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard, pending.TimeoutAt);
 
         // Wait for the action with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -151,7 +154,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         }
         finally
         {
-            _session.PendingAction = null;
+            _session.PendingActions.TryRemove(Position, out _);
         }
     }
 
@@ -189,16 +192,17 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         var tcs = new TaskCompletionSource<bool>();
 
-        _session.PendingAction = new PendingAction
+        var pending = new PendingAction
         {
             ActionType = PendingActionType.ContinueDeal,
             Player = Position,
             ContinueDealTcs = tcs,
             TimeoutDuration = _timeout
         };
+        _session.PendingActions[Position] = pending;
 
         // Notify the player to confirm continuation
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal, _session.PendingAction.TimeoutAt);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal, pending.TimeoutAt);
 
         // Wait for the confirmation with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -213,7 +217,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         }
         finally
         {
-            _session.PendingAction = null;
+            _session.PendingActions.TryRemove(Position, out _);
         }
     }
 
@@ -221,16 +225,17 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     {
         var tcs = new TaskCompletionSource<bool>();
 
-        _session.PendingAction = new PendingAction
+        var pending = new PendingAction
         {
             ActionType = PendingActionType.ContinueMatch,
             Player = Position,
             ContinueMatchTcs = tcs,
             TimeoutDuration = _timeout
         };
+        _session.PendingActions[Position] = pending;
 
         // Notify the player to confirm continuation
-        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, _session.PendingAction.TimeoutAt);
+        await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, pending.TimeoutAt);
 
         // Wait for the confirmation with timeout
         using var cts = new CancellationTokenSource(_timeout);
@@ -245,7 +250,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         }
         finally
         {
-            _session.PendingAction = null;
+            _session.PendingActions.TryRemove(Position, out _);
         }
     }
 }

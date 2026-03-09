@@ -218,21 +218,21 @@ public sealed class GameService : IGameService
         IReadOnlyList<ValidActionResponse>? validActions = null;
         PendingActionType? pendingType = null;
 
-        var isMyTurn = session.PendingAction?.Player == position.Value;
-        if (isMyTurn && session.PendingAction != null)
+        var isMyTurn = session.PendingActions.TryGetValue(position.Value, out var myPending);
+        if (isMyTurn && myPending != null)
         {
-            pendingType = session.PendingAction.ActionType;
+            pendingType = myPending.ActionType;
 
-            if (session.PendingAction.ValidCards != null)
+            if (myPending.ValidCards != null)
             {
-                validCards = session.PendingAction.ValidCards
+                validCards = myPending.ValidCards
                     .Select(CardResponse.FromCard)
                     .ToList();
             }
 
-            if (session.PendingAction.ValidNegotiationActions != null)
+            if (myPending.ValidNegotiationActions != null)
             {
-                validActions = session.PendingAction.ValidNegotiationActions
+                validActions = myPending.ValidNegotiationActions
                     .Select(a => MapToValidActionResponse(a))
                     .ToList();
             }
@@ -256,12 +256,14 @@ public sealed class GameService : IGameService
         if (session == null)
             return false;
 
-        var pending = session.PendingAction;
-        if (pending == null || pending.ActionType != PendingActionType.Cut)
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null)
             return false;
 
-        var playerPosition = session.GetPositionForClient(clientId);
-        if (playerPosition == null || playerPosition.Value != pending.Player)
+        if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
+            return false;
+
+        if (pending.ActionType != PendingActionType.Cut)
             return false;
 
         // Validate cut position
@@ -279,12 +281,14 @@ public sealed class GameService : IGameService
         if (session == null)
             return false;
 
-        var pending = session.PendingAction;
-        if (pending == null || pending.ActionType != PendingActionType.Negotiate)
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null)
             return false;
 
-        var playerPosition = session.GetPositionForClient(clientId);
-        if (playerPosition == null || playerPosition.Value != pending.Player)
+        if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
+            return false;
+
+        if (pending.ActionType != PendingActionType.Negotiate)
             return false;
 
         // Validate the action is one of the valid options
@@ -306,12 +310,14 @@ public sealed class GameService : IGameService
         if (session == null)
             return false;
 
-        var pending = session.PendingAction;
-        if (pending == null || pending.ActionType != PendingActionType.PlayCard)
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null)
             return false;
 
-        var playerPosition = session.GetPositionForClient(clientId);
-        if (playerPosition == null || playerPosition.Value != pending.Player)
+        if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
+            return false;
+
+        if (pending.ActionType != PendingActionType.PlayCard)
             return false;
 
         // Validate the card is one of the valid options
@@ -329,12 +335,14 @@ public sealed class GameService : IGameService
         if (session == null)
             return false;
 
-        var pending = session.PendingAction;
-        if (pending == null || pending.ActionType != PendingActionType.ContinueDeal)
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null)
             return false;
 
-        var playerPosition = session.GetPositionForClient(clientId);
-        if (playerPosition == null || playerPosition.Value != pending.Player)
+        if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
+            return false;
+
+        if (pending.ActionType != PendingActionType.ContinueDeal)
             return false;
 
         // Complete the pending action
@@ -348,12 +356,14 @@ public sealed class GameService : IGameService
         if (session == null)
             return false;
 
-        var pending = session.PendingAction;
-        if (pending == null || pending.ActionType != PendingActionType.ContinueMatch)
+        var playerPosition = session.GetPositionForClient(clientId);
+        if (playerPosition == null)
             return false;
 
-        var playerPosition = session.GetPositionForClient(clientId);
-        if (playerPosition == null || playerPosition.Value != pending.Player)
+        if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
+            return false;
+
+        if (pending.ActionType != PendingActionType.ContinueMatch)
             return false;
 
         // Complete the pending action
@@ -587,8 +597,7 @@ public sealed class GameService : IGameService
         }
 
         // If there's a pending action for this player, re-notify with new clientId
-        var pending = session.PendingAction;
-        if (pending != null && pending.Player == position.Value)
+        if (session.PendingActions.TryGetValue(position.Value, out var pending))
         {
             _ = _notifications.NotifyYourTurnAsync(
                 gameId, newClientId, position.Value, pending.ActionType, pending.TimeoutAt);
@@ -643,9 +652,8 @@ public sealed class GameService : IGameService
         // Cancel the game loop
         session.CancellationTokenSource.Cancel();
 
-        // Force-complete any pending TaskCompletionSource so the game loop can unblock
-        var pending = session.PendingAction;
-        if (pending != null)
+        // Force-complete any pending TaskCompletionSources so the game loop can unblock
+        foreach (var pending in session.PendingActions.Values)
         {
             pending.CutTcs?.TrySetCanceled();
             pending.NegotiationTcs?.TrySetCanceled();
@@ -653,6 +661,7 @@ public sealed class GameService : IGameService
             pending.ContinueDealTcs?.TrySetCanceled();
             pending.ContinueMatchTcs?.TrySetCanceled();
         }
+        session.PendingActions.Clear();
 
         // Wait briefly for the game loop to exit
         if (session.GameLoopTask != null)
