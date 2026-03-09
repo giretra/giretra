@@ -580,6 +580,37 @@ public sealed class RoomService : IRoomService
         ScheduleDelayedRemoval(room.RoomId, client.ClientId);
     }
 
+    public (StartGameResponse? Response, string? Error) AutoStartGame(string roomId)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null)
+            return (null, "Room not found");
+
+        if (room.Status != RoomStatus.Waiting)
+            return (null, $"Room is not in waiting state (current: {room.Status})");
+
+        if (room.PlayerCount == 0)
+            return (null, "No human players in the room");
+
+        CancelIdleCleanup(roomId);
+
+        var gameSession = _gameService.CreateGame(room);
+        if (gameSession == null)
+            return (null, "Failed to create game session");
+
+        room.Status = RoomStatus.Playing;
+        room.GameSessionId = gameSession.GameId;
+        _roomRepository.Update(room);
+
+        _ = _notifications.NotifyGameStartedAsync(roomId, gameSession.GameId);
+
+        return (new StartGameResponse
+        {
+            GameId = gameSession.GameId,
+            RoomId = roomId
+        }, null);
+    }
+
     public void ResetToWaiting(string roomId)
     {
         var room = _roomRepository.GetById(roomId);

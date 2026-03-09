@@ -70,19 +70,17 @@ import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/
         }
 
         <div class="actions">
-          @if (isCreator()) {
-            <button
-              hlmBtn
-              variant="default"
-              [disabled]="waiting()"
-              (click)="playAgain.emit()"
-            >
-              {{ waiting() ? t('matchEnd.waitingForOthers') : t('matchEnd.playAgain') }}
-            </button>
-          }
           <button
             hlmBtn
-            [variant]="isCreator() ? 'secondary' : 'default'"
+            variant="default"
+            [disabled]="waiting()"
+            (click)="playAgain.emit()"
+          >
+            {{ waiting() ? t('matchEnd.waitingForOthers') : t('matchEnd.playAgain') }}
+          </button>
+          <button
+            hlmBtn
+            variant="secondary"
             (click)="leaveTable.emit()"
           >
             {{ t('matchEnd.leaveTable') }}
@@ -278,7 +276,6 @@ export class MatchEndOverlayComponent {
   readonly team1Points = input<number>(0);
   readonly team2Points = input<number>(0);
   readonly totalDeals = input<number>(0);
-  readonly isCreator = input<boolean>(false);
   readonly eloChange = input<EloChangeResponse | null>(null);
   readonly isRanked = input<boolean>(false);
   readonly idleDeadline = input<Date | null>(null);
