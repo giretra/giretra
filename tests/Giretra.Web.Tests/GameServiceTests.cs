@@ -308,7 +308,7 @@ public sealed class GameServiceTests
         var session = _gameService.CreateGame(room)!;
 
         // Manually create a cut pending action for testing
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Cut,
             Player = PlayerPosition.Bottom,
@@ -346,7 +346,7 @@ public sealed class GameServiceTests
         var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
         var session = _gameService.CreateGame(room)!;
 
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.PlayCard,
             Player = PlayerPosition.Bottom,
@@ -368,7 +368,7 @@ public sealed class GameServiceTests
         var wrongClientId = room.PlayerSlots[PlayerPosition.Top]!.ClientId;
         var session = _gameService.CreateGame(room)!;
 
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Cut,
             Player = PlayerPosition.Bottom,
@@ -396,7 +396,7 @@ public sealed class GameServiceTests
         var session = _gameService.CreateGame(room)!;
 
         var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom) };
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Negotiate,
             Player = PlayerPosition.Bottom,
@@ -421,7 +421,7 @@ public sealed class GameServiceTests
         var session = _gameService.CreateGame(room)!;
 
         var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom) };
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Negotiate,
             Player = PlayerPosition.Bottom,
@@ -465,7 +465,7 @@ public sealed class GameServiceTests
         var session = _gameService.CreateGame(room)!;
 
         var validCard = new Card(CardRank.Ace, CardSuit.Spades);
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.PlayCard,
             Player = PlayerPosition.Bottom,
@@ -491,7 +491,7 @@ public sealed class GameServiceTests
 
         var validCard = new Card(CardRank.Ace, CardSuit.Spades);
         var invalidCard = new Card(CardRank.Seven, CardSuit.Hearts);
-        session.PendingAction = new PendingAction
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.PlayCard,
             Player = PlayerPosition.Bottom,
@@ -606,9 +606,9 @@ public sealed class GameServiceTests
         }
 
         // If no pending action, create one manually for testing
-        if (session.PendingAction == null || session.PendingAction.ActionType != PendingActionType.Cut)
+        if (!session.PendingActions.TryGetValue(PlayerPosition.Bottom, out var pa) || pa.ActionType != PendingActionType.Cut)
         {
-            session.PendingAction = new PendingAction
+            session.PendingActions[PlayerPosition.Bottom] = new PendingAction
             {
                 ActionType = PendingActionType.Cut,
                 Player = PlayerPosition.Bottom,

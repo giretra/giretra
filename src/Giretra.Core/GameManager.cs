@@ -141,7 +141,7 @@ public sealed class GameManager
 
         // Wait for players to confirm before returning from match
         _logger.LogDebug("Waiting for player confirmation after match ends");
-        await NotifyAllPlayersAsync(p => p.ConfirmContinueMatchAsync(_matchState));
+        await ConfirmAllPlayersAsync(p => p.ConfirmContinueMatchAsync(_matchState));
 
         return _matchState;
     }
@@ -197,7 +197,7 @@ public sealed class GameManager
         if (!_matchState.IsComplete)
         {
             _logger.LogDebug("Waiting for player confirmation before starting next deal");
-            await NotifyAllPlayersAsync(p => p.ConfirmContinueDealAsync(_matchState));
+            await ConfirmAllPlayersAsync(p => p.ConfirmContinueDealAsync(_matchState));
         }
     }
 
@@ -411,6 +411,31 @@ public sealed class GameManager
 
         // Same suit: compare strength
         return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
+    }
+
+    /// <summary>
+    /// Runs an action on all players concurrently via Task.WhenAll.
+    /// Used for confirmations (ContinueDeal/ContinueMatch) where all players
+    /// need to respond independently — sequential calls would deadlock with
+    /// multiple human players sharing a single PendingAction slot.
+    /// </summary>
+    private async Task ConfirmAllPlayersAsync(Func<IPlayerAgent, Task> action)
+    {
+        var tasks = _players.Values.Select(async player =>
+        {
+            try
+            {
+                await action(player);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Confirmation failed for player at {Position}, continuing with remaining players",
+                    player.Position);
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     /// <summary>
