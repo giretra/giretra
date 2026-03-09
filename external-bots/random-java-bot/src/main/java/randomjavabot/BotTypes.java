@@ -301,6 +301,10 @@ record ChooseCardContext(
 @JsonIgnoreProperties(ignoreUnknown = true)
 record DealStartedContext(MatchState matchState) {}
 
+/** Notification: negotiation phase completed, trick-playing phase is about to begin. */
+@JsonIgnoreProperties(ignoreUnknown = true)
+record NegotiationCompletedContext(NegotiationState negotiationState, MatchState matchState) {}
+
 /** Notification: a player (any, including you) played a card. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 record CardPlayedContext(

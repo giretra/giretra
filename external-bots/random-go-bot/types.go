@@ -304,6 +304,13 @@ type DealStartedContext struct {
 	MatchState MatchState `json:"matchState"`
 }
 
+// NegotiationCompletedContext is a notification that the negotiation phase completed,
+// before the trick-playing phase begins.
+type NegotiationCompletedContext struct {
+	NegotiationState NegotiationState `json:"negotiationState"`
+	MatchState       MatchState       `json:"matchState"`
+}
+
 // CardPlayedContext is a notification that a player (any, including you) played a card.
 type CardPlayedContext struct {
 	// Player is the player who played the card.

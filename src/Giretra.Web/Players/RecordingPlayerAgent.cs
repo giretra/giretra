@@ -65,6 +65,9 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
         return _inner.OnDealStartedAsync(matchState);
     }
 
+    public Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+        => _inner.OnNegotiationCompletedAsync(negotiationState, matchState);
+
     public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
         => _inner.OnDealEndedAsync(result, handState, matchState);
 

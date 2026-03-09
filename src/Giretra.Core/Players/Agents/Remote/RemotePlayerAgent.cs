@@ -72,6 +72,12 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
         await _client.NotifyDealStartedAsync(_sessionId!, matchState);
     }
 
+    public async Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+    {
+        if (_sessionId is null || !IsNotificationEnabled("negotiation-completed")) return;
+        await _client.NotifyNegotiationCompletedAsync(_sessionId, negotiationState, matchState);
+    }
+
     public async Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         if (_sessionId is null || !IsNotificationEnabled("deal-ended")) return;

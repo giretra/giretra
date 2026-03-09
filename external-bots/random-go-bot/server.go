@@ -109,6 +109,10 @@ func main() {
 			var ctx DealStartedContext
 			json.NewDecoder(r.Body).Decode(&ctx)
 			bot.OnDealStarted(ctx)
+		case "negotiation-completed":
+			var ctx NegotiationCompletedContext
+			json.NewDecoder(r.Body).Decode(&ctx)
+			bot.OnNegotiationCompleted(ctx)
 		case "card-played":
 			var ctx CardPlayedContext
 			json.NewDecoder(r.Body).Decode(&ctx)

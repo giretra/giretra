@@ -349,6 +349,13 @@ public class DealStartedContext
     public MatchState MatchState { get; set; } = new();
 }
 
+/// <summary>Notification: negotiation phase completed, trick-playing phase is about to begin.</summary>
+public class NegotiationCompletedContext
+{
+    public NegotiationState NegotiationState { get; set; } = new();
+    public MatchState MatchState { get; set; } = new();
+}
+
 /// <summary>Notification: a player (any, including you) played a card.</summary>
 public class CardPlayedContext
 {
