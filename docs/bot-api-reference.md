@@ -466,7 +466,52 @@ POST /api/sessions/{sessionId}/notify/deal-started
 
 ---
 
-### 7. Card Played
+### 7. Negotiation Completed
+
+Called after the negotiation phase completes, before the final card distribution and trick-playing phase. The bot can use this to observe the resolved game mode, announcer team, multiplier, and the full negotiation action history.
+
+```
+POST /api/sessions/{sessionId}/notify/negotiation-completed
+```
+
+**Request:**
+
+```json
+{
+  "negotiationState": {
+    "dealer": "Bottom",
+    "currentPlayer": "Left",
+    "currentBid": "AllTrumps",
+    "currentBidder": "Top",
+    "consecutiveAccepts": 3,
+    "hasDoubleOccurred": false,
+    "actions": [
+      { "type": "Announcement", "player": "Left", "mode": "ColourHearts" },
+      { "type": "Accept", "player": "Top" },
+      { "type": "Announcement", "player": "Top", "mode": "AllTrumps" },
+      { "type": "Accept", "player": "Right" },
+      { "type": "Accept", "player": "Bottom" },
+      { "type": "Accept", "player": "Left" }
+    ],
+    "doubledModes": {},
+    "redoubledModes": [],
+    "teamColourAnnouncements": { "Team2": "ColourHearts" }
+  },
+  "matchState": { ... }
+}
+
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `negotiationState` | NegotiationState | The completed negotiation with full action history |
+| `matchState` | MatchState | Current match state (`currentDeal` has `resolvedMode`, `announcerTeam`, `multiplier`) |
+
+**Response:** `200 OK` (body ignored)
+
+---
+
+### 8. Card Played
 
 Called after every card is played by any player (including the bot itself).
 
@@ -496,7 +541,7 @@ POST /api/sessions/{sessionId}/notify/card-played
 
 ---
 
-### 8. Trick Completed
+### 9. Trick Completed
 
 Called after each trick completes (all 4 cards played).
 
@@ -536,7 +581,7 @@ POST /api/sessions/{sessionId}/notify/trick-completed
 
 ---
 
-### 9. Deal Ended
+### 10. Deal Ended
 
 Called when a deal completes (all 8 tricks played and scored).
 
@@ -564,7 +609,7 @@ POST /api/sessions/{sessionId}/notify/deal-ended
 
 ---
 
-### 10. Match Ended
+### 11. Match Ended
 
 Called when the match ends (a team reached the target score).
 
@@ -630,6 +675,8 @@ The engine enforces timeouts on all HTTP calls. Timeout values are configured on
 │   │   │   POST .../choose-negotiation-action         │ │ │
 │   │   └──────────────────────────────────────────────┘ │ │
 │   │                                                    │ │
+│   │   POST .../notify/negotiation-completed            │ │
+│   │                                                    │ │
 │   │   ┌──────────────────────────────────────────────┐ │ │
 │   │   │ Trick (repeated 8 times)                     │ │ │
 │   │   │   POST .../choose-card         (per player)  │ │ │
@@ -653,7 +700,7 @@ The engine enforces timeouts on all HTTP calls. Timeout values are configured on
 
 1. **Stateless bots**: If your bot is stateless (evaluates only the current request), you may ignore all `/notify/*` events — just return `200 OK` immediately. The decision endpoints include all necessary context.
 
-2. **Stateful bots**: Use `notify/deal-started` to reset per-deal state. Use `notify/card-played` to track played cards and infer opponent voids. Use `notify/trick-completed` to reset per-trick state.
+2. **Stateful bots**: Use `notify/deal-started` to reset per-deal state. Use `notify/negotiation-completed` to observe the resolved game mode and full bidding history. Use `notify/card-played` to track played cards and infer opponent voids. Use `notify/trick-completed` to reset per-trick state.
 
 3. **Concurrency**: Your server will receive requests for multiple sessions (different games) concurrently. Ensure session state is properly isolated.
 

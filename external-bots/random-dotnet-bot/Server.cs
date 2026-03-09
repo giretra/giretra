@@ -84,6 +84,12 @@ app.MapPost("/api/sessions/{sessionId}/notify/{eventName}",
                 bot.OnDealStarted(ctx!);
                 break;
             }
+            case "negotiation-completed":
+            {
+                var ctx = await req.ReadFromJsonAsync<NegotiationCompletedContext>();
+                bot.OnNegotiationCompleted(ctx!);
+                break;
+            }
             case "card-played":
             {
                 var ctx = await req.ReadFromJsonAsync<CardPlayedContext>();

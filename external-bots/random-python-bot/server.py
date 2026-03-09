@@ -63,6 +63,7 @@ async def notify(request: web.Request) -> web.Response:
 
     handlers = {
         "deal-started": bot.on_deal_started,
+        "negotiation-completed": bot.on_negotiation_completed,
         "card-played": bot.on_card_played,
         "trick-completed": bot.on_trick_completed,
         "deal-ended": bot.on_deal_ended,

@@ -46,6 +46,9 @@ public class Bot {
     /** Called when a new deal begins. */
     public void onDealStarted(DealStartedContext ctx) {}
 
+    /** Called when negotiation completes, before trick-playing begins. */
+    public void onNegotiationCompleted(NegotiationCompletedContext ctx) {}
+
     /** Called after any player (including you) plays a card. */
     public void onCardPlayed(CardPlayedContext ctx) {}
 

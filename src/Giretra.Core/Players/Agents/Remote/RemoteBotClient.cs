@@ -142,6 +142,17 @@ public sealed class RemoteBotClient : IDisposable
         await PostNotificationAsync($"api/sessions/{sessionId}/notify/deal-started", request);
     }
 
+    public async Task NotifyNegotiationCompletedAsync(
+        string sessionId, NegotiationState negotiationState, MatchState matchState)
+    {
+        var request = new
+        {
+            negotiationState = MapNegotiationState(negotiationState),
+            matchState = MapMatchState(matchState)
+        };
+        await PostNotificationAsync($"api/sessions/{sessionId}/notify/negotiation-completed", request);
+    }
+
     public async Task NotifyCardPlayedAsync(
         string sessionId, PlayerPosition player, Card card, HandState handState, MatchState matchState)
     {
