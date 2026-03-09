@@ -134,6 +134,7 @@
   "dealSummary.cards.nine": "Neuf",
   "dealSummary.viewTrickHistory": "Voir les Plis",
   "dealSummary.trickHistory": "Historique des Plis",
+  "dealSummary.waitingForOthers": "En attente des autres...",
 
   "matchEnd.youWin": "Victoire !",
   "matchEnd.gameOver": "Fin de Partie",
@@ -141,6 +142,7 @@
   "matchEnd.dealsPlayed": "{{count}} donnes jouées",
   "matchEnd.playAgain": "Rejouer",
   "matchEnd.leaveTable": "Quitter la Table",
+  "matchEnd.waitingForOthers": "En attente des autres...",
   "matchEnd.rating": "Classement",
   "matchEnd.autoClose": "Départ auto dans",
 

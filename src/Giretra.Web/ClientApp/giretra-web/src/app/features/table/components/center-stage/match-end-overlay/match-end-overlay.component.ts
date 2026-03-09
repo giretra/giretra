@@ -74,9 +74,10 @@ import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/
             <button
               hlmBtn
               variant="default"
+              [disabled]="waiting()"
               (click)="playAgain.emit()"
             >
-              {{ t('matchEnd.playAgain') }}
+              {{ waiting() ? t('matchEnd.waitingForOthers') : t('matchEnd.playAgain') }}
             </button>
           }
           <button
@@ -281,6 +282,7 @@ export class MatchEndOverlayComponent {
   readonly eloChange = input<EloChangeResponse | null>(null);
   readonly isRanked = input<boolean>(false);
   readonly idleDeadline = input<Date | null>(null);
+  readonly waiting = input<boolean>(false);
 
   readonly playAgain = output<void>();
   readonly leaveTable = output<void>();

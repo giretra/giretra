@@ -134,6 +134,7 @@
   "dealSummary.cards.nine": "Nine",
   "dealSummary.viewTrickHistory": "View Tricks",
   "dealSummary.trickHistory": "Trick History",
+  "dealSummary.waitingForOthers": "Waiting for others...",
 
   "matchEnd.youWin": "You Win!",
   "matchEnd.gameOver": "Game Over",
@@ -141,6 +142,7 @@
   "matchEnd.dealsPlayed": "{{count}} deals played",
   "matchEnd.playAgain": "Play Again",
   "matchEnd.leaveTable": "Leave Table",
+  "matchEnd.waitingForOthers": "Waiting for others...",
   "matchEnd.rating": "Rating",
   "matchEnd.autoClose": "Auto-leave in",
 
