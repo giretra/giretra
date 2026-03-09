@@ -63,6 +63,14 @@ public interface IPlayerAgent
     Task OnDealStartedAsync(MatchState matchState);
 
     /// <summary>
+    /// Called when negotiation completes, before the final card distribution and trick-playing phase.
+    /// Allows the player to observe the full negotiation history and resolved game mode.
+    /// </summary>
+    /// <param name="negotiationState">The completed negotiation state with all actions taken.</param>
+    /// <param name="matchState">The current state of the match (CurrentDeal has ResolvedMode, AnnouncerTeam, Multiplier).</param>
+    Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState);
+
+    /// <summary>
     /// Called when a deal ends, allowing the player to observe the result.
     /// </summary>
     /// <param name="result">The result of the completed deal.</param>

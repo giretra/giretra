@@ -50,6 +50,9 @@ public class Bot
     /// <summary>Called when a new deal begins.</summary>
     public virtual void OnDealStarted(DealStartedContext ctx) { }
 
+    /// <summary>Called when negotiation completes, before trick-playing begins.</summary>
+    public virtual void OnNegotiationCompleted(NegotiationCompletedContext ctx) { }
+
     /// <summary>Called after any player (including you) plays a card.</summary>
     public virtual void OnCardPlayed(CardPlayedContext ctx) { }
 

@@ -145,6 +145,7 @@ public class Server {
     private static void handleNotify(HttpExchange exchange, Bot bot, String event) throws IOException {
         switch (event) {
             case "deal-started" -> bot.onDealStarted(readBody(exchange, DealStartedContext.class));
+            case "negotiation-completed" -> bot.onNegotiationCompleted(readBody(exchange, NegotiationCompletedContext.class));
             case "card-played" -> bot.onCardPlayed(readBody(exchange, CardPlayedContext.class));
             case "trick-completed" -> bot.onTrickCompleted(readBody(exchange, TrickCompletedContext.class));
             case "deal-ended" -> bot.onDealEnded(readBody(exchange, DealEndedContext.class));

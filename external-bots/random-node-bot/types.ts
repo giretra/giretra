@@ -306,6 +306,12 @@ export interface DealStartedContext {
   matchState: MatchState;
 }
 
+/** Notification: negotiation phase completed, trick-playing phase is about to begin. */
+export interface NegotiationCompletedContext {
+  negotiationState: NegotiationState;
+  matchState: MatchState;
+}
+
 /** Notification: a player (any, including you) played a card. */
 export interface CardPlayedContext {
   /** The player who played the card. */

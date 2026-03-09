@@ -1,5 +1,6 @@
 using Giretra.Core.Cards;
 using Giretra.Core.GameModes;
+using Giretra.Core.Negotiation;
 using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
@@ -70,6 +71,23 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealStarted", ev);
+    }
+
+    public async Task NotifyNegotiationCompletedAsync(string gameId, NegotiationState negotiationState, MatchState matchState)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null) return;
+
+        var deal = matchState.CurrentDeal!;
+        var ev = new NegotiationCompletedEvent
+        {
+            GameId = gameId,
+            ResolvedMode = deal.ResolvedMode!.Value,
+            AnnouncerTeam = deal.AnnouncerTeam!.Value,
+            Multiplier = deal.Multiplier!.Value
+        };
+
+        await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("NegotiationCompleted", ev);
     }
 
     public async Task NotifyDealEndedAsync(string gameId, DealResult result, HandState handState, MatchState matchState)

@@ -160,6 +160,11 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyDealStartedAsync(_session.GameId, matchState);
     }
 
+    public async Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
+    {
+        await _notifications.NotifyNegotiationCompletedAsync(_session.GameId, negotiationState, matchState);
+    }
+
     public async Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
         await _notifications.NotifyDealEndedAsync(_session.GameId, result, handState, matchState);

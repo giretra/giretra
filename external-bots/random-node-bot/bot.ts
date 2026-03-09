@@ -13,6 +13,7 @@ import {
   ChooseCardContext,
   Card,
   DealStartedContext,
+  NegotiationCompletedContext,
   CardPlayedContext,
   TrickCompletedContext,
   DealEndedContext,
@@ -50,6 +51,9 @@ export class Bot {
 
   /** Called when a new deal begins. */
   onDealStarted(ctx: DealStartedContext): void {}
+
+  /** Called when negotiation completes, before trick-playing begins. */
+  onNegotiationCompleted(ctx: NegotiationCompletedContext): void {}
 
   /** Called after any player (including you) plays a card. */
   onCardPlayed(ctx: CardPlayedContext): void {}

@@ -45,6 +45,7 @@ public sealed class DelayedPlayerAgent : IPlayerAgent
 
     // Lifecycle/observation methods — no delay needed
     public Task OnDealStartedAsync(MatchState matchState) => _inner.OnDealStartedAsync(matchState);
+    public Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState) => _inner.OnNegotiationCompletedAsync(negotiationState, matchState);
     public Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState) => _inner.OnCardPlayedAsync(player, card, handState, matchState);
     public Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState) => _inner.OnTrickCompletedAsync(completedTrick, winner, handState, matchState);
     public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState) => _inner.OnDealEndedAsync(result, handState, matchState);

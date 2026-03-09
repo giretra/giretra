@@ -10,6 +10,7 @@ import {
   ChooseNegotiationActionContext,
   ChooseCardContext,
   DealStartedContext,
+  NegotiationCompletedContext,
   CardPlayedContext,
   TrickCompletedContext,
   DealEndedContext,
@@ -110,6 +111,9 @@ const server = http.createServer(async (req, res) => {
       switch (notifyMatch[2]) {
         case "deal-started":
           bot.onDealStarted(body as DealStartedContext);
+          break;
+        case "negotiation-completed":
+          bot.onNegotiationCompleted(body as NegotiationCompletedContext);
           break;
         case "card-played":
           bot.onCardPlayed(body as CardPlayedContext);

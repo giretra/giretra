@@ -346,6 +346,13 @@ class DealStartedContext(TypedDict):
     matchState: MatchState
 
 
+class NegotiationCompletedContext(TypedDict):
+    """Notification: negotiation phase completed, trick-playing phase is about to begin."""
+
+    negotiationState: NegotiationState
+    matchState: MatchState
+
+
 class CardPlayedContext(TypedDict):
     """Notification: a player (any, including you) played a card."""
 
