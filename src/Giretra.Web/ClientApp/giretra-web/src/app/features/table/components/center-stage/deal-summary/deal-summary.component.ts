@@ -120,12 +120,12 @@ interface BreakdownRow {
 
           <div class="button-row">
             @if (hasTrickHistory()) {
-              <button hlmBtn variant="outline" class="history-btn" (click)="showingTrickHistory.set(true)">
+              <button hlmBtn variant="outline" class="history-btn" [disabled]="waiting()" (click)="showingTrickHistory.set(true)">
                 {{ t('dealSummary.viewTrickHistory') }}
               </button>
             }
-            <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
-              {{ t('common.continue') }}
+            <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
+              {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
             </button>
           </div>
 
@@ -161,8 +161,8 @@ interface BreakdownRow {
             }
           </div>
 
-          <button hlmBtn variant="default" class="continue-button" (click)="dismissed.emit()">
-            {{ t('common.continue') }}
+          <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
+            {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
           </button>
         }
       </div>
@@ -604,6 +604,8 @@ export class DealSummaryComponent {
     team2Breakdown: CardPointsBreakdownResponse;
     trickHistory: TrickHistoryEntry[];
   } | null>(null);
+
+  readonly waiting = input<boolean>(false);
 
   readonly dismissed = output<void>();
 

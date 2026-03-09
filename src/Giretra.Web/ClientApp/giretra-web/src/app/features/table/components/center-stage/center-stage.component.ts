@@ -65,6 +65,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [summary]="dealSummary()"
             [myTeam]="myTeam()"
             [myPosition]="myPosition()"
+            [waiting]="waiting()"
             (dismissed)="hideDealSummary.emit()"
           />
         }
@@ -102,6 +103,7 @@ export class CenterStageComponent {
   readonly team2Tricks = input<number>(0);
   readonly myTeam = input<Team | null>(null);
   readonly idleDeadline = input<Date | null>(null);
+  readonly waiting = input<boolean>(false);
 
   readonly startGame = output<void>();
   readonly submitCut = output<void>();

@@ -91,6 +91,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [myTeam]="gameState.myTeam()"
         [tricksWonByPosition]="gameState.tricksWonByPosition()"
         [idleDeadline]="gameState.idleDeadline()"
+        [waitingForContinue]="waitingForContinue()"
         (startGame)="onStartGame()"
         (submitCut)="onSubmitCut()"
         (hideDealSummary)="onHideDealSummary()"
@@ -146,6 +147,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [eloChange]="gameState.myEloChange()"
           [isRanked]="gameState.isRanked()"
           [idleDeadline]="gameState.idleDeadline()"
+          [waiting]="waitingForContinue()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
         />
@@ -278,6 +280,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
+  readonly waitingForContinue = signal(false);
 
   readonly gameModePopup = signal<{
     mode: GameMode;
@@ -320,6 +323,14 @@ export class TableComponent implements OnInit, OnDestroy {
     effect(() => {
       if (this.gameState.isMyTurn()) {
         this.profilePopupData.set(null);
+      }
+    });
+
+    // Reset waiting state when a new deal/phase starts
+    effect(() => {
+      const phase = this.gameState.phase();
+      if (phase !== 'dealSummary' && phase !== 'matchEnd') {
+        this.waitingForContinue.set(false);
       }
     });
 
@@ -554,6 +565,7 @@ export class TableComponent implements OnInit, OnDestroy {
     // The DealStarted SignalR event will hide the summary
     if (pendingAction === PendingActionType.ContinueDeal && gameId && clientId) {
       console.log('[Table] Submitting continue deal confirmation');
+      this.waitingForContinue.set(true);
       this.api.submitContinueDeal(gameId, clientId).subscribe({
         next: () => {
           console.log('[Table] Continue deal submitted successfully');
@@ -561,6 +573,7 @@ export class TableComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to submit continue deal', err);
+          this.waitingForContinue.set(false);
           // On error, still hide the summary to not block the UI
           this.gameState.hideDealSummary();
         },
@@ -584,6 +597,7 @@ export class TableComponent implements OnInit, OnDestroy {
     // If waiting for ContinueMatch confirmation, call the API first
     if (pendingAction === PendingActionType.ContinueMatch && gameId && clientId) {
       console.log('[Table] Submitting continue match confirmation');
+      this.waitingForContinue.set(true);
       this.api.submitContinueMatch(gameId, clientId).subscribe({
         next: () => {
           console.log('[Table] Continue match submitted successfully');
@@ -592,6 +606,7 @@ export class TableComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to submit continue match', err);
+          this.waitingForContinue.set(false);
           // On error, still try to start new game
           this.onStartGame();
         },

@@ -134,6 +134,7 @@
   "dealSummary.cards.nine": "Sivy",
   "dealSummary.viewTrickHistory": "Jereo ny Pli",
   "dealSummary.trickHistory": "Tantaran'ny Pli",
+  "dealSummary.waitingForOthers": "Miandry ny hafa...",
 
   "matchEnd.youWin": "Nandresy!",
   "matchEnd.gameOver": "Tapitra ny Lalao",
@@ -141,6 +142,7 @@
   "matchEnd.dealsPlayed": "{{count}} fizarana natao",
   "matchEnd.playAgain": "Milalao Indray",
   "matchEnd.leaveTable": "Hiala amin'ny Latabatra",
+  "matchEnd.waitingForOthers": "Miandry ny hafa...",
   "matchEnd.rating": "Laharana",
   "matchEnd.autoClose": "Hiala ho azy ao anatin'ny",
 
