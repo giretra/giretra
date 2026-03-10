@@ -674,7 +674,34 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var acceptAction = validActions.OfType<AcceptAction>().FirstOrDefault();
         if (acceptAction != null)
         {
+            // For modes requiring double before accept (NoTrumps/ColourClubs),
+            // prefer redouble over accept — treat "accept" as redouble
+            if (negotiationState.CurrentBid.HasValue &&
+                negotiationState.CurrentBid.Value.RequiresDoubleBeforeAccept())
+            {
+                var rdbl = validActions.OfType<RedoubleAction>()
+                    .FirstOrDefault(a => a.TargetMode == negotiationState.CurrentBid.Value);
+                if (rdbl != null)
+                    return rdbl;
+            }
+
             return acceptAction;
+        }
+
+        // Cannot accept NoTrumps/ColourClubs until doubled — double instead
+        if (negotiationState.CurrentBid.HasValue &&
+            negotiationState.CurrentBid.Value.RequiresDoubleBeforeAccept())
+        {
+            var bid = negotiationState.CurrentBid.Value;
+            var dbl = validActions.OfType<DoubleAction>()
+                .FirstOrDefault(a => a.TargetMode == bid);
+            if (dbl != null)
+                return dbl;
+
+            var rdbl = validActions.OfType<RedoubleAction>()
+                .FirstOrDefault(a => a.TargetMode == bid);
+            if (rdbl != null)
+                return rdbl;
         }
 
         return validActions[0];
