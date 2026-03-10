@@ -259,6 +259,7 @@ type MatchState struct {
 type SessionRequest struct {
 	Position PlayerPosition `json:"position"`
 	MatchID  string         `json:"matchId"`
+	Seed     *int64         `json:"seed,omitempty"`
 }
 
 // ─── Bot Contexts (passed to your methods) ──────────────────────────

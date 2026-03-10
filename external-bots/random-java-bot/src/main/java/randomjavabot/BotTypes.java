@@ -251,7 +251,7 @@ record MatchState(
 // ─── Session (internal — used by Server.java for deserialization) ───
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-record SessionRequest(PlayerPosition position, String matchId) {}
+record SessionRequest(PlayerPosition position, String matchId, Integer seed) {}
 
 // ─── Bot Contexts (passed to your methods) ──────────────────────────
 

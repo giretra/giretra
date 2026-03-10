@@ -7,14 +7,16 @@
 
 package randomjavabot;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 public class Bot {
 
     private final String matchId;
+    private final Random rng;
 
-    public Bot(String matchId) {
+    public Bot(String matchId, Integer seed) {
         this.matchId = matchId;
+        this.rng = seed != null ? new Random(seed) : new Random();
     }
 
     /**
@@ -22,8 +24,8 @@ public class Bot {
      * Return a position (6–26) and whether to cut from the top.
      */
     public CutResult chooseCut(ChooseCutContext ctx) {
-        int position = ThreadLocalRandom.current().nextInt(6, 27); // 6..26 inclusive
-        boolean fromTop = ThreadLocalRandom.current().nextBoolean();
+        int position = rng.nextInt(6, 27); // 6..26 inclusive
+        boolean fromTop = rng.nextBoolean();
         return new CutResult(position, fromTop);
     }
 
@@ -32,7 +34,7 @@ public class Bot {
      * Pick one action from {@code ctx.validActions()}.
      */
     public NegotiationActionChoice chooseNegotiationAction(ChooseNegotiationActionContext ctx) {
-        return ctx.validActions().get(ThreadLocalRandom.current().nextInt(ctx.validActions().size()));
+        return ctx.validActions().get(rng.nextInt(ctx.validActions().size()));
     }
 
     /**
@@ -40,7 +42,7 @@ public class Bot {
      * Pick one card from {@code ctx.validPlays()}.
      */
     public Card chooseCard(ChooseCardContext ctx) {
-        return ctx.validPlays().get(ThreadLocalRandom.current().nextInt(ctx.validPlays().size()));
+        return ctx.validPlays().get(rng.nextInt(ctx.validPlays().size()));
     }
 
     /** Called when a new deal begins. */

@@ -12,31 +12,40 @@ import "math/rand/v2"
 // Bot holds the state for a single game session.
 type Bot struct {
 	MatchID string
+	rng     *rand.Rand
 }
 
 // NewBot creates a new Bot for the given match.
-func NewBot(matchID string) *Bot {
-	return &Bot{MatchID: matchID}
+// If seed is non-nil, the bot uses a deterministic RNG seeded with *seed.
+// If seed is nil, the bot uses a randomly-seeded RNG.
+func NewBot(matchID string, seed *int64) *Bot {
+	var rng *rand.Rand
+	if seed != nil {
+		rng = rand.New(rand.NewPCG(uint64(*seed), 0))
+	} else {
+		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	}
+	return &Bot{MatchID: matchID, rng: rng}
 }
 
 // ChooseCut is called when it's your turn to cut the deck before a deal.
 // Return a position (6–26) and whether to cut from the top.
 func (b *Bot) ChooseCut(ctx ChooseCutContext) CutResult {
-	position := rand.IntN(21) + 6 // 6..26 inclusive
-	fromTop := rand.IntN(2) == 0
+	position := b.rng.IntN(21) + 6 // 6..26 inclusive
+	fromTop := b.rng.IntN(2) == 0
 	return CutResult{Position: position, FromTop: fromTop}
 }
 
 // ChooseNegotiationAction is called during the negotiation (bidding) phase.
 // Pick one action from ctx.ValidActions.
 func (b *Bot) ChooseNegotiationAction(ctx ChooseNegotiationActionContext) NegotiationActionChoice {
-	return ctx.ValidActions[rand.IntN(len(ctx.ValidActions))]
+	return ctx.ValidActions[b.rng.IntN(len(ctx.ValidActions))]
 }
 
 // ChooseCard is called when it's your turn to play a card.
 // Pick one card from ctx.ValidPlays.
 func (b *Bot) ChooseCard(ctx ChooseCardContext) Card {
-	return ctx.ValidPlays[rand.IntN(len(ctx.ValidPlays))]
+	return ctx.ValidPlays[b.rng.IntN(len(ctx.ValidPlays))]
 }
 
 // OnDealStarted is called when a new deal begins.

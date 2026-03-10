@@ -255,7 +255,8 @@ POST /api/sessions
 ```json
 {
   "position": "Bottom",
-  "matchId": "550e8400-e29b-41d4-a716-446655440000"
+  "matchId": "550e8400-e29b-41d4-a716-446655440000",
+  "seed": 42
 }
 ```
 
@@ -263,6 +264,7 @@ POST /api/sessions
 |-------|------|----------|-------------|
 | `position` | PlayerPosition | yes | The table position assigned to this bot |
 | `matchId` | string | yes | Unique identifier for the match (for server-side correlation) |
+| `seed` | int? | no | Random seed for reproducibility. If provided, the bot should use it to seed its RNG for deterministic behavior. If `null` or absent, use non-deterministic randomness. |
 
 **Response:** `201 Created`
 
@@ -365,7 +367,7 @@ POST /api/sessions/{sessionId}/choose-negotiation-action
 | `hand` | Card[] | The bot's current hand (5 cards during negotiation) |
 | `negotiationState` | NegotiationState | Full negotiation state |
 | `matchState` | MatchState | Current match state |
-| `validActions` | NegotiationAction[] | The legal actions the bot may choose from (without `player` field — it is always the bot's position) |
+| `validActions` | NegotiationAction[] | The legal actions the bot may choose from (without `player` field --it is always the bot's position) |
 
 **Response:** `200 OK`
 
@@ -638,8 +640,8 @@ After this event, the engine will call `DELETE /api/sessions/{sessionId}` to cle
 | Status | Meaning | Engine Behavior |
 |--------|---------|-----------------|
 | `200`/`201`/`204` | Success | Continue |
-| `400 Bad Request` | Malformed request | Engine bug — log and abort |
-| `404 Not Found` | Unknown session | Session expired or invalid — abort |
+| `400 Bad Request` | Malformed request | Engine bug --log and abort |
+| `404 Not Found` | Unknown session | Session expired or invalid --abort |
 | `422 Unprocessable Entity` | Invalid response (e.g. illegal card) | Log and retry or abort |
 | `500 Internal Server Error` | Server failure | Retry up to configured limit, then abort |
 | `503 Service Unavailable` | Server overloaded | Retry with backoff, then abort |
@@ -698,7 +700,7 @@ The engine enforces timeouts on all HTTP calls. Timeout values are configured on
 
 ### For Bot Server Implementors
 
-1. **Stateless bots**: If your bot is stateless (evaluates only the current request), you may ignore all `/notify/*` events — just return `200 OK` immediately. The decision endpoints include all necessary context.
+1. **Stateless bots**: If your bot is stateless (evaluates only the current request), you may ignore all `/notify/*` events --just return `200 OK` immediately. The decision endpoints include all necessary context.
 
 2. **Stateful bots**: Use `notify/deal-started` to reset per-deal state. Use `notify/negotiation-completed` to observe the resolved game mode and full bidding history. Use `notify/card-played` to track played cards and infer opponent voids. Use `notify/trick-completed` to reset per-trick state.
 

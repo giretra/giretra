@@ -21,15 +21,30 @@ import {
 } from "./types";
 
 export class Bot {
-  constructor(public readonly matchId: string) {}
+  private nextRandom: () => number;
+
+  constructor(public readonly matchId: string, seed: number | null = null) {
+    if (seed !== null) {
+      // mulberry32 seeded PRNG
+      let s = seed | 0;
+      this.nextRandom = () => {
+        s = (s + 0x6d2b79f5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    } else {
+      this.nextRandom = Math.random;
+    }
+  }
 
   /**
    * Called when it's your turn to cut the deck before a deal.
    * Return a position (6–26) and whether to cut from the top.
    */
   chooseCut(ctx: ChooseCutContext): CutResult {
-    const position = 6 + Math.floor(Math.random() * 21); // 6..26
-    const fromTop = Math.random() > 0.5;
+    const position = 6 + Math.floor(this.nextRandom() * 21); // 6..26
+    const fromTop = this.nextRandom() > 0.5;
     return { position, fromTop };
   }
 
@@ -38,7 +53,7 @@ export class Bot {
    * Pick one action from {@link ChooseNegotiationActionContext.validActions}.
    */
   chooseNegotiationAction(ctx: ChooseNegotiationActionContext): NegotiationActionChoice {
-    return ctx.validActions[Math.floor(Math.random() * ctx.validActions.length)];
+    return ctx.validActions[Math.floor(this.nextRandom() * ctx.validActions.length)];
   }
 
   /**
@@ -46,7 +61,7 @@ export class Bot {
    * Pick one card from {@link ChooseCardContext.validPlays}.
    */
   chooseCard(ctx: ChooseCardContext): Card {
-    return ctx.validPlays[Math.floor(Math.random() * ctx.validPlays.length)];
+    return ctx.validPlays[Math.floor(this.nextRandom() * ctx.validPlays.length)];
   }
 
   /** Called when a new deal begins. */

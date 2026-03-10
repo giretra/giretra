@@ -290,6 +290,7 @@ public class SessionRequest
 {
     public PlayerPosition Position { get; set; }
     public string MatchId { get; set; } = "";
+    public int? Seed { get; set; }
 }
 
 // ─── Bot Contexts (passed to your methods) ──────────────────────────

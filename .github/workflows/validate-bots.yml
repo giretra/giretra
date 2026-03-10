@@ -60,4 +60,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Validate
-        run: sh giretra-manage.sh validate ${{ matrix.bot }} -n 10
+        run: sh giretra-manage.sh validate ${{ matrix.bot }} -n 50 --seed 17

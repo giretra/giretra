@@ -24,7 +24,7 @@ async def health(request: web.Request) -> web.Response:
 async def create_session(request: web.Request) -> web.Response:
     body = await request.json()
     session_id = str(uuid.uuid4())
-    bots[session_id] = Bot(body["matchId"])
+    bots[session_id] = Bot(body["matchId"], body.get("seed"))
     return web.json_response({"sessionId": session_id}, status=201)
 
 

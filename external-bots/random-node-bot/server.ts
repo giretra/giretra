@@ -58,7 +58,7 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && path === "/api/sessions") {
       const body = (await parseBody(req)) as SessionRequest;
       const sessionId = crypto.randomUUID();
-      bots.set(sessionId, new Bot(body.matchId));
+      bots.set(sessionId, new Bot(body.matchId, body.seed ?? null));
       return json(res, 201, { sessionId });
     }
 
