@@ -79,7 +79,7 @@ export type GameMode =
  * Scoring multiplier for a deal.
  * None = x1, Doubled = x2, Redoubled = x4.
  */
-export type MultiplierState = "None" | "Doubled" | "Redoubled";
+export type MultiplierState = "None" | "Doubled" | "Redoubled" | "ReRedoubled";
 
 // ─── Trick ──────────────────────────────────────────────────────────
 
@@ -155,12 +155,22 @@ export interface RedoubleAction {
   targetMode: GameMode;
 }
 
+/** Re-redouble action from the negotiation history (ColourClubs only). */
+export interface ReRedoubleAction {
+  type: "ReRedouble";
+  /** The player who re-redoubled. */
+  player?: PlayerPosition;
+  /** The mode being re-redoubled. */
+  targetMode: GameMode;
+}
+
 /** A negotiation action from the history (includes the player who took it). */
 export type NegotiationAction =
   | AnnouncementAction
   | AcceptAction
   | DoubleAction
-  | RedoubleAction;
+  | RedoubleAction
+  | ReRedoubleAction;
 
 /**
  * A valid action you can choose during negotiation.
@@ -171,7 +181,8 @@ export type NegotiationActionChoice =
   | { type: "Announcement"; mode: GameMode }
   | { type: "Accept" }
   | { type: "Double"; targetMode: GameMode }
-  | { type: "Redouble"; targetMode: GameMode };
+  | { type: "Redouble"; targetMode: GameMode }
+  | { type: "ReRedouble"; targetMode: GameMode };
 
 /**
  * Full state of the negotiation (bidding) phase.
@@ -196,6 +207,8 @@ export interface NegotiationState {
   doubledModes: Record<string, boolean>;
   /** Game modes that have been redoubled. */
   redoubledModes: string[];
+  /** Game modes that have been re-redoubled (ColourClubs only). */
+  reRedoubledModes: string[];
   /** Each team's Colour announcement this deal (max one Colour per team). */
   teamColourAnnouncements: Record<string, string>;
 }

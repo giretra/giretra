@@ -80,8 +80,8 @@ GameMode = Literal[
 During negotiation you can only announce a mode higher than the current bid.
 """
 
-MultiplierState = Literal["None", "Doubled", "Redoubled"]
-"""Scoring multiplier for a deal. None = x1, Doubled = x2, Redoubled = x4."""
+MultiplierState = Literal["None", "Doubled", "Redoubled", "ReRedoubled"]
+"""Scoring multiplier for a deal. None = x1, Doubled = x2, Redoubled = x4, ReRedoubled = x8."""
 
 # ─── Trick ──────────────────────────────────────────────────────────
 
@@ -165,7 +165,17 @@ class RedoubleAction(TypedDict):
     """The mode being redoubled."""
 
 
-NegotiationAction = Union[AnnouncementAction, AcceptAction, DoubleAction, RedoubleAction]
+class ReRedoubleAction(TypedDict):
+    """Re-redouble action from the negotiation history (ColourClubs only)."""
+
+    type: Literal["ReRedouble"]
+    player: PlayerPosition
+    """The player who re-redoubled."""
+    targetMode: GameMode
+    """The mode being re-redoubled."""
+
+
+NegotiationAction = Union[AnnouncementAction, AcceptAction, DoubleAction, RedoubleAction, ReRedoubleAction]
 """A negotiation action from the history (includes the player who took it)."""
 
 
@@ -196,7 +206,14 @@ class RedoubleChoice(TypedDict):
     targetMode: GameMode
 
 
-NegotiationActionChoice = Union[AnnouncementChoice, AcceptChoice, DoubleChoice, RedoubleChoice]
+class ReRedoubleChoice(TypedDict):
+    """Re-redouble a game mode (ColourClubs only)."""
+
+    type: Literal["ReRedouble"]
+    targetMode: GameMode
+
+
+NegotiationActionChoice = Union[AnnouncementChoice, AcceptChoice, DoubleChoice, RedoubleChoice, ReRedoubleChoice]
 """A valid action you can choose during negotiation.
 Same shape as NegotiationAction but without the player field
 (the server knows who you are).
@@ -226,6 +243,8 @@ class NegotiationState(TypedDict):
     """Which game modes have been doubled (mode -> true/false)."""
     redoubledModes: List[str]
     """Game modes that have been redoubled."""
+    reRedoubledModes: List[str]
+    """Game modes that have been re-redoubled (ColourClubs only)."""
     teamColourAnnouncements: Dict[str, str]
     """Each team's Colour announcement this deal (max one Colour per team)."""
 

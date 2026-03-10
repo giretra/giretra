@@ -86,7 +86,7 @@ enum GameMode {
  * Scoring multiplier for a deal.
  * Normal = x1, Doubled = x2, Redoubled = x4.
  */
-enum Multiplier { Normal, Doubled, Redoubled }
+enum Multiplier { Normal, Doubled, Redoubled, ReRedoubled }
 
 // ─── Trick ──────────────────────────────────────────────────────────
 
@@ -131,7 +131,7 @@ record HandState(
 // ─── Negotiation ────────────────────────────────────────────────────
 
 /** The type of action taken during negotiation. */
-enum NegotiationActionType { Announcement, Accept, Double, Redouble }
+enum NegotiationActionType { Announcement, Accept, Double, Redouble, ReRedouble }
 
 /**
  * A negotiation action from the history (includes the player who took it).
@@ -186,6 +186,8 @@ record NegotiationState(
     Map<String, Boolean> doubledModes,
     /** Game modes that have been redoubled. */
     List<String> redoubledModes,
+    /** Game modes that have been re-redoubled (ColourClubs only). */
+    List<String> reRedoubledModes,
     /** Each team's Colour announcement this deal (max one Colour per team). */
     Map<String, String> teamColourAnnouncements
 ) {}

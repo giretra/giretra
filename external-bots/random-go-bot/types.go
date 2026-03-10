@@ -105,7 +105,8 @@ type Multiplier string
 const (
 	MultiplierNormal    Multiplier = "normal"
 	MultiplierDoubled   Multiplier = "doubled"
-	MultiplierRedoubled Multiplier = "redoubled"
+	MultiplierRedoubled   Multiplier = "redoubled"
+	MultiplierReRedoubled Multiplier = "reRedoubled"
 )
 
 // ─── Trick ──────────────────────────────────────────────────────────
@@ -153,6 +154,7 @@ const (
 	ActionAccept       NegotiationActionType = "accept"
 	ActionDouble       NegotiationActionType = "double"
 	ActionRedouble     NegotiationActionType = "redouble"
+	ActionReRedouble   NegotiationActionType = "reRedouble"
 )
 
 // NegotiationAction is a negotiation action from the history (includes the player who took it).
@@ -196,6 +198,8 @@ type NegotiationState struct {
 	DoubledModes map[GameMode]int `json:"doubledModes"`
 	// RedoubledModes lists game modes that have been redoubled.
 	RedoubledModes []GameMode `json:"redoubledModes"`
+	// ReRedoubledModes lists game modes that have been re-redoubled (ColourClubs only).
+	ReRedoubledModes []GameMode `json:"reRedoubledModes"`
 	// TeamColourAnnouncements tracks each team's Colour announcement this deal (max one Colour per team).
 	TeamColourAnnouncements map[Team]GameMode `json:"teamColourAnnouncements"`
 }
