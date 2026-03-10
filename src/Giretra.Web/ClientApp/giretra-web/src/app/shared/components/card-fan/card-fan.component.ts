@@ -56,7 +56,6 @@ import { CardComponent } from '../card/card.component';
     }
 
     .card-wrapper.playable-card:hover {
-      transform: translateY(-16px) scale(1.05) !important;
       z-index: 100 !important;
     }
 
