@@ -17,6 +17,13 @@ public sealed class LocalWsPlayerAgentFactory : IPlayerAgentFactory, IDisposable
     public string DisplayName { get; }
     public string Pun { get; }
 
+    /// <inheritdoc />
+    public int? Seed
+    {
+        get => _inner.Seed;
+        set => _inner.Seed = value;
+    }
+
     public LocalWsPlayerAgentFactory(BotMetadata metadata, string botDirectory)
     {
         var agentName = metadata.AgentName

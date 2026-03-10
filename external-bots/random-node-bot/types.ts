@@ -270,6 +270,7 @@ export interface MatchState {
 export interface SessionRequest {
   position: PlayerPosition;
   matchId: string;
+  seed?: number | null;
 }
 
 // ─── Bot Contexts (passed to your methods) ──────────────────────────

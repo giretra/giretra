@@ -24,6 +24,8 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     private StringBuilder? _processStderr;
     private Task? _stdoutDrainTask;
     private Task? _stderrDrainTask;
+    private int? _seed;
+    private int _seedCounter;
 
     /// <summary>
     /// Returns a short diagnostic string about the bot process status.
@@ -50,6 +52,17 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
     public string AgentName { get; }
     public string DisplayName { get; }
     public string Pun { get; }
+
+    /// <inheritdoc />
+    public int? Seed
+    {
+        get => _seed;
+        set
+        {
+            _seed = value;
+            _seedCounter = 0;
+        }
+    }
 
     /// <summary>
     /// Creates a factory that connects to a remote bot server.
@@ -256,7 +269,8 @@ public sealed class RemotePlayerAgentFactory : IPlayerAgentFactory, IDisposable
 
     public IPlayerAgent Create(PlayerPosition position)
     {
-        return new RemotePlayerAgent(_client, position, _matchId, _enabledNotifications);
+        int? agentSeed = _seed.HasValue ? _seed.Value + _seedCounter++ : null;
+        return new RemotePlayerAgent(_client, position, _matchId, _enabledNotifications, agentSeed);
     }
 
     public void Dispose()

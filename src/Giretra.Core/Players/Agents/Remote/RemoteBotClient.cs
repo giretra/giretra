@@ -41,9 +41,9 @@ public sealed class RemoteBotClient : IDisposable
         _notificationTimeout = notificationTimeout ?? TimeSpan.FromSeconds(5);
     }
 
-    public async Task<string> CreateSessionAsync(PlayerPosition position, string matchId)
+    public async Task<string> CreateSessionAsync(PlayerPosition position, string matchId, int? seed = null)
     {
-        var request = new { position = position.ToString(), matchId };
+        var request = new { position = position.ToString(), matchId, seed };
         var response = await PostAsync("api/sessions", request, _decisionTimeout);
         response.EnsureSuccessStatusCode();
 

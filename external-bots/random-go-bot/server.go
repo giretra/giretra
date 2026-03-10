@@ -39,7 +39,7 @@ func main() {
 		}
 
 		sessionID := newSessionID()
-		bots.Store(sessionID, NewBot(body.MatchID))
+		bots.Store(sessionID, NewBot(body.MatchID, body.Seed))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)

@@ -13,6 +13,7 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
 {
     private readonly RemoteBotClient _client;
     private readonly string _matchId;
+    private readonly int? _seed;
     private readonly IReadOnlySet<string>? _enabledNotifications;
     private string? _sessionId;
 
@@ -22,12 +23,14 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
         RemoteBotClient client,
         PlayerPosition position,
         string matchId,
-        IReadOnlySet<string>? enabledNotifications = null)
+        IReadOnlySet<string>? enabledNotifications = null,
+        int? seed = null)
     {
         _client = client;
         Position = position;
         _matchId = matchId;
         _enabledNotifications = enabledNotifications;
+        _seed = seed;
     }
 
     private bool IsNotificationEnabled(string name)
@@ -35,7 +38,7 @@ public sealed class RemotePlayerAgent : IPlayerAgent, IAsyncDisposable
 
     private async Task EnsureSessionAsync()
     {
-        _sessionId ??= await _client.CreateSessionAsync(Position, _matchId);
+        _sessionId ??= await _client.CreateSessionAsync(Position, _matchId, _seed);
     }
 
     public async Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)

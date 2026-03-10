@@ -24,16 +24,17 @@ from bot_types import (
 
 
 class Bot:
-    def __init__(self, match_id: str) -> None:
+    def __init__(self, match_id: str, seed: int | None = None) -> None:
         self.match_id = match_id
+        self.rng = random.Random(seed)
 
     def choose_cut(self, ctx: ChooseCutContext) -> CutResult:
         """Called when it's your turn to cut the deck before a deal.
 
         Return a position (6–26) and whether to cut from the top.
         """
-        position = random.randint(6, 26)
-        from_top = random.random() > 0.5
+        position = self.rng.randint(6, 26)
+        from_top = self.rng.random() > 0.5
         return {"position": position, "fromTop": from_top}
 
     def choose_negotiation_action(
@@ -43,14 +44,14 @@ class Bot:
 
         Pick one action from ``ctx["validActions"]``.
         """
-        return random.choice(ctx["validActions"])
+        return self.rng.choice(ctx["validActions"])
 
     def choose_card(self, ctx: ChooseCardContext) -> Card:
         """Called when it's your turn to play a card.
 
         Pick one card from ``ctx["validPlays"]``.
         """
-        return random.choice(ctx["validPlays"])
+        return self.rng.choice(ctx["validPlays"])
 
     def on_deal_started(self, ctx: DealStartedContext) -> None:
         """Called when a new deal begins."""

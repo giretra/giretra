@@ -310,6 +310,7 @@ class MatchState(TypedDict):
 class SessionRequest(TypedDict):
     position: PlayerPosition
     matchId: str
+    seed: Optional[int]
 
 
 # ─── Bot Contexts (passed to your methods) ──────────────────────────

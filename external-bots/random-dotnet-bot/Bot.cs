@@ -9,13 +9,16 @@ namespace RandomDotnetBot;
 
 public class Bot
 {
-    private readonly Random Rng = new();
+    private readonly Random Rng;
 
     public string MatchId { get; }
+    public int? Seed { get; }
 
-    public Bot(string matchId)
+    public Bot(string matchId, int? seed = null)
     {
         MatchId = matchId;
+        Seed = seed;
+        Rng = seed.HasValue ? new Random(seed.Value) : new Random();
     }
 
     /// <summary>

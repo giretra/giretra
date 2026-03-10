@@ -84,7 +84,7 @@ public class Server {
         if ("POST".equals(method) && path.equals("/api/sessions")) {
             SessionRequest req = readBody(exchange, SessionRequest.class);
             String sessionId = UUID.randomUUID().toString();
-            bots.put(sessionId, new Bot(req.matchId()));
+            bots.put(sessionId, new Bot(req.matchId(), req.seed()));
             sendJson(exchange, 201, mapper.createObjectNode().put("sessionId", sessionId));
             return;
         }
