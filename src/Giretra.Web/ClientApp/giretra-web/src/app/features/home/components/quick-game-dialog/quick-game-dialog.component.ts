@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { LucideAngularModule, X, Trophy, Bot } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AiTypeInfo } from '../../../../core/services/api.service';
@@ -27,7 +27,7 @@ import { AiTypeInfo } from '../../../../core/services/api.service';
             <!-- Bot selector -->
             <p class="section-label">{{ t('quickGame.chooseDifficulty') }}</p>
             <div class="bot-list">
-              @for (bot of aiTypes(); track bot.name) {
+              @for (bot of sortedAiTypes(); track bot.name) {
                 <button
                   class="bot-row"
                   [class.selected]="selectedBot() === bot.name"
@@ -405,8 +405,24 @@ export class QuickGameDialogComponent {
   readonly closed = output<void>();
   readonly createRoom = output<void>();
 
+  readonly sortedAiTypes = computed(() =>
+    [...this.aiTypes()].sort((a, b) => b.rating - a.rating)
+  );
+
   readonly selectedBot = signal<string>('');
   readonly isRanked = signal(true);
+
+  constructor() {
+    effect(() => {
+      const types = this.aiTypes();
+      if (types.length > 0 && !this.selectedBot()) {
+        const eva = types.find(t => t.name.toLowerCase() === 'eva');
+        if (eva) {
+          this.selectedBot.set(eva.name);
+        }
+      }
+    });
+  }
 
   difficultyDots(difficulty: number): boolean[] {
     const max = 3;
