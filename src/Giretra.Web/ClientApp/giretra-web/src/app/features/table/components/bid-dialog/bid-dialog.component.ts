@@ -50,8 +50,8 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
                     <span>{{ t('negotiation.reRedouble') }}</span>
                   } @else {
                     <span>{{ t('negotiation.accept') }}</span>
-                    @if (currentBid()?.mode) {
-                      <app-game-mode-icon [mode]="currentBid()!.mode!" size="0.875rem" />
+                    @if (action.mode) {
+                      <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
                     }
                   }
                 </span>

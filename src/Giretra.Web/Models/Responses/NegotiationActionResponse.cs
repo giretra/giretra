@@ -24,7 +24,7 @@ public sealed class NegotiationActionResponse
     /// </summary>
     public GameMode? Mode { get; init; }
 
-    public static NegotiationActionResponse FromAction(NegotiationAction action)
+    public static NegotiationActionResponse FromAction(NegotiationAction action, GameMode? currentBid = null)
     {
         return action switch
         {
@@ -38,7 +38,7 @@ public sealed class NegotiationActionResponse
             {
                 ActionType = "Accept",
                 Player = a.Player,
-                Mode = null
+                Mode = currentBid
             },
             DoubleAction a => new NegotiationActionResponse
             {

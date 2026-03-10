@@ -454,9 +454,15 @@ public sealed class GameService : IGameService
         IReadOnlyList<NegotiationActionResponse>? negotiationHistory = null;
         if (deal?.Negotiation != null)
         {
-            negotiationHistory = deal.Negotiation.Actions
-                .Select(NegotiationActionResponse.FromAction)
-                .ToList();
+            GameMode? currentBid = null;
+            var history = new List<NegotiationActionResponse>(deal.Negotiation.Actions.Count);
+            foreach (var action in deal.Negotiation.Actions)
+            {
+                if (action is AnnouncementAction announcement)
+                    currentBid = announcement.Mode;
+                history.Add(NegotiationActionResponse.FromAction(action, currentBid));
+            }
+            negotiationHistory = history;
         }
 
         return new GameStateResponse
