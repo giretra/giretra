@@ -130,8 +130,8 @@ public sealed class OfflineFriendService : IFriendService
             PendingSent = [],
         });
 
-    public Task<(bool Success, string? Error)> SendFriendRequestAsync(Guid userId, string username)
-        => Task.FromResult((false, (string?)"Not available offline"));
+    public Task<(bool Success, string? Error, Guid? AffectedUserId)> SendFriendRequestAsync(Guid userId, string username)
+        => Task.FromResult((false, (string?)"Not available offline", (Guid?)null));
 
     public Task<(bool Success, string? Error)> AcceptFriendRequestAsync(Guid userId, Guid friendshipId)
         => Task.FromResult((false, (string?)"Not available offline"));

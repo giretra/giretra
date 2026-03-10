@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ApiService, RoomResponse, AiTypeInfo, AiSeat } from '../../core/services/api.service';
 import { JoinRoomEvent } from './components/room-list/room-list.component';
 import { ClientSessionService } from '../../core/services/client-session.service';
@@ -268,7 +268,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private roomsChangedSubscription: Subscription | null = null;
   private reconnectedSubscription: Subscription | null = null;
-  private friendPollSubscription: Subscription | null = null;
+  private friendCountSubscription: Subscription | null = null;
 
   readonly rooms = signal<RoomResponse[]>([]);
   readonly loading = signal<boolean>(true);
@@ -286,16 +286,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.checkActiveSession();
 
     this.connectToLobby();
-
-    this.friendPollSubscription = interval(30000).subscribe(() => {
-      this.loadPendingFriendCount();
-    });
   }
 
   ngOnDestroy(): void {
     this.roomsChangedSubscription?.unsubscribe();
     this.reconnectedSubscription?.unsubscribe();
-    this.friendPollSubscription?.unsubscribe();
+    this.friendCountSubscription?.unsubscribe();
     this.hub.leaveLobby().catch(() => {});
   }
 
@@ -314,6 +310,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.reconnectedSubscription = this.hub.reconnected$.subscribe(() => {
       this.hub.joinLobby().catch(() => {});
       this.loadRooms();
+      this.loadPendingFriendCount();
+    });
+
+    this.friendCountSubscription = this.hub.pendingFriendCountChanged$.subscribe((event) => {
+      this.pendingFriendCount.set(event.count);
     });
   }
 
