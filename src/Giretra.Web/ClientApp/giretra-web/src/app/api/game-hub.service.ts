@@ -16,6 +16,7 @@ import {
   GameHubEventNames,
   GameStartedEvent,
   MatchEndedEvent,
+  PendingFriendCountChangedEvent,
   PlayerJoinedEvent,
   PlayerKickedEvent,
   PlayerLeftEvent,
@@ -54,6 +55,7 @@ export class GameHubService implements OnDestroy {
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
   readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
   readonly roomsChanged$ = new Subject<void>();
+  readonly pendingFriendCountChanged$ = new Subject<PendingFriendCountChangedEvent>();
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
@@ -133,6 +135,7 @@ export class GameHubService implements OnDestroy {
     this.seatModeChanged$.complete();
     this.roomIdleClosed$.complete();
     this.roomsChanged$.complete();
+    this.pendingFriendCountChanged$.complete();
   }
 
   private registerConnectionHandlers(): void {
@@ -228,6 +231,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.RoomsChanged, () => {
       console.log('[Hub] RoomsChanged');
       this.ngZone.run(() => this.roomsChanged$.next());
+    });
+
+    this.hubConnection.on(GameHubEventNames.PendingFriendCountChanged, (event: PendingFriendCountChangedEvent) => {
+      console.log('[Hub] PendingFriendCountChanged', event);
+      this.ngZone.run(() => this.pendingFriendCountChanged$.next(event));
     });
   }
 }

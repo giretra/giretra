@@ -395,6 +395,11 @@ public sealed class NotificationService : INotificationService
         await _hubContext.Clients.Group("lobby").SendAsync("RoomsChanged");
     }
 
+    public async Task NotifyPendingFriendCountChangedAsync(Guid userId, int count)
+    {
+        await _hubContext.Clients.Group($"user_{userId}").SendAsync("PendingFriendCountChanged", new { Count = count });
+    }
+
     private static TrickResponse MapToTrickResponse(TrickState trick, GameMode gameMode, PlayerPosition winner)
     {
         return new TrickResponse

@@ -16,17 +16,20 @@ public class SettingsController : ControllerBase
     private readonly IFriendService _friendService;
     private readonly IBlockService _blockService;
     private readonly IMatchHistoryService _matchHistoryService;
+    private readonly INotificationService _notificationService;
 
     public SettingsController(
         IProfileService profileService,
         IFriendService friendService,
         IBlockService blockService,
-        IMatchHistoryService matchHistoryService)
+        IMatchHistoryService matchHistoryService,
+        INotificationService notificationService)
     {
         _profileService = profileService;
         _friendService = friendService;
         _blockService = blockService;
         _matchHistoryService = matchHistoryService;
+        _notificationService = notificationService;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -114,9 +117,15 @@ public class SettingsController : ControllerBase
     public async Task<ActionResult> SendFriendRequest([FromBody] SendFriendRequestRequest request)
     {
         var user = GetAuthenticatedUser();
-        var (success, error) = await _friendService.SendFriendRequestAsync(user.Id, request.Username);
+        var (success, error, affectedUserId) = await _friendService.SendFriendRequestAsync(user.Id, request.Username);
         if (!success)
             return BadRequest(new { error });
+
+        if (affectedUserId.HasValue)
+        {
+            var count = await _friendService.GetPendingCountAsync(affectedUserId.Value);
+            await _notificationService.NotifyPendingFriendCountChangedAsync(affectedUserId.Value, count);
+        }
 
         return Ok();
     }
@@ -129,6 +138,9 @@ public class SettingsController : ControllerBase
         if (!success)
             return BadRequest(new { error });
 
+        var count = await _friendService.GetPendingCountAsync(user.Id);
+        await _notificationService.NotifyPendingFriendCountChangedAsync(user.Id, count);
+
         return Ok();
     }
 
@@ -139,6 +151,9 @@ public class SettingsController : ControllerBase
         var (success, error) = await _friendService.DeclineFriendRequestAsync(user.Id, friendshipId);
         if (!success)
             return BadRequest(new { error });
+
+        var count = await _friendService.GetPendingCountAsync(user.Id);
+        await _notificationService.NotifyPendingFriendCountChangedAsync(user.Id, count);
 
         return Ok();
     }

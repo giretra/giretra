@@ -11,10 +11,23 @@ namespace Giretra.Web.Hubs;
 public sealed class GameHub : Hub
 {
     private readonly IRoomService _roomService;
+    private readonly IUserSyncService _userSyncService;
 
-    public GameHub(IRoomService roomService)
+    public GameHub(IRoomService roomService, IUserSyncService userSyncService)
     {
         _roomService = roomService;
+        _userSyncService = userSyncService;
+    }
+
+    public override async Task OnConnectedAsync()
+    {
+        if (Context.User?.Identity?.IsAuthenticated == true)
+        {
+            var user = await _userSyncService.SyncUserAsync(Context.User);
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{user.Id}");
+        }
+
+        await base.OnConnectedAsync();
     }
 
     /// <summary>

@@ -75,21 +75,21 @@ public sealed class FriendService : IFriendService
         };
     }
 
-    public async Task<(bool Success, string? Error)> SendFriendRequestAsync(Guid userId, string username)
+    public async Task<(bool Success, string? Error, Guid? AffectedUserId)> SendFriendRequestAsync(Guid userId, string username)
     {
         var targetUser = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
         if (targetUser == null)
-            return (false, "User not found.");
+            return (false, "User not found.", null);
 
         if (targetUser.Id == userId)
-            return (false, "You cannot send a friend request to yourself.");
+            return (false, "You cannot send a friend request to yourself.", null);
 
         // Check if blocked in either direction
         var isBlocked = await _db.Blocks.AnyAsync(b =>
             (b.BlockerId == userId && b.BlockedId == targetUser.Id) ||
             (b.BlockerId == targetUser.Id && b.BlockedId == userId));
         if (isBlocked)
-            return (false, "Unable to send friend request.");
+            return (false, "Unable to send friend request.", null);
 
         // Check existing friendship
         var existing = await _db.Friendships.FirstOrDefaultAsync(f =>
@@ -99,7 +99,7 @@ public sealed class FriendService : IFriendService
         if (existing != null)
         {
             if (existing.Status == FriendshipStatus.Accepted)
-                return (false, "You are already friends.");
+                return (false, "You are already friends.", null);
 
             if (existing.Status == FriendshipStatus.Pending)
             {
@@ -109,10 +109,11 @@ public sealed class FriendService : IFriendService
                     existing.Status = FriendshipStatus.Accepted;
                     existing.UpdatedAt = DateTimeOffset.UtcNow;
                     await _db.SaveChangesAsync();
-                    return (true, null);
+                    // The original requester's pending request was accepted
+                    return (true, null, targetUser.Id);
                 }
 
-                return (false, "Friend request already sent.");
+                return (false, "Friend request already sent.", null);
             }
 
             if (existing.Status == FriendshipStatus.Declined)
@@ -123,7 +124,7 @@ public sealed class FriendService : IFriendService
                 existing.AddresseeId = targetUser.Id;
                 existing.UpdatedAt = DateTimeOffset.UtcNow;
                 await _db.SaveChangesAsync();
-                return (true, null);
+                return (true, null, targetUser.Id);
             }
         }
 
@@ -139,7 +140,7 @@ public sealed class FriendService : IFriendService
         _db.Friendships.Add(friendship);
         await _db.SaveChangesAsync();
 
-        return (true, null);
+        return (true, null, targetUser.Id);
     }
 
     public async Task<(bool Success, string? Error)> AcceptFriendRequestAsync(Guid userId, Guid friendshipId)

@@ -188,6 +188,10 @@ export interface RoomIdleClosedEvent {
   roomId: string;
 }
 
+export interface PendingFriendCountChangedEvent {
+  count: number;
+}
+
 // ============================================================================
 // Hub Methods (Client -> Server)
 // ============================================================================
@@ -218,6 +222,7 @@ export interface GameHubEvents {
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
   onRoomsChanged(callback: () => void): void;
+  onPendingFriendCountChanged(callback: (event: PendingFriendCountChangedEvent) => void): void;
 }
 
 // ============================================================================
@@ -239,6 +244,7 @@ export const GameHubEventNames = {
   SeatModeChanged: 'SeatModeChanged',
   RoomIdleClosed: 'RoomIdleClosed',
   RoomsChanged: 'RoomsChanged',
+  PendingFriendCountChanged: 'PendingFriendCountChanged',
 } as const;
 
 export type GameHubEventName = (typeof GameHubEventNames)[keyof typeof GameHubEventNames];

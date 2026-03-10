@@ -86,4 +86,9 @@ public interface INotificationService
     /// Notifies all lobby members that the room list has changed.
     /// </summary>
     Task NotifyRoomsChangedAsync();
+
+    /// <summary>
+    /// Notifies a user that their pending friend request count has changed.
+    /// </summary>
+    Task NotifyPendingFriendCountChangedAsync(Guid userId, int count);
 }
