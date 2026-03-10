@@ -424,6 +424,7 @@ public sealed class GameService : IGameService
             AnnouncementAction a => new ValidActionResponse { ActionType = "Announce", Mode = a.Mode },
             DoubleAction d => new ValidActionResponse { ActionType = "Double", Mode = d.TargetMode },
             RedoubleAction r => new ValidActionResponse { ActionType = "Redouble", Mode = r.TargetMode },
+            ReRedoubleAction rr => new ValidActionResponse { ActionType = "ReRedouble", Mode = rr.TargetMode },
             _ => throw new ArgumentException($"Unknown action type: {action.GetType().Name}")
         };
     }
