@@ -83,6 +83,11 @@ import { AiTypeInfo } from '../../../../core/services/api.service';
             <button class="custom-game-link" (click)="createRoom.emit()">
               {{ t('quickGame.customGame') }}
             </button>
+
+            <!-- Build your bot hint -->
+            <a class="build-bot-hint" href="https://www.giretra.com/build-your-bot/" target="_blank" rel="noopener">
+              {{ t('quickGame.buildYourBot') }}
+            </a>
           </div>
         </div>
       }
@@ -354,6 +359,20 @@ import { AiTypeInfo } from '../../../../core/services/api.service';
     }
     .custom-game-link:hover {
       color: hsl(var(--muted-foreground));
+    }
+
+    .build-bot-hint {
+      display: block;
+      text-align: center;
+      font-size: 0.6875rem;
+      color: hsl(var(--muted-foreground) / 0.5);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .build-bot-hint:hover {
+      color: hsl(var(--gold));
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     @keyframes fadeIn {

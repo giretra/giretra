@@ -250,7 +250,8 @@
   "quickGame.turnTimer": "1 min par tour",
   "quickGame.play": "Jouer !",
   "quickGame.starting": "Lancement...",
-  "quickGame.customGame": "Plus d'options ? Cr\u00e9ez une table",
+  "quickGame.customGame": "Plus d'options ? Créez une table",
+  "quickGame.buildYourBot": "Envie de créer votre propre bot ? C'est par ici !",
 
   "playerProfile.expert": "Expert",
   "playerProfile.veteran": "Vétéran",
