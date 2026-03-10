@@ -1,6 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { GameMode } from '../../../../api/generated/signalr-types.generated';
 import { GameModeIconComponent } from '../../../../shared/components/game-mode-icon/game-mode-icon.component';
+import { MultiplierState } from '../../../../core/services/game-state.service';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -18,8 +19,14 @@ import { TranslocoDirective } from '@jsverse/transloco';
             <span class="mode-name">{{ t('game.modes.' + modeKey()) }}</span>
           </div>
           @if (multiplier() !== 'Normal') {
-            <div class="popup-multiplier" [class.redoubled]="multiplier() === 'Redoubled'">
-              {{ multiplier() === 'Doubled' ? t('negotiation.double') : t('negotiation.redouble') }}
+            <div class="popup-multiplier"
+              [class.redoubled]="multiplier() === 'Redoubled'"
+              [class.reredoubled]="multiplier() === 'ReRedoubled'">
+              @switch (multiplier()) {
+                @case ('Doubled') { {{ t('negotiation.double') }} }
+                @case ('Redoubled') { {{ t('negotiation.redouble') }} }
+                @case ('ReRedoubled') { {{ t('negotiation.reRedouble') }} }
+              }
             </div>
           }
         </div>
@@ -109,12 +116,18 @@ import { TranslocoDirective } from '@jsverse/transloco';
         background: hsl(var(--destructive) / 0.25);
         border-color: hsl(var(--destructive) / 0.5);
       }
+
+      .popup-multiplier.reredoubled {
+        background: hsl(280, 70%, 45% / 0.2);
+        color: hsl(280, 70%, 65%);
+        border-color: hsl(280, 70%, 45% / 0.4);
+      }
     `,
   ],
 })
 export class GameModePopupComponent {
   readonly gameMode = input.required<GameMode>();
-  readonly multiplier = input<'Normal' | 'Doubled' | 'Redoubled'>('Normal');
+  readonly multiplier = input<MultiplierState>('Normal');
 
   readonly dismissed = output<void>();
 

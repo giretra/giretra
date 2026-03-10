@@ -52,6 +52,12 @@ public sealed class NegotiationActionResponse
                 Player = a.Player,
                 Mode = a.TargetMode
             },
+            ReRedoubleAction a => new NegotiationActionResponse
+            {
+                ActionType = "ReRedouble",
+                Player = a.Player,
+                Mode = a.TargetMode
+            },
             _ => throw new ArgumentException($"Unknown action type: {action.GetType().Name}")
         };
     }

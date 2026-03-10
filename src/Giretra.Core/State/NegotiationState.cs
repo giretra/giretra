@@ -56,6 +56,11 @@ public sealed class NegotiationState
     public ImmutableHashSet<GameMode> RedoubledModes { get; }
 
     /// <summary>
+    /// Tracks which modes have been re-redoubled.
+    /// </summary>
+    public ImmutableHashSet<GameMode> ReRedoubledModes { get; }
+
+    /// <summary>
     /// Tracks which team has announced a Colour mode (restriction: one per team).
     /// </summary>
     public ImmutableDictionary<Team, GameMode> TeamColourAnnouncements { get; }
@@ -80,6 +85,7 @@ public sealed class NegotiationState
         int consecutiveAccepts,
         ImmutableDictionary<GameMode, int> doubledModes,
         ImmutableHashSet<GameMode> redoubledModes,
+        ImmutableHashSet<GameMode> reRedoubledModes,
         ImmutableDictionary<Team, GameMode> teamColourAnnouncements,
         ImmutableHashSet<PlayerPosition> playersWhoAccepted,
         bool hasDoubleOccurred)
@@ -93,6 +99,7 @@ public sealed class NegotiationState
         ConsecutiveAccepts = consecutiveAccepts;
         DoubledModes = doubledModes;
         RedoubledModes = redoubledModes;
+        ReRedoubledModes = reRedoubledModes;
         TeamColourAnnouncements = teamColourAnnouncements;
         PlayersWhoAccepted = playersWhoAccepted;
         HasDoubleOccurred = hasDoubleOccurred;
@@ -113,6 +120,7 @@ public sealed class NegotiationState
             false,
             0,
             ImmutableDictionary<GameMode, int>.Empty,
+            ImmutableHashSet<GameMode>.Empty,
             ImmutableHashSet<GameMode>.Empty,
             ImmutableDictionary<Team, GameMode>.Empty,
             ImmutableHashSet<PlayerPosition>.Empty,
@@ -141,6 +149,7 @@ public sealed class NegotiationState
             AcceptAction accept => ApplyAccept(accept),
             DoubleAction doubleBid => ApplyDouble(doubleBid),
             RedoubleAction redouble => ApplyRedouble(redouble),
+            ReRedoubleAction reRedouble => ApplyReRedouble(reRedouble),
             _ => throw new ArgumentException($"Unknown action type: {action.GetType()}")
         };
     }
@@ -164,6 +173,7 @@ public sealed class NegotiationState
             0,
             DoubledModes,
             RedoubledModes,
+            ReRedoubledModes,
             newTeamColour,
             PlayersWhoAccepted,
             HasDoubleOccurred);
@@ -174,21 +184,6 @@ public sealed class NegotiationState
         var newActions = Actions.Add(action);
         var newConsecutiveAccepts = ConsecutiveAccepts + 1;
         var newPlayersAccepted = PlayersWhoAccepted.Add(action.Player);
-
-        // Check for auto-double on NoTrumps or ColourClubs
-        var accepterTeam = action.Player.GetTeam();
-        var bidderTeam = CurrentBidder?.GetTeam();
-        var isOpponentAccept = bidderTeam != null && accepterTeam != bidderTeam;
-        var causesAutoDouble = CurrentBid.HasValue &&
-                               CurrentBid.Value.AcceptCausesAutoDouble() &&
-                               isOpponentAccept &&
-                               !DoubledModes.ContainsKey(CurrentBid.Value);
-
-        var newDoubledModes = causesAutoDouble
-            ? DoubledModes.SetItem(CurrentBid!.Value, Actions.Count)
-            : DoubledModes;
-
-        var newHasDouble = HasDoubleOccurred || causesAutoDouble;
 
         // Negotiation ends after 3 consecutive accepts
         var complete = newConsecutiveAccepts >= 3 && CurrentBid.HasValue;
@@ -201,11 +196,12 @@ public sealed class NegotiationState
             Dealer,
             complete,
             newConsecutiveAccepts,
-            newDoubledModes,
+            DoubledModes,
             RedoubledModes,
+            ReRedoubledModes,
             TeamColourAnnouncements,
             newPlayersAccepted,
-            newHasDouble);
+            HasDoubleOccurred);
     }
 
     private NegotiationState ApplyDouble(DoubleAction action)
@@ -223,6 +219,7 @@ public sealed class NegotiationState
             0,
             newDoubledModes,
             RedoubledModes,
+            ReRedoubledModes,
             TeamColourAnnouncements,
             PlayersWhoAccepted,
             true);
@@ -243,6 +240,28 @@ public sealed class NegotiationState
             0,
             DoubledModes,
             newRedoubledModes,
+            ReRedoubledModes,
+            TeamColourAnnouncements,
+            PlayersWhoAccepted,
+            true);
+    }
+
+    private NegotiationState ApplyReRedouble(ReRedoubleAction action)
+    {
+        var newActions = Actions.Add(action);
+        var newReRedoubledModes = ReRedoubledModes.Add(action.TargetMode);
+
+        return new NegotiationState(
+            newActions,
+            CurrentBid,
+            CurrentBidder,
+            CurrentPlayer.Next(),
+            Dealer,
+            false,
+            0,
+            DoubledModes,
+            RedoubledModes,
+            newReRedoubledModes,
             TeamColourAnnouncements,
             PlayersWhoAccepted,
             true);
@@ -277,9 +296,11 @@ public sealed class NegotiationState
             {
                 if (DoubledModes.ContainsKey(announcement.Mode))
                 {
-                    var multiplier = RedoubledModes.Contains(announcement.Mode)
-                        ? MultiplierState.Redoubled
-                        : MultiplierState.Doubled;
+                    var multiplier = ReRedoubledModes.Contains(announcement.Mode)
+                        ? MultiplierState.ReRedoubled
+                        : RedoubledModes.Contains(announcement.Mode)
+                            ? MultiplierState.Redoubled
+                            : MultiplierState.Doubled;
 
                     return (announcement.Mode, announcement.Player.GetTeam(), multiplier);
                 }

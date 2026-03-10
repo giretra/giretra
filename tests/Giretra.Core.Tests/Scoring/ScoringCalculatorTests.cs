@@ -194,6 +194,20 @@ public class ScoringCalculatorTests
         Assert.Equal(52, result.Team1MatchPoints);  // 26 × 2
     }
 
+    [Fact]
+    public void NoTrumps_Redoubled_104Points()
+    {
+        var result = _calculator.Calculate(
+            GameMode.NoTrumps,
+            MultiplierState.Redoubled,
+            Team.Team1,
+            80,
+            50,
+            sweepingTeam: null);
+
+        Assert.Equal(104, result.Team1MatchPoints);  // 26 × 4
+    }
+
     #endregion
 
     #region Colour Scoring Tests
@@ -258,7 +272,7 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void ColourClubs_AnnouncerWins_Gets32Points()
+    public void ColourClubs_AnnouncerWins_Gets16Points()
     {
         var result = _calculator.Calculate(
             GameMode.ColourClubs,
@@ -268,12 +282,12 @@ public class ScoringCalculatorTests
             62,
             sweepingTeam: null);
 
-        Assert.Equal(32, result.Team1MatchPoints);
+        Assert.Equal(16, result.Team1MatchPoints);
         Assert.Equal(0, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void ColourClubs_AnnouncerLoses_DefenderGets32Points()
+    public void ColourClubs_AnnouncerLoses_DefenderGets16Points()
     {
         var result = _calculator.Calculate(
             GameMode.ColourClubs,
@@ -284,11 +298,11 @@ public class ScoringCalculatorTests
             sweepingTeam: null);
 
         Assert.Equal(0, result.Team1MatchPoints);
-        Assert.Equal(32, result.Team2MatchPoints);
+        Assert.Equal(16, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void ColourClubs_Doubled_64Points()
+    public void ColourClubs_Doubled_32Points()
     {
         var result = _calculator.Calculate(
             GameMode.ColourClubs,
@@ -298,11 +312,11 @@ public class ScoringCalculatorTests
             62,
             sweepingTeam: null);
 
-        Assert.Equal(64, result.Team1MatchPoints);  // 32 × 2
+        Assert.Equal(32, result.Team1MatchPoints);  // 16 × 2
     }
 
     [Fact]
-    public void ColourClubs_Redoubled_256Points()
+    public void ColourClubs_Redoubled_64Points()
     {
         var result = _calculator.Calculate(
             GameMode.ColourClubs,
@@ -312,7 +326,21 @@ public class ScoringCalculatorTests
             62,
             sweepingTeam: null);
 
-        Assert.Equal(256, result.Team1MatchPoints);  // 32 × 8 (auto-double × redouble)
+        Assert.Equal(64, result.Team1MatchPoints);  // 16 × 4
+    }
+
+    [Fact]
+    public void ColourClubs_ReRedoubled_128Points()
+    {
+        var result = _calculator.Calculate(
+            GameMode.ColourClubs,
+            MultiplierState.ReRedoubled,
+            Team.Team1,
+            100,
+            62,
+            sweepingTeam: null);
+
+        Assert.Equal(128, result.Team1MatchPoints);  // 16 × 8
     }
 
     [Fact]

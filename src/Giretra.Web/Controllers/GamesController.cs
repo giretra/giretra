@@ -113,6 +113,11 @@ public class GamesController : ControllerBase
                     return BadRequest("Mode is required for Redouble action.");
                 action = new RedoubleAction(position.Value, request.Mode.Value);
                 break;
+            case "reredouble":
+                if (request.Mode == null)
+                    return BadRequest("Mode is required for ReRedouble action.");
+                action = new ReRedoubleAction(position.Value, request.Mode.Value);
+                break;
             default:
                 return BadRequest($"Unknown action type: {request.ActionType}");
         }

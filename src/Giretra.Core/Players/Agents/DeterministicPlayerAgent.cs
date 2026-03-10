@@ -674,35 +674,6 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var acceptAction = validActions.OfType<AcceptAction>().FirstOrDefault();
         if (acceptAction != null)
         {
-            var currentBid = negotiationState.CurrentBid;
-            if (currentBid.HasValue)
-            {
-                var bidMode = currentBid.Value;
-
-                // Accepting Clubs or NoTrumps by opponent triggers auto-double —
-                // treat this like voluntarily doubling: require a strong hand
-                if (bidMode.AcceptCausesAutoDouble() &&
-                    negotiationState.CurrentBidder.HasValue &&
-                    negotiationState.CurrentBidder.Value.GetTeam() != _myTeam &&
-                    !negotiationState.DoubledModes.ContainsKey(bidMode))
-                {
-                    var eval = modeEvals[bidMode];
-                    double autoDoubleThreshold = doubleThreshold - 5;
-
-                    if (eval.Score >= autoDoubleThreshold && eval.GuaranteedTricks >= doubleGuaranteedMin - 1)
-                        return acceptAction;
-
-                    // Hand not strong enough — try to escape-announce into a better mode
-                    var escapeAnnounce = announceActions
-                        .Where(a => modeEvals[a.Mode].Score >= competeThreshold - 10)
-                        .OrderByDescending(a => modeEvals[a.Mode].Score)
-                        .FirstOrDefault();
-
-                    if (escapeAnnounce != null)
-                        return escapeAnnounce;
-                }
-            }
-
             return acceptAction;
         }
 

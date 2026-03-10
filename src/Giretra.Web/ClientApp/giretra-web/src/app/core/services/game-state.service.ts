@@ -31,7 +31,7 @@ export type GamePhase =
   | 'dealSummary'
   | 'matchEnd';
 
-export type MultiplierState = 'Normal' | 'Doubled' | 'Redoubled';
+export type MultiplierState = 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
 
 @Injectable({
   providedIn: 'root',

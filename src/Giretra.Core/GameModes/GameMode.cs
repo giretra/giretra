@@ -82,7 +82,6 @@ public static class GameModeExtensions
         {
             GameMode.AllTrumps => 26,
             GameMode.NoTrumps => 26,
-            GameMode.ColourClubs => 32,
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
@@ -102,17 +101,24 @@ public static class GameModeExtensions
 
     /// <summary>
     /// Checks if redouble is allowed for this game mode.
-    /// Redouble is NOT allowed for NoTrumps and ColourClubs (already implicitly doubled on accept).
+    /// Redouble is allowed for all modes.
     /// </summary>
     public static bool CanRedouble(this GameMode mode)
-        => mode is not GameMode.NoTrumps;
+        => true;
 
     /// <summary>
-    /// Checks if accepting this mode by opponent causes automatic double.
+    /// Checks if opponents must explicitly double this mode before they can accept it.
     /// This applies to NoTrumps and ColourClubs.
     /// </summary>
-    public static bool AcceptCausesAutoDouble(this GameMode mode)
+    public static bool RequiresDoubleBeforeAccept(this GameMode mode)
         => mode is GameMode.NoTrumps or GameMode.ColourClubs;
+
+    /// <summary>
+    /// Checks if re-redouble (×8) is allowed for this game mode.
+    /// Only allowed for ColourClubs.
+    /// </summary>
+    public static bool CanReRedouble(this GameMode mode)
+        => mode is GameMode.ColourClubs;
 
     /// <summary>
     /// Creates a Colour game mode from a suit.

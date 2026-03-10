@@ -51,6 +51,13 @@ public static class NegotiationEngine
         // First player must announce (cannot accept with no bid)
         if (!state.CurrentBid.HasValue) return false;
 
+        // For NoTrumps/ColourClubs, opponents cannot accept until the mode has been explicitly doubled
+        if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
+            !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -126,9 +133,6 @@ public static class NegotiationEngine
         // Mode must not already be redoubled
         if (state.RedoubledModes.Contains(mode)) return false;
 
-        // Redouble not allowed for NoTrumps or ColourClubs
-        if (!mode.CanRedouble()) return false;
-
         // Only announcer's team can redouble
         var playerTeam = state.CurrentPlayer.GetTeam();
 
@@ -156,6 +160,51 @@ public static class NegotiationEngine
             .ToList();
 
         redoubleableModes = modes;
+        return modes.Count > 0;
+    }
+
+    /// <summary>
+    /// Checks if the current player can re-redouble the specified mode.
+    /// </summary>
+    public static bool CanReRedouble(NegotiationState state, GameMode mode)
+    {
+        if (state.IsComplete) return false;
+
+        // Mode must have been redoubled
+        if (!state.RedoubledModes.Contains(mode)) return false;
+
+        // Mode must not already be re-redoubled
+        if (state.ReRedoubledModes.Contains(mode)) return false;
+
+        // Re-redouble only allowed for ColourClubs
+        if (!mode.CanReRedouble()) return false;
+
+        // Only opponent team (NOT announcer's team) can re-redouble
+        var playerTeam = state.CurrentPlayer.GetTeam();
+
+        var announcer = state.Actions
+            .OfType<AnnouncementAction>()
+            .FirstOrDefault(a => a.Mode == mode);
+
+        if (announcer is null) return false;
+
+        return announcer.Player.GetTeam() != playerTeam;
+    }
+
+    /// <summary>
+    /// Checks if the current player can re-redouble any mode.
+    /// </summary>
+    public static bool CanReRedouble(NegotiationState state, out IReadOnlyList<GameMode> reRedoubleableModes)
+    {
+        reRedoubleableModes = Array.Empty<GameMode>();
+
+        if (state.IsComplete) return false;
+
+        var modes = state.RedoubledModes
+            .Where(m => CanReRedouble(state, m))
+            .ToList();
+
+        reRedoubleableModes = modes;
         return modes.Count > 0;
     }
 
@@ -200,6 +249,15 @@ public static class NegotiationEngine
             }
         }
 
+        // Re-redouble
+        if (CanReRedouble(state, out var reRedoubleableModes))
+        {
+            foreach (var mode in reRedoubleableModes)
+            {
+                actions.Add(new ReRedoubleAction(player, mode));
+            }
+        }
+
         return actions;
     }
 
@@ -224,6 +282,7 @@ public static class NegotiationEngine
             AcceptAction => ValidateAccept(state),
             DoubleAction doubleBid => ValidateDouble(state, doubleBid),
             RedoubleAction redouble => ValidateRedouble(state, redouble),
+            ReRedoubleAction reRedouble => ValidateReRedouble(state, reRedouble),
             _ => $"Unknown action type: {action.GetType().Name}"
         };
     }
@@ -262,6 +321,12 @@ public static class NegotiationEngine
         if (!state.CurrentBid.HasValue)
         {
             return "Cannot accept when no bid has been made.";
+        }
+
+        if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
+            !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
+        {
+            return $"Cannot accept {state.CurrentBid.Value} until it has been explicitly doubled.";
         }
 
         return null;
@@ -335,11 +400,6 @@ public static class NegotiationEngine
             return $"{action.TargetMode} has already been redoubled.";
         }
 
-        if (!action.TargetMode.CanRedouble())
-        {
-            return $"Cannot redouble {action.TargetMode}.";
-        }
-
         var playerTeam = action.Player.GetTeam();
 
         var announcer = state.Actions
@@ -354,6 +414,43 @@ public static class NegotiationEngine
         if (announcer.Player.GetTeam() != playerTeam)
         {
             return "Only the announcer's team can redouble.";
+        }
+
+        return null;
+    }
+
+    private static string? ValidateReRedouble(NegotiationState state, ReRedoubleAction action)
+    {
+        if (!state.RedoubledModes.Contains(action.TargetMode))
+        {
+            return $"{action.TargetMode} has not been redoubled.";
+        }
+
+        if (state.ReRedoubledModes.Contains(action.TargetMode))
+        {
+            return $"{action.TargetMode} has already been re-redoubled.";
+        }
+
+        if (!action.TargetMode.CanReRedouble())
+        {
+            return $"Cannot re-redouble {action.TargetMode}.";
+        }
+
+        var playerTeam = action.Player.GetTeam();
+
+        var announcer = state.Actions
+            .OfType<AnnouncementAction>()
+            .FirstOrDefault(a => a.Mode == action.TargetMode);
+
+        if (announcer is null)
+        {
+            return $"{action.TargetMode} has not been announced.";
+        }
+
+        // Opponent team re-redoubles (NOT the announcer's team)
+        if (announcer.Player.GetTeam() == playerTeam)
+        {
+            return "Only the opponent team can re-redouble.";
         }
 
         return null;

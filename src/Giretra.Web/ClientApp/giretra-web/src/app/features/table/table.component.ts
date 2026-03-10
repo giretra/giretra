@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, effect, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { GameStateService, GamePhase } from '../../core/services/game-state.service';
+import { GameStateService, GamePhase, MultiplierState } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { GameHubService } from '../../api/game-hub.service';
@@ -283,7 +283,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   readonly gameModePopup = signal<{
     mode: GameMode;
-    multiplier: 'Normal' | 'Doubled' | 'Redoubled';
+    multiplier: MultiplierState;
   } | null>(null);
   private gameModePopupTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private previousPhase: GamePhase | null = null;
@@ -350,7 +350,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   private showGameModePopup(
     mode: GameMode,
-    multiplier: 'Normal' | 'Doubled' | 'Redoubled'
+    multiplier: MultiplierState
   ): void {
     if (this.gameModePopupTimeoutId) {
       clearTimeout(this.gameModePopupTimeoutId);

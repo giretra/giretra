@@ -11,6 +11,7 @@ public enum RecordedActionType
     Accept,
     Double,
     Redouble,
+    ReRedouble,
     PlayCard
 }
 
