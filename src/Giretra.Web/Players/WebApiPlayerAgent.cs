@@ -246,7 +246,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         catch (OperationCanceledException)
         {
             // Timeout - auto-continue
-            tcs.TrySetResult(true);
+            tcs.TrySetResult(false);
         }
         finally
         {
