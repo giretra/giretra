@@ -109,9 +109,9 @@ public class GameModeTests
     [InlineData(GameMode.ColourClubs, true)]
     [InlineData(GameMode.AllTrumps, false)]
     [InlineData(GameMode.ColourSpades, false)]
-    public void RequiresDoubleBeforeAccept_ReturnsCorrectValue(GameMode mode, bool expected)
+    public void AutoDoublesOnOpponentAccept_ReturnsCorrectValue(GameMode mode, bool expected)
     {
-        Assert.Equal(expected, mode.RequiresDoubleBeforeAccept());
+        Assert.Equal(expected, mode.AutoDoublesOnOpponentAccept());
     }
 
     [Theory]

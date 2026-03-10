@@ -51,18 +51,6 @@ public static class NegotiationEngine
         // First player must announce (cannot accept with no bid)
         if (!state.CurrentBid.HasValue) return false;
 
-        // For NoTrumps/ColourClubs, OPPONENTS cannot accept until the mode has been explicitly doubled.
-        // The announcer's team can always accept their own bid.
-        if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
-            !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
-        {
-            var announcerTeam = state.CurrentBidder!.Value.GetTeam();
-            if (state.CurrentPlayer.GetTeam() != announcerTeam)
-            {
-                return false;
-            }
-        }
-
         return true;
     }
 
@@ -138,7 +126,6 @@ public static class NegotiationEngine
         // Mode must not already be redoubled
         if (state.RedoubledModes.Contains(mode)) return false;
 
-        // Only announcer's team can redouble
         var playerTeam = state.CurrentPlayer.GetTeam();
 
         // Find who announced this mode
@@ -147,6 +134,11 @@ public static class NegotiationEngine
             .FirstOrDefault(a => a.Mode == mode);
 
         if (announcer is null) return false;
+
+        // Auto-doubled: opponent's partner (same team as auto-doubler) can redouble
+        // Normal: announcer's team can redouble
+        if (state.AutoDoubledModes.Contains(mode))
+            return announcer.Player.GetTeam() != playerTeam;
 
         return announcer.Player.GetTeam() == playerTeam;
     }
@@ -184,7 +176,6 @@ public static class NegotiationEngine
         // Re-redouble only allowed for ColourClubs
         if (!mode.CanReRedouble()) return false;
 
-        // Only opponent team (NOT announcer's team) can re-redouble
         var playerTeam = state.CurrentPlayer.GetTeam();
 
         var announcer = state.Actions
@@ -192,6 +183,11 @@ public static class NegotiationEngine
             .FirstOrDefault(a => a.Mode == mode);
 
         if (announcer is null) return false;
+
+        // Auto-doubled: announcer's team can re-redouble (inverted)
+        // Normal: opponent team can re-redouble
+        if (state.AutoDoubledModes.Contains(mode))
+            return announcer.Player.GetTeam() == playerTeam;
 
         return announcer.Player.GetTeam() != playerTeam;
     }
@@ -328,17 +324,6 @@ public static class NegotiationEngine
             return "Cannot accept when no bid has been made.";
         }
 
-        // Only opponents are blocked from accepting NoTrumps/ColourClubs before doubling.
-        if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
-            !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
-        {
-            var announcerTeam = state.CurrentBidder!.Value.GetTeam();
-            if (state.CurrentPlayer.GetTeam() != announcerTeam)
-            {
-                return $"Cannot accept {state.CurrentBid.Value} until it has been explicitly doubled.";
-            }
-        }
-
         return null;
     }
 
@@ -421,9 +406,21 @@ public static class NegotiationEngine
             return $"{action.TargetMode} has not been announced.";
         }
 
-        if (announcer.Player.GetTeam() != playerTeam)
+        // Auto-doubled: opponent's team (not announcer's team) can redouble
+        // Normal: announcer's team can redouble
+        if (state.AutoDoubledModes.Contains(action.TargetMode))
         {
-            return "Only the announcer's team can redouble.";
+            if (announcer.Player.GetTeam() == playerTeam)
+            {
+                return "Only the opponent team can redouble an auto-doubled mode.";
+            }
+        }
+        else
+        {
+            if (announcer.Player.GetTeam() != playerTeam)
+            {
+                return "Only the announcer's team can redouble.";
+            }
         }
 
         return null;
@@ -457,10 +454,21 @@ public static class NegotiationEngine
             return $"{action.TargetMode} has not been announced.";
         }
 
-        // Opponent team re-redoubles (NOT the announcer's team)
-        if (announcer.Player.GetTeam() == playerTeam)
+        // Auto-doubled: announcer's team can re-redouble (inverted)
+        // Normal: opponent team can re-redouble
+        if (state.AutoDoubledModes.Contains(action.TargetMode))
         {
-            return "Only the opponent team can re-redouble.";
+            if (announcer.Player.GetTeam() != playerTeam)
+            {
+                return "Only the announcer's team can re-redouble an auto-doubled mode.";
+            }
+        }
+        else
+        {
+            if (announcer.Player.GetTeam() == playerTeam)
+            {
+                return "Only the opponent team can re-redouble.";
+            }
         }
 
         return null;

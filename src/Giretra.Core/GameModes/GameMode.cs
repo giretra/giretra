@@ -107,10 +107,10 @@ public static class GameModeExtensions
         => true;
 
     /// <summary>
-    /// Checks if opponents must explicitly double this mode before they can accept it.
+    /// Checks if an opponent accepting this mode auto-doubles it (×2).
     /// This applies to NoTrumps and ColourClubs.
     /// </summary>
-    public static bool RequiresDoubleBeforeAccept(this GameMode mode)
+    public static bool AutoDoublesOnOpponentAccept(this GameMode mode)
         => mode is GameMode.NoTrumps or GameMode.ColourClubs;
 
     /// <summary>
