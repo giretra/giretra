@@ -362,6 +362,12 @@ public sealed class RemoteBotClient : IDisposable
                 player = a.Player.ToString(),
                 targetMode = a.TargetMode.ToString()
             },
+            ReRedoubleAction a => new
+            {
+                type = "ReRedouble",
+                player = a.Player.ToString(),
+                targetMode = a.TargetMode.ToString()
+            },
             _ => throw new ArgumentException($"Unknown negotiation action type: {action.GetType()}")
         };
 
@@ -375,6 +381,7 @@ public sealed class RemoteBotClient : IDisposable
             AcceptAction => new { type = "Accept" },
             DoubleAction a => new { type = "Double", targetMode = a.TargetMode.ToString() },
             RedoubleAction a => new { type = "Redouble", targetMode = a.TargetMode.ToString() },
+            ReRedoubleAction a => new { type = "ReRedouble", targetMode = a.TargetMode.ToString() },
             _ => throw new ArgumentException($"Unknown negotiation action type: {action.GetType()}")
         };
 
@@ -416,6 +423,10 @@ public sealed class RemoteBotClient : IDisposable
 
             RedoubleAction a =>
                 string.Equals(response.Type, "Redouble", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(response.TargetMode, a.TargetMode.ToString(), StringComparison.OrdinalIgnoreCase),
+
+            ReRedoubleAction a =>
+                string.Equals(response.Type, "ReRedouble", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(response.TargetMode, a.TargetMode.ToString(), StringComparison.OrdinalIgnoreCase),
 
             _ => false
