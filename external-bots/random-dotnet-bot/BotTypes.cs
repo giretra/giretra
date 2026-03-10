@@ -87,7 +87,7 @@ public enum GameMode
 /// Scoring multiplier for a deal.
 /// Normal = x1, Doubled = x2, Redoubled = x4.
 /// </summary>
-public enum Multiplier { Normal, Doubled, Redoubled }
+public enum Multiplier { Normal, Doubled, Redoubled, ReRedoubled }
 
 // ─── Trick ──────────────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ public class HandState
 // ─── Negotiation ────────────────────────────────────────────────────
 
 /// <summary>The type of action taken during negotiation.</summary>
-public enum NegotiationActionType { Announcement, Accept, Double, Redouble }
+public enum NegotiationActionType { Announcement, Accept, Double, Redouble, ReRedouble }
 
 /// <summary>
 /// A negotiation action from the history (includes the player who took it).
@@ -204,6 +204,9 @@ public class NegotiationState
 
     /// <summary>Game modes that have been redoubled.</summary>
     public List<GameMode> RedoubledModes { get; set; } = [];
+
+    /// <summary>Game modes that have been re-redoubled (ColourClubs only).</summary>
+    public List<GameMode> ReRedoubledModes { get; set; } = [];
 
     /// <summary>Each team's Colour announcement this deal (max one Colour per team).</summary>
     public Dictionary<Team, GameMode> TeamColourAnnouncements { get; set; } = new();
