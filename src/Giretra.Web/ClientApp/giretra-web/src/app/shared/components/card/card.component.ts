@@ -80,16 +80,12 @@ import { getCardSvgHref, getCardBackSvgHref, isTrump } from '../../../core/utils
     }
 
     .playable:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      outline: 2px solid hsl(var(--gold));
+      outline-offset: 2px;
     }
 
     .lifted {
       transform: translateY(-12px);
-    }
-
-    .lifted:hover {
-      transform: translateY(-16px);
     }
 
     .dimmed {
