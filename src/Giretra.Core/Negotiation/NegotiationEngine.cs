@@ -51,11 +51,16 @@ public static class NegotiationEngine
         // First player must announce (cannot accept with no bid)
         if (!state.CurrentBid.HasValue) return false;
 
-        // For NoTrumps/ColourClubs, opponents cannot accept until the mode has been explicitly doubled
+        // For NoTrumps/ColourClubs, OPPONENTS cannot accept until the mode has been explicitly doubled.
+        // The announcer's team can always accept their own bid.
         if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
             !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
         {
-            return false;
+            var announcerTeam = state.CurrentBidder!.Value.GetTeam();
+            if (state.CurrentPlayer.GetTeam() != announcerTeam)
+            {
+                return false;
+            }
         }
 
         return true;
@@ -323,10 +328,15 @@ public static class NegotiationEngine
             return "Cannot accept when no bid has been made.";
         }
 
+        // Only opponents are blocked from accepting NoTrumps/ColourClubs before doubling.
         if (state.CurrentBid.Value.RequiresDoubleBeforeAccept() &&
             !state.DoubledModes.ContainsKey(state.CurrentBid.Value))
         {
-            return $"Cannot accept {state.CurrentBid.Value} until it has been explicitly doubled.";
+            var announcerTeam = state.CurrentBidder!.Value.GetTeam();
+            if (state.CurrentPlayer.GetTeam() != announcerTeam)
+            {
+                return $"Cannot accept {state.CurrentBid.Value} until it has been explicitly doubled.";
+            }
         }
 
         return null;

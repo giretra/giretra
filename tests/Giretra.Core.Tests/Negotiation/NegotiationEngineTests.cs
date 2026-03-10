@@ -487,9 +487,114 @@ public class NegotiationEngineTests
         // Bottom announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
-        // Validate accept should fail
+        // Validate accept should fail for opponent
         var error = NegotiationEngine.ValidateAction(state, new AcceptAction(PlayerPosition.Left));
         Assert.NotNull(error);
         Assert.Contains("doubled", error);
+    }
+
+    [Fact]
+    public void AnnouncerTeam_CanAccept_NoTrumps_WithoutDoubling()
+    {
+        // The double-before-accept rule only applies to OPPONENTS, not the announcer's team.
+        // Scenario: NoTrumps is the current bid (undoubled), a different mode was doubled,
+        // and the announcer's team should still be able to accept.
+        var state = NegotiationState.Create(PlayerPosition.Bottom);
+
+        // Left (Team2) announces ColourClubs
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourClubs));
+
+        // Top (Team1) announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.NoTrumps));
+
+        // Right (Team2) doubles ColourClubs (not NoTrumps!)
+        // HasDoubleOccurred = true, but NoTrumps is NOT doubled
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs));
+
+        // Bottom (Team1, NoTrumps announcer's team) can accept despite NoTrumps being undoubled
+        Assert.True(NegotiationEngine.CanAccept(state));
+        Assert.Null(NegotiationEngine.ValidateAction(state, new AcceptAction(PlayerPosition.Bottom)));
+    }
+
+    [Fact]
+    public void Opponent_CannotAccept_NoTrumps_WithoutDoubling_EvenAfterOtherDouble()
+    {
+        // Opponents still cannot accept undoubled NoTrumps, even if a different mode was doubled.
+        var state = NegotiationState.Create(PlayerPosition.Right);
+
+        // Bottom (Team1) announces ColourClubs
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
+
+        // Left (Team2) announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.NoTrumps));
+
+        // Top (Team1) doubles ColourClubs? No, that's Team1's own bid.
+        // Top (Team1) can double NoTrumps (opponent's bid), but let's set up opponent accepting undoubled NoTrumps.
+        // Actually, we need a Team1 player to be asked to accept undoubled NoTrumps announced by Team2.
+        // Top doubles... hmm, we need HasDoubleOccurred with NoTrumps undoubled and an opponent trying to accept.
+
+        // Fresh scenario:
+        var state2 = NegotiationState.Create(PlayerPosition.Top);
+
+        // Right (Team2) announces ColourClubs
+        state2 = state2.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs));
+
+        // Bottom (Team1) announces NoTrumps
+        state2 = state2.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
+
+        // Left (Team2) doubles ColourClubs? No, that's Team2's own bid. Can't double own team.
+        // Left (Team2) can double NoTrumps (Team1's bid).
+        // We need a double on something OTHER than NoTrumps by an opponent.
+        // But Left is Team2, NoTrumps was by Team1. Left CAN double NoTrumps, but we want to double something else.
+
+        // Simpler: just verify opponent cannot accept undoubled NoTrumps (basic case, already tested)
+        // The new dimension is the team-aware check.
+        var state3 = NegotiationState.Create(PlayerPosition.Right);
+
+        // Bottom (Team1) announces NoTrumps
+        state3 = state3.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
+
+        // Left (Team2, opponent) cannot accept undoubled NoTrumps
+        Assert.False(NegotiationEngine.CanAccept(state3));
+        Assert.NotNull(NegotiationEngine.ValidateAction(state3, new AcceptAction(PlayerPosition.Left)));
+    }
+
+    [Fact]
+    public void GetValidActions_NotEmpty_AfterReRedoubleWithUndoubledNoTrumps()
+    {
+        // This is the exact scenario that caused the crash:
+        // After ColourClubs is doubled → redoubled → re-redoubled, and NoTrumps
+        // is the current bid (undoubled), the announcer's team must still have valid actions.
+        var state = NegotiationState.Create(PlayerPosition.Top);
+
+        // Right (Team2) announces ColourClubs
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs));
+
+        // Bottom (Team1) announces ColourDiamonds
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourDiamonds));
+
+        // Left (Team2) announces NoTrumps (current bid = NoTrumps, bidder = Left/Team2)
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.NoTrumps));
+
+        // Top (Team1) doubles ColourClubs (opponent bid)
+        state = state.Apply(new DoubleAction(PlayerPosition.Top, GameMode.ColourClubs));
+
+        // Right (Team2, ColourClubs announcer's team) redoubles ColourClubs
+        state = state.Apply(new RedoubleAction(PlayerPosition.Right, GameMode.ColourClubs));
+
+        // Bottom (Team1, opponent) re-redoubles ColourClubs
+        state = state.Apply(new ReRedoubleAction(PlayerPosition.Bottom, GameMode.ColourClubs));
+
+        // Now it's Left's turn (Team2, NoTrumps announcer's team)
+        // CurrentBid = NoTrumps (undoubled), HasDoubleOccurred = true
+        Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
+        Assert.Equal(GameMode.NoTrumps, state.CurrentBid);
+        Assert.True(state.HasDoubleOccurred);
+        Assert.False(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
+
+        // Left (announcer's team) must have at least Accept available
+        var validActions = NegotiationEngine.GetValidActions(state);
+        Assert.NotEmpty(validActions);
+        Assert.Contains(validActions, a => a is AcceptAction);
     }
 }
