@@ -77,7 +77,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourSpades, 16)]
     [InlineData(GameMode.ColourHearts, 16)]
     [InlineData(GameMode.ColourDiamonds, 16)]
-    [InlineData(GameMode.ColourClubs, 32)]
+    [InlineData(GameMode.ColourClubs, 16)]
     public void GetBaseMatchPoints_ReturnsCorrectValue(GameMode mode, int expected)
     {
         Assert.Equal(expected, mode.GetBaseMatchPoints());
@@ -97,7 +97,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourSpades, true)]
     [InlineData(GameMode.ColourHearts, true)]
     [InlineData(GameMode.ColourDiamonds, true)]
-    [InlineData(GameMode.NoTrumps, false)]
+    [InlineData(GameMode.NoTrumps, true)]
     [InlineData(GameMode.ColourClubs, true)]
     public void CanRedouble_ReturnsCorrectValue(GameMode mode, bool expected)
     {
@@ -109,9 +109,19 @@ public class GameModeTests
     [InlineData(GameMode.ColourClubs, true)]
     [InlineData(GameMode.AllTrumps, false)]
     [InlineData(GameMode.ColourSpades, false)]
-    public void AcceptCausesAutoDouble_ReturnsCorrectValue(GameMode mode, bool expected)
+    public void RequiresDoubleBeforeAccept_ReturnsCorrectValue(GameMode mode, bool expected)
     {
-        Assert.Equal(expected, mode.AcceptCausesAutoDouble());
+        Assert.Equal(expected, mode.RequiresDoubleBeforeAccept());
+    }
+
+    [Theory]
+    [InlineData(GameMode.ColourClubs, true)]
+    [InlineData(GameMode.NoTrumps, false)]
+    [InlineData(GameMode.AllTrumps, false)]
+    [InlineData(GameMode.ColourSpades, false)]
+    public void CanReRedouble_ReturnsCorrectValue(GameMode mode, bool expected)
+    {
+        Assert.Equal(expected, mode.CanReRedouble());
     }
 
     [Theory]
@@ -154,5 +164,6 @@ public class GameModeTests
         Assert.Equal(1, MultiplierState.Normal.GetMultiplier());
         Assert.Equal(2, MultiplierState.Doubled.GetMultiplier());
         Assert.Equal(4, MultiplierState.Redoubled.GetMultiplier());
+        Assert.Equal(8, MultiplierState.ReRedoubled.GetMultiplier());
     }
 }

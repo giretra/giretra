@@ -18,7 +18,12 @@ public enum MultiplierState
     /// <summary>
     /// Redoubled scoring (×4). Applied when announcer team counters a Double.
     /// </summary>
-    Redoubled = 4
+    Redoubled = 4,
+
+    /// <summary>
+    /// Re-redoubled scoring (×8). Applied when opponents counter a Redouble (ColourClubs only).
+    /// </summary>
+    ReRedoubled = 8
 }
 
 public static class MultiplierStateExtensions
@@ -28,17 +33,4 @@ public static class MultiplierStateExtensions
     /// </summary>
     public static int GetMultiplier(this MultiplierState state)
         => (int)state;
-
-    /// <summary>
-    /// Gets the effective multiplier considering auto-doubled modes.
-    /// For modes that auto-double on accept (ColourClubs), a redouble
-    /// multiplies the already-doubled value by 4, giving ×8 from base.
-    /// </summary>
-    public static int GetEffectiveMultiplier(this MultiplierState state, GameMode mode)
-    {
-        var baseMultiplier = state.GetMultiplier();
-        if (mode.AcceptCausesAutoDouble() && state == MultiplierState.Redoubled)
-            return baseMultiplier * 2; // 4 × 2 = 8
-        return baseMultiplier;
-    }
 }

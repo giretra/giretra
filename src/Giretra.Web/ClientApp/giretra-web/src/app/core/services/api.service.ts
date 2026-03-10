@@ -90,13 +90,13 @@ export interface StartGameResponse {
 }
 
 export interface NegotiationAction {
-  actionType: 'Announce' | 'Accept' | 'Double' | 'Redouble';
+  actionType: 'Announce' | 'Accept' | 'Double' | 'Redouble' | 'ReRedouble';
   player: PlayerPosition;
   mode: GameMode | null;
 }
 
 export interface ValidAction {
-  actionType: 'Announce' | 'Accept' | 'Double' | 'Redouble';
+  actionType: 'Announce' | 'Accept' | 'Double' | 'Redouble' | 'ReRedouble';
   mode: GameMode | null;
 }
 
@@ -125,7 +125,7 @@ export interface GameStateResponse {
   phase: 'AwaitingCut' | 'InitialDistribution' | 'Negotiation' | 'FinalDistribution' | 'Playing' | 'Completed';
   completedDealsCount: number;
   gameMode: GameMode | null;
-  multiplier: 'Normal' | 'Doubled' | 'Redoubled';
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
   currentTrick: TrickResponse | null;
   completedTricks: TrickResponse[];
   team1CardPoints: number;

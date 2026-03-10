@@ -40,6 +40,7 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
             AnnouncementAction a => (RecordedActionType.Announce, (Core.GameModes.GameMode?)a.Mode),
             DoubleAction d => (RecordedActionType.Double, (Core.GameModes.GameMode?)d.TargetMode),
             RedoubleAction r => (RecordedActionType.Redouble, (Core.GameModes.GameMode?)r.TargetMode),
+            ReRedoubleAction rr => (RecordedActionType.ReRedouble, (Core.GameModes.GameMode?)rr.TargetMode),
             _ => throw new ArgumentException($"Unknown action type: {result.GetType().Name}")
         };
 

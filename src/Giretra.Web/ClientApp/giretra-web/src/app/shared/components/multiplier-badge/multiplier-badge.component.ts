@@ -32,6 +32,11 @@ import { MultiplierState } from '../../../core/services/game-state.service';
       background: hsl(0, 72%, 51%);
       color: white;
     }
+
+    .reredoubled {
+      background: hsl(280, 70%, 45%);
+      color: white;
+    }
   `],
 })
 export class MultiplierBadgeComponent {
@@ -45,6 +50,8 @@ export class MultiplierBadgeComponent {
         return '\u00d72';
       case 'Redoubled':
         return '\u00d74';
+      case 'ReRedoubled':
+        return '\u00d78';
       default:
         return '';
     }
@@ -56,6 +63,8 @@ export class MultiplierBadgeComponent {
         return 'doubled';
       case 'Redoubled':
         return 'redoubled';
+      case 'ReRedoubled':
+        return 'reredoubled';
       default:
         return '';
     }

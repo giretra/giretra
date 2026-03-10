@@ -45,6 +45,9 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
                   } @else if (action.actionType === 'Redouble') {
                     <span class="multiplier-symbol">\u00d74</span>
                     <span>{{ t('negotiation.redouble') }}</span>
+                  } @else if (action.actionType === 'ReRedouble') {
+                    <span class="multiplier-symbol">\u00d78</span>
+                    <span>{{ t('negotiation.reRedouble') }}</span>
                   } @else {
                     <span>{{ t('negotiation.accept') }}</span>
                     @if (currentBid()?.mode) {
@@ -247,6 +250,12 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
       border: 1px solid hsl(var(--destructive) / 0.5);
     }
 
+    .action-badge.reredouble-badge {
+      background: hsl(280, 70%, 45% / 0.2);
+      color: hsl(280, 70%, 65%);
+      border: 1px solid hsl(280, 70%, 45% / 0.4);
+    }
+
     .multiplier-symbol {
       font-weight: 800;
       font-size: 0.8125rem;
@@ -301,6 +310,7 @@ export class BidDialogComponent {
       case 'Accept': return 'accept-badge';
       case 'Double': return 'double-badge';
       case 'Redouble': return 'redouble-badge';
+      case 'ReRedouble': return 'reredouble-badge';
       default: return '';
     }
   }

@@ -102,6 +102,7 @@
   "negotiation.accept": "Bonne",
   "negotiation.double": "Contré",
   "negotiation.redouble": "Surcontré",
+  "negotiation.reRedouble": "Sur-surcontré",
 
   "bidDialog.title": "À vous d'enchérir",
   "bidDialog.noBidYouOpen": "Pas d'annonce : à vous d'ouvrir",

@@ -47,7 +47,7 @@ interface BidButton {
               [variant]="btn.variant"
               class="bid-btn"
               [class.accept-btn]="btn.actionType === 'Accept'"
-              [class.double-btn]="btn.actionType === 'Double' || btn.actionType === 'Redouble'"
+              [class.double-btn]="btn.actionType === 'Double' || btn.actionType === 'Redouble' || btn.actionType === 'ReRedouble'"
               (click)="selectAction(btn)"
             >
               @if (btn.actionType === 'Accept') {
@@ -65,6 +65,12 @@ interface BidButton {
               } @else if (btn.actionType === 'Redouble') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>{{ t('negotiation.redouble') }} <span class="multiplier">\u00d74</span></span>
+                @if (btn.mode) {
+                  <app-game-mode-icon [mode]="btn.mode" size="1rem" />
+                }
+              } @else if (btn.actionType === 'ReRedouble') {
+                <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+                <span>{{ t('negotiation.reRedouble') }} <span class="multiplier">\u00d78</span></span>
                 @if (btn.mode) {
                   <app-game-mode-icon [mode]="btn.mode" size="1rem" />
                 }
@@ -223,6 +229,16 @@ export class BidButtonRowComponent {
       buttons.push({
         label: '\u00d74',
         actionType: 'Redouble',
+        mode: a.mode,
+        variant: 'destructive',
+      });
+    }
+
+    // Re-redouble buttons (one per re-redoubleable mode)
+    for (const a of actions.filter((a) => a.actionType === 'ReRedouble')) {
+      buttons.push({
+        label: '\u00d78',
+        actionType: 'ReRedouble',
         mode: a.mode,
         variant: 'destructive',
       });
