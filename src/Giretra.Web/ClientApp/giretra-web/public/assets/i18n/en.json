@@ -270,5 +270,12 @@
   "playerProfile.botType.mlDesc": "Trained on game data using neural networks",
   "playerProfile.builtIn": "Built-in",
   "playerProfile.author": "Author",
-  "playerProfile.viewOnGithub": "View on GitHub"
+  "playerProfile.viewOnGithub": "View on GitHub",
+
+  "welcome.title": "Welcome to Giretra!",
+  "welcome.subtitle": "The Malagasy Belote card game",
+  "welcome.openSourceText": "Giretra is free and open-source. If you find a bug or have a suggestion, we'd love to hear from you!",
+  "welcome.feedbackLink": "Report an issue or suggest a feature",
+  "welcome.chooseLanguage": "Choose your language",
+  "welcome.letsPlay": "Let's Play!"
 }

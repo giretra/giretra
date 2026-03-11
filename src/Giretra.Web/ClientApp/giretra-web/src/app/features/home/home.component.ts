@@ -15,6 +15,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { HotToastService } from '@ngxpert/hot-toast';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { QuickGameDialogComponent } from './components/quick-game-dialog/quick-game-dialog.component';
+import { WelcomeDialogComponent } from '../../shared/components/welcome-dialog/welcome-dialog.component';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 import { environment } from '../../../environments/environment';
 
@@ -28,6 +29,7 @@ import { environment } from '../../../environments/environment';
     TranslocoDirective,
     LanguageSwitcherComponent,
     QuickGameDialogComponent,
+    WelcomeDialogComponent,
   ],
   template: `
     <ng-container *transloco="let t">
@@ -174,6 +176,10 @@ import { environment } from '../../../environments/environment';
       </footer>
 
     </div>
+
+    @if (showWelcome()) {
+      <app-welcome-dialog (dismissed)="showWelcome.set(false)" />
+    }
     </ng-container>
   `,
   styles: [`
@@ -277,6 +283,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly aiTypes = signal<AiTypeInfo[]>([]);
   readonly pendingFriendCount = signal<number>(0);
   readonly activeGameRoomId = signal<string | null>(null);
+  readonly showWelcome = signal(WelcomeDialogComponent.shouldShow());
   private readonly joining = signal(false);
 
   ngOnInit(): void {
