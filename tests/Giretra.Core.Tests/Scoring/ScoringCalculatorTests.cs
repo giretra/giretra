@@ -52,7 +52,7 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
-    public void AllTrumps_Doubled_PointsMultiplied()
+    public void AllTrumps_Doubled_AnnouncerWins_WinnerTakesAll()
     {
         var result = _calculator.Calculate(
             GameMode.AllTrumps,
@@ -62,12 +62,12 @@ public class ScoringCalculatorTests
             59,
             sweepingTeam: null);
 
-        Assert.Equal(40, result.Team1MatchPoints);  // 20 × 2
-        Assert.Equal(12, result.Team2MatchPoints);  // 6 × 2
+        Assert.Equal(52, result.Team1MatchPoints);  // 26 × 2
+        Assert.Equal(0, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void AllTrumps_Redoubled_PointsMultiplied()
+    public void AllTrumps_Redoubled_AnnouncerWins_WinnerTakesAll()
     {
         var result = _calculator.Calculate(
             GameMode.AllTrumps,
@@ -77,15 +77,14 @@ public class ScoringCalculatorTests
             59,
             sweepingTeam: null);
 
-        Assert.Equal(80, result.Team1MatchPoints);  // 20 × 4
-        Assert.Equal(24, result.Team2MatchPoints);  // 6 × 4
+        Assert.Equal(104, result.Team1MatchPoints);  // 26 × 4
+        Assert.Equal(0, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void AllTrumps_Doubled_RoundingTie_AnnouncerWins()
+    public void AllTrumps_Doubled_AnnouncerBarely_WinnerTakesAll()
     {
-        // 131-127 rounds to 13-13 in normal mode (tie)
-        // In doubled mode, announcer has more card points so must win: 14-12 × 2
+        // 131-127: would be tie in normal mode, but doubled = winner-takes-all
         var result = _calculator.Calculate(
             GameMode.AllTrumps,
             MultiplierState.Doubled,
@@ -94,15 +93,14 @@ public class ScoringCalculatorTests
             127,
             sweepingTeam: null);
 
-        Assert.Equal(28, result.Team1MatchPoints);  // 14 × 2
-        Assert.Equal(24, result.Team2MatchPoints);  // 12 × 2
+        Assert.Equal(52, result.Team1MatchPoints);  // 26 × 2
+        Assert.Equal(0, result.Team2MatchPoints);
     }
 
     [Fact]
-    public void AllTrumps_Redoubled_RoundingTie_AnnouncerWins()
+    public void AllTrumps_Redoubled_AnnouncerBarely_WinnerTakesAll()
     {
-        // 130-128 rounds to 13-13 in normal mode (tie)
-        // In redoubled mode, announcer has more card points so must win: 14-12 × 4
+        // 130-128: would be tie in normal mode, but redoubled = winner-takes-all
         var result = _calculator.Calculate(
             GameMode.AllTrumps,
             MultiplierState.Redoubled,
@@ -111,8 +109,38 @@ public class ScoringCalculatorTests
             128,
             sweepingTeam: null);
 
-        Assert.Equal(56, result.Team1MatchPoints);  // 14 × 4
-        Assert.Equal(48, result.Team2MatchPoints);  // 12 × 4
+        Assert.Equal(104, result.Team1MatchPoints);  // 26 × 4
+        Assert.Equal(0, result.Team2MatchPoints);
+    }
+
+    [Fact]
+    public void AllTrumps_Doubled_AnnouncerLoses_DefenderTakesAll()
+    {
+        var result = _calculator.Calculate(
+            GameMode.AllTrumps,
+            MultiplierState.Doubled,
+            Team.Team1,
+            120,
+            138,
+            sweepingTeam: null);
+
+        Assert.Equal(0, result.Team1MatchPoints);
+        Assert.Equal(52, result.Team2MatchPoints);  // 26 × 2
+    }
+
+    [Fact]
+    public void AllTrumps_Redoubled_AnnouncerLoses_DefenderTakesAll()
+    {
+        var result = _calculator.Calculate(
+            GameMode.AllTrumps,
+            MultiplierState.Redoubled,
+            Team.Team1,
+            120,
+            138,
+            sweepingTeam: null);
+
+        Assert.Equal(0, result.Team1MatchPoints);
+        Assert.Equal(104, result.Team2MatchPoints);  // 26 × 4
     }
 
     [Fact]

@@ -126,58 +126,69 @@ public class ScoringCalculator
         int announcerMatchPoints;
         int defenderMatchPoints;
 
-        // Announcer needs >= 129 to not lose outright
-        if (announcerPoints < 129)
+        if (multiplier != MultiplierState.Normal)
         {
-            // Announcer loses - defender gets all 26
-            announcerMatchPoints = 0;
-            defenderMatchPoints = 26;
-        }
-        else
-        {
-            // Split scoring: divide by 10, round to nearest (standard rounding)
-            // Per SPEC.md examples: 131 rounds to 13, 127 rounds to 13 (tie)
-            var rawAnnouncerMatch = (int)Math.Round(announcerPoints / 10.0, MidpointRounding.AwayFromZero);
-            var rawDefenderMatch = (int)Math.Round(defenderPoints / 10.0, MidpointRounding.AwayFromZero);
-
-            // Check for effective tie (both round to same or 129-129)
-            if (announcerPoints == 129 && defenderPoints == 129)
+            // Doubled/Redoubled: winner-takes-all (26 × multiplier), only 129-129 is 0-0
+            if (announcerPoints == defenderPoints)
             {
-                // Exact tie
                 announcerMatchPoints = 0;
                 defenderMatchPoints = 0;
             }
-            else if (rawAnnouncerMatch == rawDefenderMatch)
+            else if (announcerPoints >= 129)
             {
-                if (multiplier != MultiplierState.Normal)
-                {
-                    // Doubled/Redoubled: no rounding ties - announcer has strictly more card points
-                    announcerMatchPoints = rawAnnouncerMatch + 1;
-                    defenderMatchPoints = rawDefenderMatch - 1;
-                }
-                else
-                {
-                    // Normal mode: rounds to tie (e.g., 131-127 -> 13-13)
-                    announcerMatchPoints = 0;
-                    defenderMatchPoints = 0;
-                }
-            }
-            else if (rawDefenderMatch < 6)
-            {
-                // Defender below 55 card points (rounds to < 6) - announcer takes all 26
                 announcerMatchPoints = 26;
                 defenderMatchPoints = 0;
             }
             else
             {
-                // Cap at 20-6
-                announcerMatchPoints = Math.Min(rawAnnouncerMatch, 20);
-                defenderMatchPoints = Math.Max(rawDefenderMatch, 6);
+                announcerMatchPoints = 0;
+                defenderMatchPoints = 26;
+            }
+        }
+        else
+        {
+            // Normal mode: split scoring
+            if (announcerPoints < 129)
+            {
+                // Announcer loses - defender gets all 26
+                announcerMatchPoints = 0;
+                defenderMatchPoints = 26;
+            }
+            else if (announcerPoints == 129 && defenderPoints == 129)
+            {
+                // Exact tie
+                announcerMatchPoints = 0;
+                defenderMatchPoints = 0;
+            }
+            else
+            {
+                // Split scoring: divide by 10, round to nearest (standard rounding)
+                var rawAnnouncerMatch = (int)Math.Round(announcerPoints / 10.0, MidpointRounding.AwayFromZero);
+                var rawDefenderMatch = (int)Math.Round(defenderPoints / 10.0, MidpointRounding.AwayFromZero);
 
-                // Ensure total doesn't exceed 26
-                if (announcerMatchPoints + defenderMatchPoints > 26)
+                if (rawAnnouncerMatch == rawDefenderMatch)
                 {
-                    defenderMatchPoints = 26 - announcerMatchPoints;
+                    // Rounds to tie (e.g., 131-127 -> 13-13)
+                    announcerMatchPoints = 0;
+                    defenderMatchPoints = 0;
+                }
+                else if (rawDefenderMatch < 6)
+                {
+                    // Defender below 55 card points - announcer takes all 26
+                    announcerMatchPoints = 26;
+                    defenderMatchPoints = 0;
+                }
+                else
+                {
+                    // Cap at 20-6
+                    announcerMatchPoints = Math.Min(rawAnnouncerMatch, 20);
+                    defenderMatchPoints = Math.Max(rawDefenderMatch, 6);
+
+                    // Ensure total doesn't exceed 26
+                    if (announcerMatchPoints + defenderMatchPoints > 26)
+                    {
+                        defenderMatchPoints = 26 - announcerMatchPoints;
+                    }
                 }
             }
         }
