@@ -242,9 +242,9 @@ export class WelcomeDialogComponent {
   private readonly transloco = inject(TranslocoService);
 
   readonly langs = [
-    { code: 'en', flag: '\u{1F1EC}\u{1F1E7}', label: 'English' },
-    { code: 'fr', flag: '\u{1F1EB}\u{1F1F7}', label: 'Fran\u00e7ais' },
     { code: 'mg', flag: '\u{1F1F2}\u{1F1EC}', label: 'Malagasy' },
+    { code: 'fr', flag: '\u{1F1EB}\u{1F1F7}', label: 'Fran\u00e7ais' },
+    { code: 'en', flag: '\u{1F1EC}\u{1F1E7}', label: 'English' },
   ];
 
   readonly selectedLang = signal(this.transloco.getActiveLang());
