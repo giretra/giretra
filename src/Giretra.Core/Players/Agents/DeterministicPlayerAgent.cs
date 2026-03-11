@@ -716,6 +716,18 @@ public class DeterministicPlayerAgent : IPlayerAgent
         // Endgame: trick 8 — if we need last-trick bonus, play strongest card
         if (trickNumber == 8)
             return ChooseLastTrickLead(validPlays, handState, matchState);
+        
+        // 1b. Partner priority suit (both opponents void)
+        if (_partnerPrioritySuits.Count > 0 && trumpSuit == null)
+        {
+            var priorityCards = validPlays
+                .Where(c => _partnerPrioritySuits.Contains(c.Suit))
+                .OrderByDescending(c => c.GetStrength(mode))
+                .ToList();
+
+            if (priorityCards.Count > 0)
+                return priorityCards[0];
+        }
 
         // 1. Cash master cards (guaranteed winners)
         var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
