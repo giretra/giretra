@@ -65,6 +65,7 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [summary]="dealSummary()"
             [myTeam]="myTeam()"
             [myPosition]="myPosition()"
+            [isWatcher]="isWatcher()"
             [waiting]="waiting()"
             (dismissed)="hideDealSummary.emit()"
           />

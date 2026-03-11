@@ -155,6 +155,10 @@
   "scoreBar.leaveTable": "Hiala amin'ny Latabatra",
 
   "watcher.spectating": "Mpijery",
+  "watcher.cardsLeft": "Katra sisa",
+  "watcher.ranked": "Voaisa",
+  "watcher.unranked": "Tsy voaisa",
+  "watcher.autoContinue": "Tohizana ao anatin'ny {{seconds}}s...",
 
   "settings.title": "Fikirana",
   "settings.tabs.profile": "Mombamomba",

@@ -1,5 +1,6 @@
 import { Component, input, output, OnInit, DoCheck } from '@angular/core';
 import { CardResponse, GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
+import { MultiplierState } from '../../../../core/services/game-state.service';
 import { GamePhase } from '../../../../core/services/game-state.service';
 import { Card } from '../../../../core/models';
 import { CardFanComponent } from '../../../../shared/components/card-fan/card-fan.component';
@@ -16,6 +17,15 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <!-- Watcher view -->
         <app-watcher-bar
           [playerCardCounts]="playerCardCounts()"
+          [team1MatchPoints]="team1MatchPoints()"
+          [team2MatchPoints]="team2MatchPoints()"
+          [gameMode]="gameMode()"
+          [multiplier]="multiplier()"
+          [isRanked]="isRanked()"
+          [dealNumber]="dealNumber()"
+          [activePlayer]="activePlayer()"
+          [idleDeadline]="idleDeadline()"
+          (idleExpired)="idleExpired.emit()"
         />
       } @else {
         @switch (phase()) {
@@ -156,8 +166,15 @@ export class HandAreaComponent implements OnInit, DoCheck {
   readonly activePlayer = input<PlayerPosition | null>(null);
   readonly playerCardCounts = input<Record<PlayerPosition, number> | null>(null);
   readonly disabled = input<boolean>(false);
+  readonly team1MatchPoints = input<number>(0);
+  readonly team2MatchPoints = input<number>(0);
+  readonly multiplier = input<MultiplierState>('Normal');
+  readonly isRanked = input<boolean>(false);
+  readonly dealNumber = input<number>(0);
+  readonly idleDeadline = input<Date | null>(null);
 
   readonly playCard = output<{ rank: string; suit: string }>();
+  readonly idleExpired = output<void>();
   onCardSelected(card: Card): void {
     console.log('[HandArea] onCardSelected:', {
       card: `${card.rank} of ${card.suit}`,

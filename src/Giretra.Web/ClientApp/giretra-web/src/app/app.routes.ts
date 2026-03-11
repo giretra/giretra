@@ -41,7 +41,7 @@ export const confirmLeaveGameGuard = async () => {
   const phase = gameState.phase();
   const gameInProgress = gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 
-  if (gameInProgress) {
+  if (gameInProgress && !session.isWatcher()) {
     if (!confirm(transloco.translate('table.leaveConfirm'))) {
       return false;
     }
