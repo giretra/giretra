@@ -87,7 +87,7 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
 
     .card-slot {
       position: absolute;
-      width: 33%;
+      width: 38%;
     }
 
     .card-slot.top {
