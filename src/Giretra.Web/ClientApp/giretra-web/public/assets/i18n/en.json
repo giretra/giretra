@@ -145,6 +145,9 @@
   "matchEnd.leaveTable": "Leave Table",
   "matchEnd.waitingForOthers": "Waiting for others...",
   "matchEnd.rating": "Rating",
+  "matchEnd.dealRecap": "Deal Recap",
+  "matchEnd.mode": "Mode",
+  "matchEnd.sweep": "Sweep",
   "matchEnd.autoClose": "Auto-leave in",
 
   "scoreBar.yourTurn": "Your turn",

@@ -9,6 +9,7 @@ import {
   CardRank,
   CardResponse,
   CardSuit,
+  DealRecapResponse,
   GameMode,
   PlayerPosition,
   SeatAccessMode,
@@ -138,6 +139,7 @@ export interface GameStateResponse {
   pendingActionPlayer: PlayerPosition | null;
   pendingActionTimeoutAt: string | null;
   eloChanges: Record<string, EloChangeResponse> | null;
+  completedDeals: DealRecapResponse[] | null;
 }
 
 export interface PlayerStateResponse {

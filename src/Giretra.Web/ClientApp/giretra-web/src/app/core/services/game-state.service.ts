@@ -357,6 +357,9 @@ export class GameStateService {
     return changes[pos] ?? null;
   });
 
+  /** Completed deal recaps (only available when match is complete) */
+  readonly completedDeals = computed(() => this._gameState()?.completedDeals ?? null);
+
   /** Whether the current room is ranked */
   readonly isRanked = computed(() => this._currentRoom()?.isRanked ?? false);
 

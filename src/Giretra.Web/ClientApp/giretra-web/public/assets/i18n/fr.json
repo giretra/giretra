@@ -145,6 +145,9 @@
   "matchEnd.leaveTable": "Quitter la Table",
   "matchEnd.waitingForOthers": "En attente des autres...",
   "matchEnd.rating": "Classement",
+  "matchEnd.dealRecap": "Récapitulatif des donnes",
+  "matchEnd.mode": "Mode",
+  "matchEnd.sweep": "Capot",
   "matchEnd.autoClose": "Départ auto dans",
 
   "scoreBar.yourTurn": "À vous",

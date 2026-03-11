@@ -308,7 +308,8 @@ public sealed class NotificationService : INotificationService
             Winner = matchState.Winner!.Value,
             Team1MatchPoints = matchState.Team1MatchPoints,
             Team2MatchPoints = matchState.Team2MatchPoints,
-            TotalDeals = matchState.CompletedDeals.Count
+            TotalDeals = matchState.CompletedDeals.Count,
+            CompletedDeals = MapToCompletedDeals(matchState)
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("MatchEnded", ev);
@@ -398,6 +399,21 @@ public sealed class NotificationService : INotificationService
     public async Task NotifyPendingFriendCountChangedAsync(Guid userId, int count)
     {
         await _hubContext.Clients.Group($"user_{userId}").SendAsync("PendingFriendCountChanged", new { Count = count });
+    }
+
+    internal static IReadOnlyList<DealRecapResponse> MapToCompletedDeals(MatchState matchState)
+    {
+        return matchState.CompletedDeals.Select(r => new DealRecapResponse
+        {
+            GameMode = r.GameMode,
+            Multiplier = r.Multiplier,
+            AnnouncerTeam = r.AnnouncerTeam,
+            Team1MatchPoints = r.Team1MatchPoints,
+            Team2MatchPoints = r.Team2MatchPoints,
+            WasSweep = r.WasSweep,
+            SweepingTeam = r.SweepingTeam,
+            IsInstantWin = r.IsInstantWin
+        }).ToList();
     }
 
     private static TrickResponse MapToTrickResponse(TrickState trick, GameMode gameMode, PlayerPosition winner)

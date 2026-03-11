@@ -1,4 +1,5 @@
 using Giretra.Core.Players;
+using Giretra.Web.Models.Responses;
 
 namespace Giretra.Web.Models.Events;
 
@@ -31,4 +32,9 @@ public sealed class MatchEndedEvent
     /// Number of deals played.
     /// </summary>
     public required int TotalDeals { get; init; }
+
+    /// <summary>
+    /// Recap of all completed deals in the match.
+    /// </summary>
+    public required IReadOnlyList<DealRecapResponse> CompletedDeals { get; init; }
 }

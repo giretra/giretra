@@ -145,6 +145,9 @@
   "matchEnd.leaveTable": "Hiala amin'ny Latabatra",
   "matchEnd.waitingForOthers": "Miandry ny hafa...",
   "matchEnd.rating": "Laharana",
+  "matchEnd.dealRecap": "Famintinana ny fizarana",
+  "matchEnd.mode": "Karazana",
+  "matchEnd.sweep": "Capot",
   "matchEnd.autoClose": "Hiala ho azy ao anatin'ny",
 
   "scoreBar.yourTurn": "Anjaranao",
