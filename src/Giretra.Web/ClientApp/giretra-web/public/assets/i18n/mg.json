@@ -270,5 +270,12 @@
   "playerProfile.botType.mlDesc": "Nofanina tamin'ny angon-drakitra lalao amin'ny réseaux de neurones",
   "playerProfile.builtIn": "Voarafitra",
   "playerProfile.author": "Mpanoratra",
-  "playerProfile.viewOnGithub": "Jereo ao amin'ny GitHub"
+  "playerProfile.viewOnGithub": "Jereo ao amin'ny GitHub",
+
+  "welcome.title": "Tongasoa eto amin'ny Giretra!",
+  "welcome.subtitle": "Lalao karta Belote malagasy",
+  "welcome.openSourceText": "Giretra dia maimaim-poana sady open-source. Raha mahita olana ianao na manana hevitra, aza misalasala milaza aminay!",
+  "welcome.feedbackLink": "Ilazao olana na manoro hevitra",
+  "welcome.chooseLanguage": "Fidio ny fiteninao",
+  "welcome.letsPlay": "Andeha hilalao!"
 }

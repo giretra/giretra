@@ -270,5 +270,12 @@
   "playerProfile.botType.mlDesc": "Entraîné sur des données de jeu par réseaux de neurones",
   "playerProfile.builtIn": "Intégré",
   "playerProfile.author": "Auteur",
-  "playerProfile.viewOnGithub": "Voir sur GitHub"
+  "playerProfile.viewOnGithub": "Voir sur GitHub",
+
+  "welcome.title": "Bienvenue sur Giretra !",
+  "welcome.subtitle": "Le jeu de Belote à la malgache",
+  "welcome.openSourceText": "Giretra est gratuit et open-source. Si vous trouvez un bug ou avez une suggestion, n'hésitez pas à nous en faire part !",
+  "welcome.feedbackLink": "Signaler un problème ou suggérer une amélioration",
+  "welcome.chooseLanguage": "Choisissez votre langue",
+  "welcome.letsPlay": "C'est parti !"
 }
