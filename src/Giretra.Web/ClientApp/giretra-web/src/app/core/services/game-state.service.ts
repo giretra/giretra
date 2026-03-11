@@ -739,17 +739,12 @@ export class GameStateService {
       this._completedTrickToShow.set(trick);
       this._showingCompletedTrick.set(true);
 
-      // For non-last tricks, auto-dismiss after delay
-      // For last trick, wait for user to click (no timeout)
-      // Watchers always auto-dismiss (they don't interact)
-      if (!isLastTrick || this.session.isWatcher()) {
-        this._completedTrickTimeoutId = setTimeout(() => {
-          this._completedTrickTimeoutId = null;
-          this._showingCompletedTrick.set(false);
-          this._completedTrickToShow.set(null);
-          this.refreshState();
-        }, this.COMPLETED_TRICK_DELAY_MS);
-      }
+      // Auto-dismiss after delay (shorter for last trick so deal summary appears quickly)
+      const delay = isLastTrick ? 1000 : this.COMPLETED_TRICK_DELAY_MS;
+      this._completedTrickTimeoutId = setTimeout(() => {
+        this._completedTrickTimeoutId = null;
+        this.dismissCompletedTrick();
+      }, delay);
     });
 
     // Deal ended
