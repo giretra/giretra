@@ -3,6 +3,8 @@ import { GameMode } from '../../../../../api/generated/signalr-types.generated';
 import { ValidAction } from '../../../../../core/services/api.service';
 import { HlmButton } from '@spartan-ng/helm/button';
 import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
+import { MultiplierBadgeComponent } from '../../../../../shared/components/multiplier-badge/multiplier-badge.component';
+import { MultiplierState } from '../../../../../core/services/game-state.service';
 import { LucideAngularModule, Check, ChevronsUp } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -16,7 +18,7 @@ interface BidButton {
 @Component({
   selector: 'app-bid-button-row',
   standalone: true,
-  imports: [HlmButton, GameModeIconComponent, LucideAngularModule, TranslocoDirective],
+  imports: [HlmButton, GameModeIconComponent, MultiplierBadgeComponent, LucideAngularModule, TranslocoDirective],
   template: `
     <div class="bid-buttons" *transloco="let t">
       <!-- Announce section -->
@@ -56,6 +58,7 @@ interface BidButton {
                 @if (btn.mode) {
                   <app-game-mode-icon [mode]="btn.mode" size="1rem" />
                 }
+                <app-multiplier-badge [multiplier]="currentMultiplier()" />
               } @else if (btn.actionType === 'Double') {
                 <i-lucide [img]="ChevronsUpIcon" [size]="16" [strokeWidth]="2"></i-lucide>
                 <span>{{ t('negotiation.double') }} <span class="multiplier">\u00d72</span></span>
@@ -174,6 +177,7 @@ export class BidButtonRowComponent {
 
   readonly validActions = input<ValidAction[]>([]);
   readonly currentBidMode = input<GameMode | null>(null);
+  readonly currentMultiplier = input<MultiplierState>('Normal');
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
 

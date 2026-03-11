@@ -4,13 +4,15 @@ import { ValidAction, NegotiationAction } from '../../../../core/services/api.se
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { GameModeIconComponent } from '../../../../shared/components/game-mode-icon/game-mode-icon.component';
+import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
+import { MultiplierState } from '../../../../core/services/game-state.service';
 import { TranslocoDirective, TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, TranslocoDirective, TranslocoPipe],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, MultiplierBadgeComponent, TranslocoDirective, TranslocoPipe],
   template: `
     <ng-container *transloco="let t">
     <div class="backdrop"></div>
@@ -22,6 +24,7 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
         @if (currentBid(); as bid) {
           <div class="current-bid">
             <app-game-mode-badge [mode]="bid.mode" size="1.5rem" />
+            <app-multiplier-badge [multiplier]="currentMultiplier()" />
             <span class="bid-by">{{ t('negotiation.bidBy', { player: t(positionKey(bid.player)) }) }}</span>
           </div>
         } @else {
@@ -64,6 +67,7 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
         <app-bid-button-row
           [validActions]="validActions()"
           [currentBidMode]="currentBid()?.mode ?? null"
+          [currentMultiplier]="currentMultiplier()"
           (actionSelected)="onAction($event)"
         />
       </div>
@@ -279,6 +283,28 @@ export class BidDialogComponent {
       }
     }
     return null;
+  });
+
+  readonly currentMultiplier = computed<MultiplierState>(() => {
+    const history = this.negotiationHistory();
+    let multiplier: MultiplierState = 'Normal';
+    for (const action of history) {
+      switch (action.actionType) {
+        case 'Announce':
+          multiplier = 'Normal';
+          break;
+        case 'Double':
+          multiplier = 'Doubled';
+          break;
+        case 'Redouble':
+          multiplier = 'Redoubled';
+          break;
+        case 'ReRedouble':
+          multiplier = 'ReRedoubled';
+          break;
+      }
+    }
+    return multiplier;
   });
 
   readonly reversedHistory = computed(() => [...this.negotiationHistory()].reverse());
