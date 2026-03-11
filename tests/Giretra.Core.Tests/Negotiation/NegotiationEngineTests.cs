@@ -580,4 +580,47 @@ public class NegotiationEngineTests
         Assert.NotEmpty(validActions);
         Assert.Contains(validActions, a => a is AcceptAction);
     }
+
+    [Fact]
+    public void PlayerWhoAcceptedEarlierBid_CanAnnounceHigherMode_AfterNewAnnouncement()
+    {
+        // Dealer is Left, so Top speaks first
+        // Turn order: Top → Right → Bottom → Left → ...
+        var state = NegotiationState.Create(PlayerPosition.Left);
+
+        // 1. Top (Team1) announces Hearts
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts));
+
+        // 2. Right (Team2) accepts
+        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+
+        // 3. Bottom (Team1) accepts
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+
+        // 4. Left (Team2) announces Spades (higher than Hearts)
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourSpades));
+
+        // 5. Top (Team1) accepts
+        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+
+        // 6. Right (Team2) accepts
+        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+
+        // 7. Bottom's turn — accepted Hearts earlier, but Spades was announced after
+        Assert.Equal(PlayerPosition.Bottom, state.CurrentPlayer);
+
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        // Bottom should be able to: Accept, Double Spades, announce NoTrumps, announce AllTrumps
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is DoubleAction d && d.TargetMode == GameMode.ColourSpades);
+        Assert.Contains(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.NoTrumps);
+        Assert.Contains(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.AllTrumps);
+
+        // Bottom (Team1) cannot announce Colour modes (team already used their Colour on Hearts)
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode.IsColourMode());
+
+        // Exactly 4 valid actions
+        Assert.Equal(4, validActions.Count);
+    }
 }

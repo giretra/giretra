@@ -183,7 +183,7 @@ public sealed class NegotiationState
             RedoubledModes,
             ReRedoubledModes,
             newTeamColour,
-            PlayersWhoAccepted,
+            ImmutableHashSet<PlayerPosition>.Empty,
             HasDoubleOccurred,
             AutoDoubledModes);
     }
