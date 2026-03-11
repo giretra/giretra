@@ -909,23 +909,18 @@ public class DeterministicPlayerAgent : IPlayerAgent
         bool followingSuit = validPlays.Any(c => c.Suit == leadSuit);
         bool playingTrump = !followingSuit && trumpSuit.HasValue && validPlays.Any(c => c.Suit == trumpSuit.Value);
         bool discarding = !followingSuit && !playingTrump;
-
-        bool isEndgame = handState.CompletedTricks.Count + 1 >= 7;
-
-        bool opponentHasMaster = trick.PlayedCards
-            .Where(s => s.Team != _myTeam)
-            .Any(c => PlayerAgentHelper.IsMasterCard(c.Card, mode, [], _playedCards));
-
+        
         if (discarding)
         {
-            if (winningCard.HasValue && PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, [], _playedCards))
+            if (winningCard.HasValue 
+                && PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, [], _playedCards))
             {
                 return teammateWinning
                     ? ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit)
                     : ChooseLeastValuableCard(validPlays, mode, hand);
             }
 
-            return ChooseSmartDiscard(hand, validPlays, mode, opponentHasMaster);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
         if (playingTrump)
