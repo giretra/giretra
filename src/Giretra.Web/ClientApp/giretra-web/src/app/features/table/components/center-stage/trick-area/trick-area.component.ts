@@ -159,8 +159,12 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
     /* Responsive adjustments */
     @media (max-width: 480px) {
       .trick-area {
-        width: 190px;
-        height: 190px;
+        width: 240px;
+        height: 240px;
+      }
+
+      .card-slot {
+        width: 42%;
       }
     }
   `],
