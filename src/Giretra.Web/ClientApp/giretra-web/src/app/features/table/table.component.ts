@@ -143,6 +143,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [team1Points]="gameState.team1MatchPoints()"
           [team2Points]="gameState.team2MatchPoints()"
           [totalDeals]="gameState.dealNumber() - 1"
+          [completedDeals]="gameState.completedDeals()"
           [eloChange]="gameState.myEloChange()"
           [isRanked]="gameState.isRanked()"
           [idleDeadline]="gameState.idleDeadline()"

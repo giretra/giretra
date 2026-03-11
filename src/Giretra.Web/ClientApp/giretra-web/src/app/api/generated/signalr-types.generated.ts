@@ -164,12 +164,24 @@ export interface TrickCompletedEvent {
   team2CardPoints: number;
 }
 
+export interface DealRecapResponse {
+  gameMode: GameMode;
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
+  announcerTeam: Team;
+  team1MatchPoints: number;
+  team2MatchPoints: number;
+  wasSweep: boolean;
+  sweepingTeam?: Team;
+  isInstantWin: boolean;
+}
+
 export interface MatchEndedEvent {
   gameId: string;
   winner: Team;
   team1MatchPoints: number;
   team2MatchPoints: number;
   totalDeals: number;
+  completedDeals: DealRecapResponse[];
 }
 
 export interface PlayerKickedEvent {

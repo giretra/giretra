@@ -119,4 +119,9 @@ public sealed class GameStateResponse
     /// Elo rating changes per position (only present for completed ranked matches).
     /// </summary>
     public IReadOnlyDictionary<PlayerPosition, EloChangeResponse>? EloChanges { get; init; }
+
+    /// <summary>
+    /// Recap of all completed deals (only present when match is complete).
+    /// </summary>
+    public IReadOnlyList<DealRecapResponse>? CompletedDeals { get; init; }
 }
