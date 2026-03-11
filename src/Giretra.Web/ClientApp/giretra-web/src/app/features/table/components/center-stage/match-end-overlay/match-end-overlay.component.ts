@@ -99,14 +99,16 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
           }
 
           <div class="actions">
-            <button
-              hlmBtn
-              variant="default"
-              [disabled]="waiting()"
-              (click)="playAgain.emit()"
-            >
-              {{ waiting() ? t('matchEnd.waitingForOthers') : t('matchEnd.playAgain') }}
-            </button>
+            @if (!isWatcher()) {
+              <button
+                hlmBtn
+                variant="default"
+                [disabled]="waiting()"
+                (click)="playAgain.emit()"
+              >
+                {{ waiting() ? t('matchEnd.waitingForOthers') : t('matchEnd.playAgain') }}
+              </button>
+            }
             <button
               hlmBtn
               variant="secondary"
@@ -399,6 +401,7 @@ export class MatchEndOverlayComponent {
   readonly completedDeals = input<DealRecapResponse[] | null>(null);
   readonly eloChange = input<EloChangeResponse | null>(null);
   readonly isRanked = input<boolean>(false);
+  readonly isWatcher = input<boolean>(false);
   readonly idleDeadline = input<Date | null>(null);
   readonly waiting = input<boolean>(false);
 

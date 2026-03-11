@@ -155,6 +155,10 @@
   "scoreBar.leaveTable": "Quitter la Table",
 
   "watcher.spectating": "Spectateur",
+  "watcher.cardsLeft": "Cartes restantes",
+  "watcher.ranked": "Classée",
+  "watcher.unranked": "Amicale",
+  "watcher.autoContinue": "Suite dans {{seconds}}s...",
 
   "settings.title": "Paramètres",
   "settings.tabs.profile": "Profil",

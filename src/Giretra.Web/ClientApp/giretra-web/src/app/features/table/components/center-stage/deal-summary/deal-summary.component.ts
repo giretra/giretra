@@ -1,4 +1,4 @@
-import { Component, input, output, computed, inject, signal } from '@angular/core';
+import { Component, input, output, computed, inject, signal, effect, OnDestroy } from '@angular/core';
 import { CardPointsBreakdownResponse, CardSuit, GameMode, PlayerPosition, Team } from '../../../../../api/generated/signalr-types.generated';
 import { getTeamLabel, isRedSuit, toRelativePosition, getTeam } from '../../../../../core/utils';
 import { cardToString } from '../../../../../core/models/card.model';
@@ -118,16 +118,22 @@ interface BreakdownRow {
             </div>
           </div>
 
-          <div class="button-row">
-            @if (hasTrickHistory()) {
-              <button hlmBtn variant="outline" class="history-btn" [disabled]="waiting()" (click)="showingTrickHistory.set(true)">
-                {{ t('dealSummary.viewTrickHistory') }}
+          @if (isWatcher()) {
+            <div class="auto-continue">
+              {{ t('watcher.autoContinue', { seconds: autoDismissCountdown() }) }}
+            </div>
+          } @else {
+            <div class="button-row">
+              @if (hasTrickHistory()) {
+                <button hlmBtn variant="outline" class="history-btn" [disabled]="waiting()" (click)="showingTrickHistory.set(true)">
+                  {{ t('dealSummary.viewTrickHistory') }}
+                </button>
+              }
+              <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
+                {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
               </button>
-            }
-            <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
-              {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
-            </button>
-          </div>
+            </div>
+          }
 
         } @else {
           <!-- ═══ Trick History View ═══ -->
@@ -161,9 +167,15 @@ interface BreakdownRow {
             }
           </div>
 
-          <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
-            {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
-          </button>
+          @if (isWatcher()) {
+            <div class="auto-continue">
+              {{ t('watcher.autoContinue', { seconds: autoDismissCountdown() }) }}
+            </div>
+          } @else {
+            <button hlmBtn variant="default" class="continue-button" [disabled]="waiting()" (click)="dismissed.emit()">
+              {{ waiting() ? t('dealSummary.waitingForOthers') : t('common.continue') }}
+            </button>
+          }
         }
       </div>
     }
@@ -583,12 +595,24 @@ interface BreakdownRow {
       color: hsl(var(--gold));
       font-weight: 500;
     }
+
+    .auto-continue {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      text-align: center;
+      margin-top: 0.5rem;
+    }
   `],
 })
-export class DealSummaryComponent {
+export class DealSummaryComponent implements OnDestroy {
   private readonly transloco = inject(TranslocoService);
   readonly myTeam = input<Team | null>(null);
   readonly myPosition = input<PlayerPosition | null>(null);
+  readonly isWatcher = input<boolean>(false);
+
+  readonly autoDismissCountdown = signal(8);
+  private autoDismissTimerId: ReturnType<typeof setInterval> | null = null;
+  private autoDismissTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly summary = input<{
     gameMode: GameMode;
@@ -610,6 +634,40 @@ export class DealSummaryComponent {
   readonly dismissed = output<void>();
 
   readonly showingTrickHistory = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (this.isWatcher() && this.summary()) {
+        this.startAutoDismiss();
+      }
+    });
+  }
+
+  private startAutoDismiss(): void {
+    this.clearAutoDismiss();
+    this.autoDismissCountdown.set(8);
+    this.autoDismissTimerId = setInterval(() => {
+      this.autoDismissCountdown.update(v => Math.max(0, v - 1));
+    }, 1000);
+    this.autoDismissTimeoutId = setTimeout(() => {
+      this.dismissed.emit();
+    }, 8000);
+  }
+
+  private clearAutoDismiss(): void {
+    if (this.autoDismissTimerId) {
+      clearInterval(this.autoDismissTimerId);
+      this.autoDismissTimerId = null;
+    }
+    if (this.autoDismissTimeoutId) {
+      clearTimeout(this.autoDismissTimeoutId);
+      this.autoDismissTimeoutId = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.clearAutoDismiss();
+  }
 
   readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
   readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));

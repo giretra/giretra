@@ -113,7 +113,14 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [activePlayer]="gameState.activePlayer()"
         [playerCardCounts]="gameState.playerCardCounts()"
         [disabled]="gameState.isSubmittingAction()"
+        [team1MatchPoints]="gameState.team1MatchPoints()"
+        [team2MatchPoints]="gameState.team2MatchPoints()"
+        [multiplier]="gameState.multiplier()"
+        [isRanked]="gameState.isRanked()"
+        [dealNumber]="gameState.dealNumber()"
+        [idleDeadline]="gameState.idleDeadline()"
         (playCard)="onPlayCard($event)"
+        (idleExpired)="onLeaveTable()"
       />
 
       <!-- Bid Dialog Overlay -->
@@ -146,6 +153,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [completedDeals]="gameState.completedDeals()"
           [eloChange]="gameState.myEloChange()"
           [isRanked]="gameState.isRanked()"
+          [isWatcher]="gameState.isWatcher()"
           [idleDeadline]="gameState.idleDeadline()"
           [waiting]="waitingForContinue()"
           (playAgain)="onPlayAgain()"
@@ -292,11 +300,8 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly beforeUnloadHandler = (e: BeforeUnloadEvent) => {
     const phase = this.gameState.phase();
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
-    if (gameInProgress) {
+    if (gameInProgress && !this.session.isWatcher()) {
       e.preventDefault();
-      // SignalR disconnect handles the grace period — no beacon needed.
-      // sendBeacon can't include JWT auth headers, and the disconnect handler
-      // already keeps the player's seat for rejoin.
     }
   };
 
@@ -685,7 +690,7 @@ export class TableComponent implements OnInit, OnDestroy {
     const phase = this.gameState.phase();
     const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 
-    if (gameInProgress && !confirm(this.transloco.translate('table.leaveConfirm'))) {
+    if (gameInProgress && !this.session.isWatcher() && !confirm(this.transloco.translate('table.leaveConfirm'))) {
       return;
     }
 
