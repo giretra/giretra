@@ -97,7 +97,25 @@ public class DeterministicPlayerAgent : IPlayerAgent
     }
 
     public Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
-        => Task.CompletedTask;
+    {
+        if (negotiationState.CurrentBid != null)
+        {
+            var partnerPreferredSuits = negotiationState.Actions
+                .OfType<AnnouncementAction>()
+                .Where(t => t.Player == Position.Teammate() && t.Mode.IsColourMode())
+                .Select(t => t.Mode.GetTrumpSuit()!.Value).ToList();
+
+            foreach (var suit in partnerPreferredSuits)
+            {
+                if (negotiationState.CurrentBid?.GetTrumpSuit() == suit)
+                    continue;
+
+                _partnerPreferredSuits.Add(suit);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 
     public Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
         => Task.CompletedTask;
