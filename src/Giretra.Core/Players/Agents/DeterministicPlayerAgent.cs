@@ -419,6 +419,10 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private bool IsOpponentOutOfTrump(PlayerPosition opponent)
         => _opponentNoTrump.Contains(opponent);
 
+    private bool IsAllOpponentsOutOfTrump()
+        => _opponentNoTrump.Contains(Position.Next()) && _opponentNoTrump.Contains(Position.Teammate().Next());
+    
+
     private List<Card> GetRemainingInSuit(CardSuit suit)
         => _remainingCards.Where(c => c.Suit == suit).ToList();
 
@@ -741,10 +745,22 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 .ThenByDescending(c => c.GetPointValue(mode))
                 .ToList();
 
-            if (preferredMasters.Count > 0)
-                return preferredMasters[0];
+            if (mode.IsColourMode() && IsAllOpponentsOutOfTrump())
+            {
+                preferredMasters = preferredMasters
+                    .Where(r => r.Suit != trumpSuit)
+                    .ToList();
 
-            return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
+                if (preferredMasters.Count > 0)
+                    return preferredMasters[0];
+            }
+            else
+            {
+                if (preferredMasters.Count > 0)
+                    return preferredMasters[0];
+
+                return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
+            }
         }
 
         // 1b. Partner priority suit (both opponents void)
