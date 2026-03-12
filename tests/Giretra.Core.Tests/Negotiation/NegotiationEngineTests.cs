@@ -124,21 +124,22 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void OpponentAccept_ColourClubs_AutoDoubles()
+    public void OpponentAccept_ColourClubs_LocksWithoutDoubling()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         // Bottom (Team1) announces ColourClubs
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
 
-        // Left (Team2, opponent) CAN accept — this auto-doubles
+        // Left (Team2, opponent) CAN accept — locks but no score double
         Assert.True(NegotiationEngine.CanAccept(state));
 
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // ColourClubs is now doubled and auto-doubled
-        Assert.True(state.DoubledModes.ContainsKey(GameMode.ColourClubs));
-        Assert.True(state.AutoDoubledModes.Contains(GameMode.ColourClubs));
+        // ColourClubs is NOT in DoubledModes (no score multiplier)
+        Assert.False(state.DoubledModes.ContainsKey(GameMode.ColourClubs));
+        Assert.False(state.AutoDoubledModes.Contains(GameMode.ColourClubs));
+        // But announcements are blocked
         Assert.True(state.HasDoubleOccurred);
         Assert.Equal(1, state.ConsecutiveAccepts);
     }
@@ -422,25 +423,26 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void ReRedouble_AllowedForColourClubs()
+    public void ReRedouble_NotAllowed_ForAnyMode()
     {
+        // Re-redouble is not allowed for any mode
         var state = NegotiationState.Create(PlayerPosition.Right);
 
-        // Bottom (Team1) announces ColourClubs
+        // Bottom announces ColourClubs
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
 
-        // Left (Team2) doubles
+        // Left doubles
         state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourClubs));
 
-        // Top (Team1) redoubles
+        // Top redoubles
         state = state.Apply(new RedoubleAction(PlayerPosition.Top, GameMode.ColourClubs));
 
-        // Right (Team2) can re-redouble
-        Assert.True(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
+        // Right cannot re-redouble
+        Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
     }
 
     [Fact]
-    public void ReRedouble_NotAllowedForNonClubs()
+    public void ReRedouble_NotAllowed_ForColourSpades()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
@@ -453,36 +455,8 @@ public class NegotiationEngineTests
         // Top redoubles
         state = state.Apply(new RedoubleAction(PlayerPosition.Top, GameMode.ColourSpades));
 
-        // Right cannot re-redouble (only ColourClubs allows it)
+        // Right cannot re-redouble
         Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourSpades));
-    }
-
-    [Fact]
-    public void ReRedouble_OnlyByOpponentTeam()
-    {
-        var state = NegotiationState.Create(PlayerPosition.Right);
-
-        // Bottom (Team1) announces ColourClubs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
-
-        // Left (Team2) doubles
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourClubs));
-
-        // Top (Team1) can redouble but not re-redouble
-        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
-        Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
-
-        // Top redoubles
-        state = state.Apply(new RedoubleAction(PlayerPosition.Top, GameMode.ColourClubs));
-
-        // Right (Team2/opponent) can re-redouble
-        Assert.True(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
-
-        // Skip to Bottom's turn
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
-
-        // Bottom (Team1/announcer) cannot re-redouble
-        Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
     }
 
     [Fact]
@@ -547,10 +521,9 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void GetValidActions_NotEmpty_AfterReRedoubleWithUndoubledNoTrumps()
+    public void GetValidActions_NotEmpty_AfterRedoubleWithUndoubledNoTrumps()
     {
-        // This is the exact scenario that caused the crash:
-        // After ColourClubs is doubled → redoubled → re-redoubled, and NoTrumps
+        // After ColourClubs is doubled → redoubled, and NoTrumps
         // is the current bid (undoubled), the announcer's team must still have valid actions.
         var state = NegotiationState.Create(PlayerPosition.Top);
 
@@ -569,8 +542,9 @@ public class NegotiationEngineTests
         // Right (Team2, ColourClubs announcer's team) redoubles ColourClubs
         state = state.Apply(new RedoubleAction(PlayerPosition.Right, GameMode.ColourClubs));
 
-        // Bottom (Team1, opponent) re-redoubles ColourClubs
-        state = state.Apply(new ReRedoubleAction(PlayerPosition.Bottom, GameMode.ColourClubs));
+        // Now it's Bottom's turn
+        // Skip to Left's turn via accept
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
 
         // Now it's Left's turn (Team2, NoTrumps announcer's team)
         // CurrentBid = NoTrumps (undoubled), HasDoubleOccurred = true
