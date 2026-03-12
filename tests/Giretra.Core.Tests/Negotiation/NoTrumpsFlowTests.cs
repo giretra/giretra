@@ -8,7 +8,7 @@ namespace Giretra.Core.Tests.Negotiation;
 public class NoTrumpsFlowTests
 {
     [Fact]
-    public void Opponent_CanAccept_UndoubledNoTrumps_AutoDoubles()
+    public void Opponent_CanAccept_NoTrumps_LocksWithoutDoubling()
     {
         // Dealer = Top → Right speaks first
         var state = NegotiationState.Create(PlayerPosition.Top);
@@ -16,7 +16,7 @@ public class NoTrumpsFlowTests
         // Right (Team2) announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
 
-        // Bottom (Team1, opponent) CAN accept — this auto-doubles
+        // Bottom (Team1, opponent) CAN accept
         Assert.Equal(PlayerPosition.Bottom, state.CurrentPlayer);
         Assert.True(NegotiationEngine.CanAccept(state));
 
@@ -27,15 +27,15 @@ public class NoTrumpsFlowTests
 
         state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
 
-        // NoTrumps is now auto-doubled
-        Assert.True(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
-        Assert.True(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
-        Assert.True(state.HasDoubleOccurred);
+        // Accepting NoTrumps locks negotiation (blocks announcements) but does NOT double
+        Assert.False(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
+        Assert.False(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
+        Assert.True(state.HasDoubleOccurred); // Locked — no more announcements
         Assert.Equal(1, state.ConsecutiveAccepts);
     }
 
     [Fact]
-    public void AfterAutoDouble_AnnouncerTeamCannotRedouble_OpponentPartnerCan()
+    public void AfterOpponentAccept_AnnouncementsBlocked_DoubleStillAvailable()
     {
         // Dealer = Top → Right speaks first
         var state = NegotiationState.Create(PlayerPosition.Top);
@@ -43,10 +43,10 @@ public class NoTrumpsFlowTests
         // 1. Right (Team2) announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
 
-        // 2. Bottom (Team1) accepts → auto-double (×2)
+        // 2. Bottom (Team1) accepts — locks negotiation (blocks announcements)
         state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
 
-        // 3. Left (Team2, announcer's team) — CANNOT redouble (inverted)
+        // 3. Left (Team2, announcer's teammate) — can only Accept (announcements blocked, can't double own team)
         Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
         Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
 
@@ -56,18 +56,17 @@ public class NoTrumpsFlowTests
 
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // 4. Top (Team1, auto-doubler's partner) CAN redouble (×4)
+        // 4. Top (Team1) — can Accept or Double NoTrumps (announcements blocked, but double still allowed)
         Assert.Equal(PlayerPosition.Top, state.CurrentPlayer);
-        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
 
         validActions = NegotiationEngine.GetValidActions(state);
         Assert.Equal(2, validActions.Count);
         Assert.Contains(validActions, a => a is AcceptAction);
-        Assert.Contains(validActions, a => a is RedoubleAction { TargetMode: GameMode.NoTrumps });
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.NoTrumps });
     }
 
     [Fact]
-    public void AfterAutoDouble_FullFlow_ThreeAcceptsEndsNegotiation()
+    public void NoTrumps_FullFlow_ThreeAcceptsEndsNegotiation_NormalMultiplier()
     {
         // Dealer = Top → Right speaks first
         var state = NegotiationState.Create(PlayerPosition.Top);
@@ -75,7 +74,7 @@ public class NoTrumpsFlowTests
         // 1. Right (Team2) announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
 
-        // 2. Bottom (Team1) accepts → auto-double (×2)
+        // 2. Bottom (Team1) accepts — no auto-double
         state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
         Assert.False(state.IsComplete);
 
@@ -87,11 +86,11 @@ public class NoTrumpsFlowTests
         state = state.Apply(new AcceptAction(PlayerPosition.Top));
         Assert.True(state.IsComplete);
 
-        // Resolve: NoTrumps, announced by Team2, doubled (auto-double)
+        // Resolve: NoTrumps, announced by Team2, normal (no auto-double)
         var (mode, team, multiplier) = state.ResolveFinalMode();
         Assert.Equal(GameMode.NoTrumps, mode);
         Assert.Equal(Team.Team2, team);
-        Assert.Equal(MultiplierState.Doubled, multiplier);
+        Assert.Equal(MultiplierState.Normal, multiplier);
     }
 
     [Fact]

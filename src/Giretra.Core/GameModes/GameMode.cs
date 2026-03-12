@@ -81,7 +81,7 @@ public static class GameModeExtensions
         => mode switch
         {
             GameMode.AllTrumps => 26,
-            GameMode.NoTrumps => 26,
+            GameMode.NoTrumps => 52,
             _ when mode.IsColourMode() => 16,
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
@@ -108,10 +108,17 @@ public static class GameModeExtensions
 
     /// <summary>
     /// Checks if an opponent accepting this mode auto-doubles it (×2).
-    /// This applies to NoTrumps and ColourClubs.
+    /// Only applies to ColourClubs.
     /// </summary>
     public static bool AutoDoublesOnOpponentAccept(this GameMode mode)
-        => mode is GameMode.NoTrumps or GameMode.ColourClubs;
+        => mode is GameMode.ColourClubs;
+
+    /// <summary>
+    /// Checks if an opponent accepting this mode locks the negotiation (blocks new announcements)
+    /// without affecting the score multiplier. Only applies to NoTrumps.
+    /// </summary>
+    public static bool LocksOnOpponentAccept(this GameMode mode)
+        => mode is GameMode.NoTrumps;
 
     /// <summary>
     /// Checks if re-redouble (×8) is allowed for this game mode.
