@@ -105,7 +105,7 @@
   "negotiation.reRedouble": "Re-redouble",
 
   "bidDialog.title": "Your Turn to Bid",
-  "bidDialog.noBidYouOpen": "No bid yet — you open",
+  "bidDialog.noBidYouOpen": "No bid yet: you open",
 
   "gameModePopup.playing": "Playing",
 
