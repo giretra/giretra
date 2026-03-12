@@ -8,7 +8,7 @@ namespace Giretra.Web.Services;
 
 public sealed class LeaderboardService : ILeaderboardService
 {
-    private const int MinGamesForRanking = 5;
+    private const int MinGamesForRanking = 2;
     private const int MaxPlayerEntries = 100;
 
     private readonly GiretraDbContext _db;
