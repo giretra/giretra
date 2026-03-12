@@ -1033,7 +1033,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
                     return ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit);
             }
 
-            return ChooseLeastValuableCard(validPlays, mode);
+            return ChooseLeastValuableCard(validPlays, mode, hand);
         }
 
         // Opponent winning — try to win with master or cheap card
@@ -1268,14 +1268,20 @@ public class DeterministicPlayerAgent : IPlayerAgent
     }
 
     private Card ChooseLeastValuableCard(IReadOnlyList<Card> validPlays, GameMode mode,
-        IReadOnlyList<Card>? hand = null)
+        IReadOnlyList<Card> hand)
     {
         var validBySuit = validPlays.GroupBy(c => c.Suit)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        var protectedCardSuits = 
+            PlayerAgentHelper.GetProtectableSuits(hand, mode, _playedCards).ToHashSet();
+
+        protectedCardSuits.RemoveWhere(t => _partnerPrioritySuits.Contains(t));
+
         return validPlays
             .OrderBy(r => r.Suit == mode.GetTrumpSuit())
             .ThenBy(c => PlayerAgentHelper.IsMasterCard(c, mode, hand ?? [], _playedCards))
+            .ThenBy(r => protectedCardSuits.Contains(r.Suit))
             .ThenBy(c => c.GetPointValue(mode))
             .ThenBy(c => validBySuit[c.Suit].Count)
             .ThenBy(c => c.GetStrength(mode))

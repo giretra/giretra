@@ -49,6 +49,34 @@ public static class PlayerAgentHelper
         return true;
     }
 
+    // Get suits that needs to be protected. 
+    public static IReadOnlyList<CardSuit> GetProtectableSuits(
+        IReadOnlyList<Card> hand, GameMode mode, HashSet<Card> playedCards)
+    {
+        var handsGroupedBySuit = hand.GroupBy(c => c.Suit).ToDictionary(g => g.Key, g => g.ToList());
+        var allCards = BuildAllCards().ToList();
+
+        allCards.RemoveAll(r => playedCards.Contains(r));
+        allCards.RemoveAll(r => hand.Contains(r));
+
+        var result = new List<CardSuit>();
+
+        foreach (var (suit, cards) in handsGroupedBySuit)
+        {
+            var strongerCardsInHandForSuit = 
+                cards.OrderByDescending(r => r.GetStrength(mode)).First();
+
+            var strongerRemainingPlayingCardCount = allCards.Where(p => p.Suit == suit)
+                .Count(c => c.GetStrength(mode) > strongerCardsInHandForSuit.GetStrength(mode));
+
+            if ((strongerRemainingPlayingCardCount +1) == cards.Count) {
+                result.Add(suit);
+            }
+        }
+
+        return result;
+    }
+
     public static bool IsMasterCardExcludeTrump(Card card, GameMode mode, IReadOnlyList<Card> hand, HashSet<Card> playedCards)
     {
         if (!mode.IsColourMode())
