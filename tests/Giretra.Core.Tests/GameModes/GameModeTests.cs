@@ -77,7 +77,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourSpades, 16)]
     [InlineData(GameMode.ColourHearts, 16)]
     [InlineData(GameMode.ColourDiamonds, 16)]
-    [InlineData(GameMode.ColourClubs, 16)]
+    [InlineData(GameMode.ColourClubs, 32)]
     public void GetBaseMatchPoints_ReturnsCorrectValue(GameMode mode, int expected)
     {
         Assert.Equal(expected, mode.GetBaseMatchPoints());
@@ -106,7 +106,7 @@ public class GameModeTests
 
     [Theory]
     [InlineData(GameMode.NoTrumps, false)]
-    [InlineData(GameMode.ColourClubs, true)]
+    [InlineData(GameMode.ColourClubs, false)]
     [InlineData(GameMode.AllTrumps, false)]
     [InlineData(GameMode.ColourSpades, false)]
     public void AutoDoublesOnOpponentAccept_ReturnsCorrectValue(GameMode mode, bool expected)
@@ -115,7 +115,17 @@ public class GameModeTests
     }
 
     [Theory]
+    [InlineData(GameMode.NoTrumps, true)]
     [InlineData(GameMode.ColourClubs, true)]
+    [InlineData(GameMode.AllTrumps, false)]
+    [InlineData(GameMode.ColourSpades, false)]
+    public void LocksOnOpponentAccept_ReturnsCorrectValue(GameMode mode, bool expected)
+    {
+        Assert.Equal(expected, mode.LocksOnOpponentAccept());
+    }
+
+    [Theory]
+    [InlineData(GameMode.ColourClubs, false)]
     [InlineData(GameMode.NoTrumps, false)]
     [InlineData(GameMode.AllTrumps, false)]
     [InlineData(GameMode.ColourSpades, false)]
