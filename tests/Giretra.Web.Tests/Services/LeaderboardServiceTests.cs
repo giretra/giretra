@@ -73,10 +73,10 @@ public sealed class LeaderboardServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetLeaderboard_PlayersWithFewerThan5Games_Excluded()
+    public async Task GetLeaderboard_PlayersWithFewerThan2Games_Excluded()
     {
-        AddHuman("Eligible", rating: 1500, gamesPlayed: 5, gamesWon: 3);
-        AddHuman("NotEnough", rating: 1600, gamesPlayed: 4, gamesWon: 4);
+        AddHuman("Eligible", rating: 1500, gamesPlayed: 2, gamesWon: 1);
+        AddHuman("NotEnough", rating: 1600, gamesPlayed: 1, gamesWon: 1);
         AddHuman("Zero", rating: 1700, gamesPlayed: 0, gamesWon: 0);
         await _db.SaveChangesAsync();
 
