@@ -1044,6 +1044,20 @@ public class DeterministicPlayerAgent : IPlayerAgent
         bool teammateWinning,
         Card? winningCard)
     {
+        // escape
+
+        if (mode == GameMode.NoTrumps 
+              || (mode.IsColourMode() && mode.GetTrumpSuit() != trick.LeadSuit))
+        {
+            var escapableCards =
+                validPlays.Where(s => s.GetPointValue(mode) >= 10 &&
+                                      !PlayerAgentHelper.IsMasterCard(s, mode, hand, _playedCards))
+                    .OrderByDescending(r => r.GetStrength(mode)).ToList();
+
+            if (escapableCards.Any())
+                return escapableCards.First();
+        }
+
         if (teammateWinning)
             return ChooseMostValuableUselessCard(validPlays, mode, hand, trick.LeadSuit!.Value);
 
