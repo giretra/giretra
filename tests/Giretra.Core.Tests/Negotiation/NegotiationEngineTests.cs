@@ -1,6 +1,7 @@
 using Giretra.Core.GameModes;
 using Giretra.Core.Negotiation;
 using Giretra.Core.Players;
+using Giretra.Core.Scoring;
 using Giretra.Core.State;
 
 namespace Giretra.Core.Tests.Negotiation;
@@ -102,21 +103,22 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void OpponentAccept_NoTrumps_AutoDoubles()
+    public void OpponentAccept_NoTrumps_LocksWithoutDoubling()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         // Bottom (Team1) announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
-        // Left (Team2, opponent) CAN accept — this auto-doubles
+        // Left (Team2, opponent) CAN accept — locks but no score double
         Assert.True(NegotiationEngine.CanAccept(state));
 
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // NoTrumps is now doubled and auto-doubled
-        Assert.True(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
-        Assert.True(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
+        // NoTrumps is NOT in DoubledModes (no score multiplier)
+        Assert.False(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
+        Assert.False(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
+        // But announcements are blocked
         Assert.True(state.HasDoubleOccurred);
         Assert.Equal(1, state.ConsecutiveAccepts);
     }
@@ -520,26 +522,28 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void OpponentAccept_NoTrumps_AutoDoubles_AndAnnouncerTeamCannotRedouble()
+    public void OpponentAccept_NoTrumps_LocksAnnouncements_DoubleStillAvailable()
     {
-        // When opponent accepts NoTrumps, it auto-doubles. The announcer's team
-        // should NOT get the redouble privilege (inverted chain).
+        // When opponent accepts NoTrumps, announcements are blocked but no score double.
+        // Explicit double is still available.
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         // Bottom (Team1) announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
-        // Left (Team2, opponent) accepts → auto-doubles
+        // Left (Team2, opponent) accepts — locks announcements
         state = state.Apply(new AcceptAction(PlayerPosition.Left));
 
-        // Top (Team1, announcer's team) CANNOT redouble (inverted for auto-double)
+        // Top (Team1, announcer's team) cannot announce (locked), cannot redouble (no double)
+        Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.AllTrumps));
         Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
 
         // Top accepts
         state = state.Apply(new AcceptAction(PlayerPosition.Top));
 
-        // Right (Team2, auto-doubler's partner) CAN redouble
-        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
+        // Right (Team2) can double NoTrumps (opponent's bid, not yet doubled)
+        Assert.True(NegotiationEngine.CanDouble(state));
+        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
     }
 
     [Fact]
@@ -622,5 +626,129 @@ public class NegotiationEngineTests
 
         // Exactly 4 valid actions
         Assert.Equal(4, validActions.Count);
+    }
+
+    [Fact]
+    public void BottomOptions_AfterRightAnnouncesNoTrumps()
+    {
+        // Dealer is Top, so Right speaks first (dealer's left)
+        var state = NegotiationState.Create(PlayerPosition.Top);
+
+        // Right (Team2) announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+
+        // Bottom's turn
+        Assert.Equal(PlayerPosition.Bottom, state.CurrentPlayer);
+
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        // Bottom can: Accept, Announce AllTrumps (only higher mode), Double NoTrumps (opponent's bid)
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.AllTrumps);
+        Assert.Contains(validActions, a => a is DoubleAction d && d.TargetMode == GameMode.NoTrumps);
+
+        // Bottom cannot announce any Colour (all lower than NoTrumps) or NoTrumps itself
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.ColourClubs);
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.ColourDiamonds);
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.ColourHearts);
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.ColourSpades);
+        Assert.DoesNotContain(validActions, a => a is AnnouncementAction ann && ann.Mode == GameMode.NoTrumps);
+
+        // Exactly 3 valid actions
+        Assert.Equal(3, validActions.Count);
+    }
+
+    [Fact]
+    public void BottomOptions_AfterRightAnnouncesNoTrumps_MatchPointsPerOption()
+    {
+        // Dealer is Top, so Right speaks first
+        var state = NegotiationState.Create(PlayerPosition.Top);
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+
+        var scorer = new ScoringCalculator();
+
+        // Option 1: Accept — NoTrumps ×1 → 52 match points (winner-takes-all)
+        // Simulate: Bottom accepts, Left accepts, Top accepts → negotiation complete
+        var acceptState = state
+            .Apply(new AcceptAction(PlayerPosition.Bottom))
+            .Apply(new AcceptAction(PlayerPosition.Left))
+            .Apply(new AcceptAction(PlayerPosition.Top));
+
+        Assert.True(acceptState.IsComplete);
+        var (acceptMode, acceptAnnouncerTeam, acceptMultiplier) = acceptState.ResolveFinalMode();
+        Assert.Equal(GameMode.NoTrumps, acceptMode);
+        Assert.Equal(Team.Team2, acceptAnnouncerTeam); // Right announced
+        Assert.Equal(MultiplierState.Normal, acceptMultiplier);
+
+        // NoTrumps normal: base 52 match points (winner-takes-all)
+        var acceptResult = scorer.Calculate(acceptMode, acceptMultiplier, acceptAnnouncerTeam,
+            team1CardPoints: 80, team2CardPoints: 60, sweepingTeam: null);
+        Assert.Equal(52, acceptResult.Team1MatchPoints + acceptResult.Team2MatchPoints);
+
+        // Option 2: Announce AllTrumps — AllTrumps ×1 → 26 match points total (split)
+        var announceState = state
+            .Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.AllTrumps))
+            .Apply(new AcceptAction(PlayerPosition.Left))
+            .Apply(new AcceptAction(PlayerPosition.Top))
+            .Apply(new AcceptAction(PlayerPosition.Right));
+
+        Assert.True(announceState.IsComplete);
+        var (announceMode, announceAnnouncerTeam, announceMultiplier) = announceState.ResolveFinalMode();
+        Assert.Equal(GameMode.AllTrumps, announceMode);
+        Assert.Equal(Team.Team1, announceAnnouncerTeam); // Bottom announced
+        Assert.Equal(MultiplierState.Normal, announceMultiplier);
+
+        // AllTrumps split: points split proportionally, total = 26
+        var announceResult = scorer.Calculate(announceMode, announceMultiplier, announceAnnouncerTeam,
+            team1CardPoints: 150, team2CardPoints: 118, sweepingTeam: null);
+        Assert.Equal(26, announceResult.Team1MatchPoints + announceResult.Team2MatchPoints);
+
+        // Option 3: Double NoTrumps — NoTrumps ×2 → 104 match points total
+        var doubleState = state
+            .Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps))
+            .Apply(new AcceptAction(PlayerPosition.Left))
+            .Apply(new AcceptAction(PlayerPosition.Top))
+            .Apply(new AcceptAction(PlayerPosition.Right));
+
+        Assert.True(doubleState.IsComplete);
+        var (doubleMode, doubleAnnouncerTeam, doubleMultiplier) = doubleState.ResolveFinalMode();
+        Assert.Equal(GameMode.NoTrumps, doubleMode);
+        Assert.Equal(Team.Team2, doubleAnnouncerTeam); // Right announced originally
+        Assert.Equal(MultiplierState.Doubled, doubleMultiplier);
+
+        // NoTrumps doubled: base 52 × 2 = 104 match points (winner-takes-all)
+        var doubleResult = scorer.Calculate(doubleMode, doubleMultiplier, doubleAnnouncerTeam,
+            team1CardPoints: 80, team2CardPoints: 60, sweepingTeam: null);
+        Assert.Equal(104, doubleResult.Team1MatchPoints + doubleResult.Team2MatchPoints);
+    }
+
+    [Fact]
+    public void RightNoTrumps_BottomAccepts_LeftOnlyAccept_TopAcceptOrDouble()
+    {
+        // Dealer is Top, so Right speaks first
+        var state = NegotiationState.Create(PlayerPosition.Top);
+
+        // Right (Team2) announces NoTrumps
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+
+        // Bottom (Team1, opponent) accepts — locks negotiation
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+
+        // Left (Team2, announcer's teammate) — can only Accept
+        // Cannot announce (locked), cannot double own team's bid
+        Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
+        var leftActions = NegotiationEngine.GetValidActions(state);
+        Assert.Single(leftActions);
+        Assert.Contains(leftActions, a => a is AcceptAction);
+
+        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+
+        // Top (Team1) — can Accept or Double NoTrumps
+        // Cannot announce (locked), can double opponent's bid
+        Assert.Equal(PlayerPosition.Top, state.CurrentPlayer);
+        var topActions = NegotiationEngine.GetValidActions(state);
+        Assert.Equal(2, topActions.Count);
+        Assert.Contains(topActions, a => a is AcceptAction);
+        Assert.Contains(topActions, a => a is DoubleAction { TargetMode: GameMode.NoTrumps });
     }
 }

@@ -198,16 +198,24 @@ public sealed class NegotiationState
         var newAutoDoubledModes = AutoDoubledModes;
         var newHasDoubleOccurred = HasDoubleOccurred;
 
-        // Auto-double: opponent accepting an auto-double-eligible mode that isn't already doubled
         if (CurrentBid.HasValue &&
-            CurrentBid.Value.AutoDoublesOnOpponentAccept() &&
-            !DoubledModes.ContainsKey(CurrentBid.Value) &&
             CurrentBidder.HasValue &&
             action.Player.GetTeam() != CurrentBidder.Value.GetTeam())
         {
-            newDoubledModes = newDoubledModes.SetItem(CurrentBid.Value, Actions.Count);
-            newAutoDoubledModes = newAutoDoubledModes.Add(CurrentBid.Value);
-            newHasDoubleOccurred = true;
+            // Auto-double: opponent accepting ColourClubs doubles it (×2)
+            if (CurrentBid.Value.AutoDoublesOnOpponentAccept() &&
+                !DoubledModes.ContainsKey(CurrentBid.Value))
+            {
+                newDoubledModes = newDoubledModes.SetItem(CurrentBid.Value, Actions.Count);
+                newAutoDoubledModes = newAutoDoubledModes.Add(CurrentBid.Value);
+                newHasDoubleOccurred = true;
+            }
+
+            // Lock: opponent accepting NoTrumps blocks announcements without affecting score
+            if (CurrentBid.Value.LocksOnOpponentAccept() && !newHasDoubleOccurred)
+            {
+                newHasDoubleOccurred = true;
+            }
         }
 
         // Negotiation ends after 3 consecutive accepts
