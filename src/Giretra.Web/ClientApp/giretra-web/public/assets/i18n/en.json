@@ -164,6 +164,12 @@
   "scoreBar.dealNumber": "Deal {{number}}",
   "scoreBar.leaveTable": "Leave Table",
 
+  "fullscreen.suggestion": "Better on fullscreen",
+  "fullscreen.goFullscreen": "Fullscreen",
+  "fullscreen.notNow": "Not now",
+  "fullscreen.enter": "Go fullscreen",
+  "fullscreen.exit": "Exit fullscreen",
+
   "watcher.spectating": "Spectating",
   "watcher.cardsLeft": "Cards left",
   "watcher.ranked": "Ranked",
