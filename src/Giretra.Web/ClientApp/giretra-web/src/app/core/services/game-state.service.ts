@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CardResponse,
   CardPointsBreakdownResponse,
+  CardPlayType,
   GameMode,
   PlayerPosition,
   Team,
@@ -11,6 +12,7 @@ import {
 import { GameHubService } from '../../api/game-hub.service';
 import { ApiService, EloChangeResponse, GameStateResponse, PlayerStateResponse, RoomResponse, ValidAction, TrickResponse, NegotiationAction } from './api.service';
 import { ClientSessionService } from './client-session.service';
+import { SoundService } from './sound.service';
 import { environment } from '../../../environments/environment';
 import { getTeam } from '../utils/position-utils';
 
@@ -53,6 +55,7 @@ export class GameStateService {
   private readonly api = inject(ApiService);
   private readonly hub = inject(GameHubService);
   private readonly session = inject(ClientSessionService);
+  private readonly sound = inject(SoundService);
   private readonly destroyRef = inject(DestroyRef);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -725,11 +728,26 @@ export class GameStateService {
       this.refreshState();
     });
 
-    // Card played
+    // Card played — only play sound for the local user's own card plays
     this.hub.cardPlayed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: cardPlayed', event);
       this._turnTimeoutAt.set(null);
-      this.refreshState();
+
+      const isMyPlay = event.player === this.session.position();
+      this.refreshState().then(() => {
+        if (!isMyPlay) return;
+        switch (event.playType) {
+          case CardPlayType.Master:
+            this.sound.play('card_played_master');
+            break;
+          case CardPlayType.Under:
+            this.sound.play('card_played_under');
+            break;
+          default:
+            this.sound.play('card_played');
+            break;
+        }
+      });
     });
 
     // Trick completed - show cards briefly before clearing

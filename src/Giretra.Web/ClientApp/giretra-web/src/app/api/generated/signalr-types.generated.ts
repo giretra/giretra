@@ -61,6 +61,12 @@ export enum SeatAccessMode {
   InviteOnly = 'InviteOnly',
 }
 
+export enum CardPlayType {
+  Normal = 'Normal',
+  Under = 'Under',
+  Master = 'Master',
+}
+
 // ============================================================================
 // Shared Types
 // ============================================================================
@@ -154,6 +160,7 @@ export interface CardPlayedEvent {
   gameId: string;
   player: PlayerPosition;
   card: CardResponse;
+  playType: CardPlayType;
 }
 
 export interface TrickCompletedEvent {

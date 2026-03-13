@@ -1,9 +1,10 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye } from 'lucide-angular';
+import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye, Volume2, VolumeOff } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ApiService, ProfileResponse } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SoundService } from '../../../core/services/sound.service';
 
 @Component({
   selector: 'app-profile-section',
@@ -67,6 +68,30 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
             }
             <span class="field-hint">&#64;{{ p.username }}</span>
+          </div>
+
+          <!-- Sound toggle -->
+          <div class="field">
+            <label class="field-label">{{ t('settings.profile.sound') }}</label>
+            <div class="toggle-row">
+              <button
+                class="toggle"
+                [class.toggle-on]="!soundService.muted()"
+                (click)="soundService.toggleMute()"
+                [attr.aria-pressed]="!soundService.muted()"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+              <span class="toggle-label">
+                @if (!soundService.muted()) {
+                  <i-lucide [img]="Volume2Icon" [size]="14"></i-lucide>
+                  {{ t('settings.profile.soundOn') }}
+                } @else {
+                  <i-lucide [img]="VolumeOffIcon" [size]="14"></i-lucide>
+                  {{ t('settings.profile.soundOff') }}
+                }
+              </span>
+            </div>
           </div>
 
           <!-- ELO visibility -->
@@ -175,9 +200,12 @@ export class ProfileSectionComponent implements OnInit {
   readonly Trash2Icon = Trash2;
   readonly EyeOffIcon = EyeOff;
   readonly EyeIcon = Eye;
+  readonly Volume2Icon = Volume2;
+  readonly VolumeOffIcon = VolumeOff;
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  readonly soundService = inject(SoundService);
   private readonly transloco = inject(TranslocoService);
 
   readonly profile = signal<ProfileResponse | null>(null);
