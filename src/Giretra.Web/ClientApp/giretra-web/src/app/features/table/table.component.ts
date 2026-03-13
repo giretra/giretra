@@ -13,6 +13,7 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
 import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
+import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -30,6 +31,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     BidDialogComponent,
     GameModePopupComponent,
     NegotiationHistoryPopupComponent,
+    MatchHistoryPopupComponent,
     PlayerProfilePopupComponent,
     TranslocoDirective,
   ],
@@ -67,6 +69,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [turnTimeoutAt]="gameState.turnTimeoutAt()"
         (leaveTable)="onLeaveTable()"
         (modeBadgeClicked)="onModeBadgeClicked()"
+        (matchPointsClicked)="onMatchPointsClicked()"
       />
 
       <!-- Zone B: Table Surface (players + center stage) -->
@@ -151,6 +154,17 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [negotiationHistory]="gameState.negotiationHistory()"
           [multiplier]="gameState.multiplier()"
           (closed)="showNegotiationHistory.set(false)"
+        />
+      }
+
+      <!-- Match History Popup -->
+      @if (showMatchHistory()) {
+        <app-match-history-popup
+          [dealHistory]="gameState.matchDealHistory()"
+          [team1MatchPoints]="gameState.team1MatchPoints()"
+          [team2MatchPoints]="gameState.team2MatchPoints()"
+          [myTeam]="gameState.myTeam()"
+          (closed)="showMatchHistory.set(false)"
         />
       }
 
@@ -302,6 +316,7 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
   readonly waitingForContinue = signal(false);
   readonly showNegotiationHistory = signal(false);
+  readonly showMatchHistory = signal(false);
 
   readonly gameModePopup = signal<{
     mode: GameMode;
@@ -383,6 +398,10 @@ export class TableComponent implements OnInit, OnDestroy {
 
   onModeBadgeClicked(): void {
     this.showNegotiationHistory.set(true);
+  }
+
+  onMatchPointsClicked(): void {
+    this.showMatchHistory.set(true);
   }
 
   dismissGameModePopup(): void {

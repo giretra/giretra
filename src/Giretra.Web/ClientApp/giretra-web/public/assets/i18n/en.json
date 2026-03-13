@@ -107,6 +107,13 @@
   "negotiationHistory.title": "Negotiation",
   "negotiationHistory.empty": "No negotiation yet",
 
+  "matchHistory.title": "Match Score",
+  "matchHistory.mode": "Mode",
+  "matchHistory.dealer": "Dealer",
+  "matchHistory.points": "Points",
+  "matchHistory.sweep": "Sweep",
+  "matchHistory.empty": "No deals played yet",
+
   "bidDialog.title": "Your Turn to Bid",
   "bidDialog.noBidYouOpen": "No bid yet: you open",
 
