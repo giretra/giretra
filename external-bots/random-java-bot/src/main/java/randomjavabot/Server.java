@@ -3,10 +3,6 @@
 
 package randomjavabot;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,8 +11,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
+
+import io.javalin.Javalin;
+import io.javalin.http.Context;
+import io.javalin.json.JavalinJackson;
 
 public class Server {
 
@@ -29,29 +27,8 @@ public class Server {
 
     private static final ConcurrentHashMap<String, Bot> bots = new ConcurrentHashMap<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "5063"));
-        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
-
-        server.createContext("/health", exchange -> {
-            if (!"GET".equals(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
-                exchange.close();
-                return;
-            }
-            exchange.sendResponseHeaders(200, -1);
-            exchange.close();
-        });
-
-        server.createContext("/api/sessions", exchange -> {
-            try {
-                handleSessions(exchange);
-            } catch (Exception e) {
-                e.printStackTrace();
-                exchange.sendResponseHeaders(500, -1);
-                exchange.close();
-            }
-        });
 
         // ── Launcher watchdog ─────────────────────────────────────────
         // If LAUNCHER_PID is set, monitor the launcher process and exit if it dies.
@@ -71,102 +48,60 @@ public class Server {
             }
         }
 
-        server.setExecutor(null);
-        server.start();
+        Javalin app = Javalin.create(config -> {
+            config.jsonMapper(new JavalinJackson(mapper, false));
+            config.showJavalinBanner = false;
+        });
+
+        app.get("/health", ctx -> ctx.status(200));
+
+        app.post("/api/sessions", ctx -> {
+            SessionRequest req = ctx.bodyAsClass(SessionRequest.class);
+            String sessionId = UUID.randomUUID().toString();
+            bots.put(sessionId, new Bot(req.matchId(), req.seed()));
+            ctx.status(201).json(mapper.createObjectNode().put("sessionId", sessionId));
+        });
+
+        app.delete("/api/sessions/{sessionId}", ctx -> {
+            bots.remove(ctx.pathParam("sessionId"));
+            ctx.status(204);
+        });
+
+        app.post("/api/sessions/{sessionId}/{action}", ctx -> {
+            Bot bot = getBot(ctx);
+            String action = ctx.pathParam("action");
+            switch (action) {
+                case "choose-cut" -> ctx.json(bot.chooseCut(ctx.bodyAsClass(ChooseCutContext.class)));
+                case "choose-negotiation-action" -> ctx.json(bot.chooseNegotiationAction(ctx.bodyAsClass(ChooseNegotiationActionContext.class)));
+                case "choose-card" -> ctx.json(bot.chooseCard(ctx.bodyAsClass(ChooseCardContext.class)));
+                default -> ctx.status(404);
+            }
+        });
+
+        app.post("/api/sessions/{sessionId}/notify/{event}", ctx -> {
+            Bot bot = getBot(ctx);
+            String event = ctx.pathParam("event");
+            switch (event) {
+                case "deal-started" -> bot.onDealStarted(ctx.bodyAsClass(DealStartedContext.class));
+                case "negotiation-completed" -> bot.onNegotiationCompleted(ctx.bodyAsClass(NegotiationCompletedContext.class));
+                case "card-played" -> bot.onCardPlayed(ctx.bodyAsClass(CardPlayedContext.class));
+                case "trick-completed" -> bot.onTrickCompleted(ctx.bodyAsClass(TrickCompletedContext.class));
+                case "deal-ended" -> bot.onDealEnded(ctx.bodyAsClass(DealEndedContext.class));
+                case "match-ended" -> bot.onMatchEnded(ctx.bodyAsClass(MatchEndedContext.class));
+            }
+            ctx.status(200);
+        });
+
+        app.start("localhost", port);
         System.out.println("random-java-bot listening on port " + port);
     }
 
-    private static void handleSessions(HttpExchange exchange) throws IOException {
-        String path = exchange.getRequestURI().getPath();
-        String method = exchange.getRequestMethod();
-
-        // POST /api/sessions
-        if ("POST".equals(method) && path.equals("/api/sessions")) {
-            SessionRequest req = readBody(exchange, SessionRequest.class);
-            String sessionId = UUID.randomUUID().toString();
-            bots.put(sessionId, new Bot(req.matchId(), req.seed()));
-            sendJson(exchange, 201, mapper.createObjectNode().put("sessionId", sessionId));
-            return;
-        }
-
-        // Extract session ID from path: /api/sessions/{sessionId}[/...]
-        String[] segments = path.substring("/api/sessions/".length()).split("/", 2);
-        String sessionId = segments[0];
-
-        // DELETE /api/sessions/{sessionId}
-        if ("DELETE".equals(method) && segments.length == 1) {
-            bots.remove(sessionId);
-            exchange.sendResponseHeaders(204, -1);
-            exchange.close();
-            return;
-        }
-
-        if (!"POST".equals(method) || segments.length < 2) {
-            exchange.sendResponseHeaders(404, -1);
-            exchange.close();
-            return;
-        }
-
-        Bot bot = bots.get(sessionId);
+    private static Bot getBot(Context ctx) {
+        Bot bot = bots.get(ctx.pathParam("sessionId"));
         if (bot == null) {
-            exchange.sendResponseHeaders(404, -1);
-            exchange.close();
-            return;
+            ctx.status(404);
+            throw new IllegalStateException("Session not found");
         }
-
-        String action = segments[1];
-
-        switch (action) {
-            case "choose-cut" -> {
-                ChooseCutContext ctx = readBody(exchange, ChooseCutContext.class);
-                sendJson(exchange, 200, bot.chooseCut(ctx));
-            }
-            case "choose-negotiation-action" -> {
-                ChooseNegotiationActionContext ctx = readBody(exchange, ChooseNegotiationActionContext.class);
-                sendJson(exchange, 200, bot.chooseNegotiationAction(ctx));
-            }
-            case "choose-card" -> {
-                ChooseCardContext ctx = readBody(exchange, ChooseCardContext.class);
-                sendJson(exchange, 200, bot.chooseCard(ctx));
-            }
-            default -> {
-                // notify/{event}
-                if (action.startsWith("notify/")) {
-                    String event = action.substring("notify/".length());
-                    handleNotify(exchange, bot, event);
-                } else {
-                    exchange.sendResponseHeaders(404, -1);
-                    exchange.close();
-                }
-            }
-        }
-    }
-
-    private static void handleNotify(HttpExchange exchange, Bot bot, String event) throws IOException {
-        switch (event) {
-            case "deal-started" -> bot.onDealStarted(readBody(exchange, DealStartedContext.class));
-            case "negotiation-completed" -> bot.onNegotiationCompleted(readBody(exchange, NegotiationCompletedContext.class));
-            case "card-played" -> bot.onCardPlayed(readBody(exchange, CardPlayedContext.class));
-            case "trick-completed" -> bot.onTrickCompleted(readBody(exchange, TrickCompletedContext.class));
-            case "deal-ended" -> bot.onDealEnded(readBody(exchange, DealEndedContext.class));
-            case "match-ended" -> bot.onMatchEnded(readBody(exchange, MatchEndedContext.class));
-        }
-        exchange.sendResponseHeaders(200, -1);
-        exchange.close();
-    }
-
-    private static <T> T readBody(HttpExchange exchange, Class<T> type) throws IOException {
-        try (InputStream is = exchange.getRequestBody()) {
-            return mapper.readValue(is, type);
-        }
-    }
-
-    private static void sendJson(HttpExchange exchange, int status, Object body) throws IOException {
-        byte[] bytes = mapper.writeValueAsBytes(body);
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        return bot;
     }
 }
