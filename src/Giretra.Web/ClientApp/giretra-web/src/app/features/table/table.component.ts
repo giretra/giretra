@@ -623,6 +623,9 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onPlayCard(card: { rank: string; suit: string }): void {
+    if (this.gameState.showingCompletedTrick()) {
+      this.gameState.dismissCompletedTrick();
+    }
     if (this.gameState.isSubmittingAction()) return;
 
     const gameId = this.gameState.gameId();

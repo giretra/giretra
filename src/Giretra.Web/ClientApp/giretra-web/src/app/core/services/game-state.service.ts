@@ -121,7 +121,7 @@ export class GameStateService {
   private readonly _completedTrickToShow = signal<TrickResponse | null>(null);
   private readonly _isLastTrick = signal<boolean>(false);
   private _completedTrickTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private readonly COMPLETED_TRICK_DELAY_MS = 3000;
+  private readonly COMPLETED_TRICK_DELAY_MS = 2100;
 
   // Pending deal summary to show after last trick is dismissed
   private _pendingDealSummary: {
