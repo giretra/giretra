@@ -46,6 +46,8 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
+          cache: maven
+          cache-dependency-path: external-bots/${{ matrix.bot }}/pom.xml
 
       - name: Setup Node.js
         if: matrix.node-version
