@@ -51,6 +51,12 @@
     "tailwindcss": "^4.1.18",
     "tslib": "^2.3.0"
   },
+  "overrides": {
+    "ajv": "~8.18.0",
+    "koa": "~3.1.2",
+    "serialize-javascript": "~7.0.4",
+    "undici": "~7.24.1"
+  },
   "devDependencies": {
     "@angular/build": "^21.1.2",
     "@angular/cli": "^21.1.2",
