@@ -4,6 +4,7 @@ import { GameStateService, GamePhase, MultiplierState } from '../../core/service
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { GameHubService } from '../../api/game-hub.service';
+import { FullscreenService } from '../../core/services/fullscreen.service';
 import { GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
@@ -16,6 +17,7 @@ import { NegotiationHistoryPopupComponent } from './components/negotiation-histo
 import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
+import { LucideAngularModule, Maximize } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { HotToastService } from '@ngxpert/hot-toast';
@@ -33,6 +35,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     NegotiationHistoryPopupComponent,
     MatchHistoryPopupComponent,
     PlayerProfilePopupComponent,
+    LucideAngularModule,
     TranslocoDirective,
   ],
   template: `
@@ -51,6 +54,18 @@ import { HotToastService } from '@ngxpert/hot-toast';
         <div class="connection-banner disconnected">
           {{ t('table.connectionLost') }}
           <button class="retry-btn" (click)="onRetryConnection()">{{ t('common.retry') }}</button>
+        </div>
+      }
+
+      <!-- Fullscreen suggestion (mobile only, one-time) -->
+      @if (showFullscreenSuggestion()) {
+        <div class="fullscreen-banner">
+          <span class="fullscreen-banner-text">{{ t('fullscreen.suggestion') }}</span>
+          <button class="fullscreen-banner-btn" (click)="acceptFullscreen()">
+            <i-lucide [img]="MaximizeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+            {{ t('fullscreen.goFullscreen') }}
+          </button>
+          <button class="fullscreen-banner-dismiss" (click)="dismissFullscreen()">{{ t('fullscreen.notNow') }}</button>
         </div>
       }
 
@@ -300,6 +315,64 @@ import { HotToastService } from '@ngxpert/hot-toast';
     .retry-btn:hover {
       background: hsl(0 72% 51% / 0.35);
     }
+
+    .fullscreen-banner {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+      background: hsl(var(--primary) / 0.08);
+      border-bottom: 1px solid hsl(var(--primary) / 0.2);
+      animation: bannerSlideIn 0.3s ease;
+    }
+
+    @keyframes bannerSlideIn {
+      from { opacity: 0; transform: translateY(-100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fullscreen-banner-text {
+      color: hsl(var(--muted-foreground));
+      font-size: 0.6875rem;
+    }
+
+    .fullscreen-banner-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.1875rem 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .fullscreen-banner-btn:hover {
+      opacity: 0.85;
+    }
+
+    .fullscreen-banner-dismiss {
+      padding: 0.125rem 0.375rem;
+      font-size: 0.625rem;
+      color: hsl(var(--muted-foreground));
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .fullscreen-banner-dismiss:hover {
+      color: hsl(var(--foreground));
+    }
   `],
 })
 export class TableComponent implements OnInit, OnDestroy {
@@ -311,12 +384,16 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
   private readonly toast = inject(HotToastService);
+  private readonly fullscreenService = inject(FullscreenService);
+
+  readonly MaximizeIcon = Maximize;
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
   readonly waitingForContinue = signal(false);
   readonly showNegotiationHistory = signal(false);
   readonly showMatchHistory = signal(false);
+  readonly showFullscreenSuggestion = signal(false);
 
   readonly gameModePopup = signal<{
     mode: GameMode;
@@ -412,8 +489,24 @@ export class TableComponent implements OnInit, OnDestroy {
     this.gameModePopup.set(null);
   }
 
+  acceptFullscreen(): void {
+    this.showFullscreenSuggestion.set(false);
+    this.fullscreenService.dismissPrompt();
+    this.fullscreenService.enterFullscreen();
+  }
+
+  dismissFullscreen(): void {
+    this.showFullscreenSuggestion.set(false);
+    this.fullscreenService.dismissPrompt();
+  }
+
   ngOnInit(): void {
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
+
+    // Show fullscreen suggestion on mobile (once)
+    if (this.fullscreenService.shouldPrompt()) {
+      this.showFullscreenSuggestion.set(true);
+    }
 
     const roomId = this.route.snapshot.paramMap.get('roomId');
     const inviteToken = this.route.snapshot.queryParamMap.get('invite');

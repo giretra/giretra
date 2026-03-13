@@ -164,6 +164,12 @@
   "scoreBar.dealNumber": "Donne {{number}}",
   "scoreBar.leaveTable": "Quitter la Table",
 
+  "fullscreen.suggestion": "Mieux en plein écran",
+  "fullscreen.goFullscreen": "Plein écran",
+  "fullscreen.notNow": "Pas maintenant",
+  "fullscreen.enter": "Plein écran",
+  "fullscreen.exit": "Quitter le plein écran",
+
   "watcher.spectating": "Spectateur",
   "watcher.cardsLeft": "Cartes restantes",
   "watcher.ranked": "Classée",

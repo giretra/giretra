@@ -164,6 +164,12 @@
   "scoreBar.dealNumber": "Fizarana {{number}}",
   "scoreBar.leaveTable": "Hiala amin'ny Latabatra",
 
+  "fullscreen.suggestion": "Tsara kokoa amin'ny écran feno",
+  "fullscreen.goFullscreen": "Écran feno",
+  "fullscreen.notNow": "Tsy izao",
+  "fullscreen.enter": "Écran feno",
+  "fullscreen.exit": "Hiala amin'ny écran feno",
+
   "watcher.spectating": "Mpijery",
   "watcher.cardsLeft": "Katra sisa",
   "watcher.ranked": "Voaisa",

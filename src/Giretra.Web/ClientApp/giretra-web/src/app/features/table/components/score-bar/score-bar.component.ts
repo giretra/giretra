@@ -3,11 +3,12 @@ import { GameMode, Team } from '../../../../api/generated/signalr-types.generate
 import { RoomResponse } from '../../../../core/services/api.service';
 import { getTeamLabel } from '../../../../core/utils';
 import { MultiplierState } from '../../../../core/services/game-state.service';
+import { FullscreenService } from '../../../../core/services/fullscreen.service';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
 import { TurnTimerComponent } from '../../../../shared/components/turn-timer/turn-timer.component';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, LogOut } from 'lucide-angular';
+import { LucideAngularModule, LogOut, Maximize, Minimize } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 @Component({
@@ -49,6 +50,20 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
           <span class="team-label">{{ team2Label() }}</span>
           <span class="match-points">{{ team2MatchPoints() }}</span>
         </button>
+
+        <!-- Fullscreen toggle (mobile only) -->
+        @if (fullscreen.isFullscreenSupported) {
+          <button
+            hlmBtn
+            variant="ghost"
+            size="sm"
+            class="menu-button fullscreen-btn"
+            (click)="fullscreen.toggle()"
+            [title]="fullscreen.isFullscreen() ? t('fullscreen.exit') : t('fullscreen.enter')"
+          >
+            <i-lucide [img]="fullscreen.isFullscreen() ? MinimizeIcon : MaximizeIcon" [size]="18" [strokeWidth]="2"></i-lucide>
+          </button>
+        }
 
         <!-- Leave button -->
         <button
@@ -242,6 +257,16 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       flex-shrink: 0;
     }
 
+    .fullscreen-btn {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .fullscreen-btn {
+        display: flex;
+      }
+    }
+
     /* Deal points progress */
     .deal-row {
       margin-top: 0.375rem;
@@ -346,7 +371,10 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 })
 export class ScoreBarComponent {
   private readonly transloco = inject(TranslocoService);
+  readonly fullscreen = inject(FullscreenService);
   readonly LogOutIcon = LogOut;
+  readonly MaximizeIcon = Maximize;
+  readonly MinimizeIcon = Minimize;
 
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
