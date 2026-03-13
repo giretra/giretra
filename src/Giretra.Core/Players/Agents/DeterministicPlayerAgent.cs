@@ -48,6 +48,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     // Deal context
     private GameMode? _currentGameMode;
     private readonly Team _myTeam;
+    private CardSuit? _lastLeadSuit;
 
     public PlayerPosition Position { get; }
 
@@ -763,7 +764,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
             var preferredMasters = masterCards
                 .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
                 .OrderByDescending(c => _partnerPrioritySuits.Contains(c.Suit) || _partnerPreferredSuits.Contains(c.Suit))
-                .ThenByDescending(c => c.GetPointValue(mode))
+                .ThenByDescending(c => c.Suit == _lastLeadSuit)
+                .ThenByDescending(c => c.GetStrength(mode))
                 .ToList();
 
             if (mode.IsColourMode() && IsAllOpponentsOutOfTrump())
@@ -773,16 +775,24 @@ public class DeterministicPlayerAgent : IPlayerAgent
                     .ToList();
 
                 if (preferredMasters.Count > 0)
+                {
+                    _lastLeadSuit = preferredMasters[0].Suit;
                     return preferredMasters[0];
+                }
             }
             else
             {
                 if (preferredMasters.Count > 0)
+                {
+                    _lastLeadSuit = preferredMasters[0].Suit;
                     return preferredMasters[0];
+                }
 
                 return masterCards.OrderByDescending(c => c.GetPointValue(mode)).First();
             }
         }
+
+        _lastLeadSuit = null;
 
         // 1b. Partner priority suit (both opponents void)
         if (_partnerPrioritySuits.Count > 0)
