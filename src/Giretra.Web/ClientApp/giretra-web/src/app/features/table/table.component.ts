@@ -12,6 +12,7 @@ import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
+import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
 import { TranslocoDirective } from '@jsverse/transloco';
@@ -28,6 +29,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     MatchEndOverlayComponent,
     BidDialogComponent,
     GameModePopupComponent,
+    NegotiationHistoryPopupComponent,
     PlayerProfilePopupComponent,
     TranslocoDirective,
   ],
@@ -64,6 +66,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [isMyTurn]="gameState.isMyTurn()"
         [turnTimeoutAt]="gameState.turnTimeoutAt()"
         (leaveTable)="onLeaveTable()"
+        (modeBadgeClicked)="onModeBadgeClicked()"
       />
 
       <!-- Zone B: Table Surface (players + center stage) -->
@@ -139,6 +142,15 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [gameMode]="popup.mode"
           [multiplier]="popup.multiplier"
           (dismissed)="dismissGameModePopup()"
+        />
+      }
+
+      <!-- Negotiation History Popup -->
+      @if (showNegotiationHistory()) {
+        <app-negotiation-history-popup
+          [negotiationHistory]="gameState.negotiationHistory()"
+          [multiplier]="gameState.multiplier()"
+          (closed)="showNegotiationHistory.set(false)"
         />
       }
 
@@ -289,6 +301,7 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
   readonly waitingForContinue = signal(false);
+  readonly showNegotiationHistory = signal(false);
 
   readonly gameModePopup = signal<{
     mode: GameMode;
@@ -366,6 +379,10 @@ export class TableComponent implements OnInit, OnDestroy {
       this.gameModePopup.set(null);
       this.gameModePopupTimeoutId = null;
     }, 1250);
+  }
+
+  onModeBadgeClicked(): void {
+    this.showNegotiationHistory.set(true);
   }
 
   dismissGameModePopup(): void {

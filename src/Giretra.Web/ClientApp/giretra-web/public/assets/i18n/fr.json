@@ -104,6 +104,9 @@
   "negotiation.redouble": "Surcontré",
   "negotiation.reRedouble": "Sur-surcontré",
 
+  "negotiationHistory.title": "Négociation",
+  "negotiationHistory.empty": "Pas encore de négociation",
+
   "bidDialog.title": "À vous d'enchérir",
   "bidDialog.noBidYouOpen": "Pas d'annonce : à vous d'ouvrir",
 

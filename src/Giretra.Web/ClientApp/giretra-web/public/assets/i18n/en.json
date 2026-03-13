@@ -104,6 +104,9 @@
   "negotiation.redouble": "Redouble",
   "negotiation.reRedouble": "Re-redouble",
 
+  "negotiationHistory.title": "Negotiation",
+  "negotiationHistory.empty": "No negotiation yet",
+
   "bidDialog.title": "Your Turn to Bid",
   "bidDialog.noBidYouOpen": "No bid yet: you open",
 

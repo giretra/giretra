@@ -27,10 +27,10 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
         <!-- Center info -->
         <div class="center-info">
           @if (gameMode()) {
-            <div class="mode-glow">
+            <button class="mode-glow mode-glow-btn" (click)="modeBadgeClicked.emit()">
               <app-game-mode-badge [mode]="gameMode()" />
               <app-multiplier-badge [multiplier]="multiplier()" />
-            </div>
+            </button>
           }
           @if (isMyTurn() && turnTimeoutAt()) {
             <div class="your-turn-indicator">
@@ -171,6 +171,22 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       border-radius: 0.375rem;
       background: hsl(var(--gold) / 0.08);
       border: 1px solid hsl(var(--gold) / 0.15);
+    }
+
+    .mode-glow-btn {
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mode-glow-btn:hover {
+      background: hsl(var(--gold) / 0.15);
+      border-color: hsl(var(--gold) / 0.3);
+    }
+
+    .mode-glow-btn:active {
+      background: hsl(var(--gold) / 0.2);
     }
 
     .deal-number,
@@ -326,6 +342,7 @@ export class ScoreBarComponent {
   readonly turnTimeoutAt = input<Date | null>(null);
 
   readonly leaveTable = output<void>();
+  readonly modeBadgeClicked = output<void>();
 
   readonly showDealPoints = computed(() => {
     return this.gameMode() !== null;
