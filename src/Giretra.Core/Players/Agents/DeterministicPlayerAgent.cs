@@ -381,6 +381,23 @@ public class DeterministicPlayerAgent : IPlayerAgent
             else if (played[0].GetStrength(mode) >= 10)
             {
                 _partnerDislikedSuits.Add(group.Key);
+                _partnerPrioritySuits.Remove(group.Key);
+            }
+        }
+
+        if (!mode.IsColourMode())
+        {
+            if (cannotFollowCards.Count >= 2 && !_partnerPrioritySuits.Any()
+                                             && !_partnerDislikedSuits.Any() && !_partnerPreferredSuits.Any())
+            {
+                var allSuits = Enum.GetValues<CardSuit>();
+                var partnerPlayedSuits = cannotFollowCards.Select(s => s.Suit).ToHashSet();
+                var playedTricks = _playedCards.Select(c => c.Suit).ToHashSet();
+
+                foreach (var suit in allSuits.Where(s => !partnerPlayedSuits.Contains(s) && !playedTricks.Contains(s)))
+                {
+                    _partnerPreferredSuits.Add(suit);
+                }
             }
         }
     }
@@ -415,6 +432,10 @@ public class DeterministicPlayerAgent : IPlayerAgent
 
     private bool IsPlayerVoidIn(PlayerPosition player, CardSuit suit)
         => _knownVoids[player].Contains(suit);
+
+    private bool IsAllOpponentsVoidIn(CardSuit suit)
+        => _opponentVoidSuits[Position.Next()].Contains(suit)
+           && _opponentVoidSuits[Position.Teammate().Next()].Contains(suit);
 
     private bool IsOpponentOutOfTrump(PlayerPosition opponent)
         => _opponentNoTrump.Contains(opponent);
@@ -984,15 +1005,17 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (colourTrumpSuit != null && colourTrumpSuit.Value != leadSuit && minWinner != null)
         {
             bool leadSuitFresh = _playedCards.Count(c => c.Suit == leadSuit) < 3;
-            if (leadSuitFresh)
+
+            if (leadSuitFresh && 
+                (!IsAllOpponentsVoidIn(leadSuit) || IsAllOpponentsOutOfTrump()))
             {
-                var subMaster = validPlays
+                var master = validPlays
                     .Where(c => PlayerAgentHelper.IsMasterCardExcludeTrump(c, mode, hand, _playedCards))
                     .OrderByDescending(c => c.GetStrength(mode))
                     .FirstOrDefault();
 
-                if (subMaster != default)
-                    return subMaster;
+                if (master != default)
+                    return master;
             }
         }
 
