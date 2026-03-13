@@ -107,6 +107,13 @@
   "negotiationHistory.title": "Négociation",
   "negotiationHistory.empty": "Pas encore de négociation",
 
+  "matchHistory.title": "Score de la Partie",
+  "matchHistory.mode": "Mode",
+  "matchHistory.dealer": "Donneur",
+  "matchHistory.points": "Points",
+  "matchHistory.sweep": "Capot",
+  "matchHistory.empty": "Aucune donne jouée",
+
   "bidDialog.title": "À vous d'enchérir",
   "bidDialog.noBidYouOpen": "Pas d'annonce : à vous d'ouvrir",
 

@@ -19,10 +19,10 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
       <!-- Main row -->
       <div class="score-row main-row">
         <!-- Team 1 Score -->
-        <div class="team-pill" [class.team1]="true" [class.my-team]="myTeam() === 'Team1'">
+        <button class="team-pill team-pill-btn" [class.team1]="true" [class.my-team]="myTeam() === 'Team1'" (click)="matchPointsClicked.emit()">
           <span class="team-label">{{ team1Label() }}</span>
           <span class="match-points">{{ team1MatchPoints() }}</span>
-        </div>
+        </button>
 
         <!-- Center info -->
         <div class="center-info">
@@ -45,10 +45,10 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
         </div>
 
         <!-- Team 2 Score -->
-        <div class="team-pill" [class.team2]="true" [class.my-team]="myTeam() === 'Team2'">
+        <button class="team-pill team-pill-btn" [class.team2]="true" [class.my-team]="myTeam() === 'Team2'" (click)="matchPointsClicked.emit()">
           <span class="team-label">{{ team2Label() }}</span>
           <span class="match-points">{{ team2MatchPoints() }}</span>
-        </div>
+        </button>
 
         <!-- Leave button -->
         <button
@@ -131,6 +131,25 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
     .team-pill.my-team {
       background: hsl(var(--primary) / 0.1);
+    }
+
+    .team-pill-btn {
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+    }
+
+    .team-pill-btn:hover {
+      background: hsl(var(--muted) / 0.8);
+    }
+
+    .team-pill-btn.my-team:hover {
+      background: hsl(var(--primary) / 0.18);
+    }
+
+    .team-pill-btn:active {
+      transform: scale(0.97);
     }
 
     .team-label {
@@ -343,6 +362,7 @@ export class ScoreBarComponent {
 
   readonly leaveTable = output<void>();
   readonly modeBadgeClicked = output<void>();
+  readonly matchPointsClicked = output<void>();
 
   readonly showDealPoints = computed(() => {
     return this.gameMode() !== null;
