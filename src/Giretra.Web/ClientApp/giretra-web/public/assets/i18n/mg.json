@@ -107,6 +107,13 @@
   "negotiationHistory.title": "Fifampiraharahana",
   "negotiationHistory.empty": "Mbola tsy misy fifampiraharahana",
 
+  "matchHistory.title": "Isan'ny Lalao",
+  "matchHistory.mode": "Karazana",
+  "matchHistory.dealer": "Mpizara",
+  "matchHistory.points": "Isa",
+  "matchHistory.sweep": "Capot",
+  "matchHistory.empty": "Mbola tsy misy fizarana natao",
+
   "bidDialog.title": "Anjaranao ny milaza",
   "bidDialog.noBidYouOpen": "Mbola tsy misy: ianao no manokatra",
 

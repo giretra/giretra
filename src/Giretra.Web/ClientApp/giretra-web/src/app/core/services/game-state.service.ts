@@ -23,6 +23,19 @@ export interface TrickHistoryEntry {
   team2CumulativePoints: number;
 }
 
+export interface DealHistoryEntry {
+  dealNumber: number;
+  dealer: PlayerPosition;
+  gameMode: GameMode;
+  multiplier: MultiplierState;
+  team1MatchPointsEarned: number;
+  team2MatchPointsEarned: number;
+  team1RunningTotal: number;
+  team2RunningTotal: number;
+  wasSweep: boolean;
+  sweepingTeam: Team | null;
+}
+
 export type GamePhase =
   | 'waiting'
   | 'cut'
@@ -87,6 +100,13 @@ export class GameStateService {
     trickHistory: TrickHistoryEntry[];
   } | null>(null);
   private readonly _dealTrickHistory = signal<TrickHistoryEntry[]>([]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Match Deal History (accumulated from DealStarted/DealEnded events)
+  // ─────────────────────────────────────────────────────────────────────────
+  private readonly _matchDealHistory = signal<DealHistoryEntry[]>([]);
+  private _currentDealDealer: PlayerPosition | null = null;
+  private _currentDealNumber: number = 0;
 
   readonly showingDealSummary = this._showingDealSummary.asReadonly();
   readonly dealSummary = this._dealSummary.asReadonly();
@@ -360,6 +380,9 @@ export class GameStateService {
   /** Completed deal recaps (only available when match is complete) */
   readonly completedDeals = computed(() => this._gameState()?.completedDeals ?? null);
 
+  /** Match deal history (accumulated during the match from events) */
+  readonly matchDealHistory = this._matchDealHistory.asReadonly();
+
   /** Whether the current room is ranked */
   readonly isRanked = computed(() => this._currentRoom()?.isRanked ?? false);
 
@@ -450,6 +473,9 @@ export class GameStateService {
     this._pendingDealSummary = null;
     this._turnTimeoutAt.set(null);
     this._idleDeadline.set(null);
+    this._matchDealHistory.set([]);
+    this._currentDealDealer = null;
+    this._currentDealNumber = 0;
   }
 
   /**
@@ -660,6 +686,9 @@ export class GameStateService {
       console.log('[GameState] Hub event: gameStarted', event);
       this._gameId.set(event.gameId);
       this._idleDeadline.set(null);
+      this._matchDealHistory.set([]);
+      this._currentDealDealer = null;
+      this._currentDealNumber = 0;
       // Also refresh the room to get updated status
       const room = this._currentRoom();
       if (room) {
@@ -676,6 +705,8 @@ export class GameStateService {
       console.log('[GameState] Hub event: dealStarted', event);
       this._turnTimeoutAt.set(null);
       this._dealTrickHistory.set([]);
+      this._currentDealDealer = event.dealer;
+      this._currentDealNumber = event.dealNumber;
       this.hideDealSummary();
       this.refreshState();
     });
@@ -751,6 +782,22 @@ export class GameStateService {
     this.hub.dealEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealEnded', event);
       this._turnTimeoutAt.set(null);
+
+      // Accumulate deal history entry
+      const dealer = this._currentDealDealer ?? this._gameState()?.dealer ?? PlayerPosition.Bottom;
+      const multiplier = (this._gameState()?.multiplier as MultiplierState) ?? 'Normal';
+      this._matchDealHistory.update(history => [...history, {
+        dealNumber: this._currentDealNumber || history.length + 1,
+        dealer,
+        gameMode: event.gameMode,
+        multiplier,
+        team1MatchPointsEarned: event.team1MatchPointsEarned,
+        team2MatchPointsEarned: event.team2MatchPointsEarned,
+        team1RunningTotal: event.team1TotalMatchPoints,
+        team2RunningTotal: event.team2TotalMatchPoints,
+        wasSweep: event.wasSweep,
+        sweepingTeam: event.sweepingTeam ?? null,
+      }]);
 
       const summary = {
         gameMode: event.gameMode,
