@@ -55,6 +55,8 @@ import {
   Zap,
   Maximize,
   Minimize,
+  Volume2,
+  VolumeOff,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -99,6 +101,8 @@ const usedIcons = {
   Zap,
   Maximize,
   Minimize,
+  Volume2,
+  VolumeOff,
 };
 
 function initializeKeycloak(auth: AuthService) {

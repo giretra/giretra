@@ -17,6 +17,7 @@ import { NegotiationHistoryPopupComponent } from './components/negotiation-histo
 import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { environment } from '../../../environments/environment';
+import { SoundService } from '../../core/services/sound.service';
 import { LucideAngularModule, Maximize } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
@@ -385,6 +386,7 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly transloco = inject(TranslocoService);
   private readonly toast = inject(HotToastService);
   private readonly fullscreenService = inject(FullscreenService);
+  private readonly sound = inject(SoundService);
 
   readonly MaximizeIcon = Maximize;
 
@@ -451,6 +453,7 @@ export class TableComponent implements OnInit, OnDestroy {
       this.previousPhase = phase;
 
       if (prevPhase === 'negotiation' && phase === 'playing') {
+        this.sound.play('card_folding_started');
         const mode = this.gameState.gameMode();
         if (mode) {
           this.showGameModePopup(mode, this.gameState.multiplier());
@@ -600,6 +603,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   onSubmitCut(): void {
     if (this.gameState.isSubmittingAction()) return;
+    this.sound.play('general_click');
 
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
@@ -646,6 +650,7 @@ export class TableComponent implements OnInit, OnDestroy {
 
   onSubmitNegotiation(action: { actionType: string; mode?: string | null }): void {
     if (this.gameState.isSubmittingAction()) return;
+    this.sound.play('general_click');
 
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
@@ -691,6 +696,7 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onHideDealSummary(): void {
+    this.sound.play('general_click');
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
     const pendingAction = this.gameState.pendingActionType();
@@ -720,10 +726,12 @@ export class TableComponent implements OnInit, OnDestroy {
   }
 
   onDismissCompletedTrick(): void {
+    this.sound.play('general_click');
     this.gameState.dismissCompletedTrick();
   }
 
   async onPlayAgain(): Promise<void> {
+    this.sound.play('general_click');
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
     const pendingAction = this.gameState.pendingActionType();

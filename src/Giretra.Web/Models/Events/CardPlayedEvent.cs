@@ -22,4 +22,9 @@ public sealed class CardPlayedEvent
     /// The card that was played.
     /// </summary>
     public required CardResponse Card { get; init; }
+
+    /// <summary>
+    /// Classification of the card play (Normal, Under, or Master).
+    /// </summary>
+    public required CardPlayType PlayType { get; init; }
 }

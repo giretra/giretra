@@ -254,15 +254,86 @@ public sealed class NotificationService : INotificationService
         var session = _gameRepository.GetById(gameId);
         if (session == null) return;
 
+        var playType = DetermineCardPlayType(player, card, handState, matchState);
+
         var ev = new CardPlayedEvent
         {
             GameId = gameId,
             Player = player,
-            Card = CardResponse.FromCard(card)
+            Card = CardResponse.FromCard(card),
+            PlayType = playType
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("CardPlayed", ev);
     }
+
+    private static CardPlayType DetermineCardPlayType(PlayerPosition player, Card card, HandState handState, MatchState matchState)
+    {
+        // Find the trick containing the just-played card
+        TrickState trick;
+        if (handState.CurrentTrick != null && handState.CurrentTrick.PlayedCards.Any(pc => pc.Player == player && pc.Card == card))
+        {
+            trick = handState.CurrentTrick;
+        }
+        else if (handState.CompletedTricks.Count > 0)
+        {
+            // Trick completed — card is in the last completed trick
+            trick = handState.CompletedTricks[^1];
+        }
+        else
+        {
+            return CardPlayType.Normal;
+        }
+
+        var gameMode = handState.GameMode;
+        var winner = DetermineWinner(trick, gameMode);
+        var isWinning = winner == player;
+
+        // Check for Master: the played card is winning, is master, AND all remaining hand cards are master
+        if (isWinning && matchState.CurrentDeal != null)
+        {
+            var remainingHand = matchState.CurrentDeal.Players[player].Hand;
+            var allPlayedCards = CollectAllPlayedCards(handState);
+
+            if (PlayerAgentHelper.IsMasterCard(card, gameMode, remainingHand, allPlayedCards) &&
+                remainingHand.All(c => PlayerAgentHelper.IsMasterCard(c, gameMode, remainingHand, allPlayedCards)))
+            {
+                return CardPlayType.Master;
+            }
+        }
+
+        // Under: the played card is not the current trick winner (and not a lead card)
+        if (!isWinning && trick.PlayedCards.Count > 1)
+        {
+            return CardPlayType.Under;
+        }
+
+        return CardPlayType.Normal;
+    }
+
+    private static HashSet<Card> CollectAllPlayedCards(HandState handState)
+    {
+        var played = new HashSet<Card>();
+
+        foreach (var trick in handState.CompletedTricks)
+        {
+            foreach (var pc in trick.PlayedCards)
+            {
+                played.Add(pc.Card);
+            }
+        }
+
+        if (handState.CurrentTrick != null)
+        {
+            foreach (var pc in handState.CurrentTrick.PlayedCards)
+            {
+                played.Add(pc.Card);
+            }
+        }
+
+        return played;
+    }
+
 
     public async Task NotifyTrickCompletedAsync(string gameId, TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
     {
