@@ -735,17 +735,17 @@ export class GameStateService {
 
       const isMyPlay = event.player === this.session.position();
       this.refreshState().then(() => {
-        if (!isMyPlay) return;
-        switch (event.playType) {
-          case CardPlayType.Master:
-            this.sound.play('card_played_master');
-            break;
-          case CardPlayType.Under:
-            this.sound.play('card_played_under');
-            break;
-          default:
-            this.sound.play('card_played');
-            break;
+        if (event.playType === CardPlayType.Master) {
+          this.sound.play('card_played_master');
+        } else if (isMyPlay) {
+          switch (event.playType) {
+            case CardPlayType.Under:
+              this.sound.play('card_played_under');
+              break;
+            default:
+              this.sound.play('card_played');
+              break;
+          }
         }
       });
     });
