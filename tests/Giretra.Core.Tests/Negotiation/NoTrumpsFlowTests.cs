@@ -193,9 +193,9 @@ public class NoTrumpsFlowTests
     }
 
     [Fact]
-    public void ExplicitDouble_NoTrumps_NormalRedoubleChain()
+    public void ExplicitDouble_NoTrumps_RedoubleNotAllowed()
     {
-        // When NoTrumps is explicitly doubled (not auto-doubled), normal chain applies
+        // When NoTrumps is explicitly doubled, redouble is still not allowed
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces NoTrumps
@@ -205,8 +205,8 @@ public class NoTrumpsFlowTests
         state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps));
         Assert.False(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
 
-        // 3. Left (Team2, announcer's team) CAN redouble (normal chain)
-        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
+        // 3. Left (Team2, announcer's team) cannot redouble NoTrumps
+        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
     }
 
     [Fact]

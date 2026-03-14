@@ -222,20 +222,6 @@ public class ScoringCalculatorTests
         Assert.Equal(104, result.Team1MatchPoints);  // 52 × 2
     }
 
-    [Fact]
-    public void NoTrumps_Redoubled_208Points()
-    {
-        var result = _calculator.Calculate(
-            GameMode.NoTrumps,
-            MultiplierState.Redoubled,
-            Team.Team1,
-            80,
-            50,
-            sweepingTeam: null);
-
-        Assert.Equal(208, result.Team1MatchPoints);  // 52 × 4
-    }
-
     #endregion
 
     #region Colour Scoring Tests

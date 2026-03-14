@@ -160,18 +160,18 @@ public class NegotiationEngineTests
     }
 
     [Fact]
-    public void Redouble_AllowedForNoTrumps()
+    public void Redouble_NotAllowedForNoTrumps()
     {
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         // Bottom announces NoTrumps
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
-        // Left doubles NoTrumps (mandatory before accept)
+        // Left doubles NoTrumps
         state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps));
 
-        // Top (announcer's team) can redouble NoTrumps
-        Assert.True(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
+        // Top (announcer's team) cannot redouble NoTrumps
+        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
     }
 
     [Fact]
