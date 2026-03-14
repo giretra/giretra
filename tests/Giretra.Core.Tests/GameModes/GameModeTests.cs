@@ -97,7 +97,7 @@ public class GameModeTests
     [InlineData(GameMode.ColourSpades, true)]
     [InlineData(GameMode.ColourHearts, true)]
     [InlineData(GameMode.ColourDiamonds, true)]
-    [InlineData(GameMode.NoTrumps, true)]
+    [InlineData(GameMode.NoTrumps, false)]
     [InlineData(GameMode.ColourClubs, true)]
     public void CanRedouble_ReturnsCorrectValue(GameMode mode, bool expected)
     {

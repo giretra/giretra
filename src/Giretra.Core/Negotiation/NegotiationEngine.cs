@@ -120,6 +120,9 @@ public static class NegotiationEngine
     {
         if (state.IsComplete) return false;
 
+        // Redouble not allowed for this mode
+        if (!mode.CanRedouble()) return false;
+
         // Mode must have been doubled
         if (!state.DoubledModes.ContainsKey(mode)) return false;
 
@@ -385,6 +388,11 @@ public static class NegotiationEngine
 
     private static string? ValidateRedouble(NegotiationState state, RedoubleAction action)
     {
+        if (!action.TargetMode.CanRedouble())
+        {
+            return $"Cannot redouble {action.TargetMode}.";
+        }
+
         if (!state.DoubledModes.ContainsKey(action.TargetMode))
         {
             return $"{action.TargetMode} has not been doubled.";
