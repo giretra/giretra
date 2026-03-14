@@ -33,6 +33,21 @@ public sealed class UserSyncService : IUserSyncService
         var roles = principal.FindAll("realm_role").Select(c => c.Value).ToList();
         var role = roles.Contains("admin") ? UserRole.Admin : UserRole.Normal;
 
+        try
+        {
+            return await SyncUserCoreAsync(keycloakId, username, displayName, email, role);
+        }
+        catch (DbUpdateException)
+        {
+            // Concurrent request already created this user (unique constraint on KeycloakId).
+            // Detach all tracked entities and retry — the user now exists.
+            _db.ChangeTracker.Clear();
+            return await SyncUserCoreAsync(keycloakId, username, displayName, email, role);
+        }
+    }
+
+    private async Task<User> SyncUserCoreAsync(Guid keycloakId, string username, string displayName, string? email, UserRole role)
+    {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
 
         // If not found by KeycloakId, check by email to handle re-created Keycloak accounts
@@ -73,16 +88,24 @@ public sealed class UserSyncService : IUserSyncService
         var hasPlayer = await _db.Players.AnyAsync(p => p.UserId == user.Id);
         if (!hasPlayer)
         {
-            _db.Players.Add(new Player
+            try
             {
-                PlayerType = PlayerType.Human,
-                UserId = user.Id,
-                EloRating = 1000,
-                EloIsPublic = true,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
-            });
-            await _db.SaveChangesAsync();
+                _db.Players.Add(new Player
+                {
+                    PlayerType = PlayerType.Human,
+                    UserId = user.Id,
+                    EloRating = 1000,
+                    EloIsPublic = true,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                });
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Concurrent request already created the Player record
+                _db.ChangeTracker.Clear();
+            }
         }
 
         return user;
