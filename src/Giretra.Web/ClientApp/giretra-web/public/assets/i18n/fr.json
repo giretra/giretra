@@ -163,6 +163,13 @@
   "scoreBar.yourTurn": "À vous",
   "scoreBar.dealNumber": "Donne {{number}}",
   "scoreBar.leaveTable": "Quitter la Table",
+  "scoreBar.menu": "Menu",
+  "scoreBar.sound": "Son",
+  "scoreBar.soundOn": "Activé",
+  "scoreBar.soundOff": "Désactivé",
+  "scoreBar.roomCode": "Salle",
+  "scoreBar.copied": "Copié !",
+  "scoreBar.copyFailed": "Échec de la copie",
 
   "fullscreen.suggestion": "Mieux en plein écran",
   "fullscreen.goFullscreen": "Plein écran",

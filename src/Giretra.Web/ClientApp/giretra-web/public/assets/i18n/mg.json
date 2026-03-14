@@ -163,6 +163,13 @@
   "scoreBar.yourTurn": "Anjaranao",
   "scoreBar.dealNumber": "Fizarana {{number}}",
   "scoreBar.leaveTable": "Hiala amin'ny Latabatra",
+  "scoreBar.menu": "Menu",
+  "scoreBar.sound": "Feo",
+  "scoreBar.soundOn": "Mandeha",
+  "scoreBar.soundOff": "Maty",
+  "scoreBar.roomCode": "Efitrano",
+  "scoreBar.copied": "Voatadidy!",
+  "scoreBar.copyFailed": "Tsy nahomby ny fandikana",
 
   "fullscreen.suggestion": "Tsara kokoa amin'ny écran feno",
   "fullscreen.goFullscreen": "Écran feno",

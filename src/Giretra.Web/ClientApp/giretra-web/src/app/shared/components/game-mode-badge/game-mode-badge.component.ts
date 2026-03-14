@@ -12,7 +12,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
     @if (mode()) {
       <span class="badge" [class]="badgeClass()">
         <app-game-mode-icon [mode]="mode()" [size]="size()" />
-        @if (modeTextKey(); as key) {
+        @if (!compact() && modeTextKey(); as key) {
           <span class="mode-text">{{ t('game.modes.' + key) }}</span>
         }
       </span>
@@ -49,6 +49,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 export class GameModeBadgeComponent {
   readonly mode = input<GameMode | null>(null);
   readonly size = input<string>('1.25rem');
+  readonly compact = input<boolean>(false);
 
   readonly modeTextKey = computed(() => {
     const m = this.mode();
