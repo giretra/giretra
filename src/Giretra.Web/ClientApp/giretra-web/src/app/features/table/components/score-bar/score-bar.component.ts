@@ -18,8 +18,10 @@ import {
   Volume2,
   VolumeOff,
   Copy,
+  Globe,
 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { LanguageSwitcherComponent } from '../../../../shared/components/language-switcher/language-switcher.component';
 import { HotToastService } from '@ngxpert/hot-toast';
 
 @Component({
@@ -32,6 +34,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     HlmButton,
     LucideAngularModule,
     TranslocoDirective,
+    LanguageSwitcherComponent,
   ],
   template: `
     <div class="score-bar" *transloco="let t">
@@ -126,6 +129,12 @@ import { HotToastService } from '@ngxpert/hot-toast';
               <span class="menu-label">{{ fullscreen.isFullscreen() ? t('fullscreen.exit') : t('fullscreen.enter') }}</span>
             </button>
           }
+
+          <div class="menu-row menu-row-lang">
+            <i-lucide [img]="GlobeIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
+            <span class="menu-label">{{ t('scoreBar.language') }}</span>
+            <app-language-switcher />
+          </div>
 
           <div class="menu-sep"></div>
 
@@ -477,6 +486,14 @@ import { HotToastService } from '@ngxpert/hot-toast';
         background: hsl(0 72% 51% / 0.08);
       }
 
+      .menu-row-lang {
+        cursor: default;
+      }
+
+      .menu-row-lang:hover {
+        background: transparent;
+      }
+
       .menu-sep {
         height: 0.5px;
         background: hsl(var(--foreground) / 0.08);
@@ -596,6 +613,7 @@ export class ScoreBarComponent {
   readonly Volume2Icon = Volume2;
   readonly VolumeOffIcon = VolumeOff;
   readonly CopyIcon = Copy;
+  readonly GlobeIcon = Globe;
 
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
