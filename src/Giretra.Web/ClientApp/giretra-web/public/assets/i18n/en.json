@@ -163,6 +163,13 @@
   "scoreBar.yourTurn": "Your turn",
   "scoreBar.dealNumber": "Deal {{number}}",
   "scoreBar.leaveTable": "Leave Table",
+  "scoreBar.menu": "Menu",
+  "scoreBar.sound": "Sound",
+  "scoreBar.soundOn": "On",
+  "scoreBar.soundOff": "Off",
+  "scoreBar.roomCode": "Room",
+  "scoreBar.copied": "Copied!",
+  "scoreBar.copyFailed": "Copy failed",
 
   "fullscreen.suggestion": "Better on fullscreen",
   "fullscreen.goFullscreen": "Fullscreen",
