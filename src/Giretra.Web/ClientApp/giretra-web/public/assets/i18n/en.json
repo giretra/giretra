@@ -170,6 +170,7 @@
   "scoreBar.roomCode": "Room",
   "scoreBar.copied": "Copied!",
   "scoreBar.copyFailed": "Copy failed",
+  "scoreBar.language": "Language",
 
   "fullscreen.suggestion": "Better on fullscreen",
   "fullscreen.goFullscreen": "Fullscreen",
