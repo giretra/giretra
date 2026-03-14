@@ -102,10 +102,10 @@ public static class GameModeExtensions
 
     /// <summary>
     /// Checks if redouble is allowed for this game mode.
-    /// Redouble is allowed for all modes.
+    /// Redouble is not allowed for NoTrumps.
     /// </summary>
     public static bool CanRedouble(this GameMode mode)
-        => true;
+        => mode is not GameMode.NoTrumps;
 
     /// <summary>
     /// Checks if an opponent accepting this mode auto-doubles it (×2).
