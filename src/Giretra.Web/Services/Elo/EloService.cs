@@ -30,73 +30,27 @@ public sealed class EloService : IEloService
         var winnerTeam = matchState.Winner.Value;
         var now = DateTimeOffset.UtcNow;
 
-        // Resolve Player IDs for all 4 positions
+        // Use pre-computed Elo results from preview to guarantee consistency
+        // between what the client saw and what gets persisted.
+        var eloResults = session.EloResults;
+        if (eloResults == null)
+        {
+            _logger.LogWarning("No Elo preview for match {MatchId}, computing fresh", matchId);
+            eloResults = await PreviewMatchEloAsync(session);
+            if (eloResults == null)
+                return;
+        }
+
+        // Resolve Player entities for DB writes
         var playerMap = await ResolvePlayersAsync(session.PlayerComposition);
         var involvedBots = session.PlayerComposition.Values.Any(p => p.IsBot);
 
-        // Read current Elo ratings
-        var currentElos = playerMap.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.EloRating);
-
-        // Compute weekly bot-Elo totals per human (only if bots involved)
-        var weeklyBotGains = new Dictionary<PlayerPosition, int>();
-        if (involvedBots)
-        {
-            var sevenDaysAgo = now.AddDays(-7);
-            var humanPlayerIds = playerMap
-                .Where(kvp => !session.PlayerComposition[kvp.Key].IsBot)
-                .Select(kvp => kvp.Value.Id)
-                .ToList();
-
-            if (humanPlayerIds.Count > 0)
-            {
-                var gains = await _db.EloHistories
-                    .Where(eh => humanPlayerIds.Contains(eh.PlayerId)
-                        && eh.InvolvedBots
-                        && eh.EloChange > 0
-                        && eh.RecordedAt >= sevenDaysAgo)
-                    .GroupBy(eh => eh.PlayerId)
-                    .Select(g => new { PlayerId = g.Key, Total = g.Sum(eh => eh.EloChange) })
-                    .ToListAsync();
-
-                var gainsByPlayerId = gains.ToDictionary(g => g.PlayerId, g => g.Total);
-
-                foreach (var (pos, player) in playerMap)
-                {
-                    if (!session.PlayerComposition[pos].IsBot)
-                        weeklyBotGains[pos] = gainsByPlayerId.GetValueOrDefault(player.Id, 0);
-                }
-            }
-        }
-
-        // Compute Elo deltas for each position
         foreach (var position in Enum.GetValues<PlayerPosition>())
         {
             var info = session.PlayerComposition[position];
             var player = playerMap[position];
             var isWinner = position.GetTeam() == winnerTeam;
-
-            // Compute opponent composite Elo (average of opposing team)
-            var oppTeam = position.GetTeam() == Team.Team1 ? Team.Team2 : Team.Team1;
-            var oppPositions = Enum.GetValues<PlayerPosition>().Where(p => p.GetTeam() == oppTeam).ToList();
-            var oppComposite = oppPositions.Average(p => (double)currentElos[p]);
-
-            // Count bot-teammates and bot-opponents
-            var hasBotTeammate = session.PlayerComposition[position.Teammate()].IsBot;
-            var botOpponentCount = oppPositions.Count(p => session.PlayerComposition[p].IsBot);
-
-            var ctx = new PlayerContext(
-                PlayerId: player.Id,
-                CurrentElo: currentElos[position],
-                IsBot: info.IsBot,
-                IsWinner: isWinner,
-                OpponentCompositeElo: oppComposite,
-                InvolvedBots: involvedBots,
-                HasBotTeammate: hasBotTeammate,
-                BotOpponentCount: botOpponentCount,
-                WeeklyBotEloGained: weeklyBotGains.GetValueOrDefault(position, 0)
-            );
-
-            var eloResult = _calc.ComputeNormalMatchDelta(ctx);
+            var preview = eloResults[position];
 
             // Stage MatchPlayer record
             _db.MatchPlayers.Add(new ModelEntities.MatchPlayer
@@ -107,9 +61,9 @@ public sealed class EloService : IEloService
                 Position = (ModelEnums.PlayerPosition)(int)position,
                 Team = (ModelEnums.Team)(int)position.GetTeam(),
                 IsWinner = isWinner,
-                EloBefore = eloResult.EloBefore,
-                EloAfter = eloResult.EloAfter,
-                EloChange = eloResult.EloChange
+                EloBefore = preview.EloBefore,
+                EloAfter = preview.EloAfter,
+                EloChange = preview.EloChange
             });
 
             // Stage EloHistory and update Player for humans only
@@ -120,14 +74,14 @@ public sealed class EloService : IEloService
                     Id = Guid.NewGuid(),
                     PlayerId = player.Id,
                     MatchId = matchId,
-                    EloBefore = eloResult.EloBefore,
-                    EloAfter = eloResult.EloAfter,
-                    EloChange = eloResult.EloChange,
+                    EloBefore = preview.EloBefore,
+                    EloAfter = preview.EloAfter,
+                    EloChange = preview.EloChange,
                     InvolvedBots = involvedBots,
                     RecordedAt = now
                 });
 
-                player.EloRating = eloResult.EloAfter;
+                player.EloRating = preview.EloAfter;
                 player.GamesPlayed++;
                 if (isWinner)
                 {
