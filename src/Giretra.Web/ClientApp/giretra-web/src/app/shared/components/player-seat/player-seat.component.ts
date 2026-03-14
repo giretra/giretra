@@ -77,7 +77,7 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       background: hsl(var(--card) / 0.8);
       border: 2px solid transparent;
       min-width: 5rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
     }
 
     .player-seat:not(.empty) {
@@ -95,12 +95,18 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       border-color: hsl(var(--border));
     }
 
+    .player-seat.active-turn {
+      transform: scale(1.05);
+    }
+
     .player-seat.active-turn.team1 {
-      box-shadow: 0 0 16px hsl(var(--team1) / 0.4);
+      background: hsl(var(--team1) / 0.12);
+      box-shadow: 0 0 20px hsl(var(--team1) / 0.5), 0 0 40px hsl(var(--team1) / 0.2);
     }
 
     .player-seat.active-turn.team2 {
-      box-shadow: 0 0 16px hsl(var(--team2) / 0.4);
+      background: hsl(var(--team2) / 0.12);
+      box-shadow: 0 0 20px hsl(var(--team2) / 0.5), 0 0 40px hsl(var(--team2) / 0.2);
     }
 
     /* Avatar */
@@ -130,16 +136,21 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
     }
 
     .team1 .avatar.active-glow {
-      box-shadow: 0 0 12px hsl(var(--team1) / 0.5);
+      box-shadow: 0 0 14px hsl(var(--team1) / 0.6);
     }
 
     .team2 .avatar.active-glow {
-      box-shadow: 0 0 12px hsl(var(--team2) / 0.5);
+      box-shadow: 0 0 14px hsl(var(--team2) / 0.6);
     }
 
     @keyframes glowPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.97); }
+    }
+
+    @keyframes ringPulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+      50% { opacity: 0.5; }
     }
 
     .avatar-initial {
@@ -242,11 +253,13 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
     }
 
     .team1 .turn-ring {
-      border: 2px solid hsl(var(--team1) / 0.6);
+      border: 2px solid hsl(var(--team1) / 0.7);
+      animation: ringPulse 2s ease-in-out infinite;
     }
 
     .team2 .turn-ring {
-      border: 2px solid hsl(var(--team2) / 0.6);
+      border: 2px solid hsl(var(--team2) / 0.7);
+      animation: ringPulse 2s ease-in-out infinite;
     }
 
     /* Dealer chip */
