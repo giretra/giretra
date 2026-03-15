@@ -66,7 +66,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
                 type="text"
                 class="chat-input"
                 [placeholder]="t('chat.placeholder')"
-                [maxLength]="500"
+                [maxLength]="300"
                 (keydown.enter)="onSend()"
                 [(value)]="inputValue"
                 (input)="inputValue.set(chatInput.value)"
