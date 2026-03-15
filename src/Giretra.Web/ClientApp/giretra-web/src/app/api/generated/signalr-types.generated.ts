@@ -211,6 +211,24 @@ export interface PendingFriendCountChangedEvent {
   count: number;
 }
 
+export interface ChatMessageEvent {
+  sequenceNumber: number;
+  senderName: string;
+  isPlayer: boolean;
+  content: string;
+  sentAt: string;
+  isSystem?: boolean;
+}
+
+export interface ChatStatusChangedEvent {
+  isChatEnabled: boolean;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatMessageEvent[];
+  isChatEnabled: boolean;
+}
+
 // ============================================================================
 // Hub Methods (Client -> Server)
 // ============================================================================
@@ -220,6 +238,8 @@ export interface GameHubMethods {
   leaveRoom(roomId: string, clientId: string): Promise<void>;
   joinLobby(): Promise<void>;
   leaveLobby(): Promise<void>;
+  sendChatMessage(roomId: string, clientId: string, content: string): Promise<void>;
+  getChatHistory(roomId: string): Promise<ChatHistoryResponse>;
 }
 
 // ============================================================================
@@ -242,6 +262,8 @@ export interface GameHubEvents {
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
   onRoomsChanged(callback: () => void): void;
   onPendingFriendCountChanged(callback: (event: PendingFriendCountChangedEvent) => void): void;
+  onChatMessageReceived(callback: (event: ChatMessageEvent) => void): void;
+  onChatStatusChanged(callback: (event: ChatStatusChangedEvent) => void): void;
 }
 
 // ============================================================================
@@ -264,6 +286,8 @@ export const GameHubEventNames = {
   RoomIdleClosed: 'RoomIdleClosed',
   RoomsChanged: 'RoomsChanged',
   PendingFriendCountChanged: 'PendingFriendCountChanged',
+  ChatMessageReceived: 'ChatMessageReceived',
+  ChatStatusChanged: 'ChatStatusChanged',
 } as const;
 
 export type GameHubEventName = (typeof GameHubEventNames)[keyof typeof GameHubEventNames];

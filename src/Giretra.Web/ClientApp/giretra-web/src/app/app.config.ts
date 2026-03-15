@@ -59,6 +59,9 @@ import {
   VolumeOff,
   Menu,
   Copy,
+  MessageCircle,
+  Send,
+  TriangleAlert,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -107,6 +110,9 @@ const usedIcons = {
   VolumeOff,
   Menu,
   Copy,
+  MessageCircle,
+  Send,
+  TriangleAlert,
 };
 
 function initializeKeycloak(auth: AuthService) {

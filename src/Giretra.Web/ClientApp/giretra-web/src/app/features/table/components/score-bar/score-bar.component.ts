@@ -19,6 +19,7 @@ import {
   VolumeOff,
   Copy,
   Globe,
+  MessageCircle,
 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LanguageSwitcherComponent } from '../../../../shared/components/language-switcher/language-switcher.component';
@@ -70,6 +71,15 @@ import { HotToastService } from '@ngxpert/hot-toast';
               <app-multiplier-badge [multiplier]="multiplier()" class="multiplier-badge" />
             </button>
           }
+
+          <!-- Chat -->
+          <div class="separator"></div>
+          <button class="icon-btn chat-btn" (click)="chatClicked.emit()" [title]="t('chat.title')">
+            <i-lucide [img]="MessageCircleIcon" [size]="17" [strokeWidth]="1.5"></i-lucide>
+            @if (unreadCount() > 0) {
+              <span class="chat-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+            }
+          </button>
         </div>
 
         <!-- Right group: status info -->
@@ -129,6 +139,14 @@ import { HotToastService } from '@ngxpert/hot-toast';
               <span class="menu-label">{{ fullscreen.isFullscreen() ? t('fullscreen.exit') : t('fullscreen.enter') }}</span>
             </button>
           }
+
+          <button class="menu-row" (click)="onChatFromMenu()">
+            <i-lucide [img]="MessageCircleIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
+            <span class="menu-label">{{ t('chat.title') }}</span>
+            @if (unreadCount() > 0) {
+              <span class="menu-badge">{{ unreadCount() }}</span>
+            }
+          </button>
 
           <div class="menu-row menu-row-lang">
             <i-lucide [img]="GlobeIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
@@ -205,6 +223,36 @@ import { HotToastService } from '@ngxpert/hot-toast';
 
       .icon-btn:active {
         background: hsl(var(--foreground) / 0.1);
+      }
+
+      /* ── Chat button with badge ── */
+      .chat-btn {
+        position: relative;
+      }
+
+      .chat-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 0.875rem;
+        height: 0.875rem;
+        padding: 0 0.25rem;
+        border-radius: 9999px;
+        background: hsl(0 72% 51%);
+        color: #fff;
+        font-size: 0.5625rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        pointer-events: none;
+        animation: badgeIn 0.2s ease;
+      }
+
+      @keyframes badgeIn {
+        from { transform: scale(0); }
+        to { transform: scale(1); }
       }
 
       /* ── Scores: pure typography ── */
@@ -478,6 +526,21 @@ import { HotToastService } from '@ngxpert/hot-toast';
         font-weight: 400;
       }
 
+      .menu-badge {
+        min-width: 1.125rem;
+        height: 1.125rem;
+        padding: 0 0.3125rem;
+        border-radius: 9999px;
+        background: hsl(0 72% 51%);
+        color: #fff;
+        font-size: 0.625rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
       .menu-row-danger {
         color: hsl(0 72% 65%);
       }
@@ -614,6 +677,7 @@ export class ScoreBarComponent {
   readonly VolumeOffIcon = VolumeOff;
   readonly CopyIcon = Copy;
   readonly GlobeIcon = Globe;
+  readonly MessageCircleIcon = MessageCircle;
 
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
@@ -627,9 +691,12 @@ export class ScoreBarComponent {
   readonly isMyTurn = input<boolean>(false);
   readonly turnTimeoutAt = input<Date | null>(null);
 
+  readonly unreadCount = input<number>(0);
+
   readonly leaveTable = output<void>();
   readonly modeBadgeClicked = output<void>();
   readonly matchPointsClicked = output<void>();
+  readonly chatClicked = output<void>();
 
   readonly menuOpen = signal(false);
 
@@ -680,6 +747,11 @@ export class ScoreBarComponent {
   onToggleFullscreen(): void {
     this.fullscreen.toggle();
     this.menuOpen.set(false);
+  }
+
+  onChatFromMenu(): void {
+    this.menuOpen.set(false);
+    this.chatClicked.emit();
   }
 
   onLeaveFromMenu(): void {

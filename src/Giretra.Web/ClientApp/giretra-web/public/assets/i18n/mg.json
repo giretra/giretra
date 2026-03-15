@@ -308,5 +308,13 @@
   "welcome.openSourceText": "Giretra dia maimaim-poana sady open-source. Raha mahita olana ianao na manana hevitra, aza misalasala milaza aminay!",
   "welcome.feedbackLink": "Ilazao olana na manoro hevitra",
   "welcome.chooseLanguage": "Fidio ny fiteninao",
-  "welcome.letsPlay": "Andeha hilalao!"
+  "welcome.letsPlay": "Andeha hilalao!",
+
+  "chat.title": "Chat",
+  "chat.send": "Alefa",
+  "chat.placeholder": "Soraty ny hafatra...",
+  "chat.noMessages": "Tsy mbola misy hafatra. Miarahaba!",
+  "chat.disabledDuringPlay": "Tsy azo ampiasaina ny chat mandritra ny lalao",
+  "chat.disclaimer": "Na dia taimbava aza no anisan'ny fototra iorenan'ity lalao ity, manasa antsika rehetra hitoetra ho mpanaja sy hendry am-pitenenana izahay. Ny tsy fanajana izany dia mety hitarika fandroahana.",
+  "chat.spectator": "Mpijery"
 }

@@ -308,5 +308,13 @@
   "welcome.openSourceText": "Giretra is free and open-source. If you find a bug or have a suggestion, we'd love to hear from you!",
   "welcome.feedbackLink": "Report an issue or suggest a feature",
   "welcome.chooseLanguage": "Choose your language",
-  "welcome.letsPlay": "Let's Play!"
+  "welcome.letsPlay": "Let's Play!",
+
+  "chat.title": "Chat",
+  "chat.send": "Send",
+  "chat.placeholder": "Type a message...",
+  "chat.noMessages": "No messages yet. Say hi!",
+  "chat.disabledDuringPlay": "Chat is disabled during play",
+  "chat.disclaimer": "Even if trash talk is a core feature of this game, we invite you to remain polite and respectful. Failure to comply may result in a ban.",
+  "chat.spectator": "Spectator"
 }
