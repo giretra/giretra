@@ -109,6 +109,7 @@ public class Program
             builder.Services.AddSingleton<AiPlayerRegistry>();
             builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IGameService, GameService>();
+            builder.Services.AddSingleton<IChatService, ChatService>();
             builder.Services.AddSingleton<IRoomService, RoomService>();
 
             if (offline)

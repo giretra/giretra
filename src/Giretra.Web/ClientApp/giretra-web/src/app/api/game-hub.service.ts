@@ -11,6 +11,9 @@ import { AuthService } from '../core/services/auth.service';
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 import {
   CardPlayedEvent,
+  ChatHistoryResponse,
+  ChatMessageEvent,
+  ChatStatusChangedEvent,
   DealEndedEvent,
   DealStartedEvent,
   GameHubEventNames,
@@ -56,6 +59,8 @@ export class GameHubService implements OnDestroy {
   readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
   readonly roomsChanged$ = new Subject<void>();
   readonly pendingFriendCountChanged$ = new Subject<PendingFriendCountChangedEvent>();
+  readonly chatMessageReceived$ = new Subject<ChatMessageEvent>();
+  readonly chatStatusChanged$ = new Subject<ChatStatusChangedEvent>();
 
   async connect(hubUrl: string): Promise<void> {
     if (this.hubConnection?.state === HubConnectionState.Connected) {
@@ -114,6 +119,20 @@ export class GameHubService implements OnDestroy {
     await this.hubConnection.invoke('LeaveLobby');
   }
 
+  async sendChatMessage(roomId: string, clientId: string, content: string): Promise<void> {
+    if (!this.hubConnection) {
+      throw new Error('Not connected to hub');
+    }
+    await this.hubConnection.invoke('SendChatMessage', roomId, clientId, content);
+  }
+
+  async getChatHistory(roomId: string): Promise<ChatHistoryResponse> {
+    if (!this.hubConnection) {
+      throw new Error('Not connected to hub');
+    }
+    return await this.hubConnection.invoke('GetChatHistory', roomId);
+  }
+
   get connectionState(): HubConnectionState {
     return this.hubConnection?.state ?? HubConnectionState.Disconnected;
   }
@@ -136,6 +155,8 @@ export class GameHubService implements OnDestroy {
     this.roomIdleClosed$.complete();
     this.roomsChanged$.complete();
     this.pendingFriendCountChanged$.complete();
+    this.chatMessageReceived$.complete();
+    this.chatStatusChanged$.complete();
   }
 
   private registerConnectionHandlers(): void {
@@ -236,6 +257,16 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.PendingFriendCountChanged, (event: PendingFriendCountChangedEvent) => {
       console.log('[Hub] PendingFriendCountChanged', event);
       this.ngZone.run(() => this.pendingFriendCountChanged$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.ChatMessageReceived, (event: ChatMessageEvent) => {
+      console.log('[Hub] ChatMessageReceived', event);
+      this.ngZone.run(() => this.chatMessageReceived$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.ChatStatusChanged, (event: ChatStatusChangedEvent) => {
+      console.log('[Hub] ChatStatusChanged', event);
+      this.ngZone.run(() => this.chatStatusChanged$.next(event));
     });
   }
 }

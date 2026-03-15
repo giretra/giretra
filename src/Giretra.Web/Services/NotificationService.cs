@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Giretra.Core.Cards;
 using Giretra.Core.GameModes;
 using Giretra.Core.Negotiation;
@@ -23,17 +24,21 @@ public sealed class NotificationService : INotificationService
     private readonly IHubContext<GameHub> _hubContext;
     private readonly IGameRepository _gameRepository;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IChatService _chatService;
     private readonly ILogger<NotificationService> _logger;
+    private readonly ConcurrentDictionary<string, bool> _lastChatStatus = new();
 
     public NotificationService(
         IHubContext<GameHub> hubContext,
         IGameRepository gameRepository,
         IServiceProvider serviceProvider,
+        IChatService chatService,
         ILogger<NotificationService> logger)
     {
         _hubContext = hubContext;
         _gameRepository = gameRepository;
         _serviceProvider = serviceProvider;
+        _chatService = chatService;
         _logger = logger;
     }
 
@@ -55,6 +60,7 @@ public sealed class NotificationService : INotificationService
         if (session != null)
         {
             await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("PlayerTurn", new { GameId = gameId, Position = position, ActionType = actionType, TimeoutAt = timeoutAt });
+            await BroadcastChatStatusIfChangedAsync(session.RoomId);
         }
     }
 
@@ -71,6 +77,8 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealStarted", ev);
+        await BroadcastChatStatusIfChangedAsync(session.RoomId);
+        await BroadcastSystemChatMessageAsync(session.RoomId, $"--- Deal {ev.DealNumber} started ---");
     }
 
     public async Task NotifyNegotiationCompletedAsync(string gameId, NegotiationState negotiationState, MatchState matchState)
@@ -88,6 +96,7 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("NegotiationCompleted", ev);
+        await BroadcastChatStatusIfChangedAsync(session.RoomId);
     }
 
     public async Task NotifyDealEndedAsync(string gameId, DealResult result, HandState handState, MatchState matchState)
@@ -115,6 +124,11 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealEnded", ev);
+        await BroadcastChatStatusIfChangedAsync(session.RoomId);
+
+        var sweepText = result.WasSweep ? " (SWEEP!)" : "";
+        await BroadcastSystemChatMessageAsync(session.RoomId,
+            $"Deal ended - Cards: {result.Team1CardPoints}-{result.Team2CardPoints}{sweepText} | Match: {matchState.Team1MatchPoints}-{matchState.Team2MatchPoints}");
     }
 
     private static (CardPointsBreakdownResponse Team1, CardPointsBreakdownResponse Team2) ComputeCardPointsBreakdown(HandState handState)
@@ -384,6 +398,11 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("MatchEnded", ev);
+        await BroadcastChatStatusIfChangedAsync(session.RoomId);
+
+        var winnerLabel = matchState.Winner!.Value == Core.Players.Team.Team1 ? "Team 1" : "Team 2";
+        await BroadcastSystemChatMessageAsync(session.RoomId,
+            $"{winnerLabel} wins! Final score: {matchState.Team1MatchPoints}-{matchState.Team2MatchPoints}");
     }
 
     public async Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position)
@@ -419,6 +438,7 @@ public sealed class NotificationService : INotificationService
         };
 
         await _hubContext.Clients.Group($"room_{roomId}").SendAsync("GameStarted", ev);
+        await BroadcastChatStatusIfChangedAsync(roomId);
     }
 
     public async Task NotifyPlayerKickedAsync(string roomId, string playerName, PlayerPosition position)
@@ -470,6 +490,34 @@ public sealed class NotificationService : INotificationService
     public async Task NotifyPendingFriendCountChangedAsync(Guid userId, int count)
     {
         await _hubContext.Clients.Group($"user_{userId}").SendAsync("PendingFriendCountChanged", new { Count = count });
+    }
+
+    private async Task BroadcastSystemChatMessageAsync(string roomId, string content)
+    {
+        var message = _chatService.AddSystemMessage(roomId, content);
+        var ev = new ChatMessageEvent
+        {
+            SequenceNumber = message.SequenceNumber,
+            SenderName = message.SenderName,
+            IsPlayer = message.IsPlayer,
+            Content = message.Content,
+            SentAt = message.SentAt,
+            IsSystem = message.IsSystem
+        };
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("ChatMessageReceived", ev);
+    }
+
+    private async Task BroadcastChatStatusIfChangedAsync(string roomId)
+    {
+        var enabled = _chatService.IsChatEnabled(roomId);
+        var previousExists = _lastChatStatus.TryGetValue(roomId, out var previous);
+
+        if (previousExists && previous == enabled)
+            return;
+
+        _lastChatStatus[roomId] = enabled;
+        var ev = new ChatStatusChangedEvent { IsChatEnabled = enabled };
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("ChatStatusChanged", ev);
     }
 
     internal static IReadOnlyList<DealRecapResponse> MapToCompletedDeals(MatchState matchState)

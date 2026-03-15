@@ -19,17 +19,19 @@ public sealed class RoomService : IRoomService
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
+    private readonly IChatService _chatService;
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly ILogger<RoomService> _logger;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingIdleCleanups = new();
     private static int _roomCounter;
 
-    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger)
+    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, IChatService chatService, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger)
     {
         _roomRepository = roomRepository;
         _gameService = gameService;
         _notifications = notifications;
+        _chatService = chatService;
         _aiRegistry = aiRegistry;
         _logger = logger;
     }
@@ -131,6 +133,7 @@ public sealed class RoomService : IRoomService
             return false;
 
         CancelIdleCleanup(roomId);
+        _chatService.ClearRoom(roomId);
         return _roomRepository.Remove(roomId);
     }
 
@@ -313,7 +316,10 @@ public sealed class RoomService : IRoomService
 
         // Remove the room if no one is left
         if (room.IsEmpty)
+        {
+            _chatService.ClearRoom(roomId);
             _roomRepository.Remove(roomId);
+        }
         else
             _roomRepository.Update(room);
 
@@ -662,6 +668,7 @@ public sealed class RoomService : IRoomService
                 }
 
                 // Delete the room if it still exists
+                _chatService.ClearRoom(roomId);
                 _roomRepository.Remove(roomId);
 
                 await _notifications.NotifyRoomsChangedAsync();
