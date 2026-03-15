@@ -8,7 +8,6 @@ import { SoundService } from '../../../../core/services/sound.service';
 import { GameModeBadgeComponent } from '../../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../../shared/components/multiplier-badge/multiplier-badge.component';
 import { TurnTimerComponent } from '../../../../shared/components/turn-timer/turn-timer.component';
-import { HlmButton } from '@spartan-ng/helm/button';
 import {
   LucideAngularModule,
   Menu,
@@ -33,7 +32,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
     GameModeBadgeComponent,
     MultiplierBadgeComponent,
     TurnTimerComponent,
-    HlmButton,
     LucideAngularModule,
     TranslocoDirective,
     LanguageSwitcherComponent,
@@ -73,14 +71,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
             </button>
           }
 
-          <!-- Chat -->
-          <div class="separator"></div>
-          <button class="icon-btn chat-btn" (click)="chatClicked.emit()" [title]="t('chat.title')">
-            <i-lucide [img]="MessageCircleIcon" [size]="17" [strokeWidth]="1.5"></i-lucide>
-            @if (unreadCount() > 0) {
-              <span class="chat-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
-            }
-          </button>
         </div>
 
         <!-- Right group: status info -->
@@ -229,36 +219,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
 
       .icon-btn:active {
         background: hsl(var(--foreground) / 0.1);
-      }
-
-      /* ── Chat button with badge ── */
-      .chat-btn {
-        position: relative;
-      }
-
-      .chat-badge {
-        position: absolute;
-        top: 0;
-        right: 0;
-        min-width: 0.875rem;
-        height: 0.875rem;
-        padding: 0 0.25rem;
-        border-radius: 9999px;
-        background: hsl(0 72% 51%);
-        color: #fff;
-        font-size: 0.5625rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        pointer-events: none;
-        animation: badgeIn 0.2s ease;
-      }
-
-      @keyframes badgeIn {
-        from { transform: scale(0); }
-        to { transform: scale(1); }
       }
 
       /* ── Scores: pure typography ── */
