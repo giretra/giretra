@@ -20,6 +20,7 @@ import {
   Copy,
   Globe,
   MessageCircle,
+  Bug,
 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LanguageSwitcherComponent } from '../../../../shared/components/language-switcher/language-switcher.component';
@@ -153,6 +154,11 @@ import { HotToastService } from '@ngxpert/hot-toast';
             <span class="menu-label">{{ t('scoreBar.language') }}</span>
             <app-language-switcher />
           </div>
+
+          <a class="menu-row" href="https://github.com/giretra/giretra/issues/new" target="_blank" rel="noopener noreferrer" (click)="menuOpen.set(false)">
+            <i-lucide [img]="BugIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
+            <span class="menu-label">{{ t('scoreBar.reportBug') }}</span>
+          </a>
 
           <div class="menu-sep"></div>
 
@@ -541,6 +547,11 @@ import { HotToastService } from '@ngxpert/hot-toast';
         line-height: 1;
       }
 
+      a.menu-row {
+        text-decoration: none;
+        color: hsl(var(--foreground));
+      }
+
       .menu-row-danger {
         color: hsl(0 72% 65%);
       }
@@ -678,6 +689,7 @@ export class ScoreBarComponent {
   readonly CopyIcon = Copy;
   readonly GlobeIcon = Globe;
   readonly MessageCircleIcon = MessageCircle;
+  readonly BugIcon = Bug;
 
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
