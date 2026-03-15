@@ -78,6 +78,7 @@ public sealed class NotificationService : INotificationService
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealStarted", ev);
         await BroadcastChatStatusIfChangedAsync(session.RoomId);
+        await BroadcastSystemChatMessageAsync(session.RoomId, $"--- Deal {ev.DealNumber} started ---");
     }
 
     public async Task NotifyNegotiationCompletedAsync(string gameId, NegotiationState negotiationState, MatchState matchState)
@@ -124,6 +125,10 @@ public sealed class NotificationService : INotificationService
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("DealEnded", ev);
         await BroadcastChatStatusIfChangedAsync(session.RoomId);
+
+        var sweepText = result.WasSweep ? " (SWEEP!)" : "";
+        await BroadcastSystemChatMessageAsync(session.RoomId,
+            $"Deal ended - Cards: {result.Team1CardPoints}-{result.Team2CardPoints}{sweepText} | Match: {matchState.Team1MatchPoints}-{matchState.Team2MatchPoints}");
     }
 
     private static (CardPointsBreakdownResponse Team1, CardPointsBreakdownResponse Team2) ComputeCardPointsBreakdown(HandState handState)
@@ -394,6 +399,10 @@ public sealed class NotificationService : INotificationService
 
         await _hubContext.Clients.Group($"room_{session.RoomId}").SendAsync("MatchEnded", ev);
         await BroadcastChatStatusIfChangedAsync(session.RoomId);
+
+        var winnerLabel = matchState.Winner!.Value == Core.Players.Team.Team1 ? "Team 1" : "Team 2";
+        await BroadcastSystemChatMessageAsync(session.RoomId,
+            $"{winnerLabel} wins! Final score: {matchState.Team1MatchPoints}-{matchState.Team2MatchPoints}");
     }
 
     public async Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position)
@@ -481,6 +490,21 @@ public sealed class NotificationService : INotificationService
     public async Task NotifyPendingFriendCountChangedAsync(Guid userId, int count)
     {
         await _hubContext.Clients.Group($"user_{userId}").SendAsync("PendingFriendCountChanged", new { Count = count });
+    }
+
+    private async Task BroadcastSystemChatMessageAsync(string roomId, string content)
+    {
+        var message = _chatService.AddSystemMessage(roomId, content);
+        var ev = new ChatMessageEvent
+        {
+            SequenceNumber = message.SequenceNumber,
+            SenderName = message.SenderName,
+            IsPlayer = message.IsPlayer,
+            Content = message.Content,
+            SentAt = message.SentAt,
+            IsSystem = message.IsSystem
+        };
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("ChatMessageReceived", ev);
     }
 
     private async Task BroadcastChatStatusIfChangedAsync(string roomId)

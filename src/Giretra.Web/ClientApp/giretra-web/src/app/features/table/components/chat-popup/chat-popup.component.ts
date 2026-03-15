@@ -48,12 +48,16 @@ import { TranslocoDirective } from '@jsverse/transloco';
               <div class="empty">{{ t('chat.noMessages') }}</div>
             } @else {
               @for (msg of messages(); track msg.sequenceNumber) {
-                <div class="msg">
-                  <span class="msg-sender" [class.msg-player]="msg.isPlayer">
-                    {{ msg.isPlayer ? msg.senderName : msg.senderName + ' (' + t('chat.spectator') + ')' }}
-                  </span>
-                  <span class="msg-content">{{ msg.content }}</span>
-                </div>
+                @if (msg.isSystem) {
+                  <div class="msg-system">{{ msg.content }}</div>
+                } @else {
+                  <div class="msg">
+                    <span class="msg-sender" [class.msg-player]="msg.isPlayer">
+                      {{ msg.isPlayer ? msg.senderName : msg.senderName + ' (' + t('chat.spectator') + ')' }}
+                    </span>
+                    <span class="msg-content">{{ msg.content }}</span>
+                  </div>
+                }
               }
             }
           </div>
@@ -242,6 +246,14 @@ import { TranslocoDirective } from '@jsverse/transloco';
 
       .msg-content {
         color: hsl(var(--foreground) / 0.85);
+      }
+
+      .msg-system {
+        font-size: 0.6875rem;
+        color: hsl(var(--foreground) / 0.35);
+        text-align: center;
+        padding: 0.25rem 0;
+        font-style: italic;
       }
 
       .input-area {

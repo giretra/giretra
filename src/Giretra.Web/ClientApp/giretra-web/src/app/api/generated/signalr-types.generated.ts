@@ -217,6 +217,7 @@ export interface ChatMessageEvent {
   isPlayer: boolean;
   content: string;
   sentAt: string;
+  isSystem?: boolean;
 }
 
 export interface ChatStatusChangedEvent {
