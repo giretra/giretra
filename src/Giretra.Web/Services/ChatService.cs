@@ -8,9 +8,18 @@ namespace Giretra.Web.Services;
 public sealed class ChatService : IChatService
 {
     private const int MaxMessagesPerRoom = 200;
-    private const int MaxContentLength = 500;
+    private const int MaxContentLength = 300;
+
+    // Rate limits per client
+    private const int BurstLimit = 5;
+    private static readonly TimeSpan BurstWindow = TimeSpan.FromSeconds(5);
+    private const int MinuteLimit = 30;
+    private static readonly TimeSpan MinuteWindow = TimeSpan.FromMinutes(1);
+    private const int HourLimit = 500;
+    private static readonly TimeSpan HourWindow = TimeSpan.FromHours(1);
 
     private readonly ConcurrentDictionary<string, RoomChat> _rooms = new();
+    private readonly ConcurrentDictionary<string, ClientRateLimit> _rateLimits = new();
     private readonly IRoomRepository _roomRepository;
     private readonly IGameRepository _gameRepository;
     private readonly ILogger<ChatService> _logger;
@@ -41,6 +50,12 @@ public sealed class ChatService : IChatService
         if (!IsChatEnabled(roomId))
         {
             _logger.LogDebug("Chat send failed: chat disabled in room {RoomId}", roomId);
+            return null;
+        }
+
+        if (IsRateLimited(clientId))
+        {
+            _logger.LogWarning("Chat send failed: rate limited client {ClientId} in room {RoomId}", clientId, roomId);
             return null;
         }
 
@@ -122,10 +137,44 @@ public sealed class ChatService : IChatService
         _rooms.TryRemove(roomId, out _);
     }
 
+    private bool IsRateLimited(string clientId)
+    {
+        var now = DateTime.UtcNow;
+        var limit = _rateLimits.GetOrAdd(clientId, _ => new ClientRateLimit());
+
+        lock (limit)
+        {
+            // Prune old timestamps
+            limit.Timestamps.RemoveAll(t => now - t > HourWindow);
+
+            var burstCount = 0;
+            var minuteCount = 0;
+            var burstCutoff = now - BurstWindow;
+            var minuteCutoff = now - MinuteWindow;
+
+            foreach (var t in limit.Timestamps)
+            {
+                if (t >= burstCutoff) burstCount++;
+                if (t >= minuteCutoff) minuteCount++;
+            }
+
+            if (burstCount >= BurstLimit || minuteCount >= MinuteLimit || limit.Timestamps.Count >= HourLimit)
+                return true;
+
+            limit.Timestamps.Add(now);
+            return false;
+        }
+    }
+
     private sealed class RoomChat
     {
         public readonly List<ChatMessage> Messages = [];
         public readonly object Lock = new();
         public long SequenceCounter;
+    }
+
+    private sealed class ClientRateLimit
+    {
+        public readonly List<DateTime> Timestamps = [];
     }
 }
