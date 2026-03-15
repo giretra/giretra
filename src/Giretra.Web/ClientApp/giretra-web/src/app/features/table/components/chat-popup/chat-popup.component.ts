@@ -50,7 +50,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
               @for (msg of messages(); track msg.sequenceNumber) {
                 <div class="msg">
                   <span class="msg-sender" [class.msg-player]="msg.isPlayer">
-                    {{ msg.isPlayer ? msg.senderName : t('chat.spectator') }}
+                    {{ msg.isPlayer ? msg.senderName : msg.senderName + ' (' + t('chat.spectator') + ')' }}
                   </span>
                   <span class="msg-content">{{ msg.content }}</span>
                 </div>
