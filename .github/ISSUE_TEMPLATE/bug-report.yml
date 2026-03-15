@@ -1,0 +1,75 @@
+name: "Anomalie / Bug / Olana"
+description: "Signaler un probleme / Report a bug / Milaza olana"
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: "Fiteny / Langue / Language"
+      options:
+        - "Malagasy"
+        - "Francais"
+        - "English"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: "Sokajy / Categorie / Category"
+      description: "Aiza no misy ny olana? / Ou se situe le probleme? / Where is the problem?"
+      options:
+        - "Giretra Web (lalao an-tserasera / jeu en ligne / online game)"
+        - "Giretra Manage (fitantanana bot / outils de gestion / management tools)"
+        - "Hafa / Autre / Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Inona no nitranga? / Que s'est-il passe? / What happened?"
+      placeholder: |
+        Lazao fotsiny izay nitranga...
+        Decrivez simplement ce qui s'est passe...
+        Just describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Dingana hanamboarana / Etapes pour reproduire / Steps to reproduce"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Inona no tokony ho nitranga? / Comportement attendu / Expected behavior"
+      placeholder: |
+        Lazao izay tokony ho nitranga...
+        Decrivez ce qui aurait du se passer...
+        Describe what should have happened...
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Sary / Captures d'ecran / Screenshots"
+      description: "Atsipizo sary eto raha misy / Glissez vos captures ici / Drag and drop screenshots here"
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: "Navigateur, OS / Browser, OS"
+      placeholder: "Chrome 120, Windows 11 / Safari, iPhone 15..."
+    validations:
+      required: false

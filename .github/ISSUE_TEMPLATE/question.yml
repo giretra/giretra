@@ -1,0 +1,25 @@
+name: "Fanontaniana / Question"
+description: "Manontany / Poser une question / Ask a question"
+labels: ["question"]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: "Fiteny / Langue / Language"
+      options:
+        - "Malagasy"
+        - "Francais"
+        - "English"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "Inona ny fanontanianao? / Quelle est votre question? / What's your question?"
+      placeholder: |
+        Manontania na inona na inona!
+        Demandez ce que vous voulez!
+        Ask anything!
+    validations:
+      required: true
