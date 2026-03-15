@@ -99,21 +99,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
         </div>
       </div>
 
-      <!-- Deal progress -->
-      @if (showDealPoints()) {
-        <div class="progress-row">
-          <div class="progress-track">
-            <div class="progress-fill team1-fill" [style.width.%]="team1ProgressPercent()"></div>
-          </div>
-          <span class="progress-pts team1-color">{{ team1CardPoints() }}</span>
-          <span class="progress-sep">|</span>
-          <span class="progress-pts team2-color">{{ team2CardPoints() }}</span>
-          <div class="progress-track">
-            <div class="progress-fill team2-fill" [style.width.%]="team2ProgressPercent()"></div>
-          </div>
-        </div>
-      }
-
       <!-- Menu dropdown -->
       @if (menuOpen()) {
         <div class="menu-backdrop" (click)="menuOpen.set(false)"></div>
@@ -416,49 +401,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
         }
       }
 
-      /* ── Progress row ── */
-      .progress-row {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0 0.125rem 0.375rem;
-      }
-
-      .progress-track {
-        flex: 1;
-        height: 3px;
-        background: hsl(var(--foreground) / 0.06);
-        border-radius: 1.5px;
-        overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%;
-        border-radius: 1.5px;
-        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .team1-fill {
-        background: hsl(var(--team1) / 0.7);
-      }
-
-      .team2-fill {
-        background: hsl(var(--team2) / 0.7);
-      }
-
-      .progress-pts {
-        font-size: 0.625rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        min-width: 1.25rem;
-        text-align: center;
-      }
-
-      .progress-sep {
-        font-size: 0.5rem;
-        color: hsl(var(--foreground) / 0.12);
-      }
-
       /* ── Menu backdrop ── */
       .menu-backdrop {
         position: fixed;
@@ -694,8 +636,6 @@ export class ScoreBarComponent {
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);
   readonly team2MatchPoints = input<number>(0);
-  readonly team1CardPoints = input<number>(0);
-  readonly team2CardPoints = input<number>(0);
   readonly dealNumber = input<number>(0);
   readonly gameMode = input<GameMode | null>(null);
   readonly multiplier = input<MultiplierState>('Normal');
@@ -712,40 +652,12 @@ export class ScoreBarComponent {
 
   readonly menuOpen = signal(false);
 
-  readonly showDealPoints = computed(() => this.gameMode() !== null);
-
   readonly team1Label = computed(() =>
     getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)),
   );
   readonly team2Label = computed(() =>
     getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)),
   );
-
-  readonly totalPoints = computed(() => {
-    const mode = this.gameMode();
-    if (!mode) return 162;
-    if (mode === GameMode.AllTrumps) return 258;
-    if (mode === GameMode.NoTrumps) return 130;
-    return 162;
-  });
-
-  readonly thresholdPercent = computed(() => {
-    const mode = this.gameMode();
-    if (!mode) return 50;
-    if (mode === GameMode.AllTrumps) return (129 / 258) * 100;
-    if (mode === GameMode.NoTrumps) return (65 / 130) * 100;
-    return (82 / 162) * 100;
-  });
-
-  readonly team1ProgressPercent = computed(() => {
-    const total = this.totalPoints();
-    return Math.min((this.team1CardPoints() / total) * 100, 100);
-  });
-
-  readonly team2ProgressPercent = computed(() => {
-    const total = this.totalPoints();
-    return Math.min((this.team2CardPoints() / total) * 100, 100);
-  });
 
   toggleMenu(event: Event): void {
     event.stopPropagation();

@@ -78,8 +78,6 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [room]="gameState.currentRoom()"
         [team1MatchPoints]="gameState.team1MatchPoints()"
         [team2MatchPoints]="gameState.team2MatchPoints()"
-        [team1CardPoints]="gameState.team1CardPoints()"
-        [team2CardPoints]="gameState.team2CardPoints()"
         [dealNumber]="gameState.dealNumber()"
         [gameMode]="gameState.gameMode()"
         [multiplier]="gameState.multiplier()"
