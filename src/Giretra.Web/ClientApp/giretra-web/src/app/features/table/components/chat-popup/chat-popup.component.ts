@@ -119,7 +119,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
         z-index: 110;
         display: flex;
         align-items: flex-end;
-        justify-content: center;
+        justify-content: flex-end;
         padding: 1rem;
         pointer-events: none;
       }

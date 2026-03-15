@@ -20,7 +20,7 @@ import { ChatPopupComponent } from './components/chat-popup/chat-popup.component
 import { ChatService } from '../../core/services/chat.service';
 import { environment } from '../../../environments/environment';
 import { SoundService } from '../../core/services/sound.service';
-import { LucideAngularModule, Maximize } from 'lucide-angular';
+import { LucideAngularModule, Maximize, MessageCircle } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { HotToastService } from '@ngxpert/hot-toast';
@@ -206,6 +206,16 @@ import { HotToastService } from '@ngxpert/hot-toast';
         />
       }
 
+      <!-- Chat FAB -->
+      @if (!chatService.isPopupOpen()) {
+        <button class="chat-fab" (click)="onChatClicked()" [title]="t('chat.title')">
+          <i-lucide [img]="MessageCircleIcon" [size]="22" [strokeWidth]="1.5"></i-lucide>
+          @if (chatService.unreadCount() > 0) {
+            <span class="chat-fab-badge">{{ chatService.unreadCount() > 9 ? '9+' : chatService.unreadCount() }}</span>
+          }
+        </button>
+      }
+
       <!-- Chat Popup -->
       @if (chatService.isPopupOpen()) {
         <app-chat-popup
@@ -387,6 +397,85 @@ import { HotToastService } from '@ngxpert/hot-toast';
     .fullscreen-banner-dismiss:hover {
       color: hsl(var(--foreground));
     }
+
+    /* ── Chat FAB ── */
+    .chat-fab {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 50;
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 50%;
+      border: none;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow:
+        0 2px 8px hsl(0 0% 0% / 0.3),
+        0 0 0 0.5px hsl(0 0% 0% / 0.1);
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+      animation: fabIn 0.25s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .chat-fab:hover {
+      transform: scale(1.08);
+      box-shadow:
+        0 4px 16px hsl(0 0% 0% / 0.35),
+        0 0 0 0.5px hsl(0 0% 0% / 0.1);
+    }
+
+    .chat-fab:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes fabIn {
+      from {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .chat-fab-badge {
+      position: absolute;
+      top: -0.125rem;
+      right: -0.125rem;
+      min-width: 1.125rem;
+      height: 1.125rem;
+      padding: 0 0.3125rem;
+      border-radius: 9999px;
+      background: hsl(0 72% 51%);
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      pointer-events: none;
+      box-shadow: 0 1px 4px hsl(0 0% 0% / 0.25);
+      animation: badgePop 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes badgePop {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    @media (max-width: 480px) {
+      .chat-fab {
+        bottom: 0.75rem;
+        right: 0.75rem;
+        width: 2.75rem;
+        height: 2.75rem;
+      }
+    }
   `],
 })
 export class TableComponent implements OnInit, OnDestroy {
@@ -403,6 +492,7 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly sound = inject(SoundService);
 
   readonly MaximizeIcon = Maximize;
+  readonly MessageCircleIcon = MessageCircle;
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
