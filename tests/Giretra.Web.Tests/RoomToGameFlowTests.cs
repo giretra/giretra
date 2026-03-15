@@ -642,6 +642,14 @@ public sealed class RoomToGameFlowTests
 
     private static async Task WaitForGameCompletion(GameSession game, TimeSpan timeout)
     {
+        if (game.GameLoopTask != null)
+        {
+            var completed = await Task.WhenAny(game.GameLoopTask, Task.Delay(timeout));
+            if (completed != game.GameLoopTask)
+                throw new TimeoutException($"Game did not complete within {timeout.TotalSeconds} seconds");
+            return;
+        }
+
         var deadline = DateTime.UtcNow + timeout;
         while (DateTime.UtcNow < deadline)
         {
