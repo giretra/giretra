@@ -24,7 +24,7 @@ export class ChatService {
   constructor() {
     this.hub.chatMessageReceived$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       this._messages.update((msgs) => [...msgs, event]);
-      if (!this._isPopupOpen()) {
+      if (!this._isPopupOpen() && !event.isSystem) {
         this._unreadCount.update((c) => c + 1);
       }
     });

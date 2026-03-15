@@ -1,3 +1,4 @@
+using Giretra.Web.Domain;
 using Giretra.Web.Models.Events;
 using Giretra.Web.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -82,15 +83,7 @@ public sealed class GameHub : Hub
         if (message == null)
             throw new HubException("Unable to send message");
 
-        var ev = new ChatMessageEvent
-        {
-            SequenceNumber = message.SequenceNumber,
-            SenderName = message.SenderName,
-            IsPlayer = message.IsPlayer,
-            Content = message.Content,
-            SentAt = message.SentAt
-        };
-
+        var ev = MapToEvent(message);
         await Clients.Group($"room_{roomId}").SendAsync("ChatMessageReceived", ev);
     }
 
@@ -99,17 +92,20 @@ public sealed class GameHub : Hub
     /// </summary>
     public object GetChatHistory(string roomId)
     {
-        var messages = _chatService.GetHistory(roomId).Select(m => new ChatMessageEvent
-        {
-            SequenceNumber = m.SequenceNumber,
-            SenderName = m.SenderName,
-            IsPlayer = m.IsPlayer,
-            Content = m.Content,
-            SentAt = m.SentAt
-        }).ToList();
+        var messages = _chatService.GetHistory(roomId).Select(MapToEvent).ToList();
 
         return new { messages, isChatEnabled = _chatService.IsChatEnabled(roomId) };
     }
+
+    private static ChatMessageEvent MapToEvent(ChatMessage m) => new()
+    {
+        SequenceNumber = m.SequenceNumber,
+        SenderName = m.SenderName,
+        IsPlayer = m.IsPlayer,
+        Content = m.Content,
+        SentAt = m.SentAt,
+        IsSystem = m.IsSystem
+    };
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {

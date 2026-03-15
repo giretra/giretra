@@ -97,6 +97,35 @@ public sealed class ChatService : IChatService
         return message;
     }
 
+    public ChatMessage AddSystemMessage(string roomId, string content)
+    {
+        var chat = _rooms.GetOrAdd(roomId, _ => new RoomChat());
+
+        ChatMessage message;
+        lock (chat.Lock)
+        {
+            var seq = ++chat.SequenceCounter;
+            message = new ChatMessage
+            {
+                SequenceNumber = seq,
+                SenderName = "",
+                IsPlayer = false,
+                Content = content,
+                SentAt = DateTime.UtcNow,
+                IsSystem = true
+            };
+
+            chat.Messages.Add(message);
+
+            if (chat.Messages.Count > MaxMessagesPerRoom)
+            {
+                chat.Messages.RemoveRange(0, chat.Messages.Count - MaxMessagesPerRoom);
+            }
+        }
+
+        return message;
+    }
+
     public IReadOnlyList<ChatMessage> GetHistory(string roomId)
     {
         if (!_rooms.TryGetValue(roomId, out var chat))

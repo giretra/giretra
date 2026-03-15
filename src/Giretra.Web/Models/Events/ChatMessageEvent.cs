@@ -7,4 +7,5 @@ public sealed class ChatMessageEvent
     public required bool IsPlayer { get; init; }
     public required string Content { get; init; }
     public required DateTime SentAt { get; init; }
+    public bool IsSystem { get; init; }
 }
