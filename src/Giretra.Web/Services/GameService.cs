@@ -168,15 +168,14 @@ public sealed class GameService : IGameService
             }
             finally
             {
-                // Reset room status and start idle timeout so "Play Again" works
-                // without waiting for database persistence to complete.
+                // Persist match to database before resetting room,
+                // so ratings and history are up-to-date when clients navigate away.
+                if (session.IsRanked && session.CompletedAt != null)
+                    await PersistMatchAsync(session);
+
                 var roomService = _serviceProvider.GetRequiredService<IRoomService>();
                 roomService.ResetToWaiting(room.RoomId);
             }
-
-            // Persist match to database after room is reset (non-blocking for Play Again)
-            if (session.IsRanked && session.CompletedAt != null)
-                await PersistMatchAsync(session);
 
             // Auto-restart if any human player actively clicked "Play Again"
             if (!session.ContinueMatchConfirmed.IsEmpty)
