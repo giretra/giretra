@@ -16,6 +16,8 @@ import { GameModePopupComponent } from './components/game-mode-popup/game-mode-p
 import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
 import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
+import { ChatPopupComponent } from './components/chat-popup/chat-popup.component';
+import { ChatService } from '../../core/services/chat.service';
 import { environment } from '../../../environments/environment';
 import { SoundService } from '../../core/services/sound.service';
 import { LucideAngularModule, Maximize } from 'lucide-angular';
@@ -36,6 +38,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
     NegotiationHistoryPopupComponent,
     MatchHistoryPopupComponent,
     PlayerProfilePopupComponent,
+    ChatPopupComponent,
     LucideAngularModule,
     TranslocoDirective,
   ],
@@ -83,9 +86,11 @@ import { HotToastService } from '@ngxpert/hot-toast';
         [myTeam]="gameState.myTeam()"
         [isMyTurn]="gameState.isMyTurn()"
         [turnTimeoutAt]="gameState.turnTimeoutAt()"
+        [unreadCount]="chatService.unreadCount()"
         (leaveTable)="onLeaveTable()"
         (modeBadgeClicked)="onModeBadgeClicked()"
         (matchPointsClicked)="onMatchPointsClicked()"
+        (chatClicked)="onChatClicked()"
       />
 
       <!-- Zone B: Table Surface (players + center stage) -->
@@ -200,6 +205,16 @@ import { HotToastService } from '@ngxpert/hot-toast';
           [waiting]="waitingForContinue()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
+        />
+      }
+
+      <!-- Chat Popup -->
+      @if (chatService.isPopupOpen()) {
+        <app-chat-popup
+          [messages]="chatService.messages()"
+          [isChatEnabled]="chatService.isChatEnabled()"
+          (messageSent)="onChatMessageSent($event)"
+          (closed)="chatService.closePopup()"
         />
       }
 
@@ -379,6 +394,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
 export class TableComponent implements OnInit, OnDestroy {
   readonly gameState = inject(GameStateService);
   readonly hub = inject(GameHubService);
+  readonly chatService = inject(ChatService);
   private readonly session = inject(ClientSessionService);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
@@ -820,6 +836,21 @@ export class TableComponent implements OnInit, OnDestroy {
     });
   }
 
+  onChatClicked(): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    if (roomId) {
+      this.chatService.openPopup(roomId);
+    }
+  }
+
+  onChatMessageSent(content: string): void {
+    const roomId = this.gameState.currentRoom()?.roomId;
+    const clientId = this.session.clientId();
+    if (roomId && clientId) {
+      this.chatService.sendMessage(roomId, clientId, content);
+    }
+  }
+
   closeProfilePopup(): void {
     this.profilePopupData.set(null);
   }
@@ -845,6 +876,7 @@ export class TableComponent implements OnInit, OnDestroy {
       }
     }
 
+    this.chatService.reset();
     await this.gameState.leaveRoom();
     this.session.leaveRoom();
     this.router.navigate(['/']);
