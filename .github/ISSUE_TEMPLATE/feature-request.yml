@@ -1,0 +1,42 @@
+name: "Hevitra / Idee / Idea"
+description: "Manolotra hevitra vaovao / Proposer une idee / Suggest a new idea"
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: "Fiteny / Langue / Language"
+      options:
+        - "Malagasy"
+        - "Francais"
+        - "English"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Inona ny hevitrao? / Quelle est votre idee? / What's your idea?"
+      placeholder: |
+        Lazao ny hevitrao, tsy misy valiny diso!
+        Decrivez votre idee, il n'y a pas de mauvaise reponse!
+        Describe your idea, there are no wrong answers!
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: "Nahoana ity no ilaina? / Pourquoi serait-ce utile? / Why would this be useful?"
+      placeholder: |
+        Inona no olana hovahany? / Quel probleme cela resoudrait? / What problem would it solve?
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Sary na sary noeritreretina / Maquette ou capture / Mockup or screenshot"
+      description: "Atsipizo sary eto raha misy / Glissez vos images ici / Drag and drop images here"
+    validations:
+      required: false
