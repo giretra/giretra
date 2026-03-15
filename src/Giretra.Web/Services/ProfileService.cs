@@ -6,6 +6,9 @@ using Giretra.Web.Repositories;
 using Giretra.Web.Validation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 using PlayerPosition = Giretra.Core.Players.PlayerPosition;
 
 namespace Giretra.Web.Services;
@@ -13,16 +16,16 @@ namespace Giretra.Web.Services;
 public sealed class ProfileService : IProfileService
 {
     private readonly GiretraDbContext _db;
-    private readonly IWebHostEnvironment _env;
     private readonly IRoomRepository _rooms;
 
-    private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png"];
-    private const long MaxAvatarSize = 2 * 1024 * 1024; // 2MB
+    private const int MaxDimension = 256;
+    private const long MaxInputSize = 5 * 1024 * 1024; // 5 MB raw upload limit
+    private const int WebPQuality = 75;
+    private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-    public ProfileService(GiretraDbContext db, IWebHostEnvironment env, IRoomRepository rooms)
+    public ProfileService(GiretraDbContext db, IRoomRepository rooms)
     {
         _db = db;
-        _env = env;
         _rooms = rooms;
     }
 
@@ -154,32 +157,54 @@ public sealed class ProfileService : IProfileService
         if (file.Length == 0)
             return (false, null, "File is empty.");
 
-        if (file.Length > MaxAvatarSize)
-            return (false, null, "File size must be 2MB or less.");
+        if (file.Length > MaxInputSize)
+            return (false, null, "File size must be 5 MB or less.");
 
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(extension))
-            return (false, null, "Only JPG and PNG files are allowed.");
+            return (false, null, "Only JPG, PNG, and WebP files are allowed.");
 
         var user = await _db.Users.FindAsync(userId);
         if (user == null)
             return (false, null, "User not found.");
 
-        // Delete old avatar if exists
-        DeleteAvatarFile(user.AvatarUrl);
+        // Convert to WebP
+        byte[] webpBytes;
+        try
+        {
+            webpBytes = await ConvertToWebPAsync(file);
+        }
+        catch (Exception)
+        {
+            return (false, null, "Invalid or corrupted image file.");
+        }
 
-        var uploadsDir = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "avatars");
-        Directory.CreateDirectory(uploadsDir);
+        // Upsert into blob_store
+        var blobKey = $"avatar/{userId}";
+        var now = DateTimeOffset.UtcNow;
 
-        var fileName = $"{userId}{extension}";
-        var filePath = Path.Combine(uploadsDir, fileName);
+        var blob = await _db.BlobStore.FindAsync(blobKey);
+        if (blob != null)
+        {
+            blob.Data = webpBytes;
+            blob.ContentType = "image/webp";
+            blob.UpdatedAt = now;
+        }
+        else
+        {
+            _db.BlobStore.Add(new BlobStore
+            {
+                Key = blobKey,
+                Data = webpBytes,
+                ContentType = "image/webp",
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
 
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-
-        var avatarUrl = $"/uploads/avatars/{fileName}";
+        var avatarUrl = $"/api/avatars/{userId}";
         user.AvatarUrl = avatarUrl;
-        user.UpdatedAt = DateTimeOffset.UtcNow;
+        user.UpdatedAt = now;
         await _db.SaveChangesAsync();
 
         return (true, avatarUrl, null);
@@ -191,7 +216,10 @@ public sealed class ProfileService : IProfileService
         if (user == null)
             return;
 
-        DeleteAvatarFile(user.AvatarUrl);
+        var blobKey = $"avatar/{userId}";
+        var blob = await _db.BlobStore.FindAsync(blobKey);
+        if (blob != null)
+            _db.BlobStore.Remove(blob);
 
         user.AvatarUrl = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
@@ -224,14 +252,23 @@ public sealed class ProfileService : IProfileService
         await _db.SaveChangesAsync();
     }
 
-    private void DeleteAvatarFile(string? avatarUrl)
+    private static async Task<byte[]> ConvertToWebPAsync(IFormFile file)
     {
-        if (string.IsNullOrEmpty(avatarUrl))
-            return;
+        await using var inputStream = file.OpenReadStream();
+        using var image = await Image.LoadAsync(inputStream);
 
-        var webRoot = _env.WebRootPath ?? "wwwroot";
-        var filePath = Path.Combine(webRoot, avatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        if (File.Exists(filePath))
-            File.Delete(filePath);
+        // Resize if larger than MaxDimension, preserving aspect ratio
+        if (image.Width > MaxDimension || image.Height > MaxDimension)
+        {
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Size = new Size(MaxDimension, MaxDimension),
+                Mode = ResizeMode.Max
+            }));
+        }
+
+        using var output = new MemoryStream();
+        await image.SaveAsync(output, new WebpEncoder { Quality = WebPQuality });
+        return output.ToArray();
     }
 }

@@ -16,6 +16,7 @@ public class GiretraDbContext(DbContextOptions<GiretraDbContext> options) : DbCo
     public DbSet<EloHistory> EloHistories => Set<EloHistory>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
     public DbSet<Block> Blocks => Set<Block>();
+    public DbSet<BlobStore> BlobStore => Set<BlobStore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
