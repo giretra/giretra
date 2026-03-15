@@ -140,6 +140,14 @@ import { HotToastService } from '@ngxpert/hot-toast';
             </button>
           }
 
+          <button class="menu-row" (click)="onChatFromMenu()">
+            <i-lucide [img]="MessageCircleIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
+            <span class="menu-label">{{ t('chat.title') }}</span>
+            @if (unreadCount() > 0) {
+              <span class="menu-badge">{{ unreadCount() }}</span>
+            }
+          </button>
+
           <div class="menu-row menu-row-lang">
             <i-lucide [img]="GlobeIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
             <span class="menu-label">{{ t('scoreBar.language') }}</span>
@@ -518,6 +526,21 @@ import { HotToastService } from '@ngxpert/hot-toast';
         font-weight: 400;
       }
 
+      .menu-badge {
+        min-width: 1.125rem;
+        height: 1.125rem;
+        padding: 0 0.3125rem;
+        border-radius: 9999px;
+        background: hsl(0 72% 51%);
+        color: #fff;
+        font-size: 0.625rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
       .menu-row-danger {
         color: hsl(0 72% 65%);
       }
@@ -724,6 +747,11 @@ export class ScoreBarComponent {
   onToggleFullscreen(): void {
     this.fullscreen.toggle();
     this.menuOpen.set(false);
+  }
+
+  onChatFromMenu(): void {
+    this.menuOpen.set(false);
+    this.chatClicked.emit();
   }
 
   onLeaveFromMenu(): void {
