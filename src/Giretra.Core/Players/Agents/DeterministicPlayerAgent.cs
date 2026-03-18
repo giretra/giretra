@@ -648,10 +648,11 @@ public class DeterministicPlayerAgent : IPlayerAgent
             modeEvals[mode] = EvaluateHand(hand, mode, isStarter);
 
         var opponentTeam = _myTeam == Team.Team1 ? Team.Team2 : Team.Team1;
+        int ourScore = matchState.GetMatchPoints(_myTeam);
+        int opponentScore = matchState.GetMatchPoints(opponentTeam);
+        int targetScore = matchState.TargetScore;
         double aggressiveness = PlayerAgentHelper.ComputeAggressiveness(
-            matchState.GetMatchPoints(_myTeam),
-            matchState.GetMatchPoints(opponentTeam),
-            matchState.TargetScore);
+            ourScore, opponentScore, targetScore);
 
         double announceThreshold = 55 - aggressiveness * 15;
         double competeThreshold = 42 - aggressiveness * 7;
@@ -667,6 +668,11 @@ public class DeterministicPlayerAgent : IPlayerAgent
             var eval = modeEvals[redoubleAction.TargetMode];
             if (eval.GuaranteedTricks >= redoubleGuaranteedMin && eval.Score >= redoubleThreshold)
                 return redoubleAction;
+
+            if (ShouldEscalateStrategically(
+                    redoubleAction.TargetMode, eval, ourScore, opponentScore, targetScore,
+                    currentMultiplier: MultiplierState.Doubled))
+                return redoubleAction;
         }
 
         // Check for double
@@ -676,10 +682,16 @@ public class DeterministicPlayerAgent : IPlayerAgent
             var eval = modeEvals[doubleAction.TargetMode];
             if (eval.GuaranteedTricks >= doubleGuaranteedMin && eval.Score >= doubleThreshold)
                 return doubleAction;
+
+            if (ShouldEscalateStrategically(
+                    doubleAction.TargetMode, eval, ourScore, opponentScore, targetScore,
+                    currentMultiplier: MultiplierState.Normal))
+                return doubleAction;
         }
 
         // Find best announcement
         var announceActions = validActions.OfType<AnnouncementAction>().ToList();
+
         bool isFirstSpeaker = negotiationState.CurrentBid == null;
 
         if (isFirstSpeaker && announceActions.Count > 0)
@@ -724,6 +736,42 @@ public class DeterministicPlayerAgent : IPlayerAgent
         return validActions[0];
     }
 
+    /// <summary>
+    /// Evaluates whether doubling/redoubling is strategically advantageous based on match
+    /// score context, even when hand evaluation alone doesn't meet normal thresholds.
+    /// </summary>
+    private static bool ShouldEscalateStrategically(
+        GameMode targetMode, HandEvaluation eval,
+        int ourScore, int opponentScore, int targetScore,
+        MultiplierState currentMultiplier)
+    {
+        int opponentWinPoints = targetMode.GetBaseMatchPoints() * currentMultiplier.GetMultiplier();
+
+        // "Nothing to lose" — opponent reaches target on a win at the current multiplier.
+        // Escalating doesn't worsen our match outcome when they win (match is lost either way),
+        // but multiplies our reward when they lose.
+        if (opponentScore + opponentWinPoints >= targetScore && eval.Score >= 25)
+            return true;
+
+        // AllTrumps split avoidance (only relevant when doubling from normal).
+        // Normal AllTrumps uses split scoring where both teams earn points — bad when we
+        // need a large swing. Doubling converts to winner-takes-all (26 × 2 = 52).
+        if (targetMode == GameMode.AllTrumps && currentMultiplier == MultiplierState.Normal)
+        {
+            // Large deficit: gradual split gains (~12 per deal) won't close the gap;
+            // a doubled win (52 pts) is our best path to catch up.
+            if (opponentScore - ourScore >= 30 && eval.Score >= 40)
+                return true;
+
+            // Opponent near target: even typical split points (~14) from a normal AllTrumps
+            // announcer win could push them over. Force winner-takes-all.
+            if (opponentScore + 14 >= targetScore && eval.Score >= 35)
+                return true;
+        }
+
+        return false;
+    }
+
     #endregion
 
     #region Lead Strategy
@@ -759,7 +807,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
             .Where(validPlays.Contains).ToList();
 
-        if (masterCards.Count > 0 && !ShouldHoldBackMasters(masterCards, trickNumber, mode))
+        if (masterCards.Count > 0 && !ShouldHoldBackMasters(masterCards, hand, trickNumber, mode))
         {
             var preferredMasters = masterCards
                 .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
@@ -806,6 +854,17 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 return priorityCards[0];
         }
 
+        if (!trumpSuit.HasValue && trickNumber < 2)
+        {
+            var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
+
+            if (kickableSuits.Any())
+            {
+                return kickableSuits.OrderByDescending(r => r.CardInSuits.Count)
+                    .First().KickCard;
+            }
+        }
+
         // 2. Trump exhaustion (Colour mode)
         if (trumpSuit.HasValue)
         {
@@ -834,6 +893,17 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 return exploitCard.Value;
         }
 
+        //if (!trumpSuit.HasValue && trickNumber <4)
+        //{
+        //    var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
+
+        //    if (kickableSuits.Any())
+        //    {
+        //        return kickableSuits.OrderByDescending(r => r.CardInSuits.Count)
+        //            .First().KickCard;
+        //    }
+        //}
+
         // 5. Long suit — lead from longest non-trump suit
         return ChooseDefaultLead(validPlays, mode, trumpSuit);
     }
@@ -842,13 +912,25 @@ public class DeterministicPlayerAgent : IPlayerAgent
     /// In early NoTrumps, avoid cashing masters if they're spread across many suits
     /// (better to hold them for later when opponents run out of options).
     /// </summary>
-    private bool ShouldHoldBackMasters(List<Card> masterCards, int trickNumber, GameMode mode)
+    private bool ShouldHoldBackMasters(List<Card> masterCards, IReadOnlyList<Card> hand, 
+        int trickNumber, GameMode mode)
     {
-        if (trickNumber > 3 || mode != GameMode.NoTrumps)
-            return false;
-
         int suitCount = masterCards.Select(c => c.Suit).Distinct().Count();
         double masterRatio = masterCards.Count / (8.0 - (trickNumber - 1));
+
+        if (mode == GameMode.AllTrumps)
+        {
+            var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
+
+            if (trickNumber < 2 && masterRatio < 0.45 && suitCount >= 2)
+            {
+                if (kickableSuits.Any())
+                    return true;
+            }
+        }
+
+        if (trickNumber > 3 || mode != GameMode.NoTrumps)
+            return false;
 
         return (suitCount >= 3 && masterRatio < 0.4);
     }

@@ -35,17 +35,56 @@ public static class PlayerAgentHelper
     {
         int cardStrength = card.GetStrength(mode);
 
-        foreach (CardRank rank in Enum.GetValues<CardRank>())
+        var allCardsOfSuit = Deck.CreateStandard()
+            .Cards.Where(c => c.Suit == card.Suit);
+        
+        var otherCardsNotInHand = 
+            allCardsOfSuit
+                .Where(c => !hand.Contains(c) && !playedCards.Contains(c)).ToList();
+
+        var strongerCardInHand = hand
+            .Where(c => c.GetStrength(mode) > cardStrength)
+            .ToList();
+
+        var strongerCardNotInHand = otherCardsNotInHand
+            .Where(c => c.GetStrength(mode) > cardStrength)
+            .ToList();
+
+        var strongerCardAboveInHand = 0; 
+        var strongerCardAboveNotOwned = 0; 
+
+        foreach (var potentialCard in Enum.GetValues<CardRank>().Select(s => new Card(s, card.Suit))
+                     .OrderByDescending(r => r.GetStrength(mode)))
         {
-            var potentialCard = new Card(rank, card.Suit);
-            if (potentialCard.Equals(card)) continue;
-            if (playedCards.Contains(potentialCard)) continue;
-            if (hand.Contains(potentialCard)) continue;
+            if (potentialCard.Equals(card))
+                continue;
+            if (playedCards.Contains(potentialCard))
+                continue;
+
+            if (hand.Contains(potentialCard))
+            {
+                strongerCardAboveInHand++;
+                continue;
+            }
 
             if (potentialCard.GetStrength(mode) > cardStrength)
+            {
+                //var aboveCardsOwned = 
+                //    strongerCardInHand.Where(c => c.GetStrength(mode) > potentialCard.GetStrength(mode)).ToList();
                 return false;
+                strongerCardAboveNotOwned++;
+                continue;
+            }
+
+            break;
         }
 
+        return true;
+
+        if (strongerCardAboveNotOwned == 0)
+            return true;
+
+        //return (strongerCardAboveInHand) > (strongerCardAboveNotOwned);
         return true;
     }
 
@@ -72,6 +111,28 @@ public static class PlayerAgentHelper
             if ((strongerRemainingPlayingCardCount +1) == cards.Count) {
                 result.Add(suit);
             }
+        }
+
+        return result;
+    }
+
+    public static IReadOnlyList<KickableSuit> GetKickableSuits(
+        IReadOnlyList<Card> hand, GameMode mode, HashSet<Card> playedCards)
+    {
+        var protectableSuits = GetProtectableSuits(hand, mode, playedCards);
+
+        var result = new List<KickableSuit>();
+
+        foreach (var suit in protectableSuits)
+        {
+            var cardsInSuit = hand.Where(c => c.Suit == suit)
+                .OrderByDescending(c => c.GetStrength(mode)).ToList();
+
+            if (cardsInSuit.Count < 2)
+                continue;
+
+            var kickCard = cardsInSuit.Skip(1).First();
+            result.Add(new KickableSuit(suit, cardsInSuit, kickCard));
         }
 
         return result;
@@ -182,3 +243,5 @@ public static class PlayerAgentHelper
         return 0.3;
     }
 }
+
+public record KickableSuit(CardSuit Suit, IReadOnlyList<Card> CardInSuits, Card KickCard);
