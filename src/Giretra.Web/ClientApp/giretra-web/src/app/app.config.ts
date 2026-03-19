@@ -63,6 +63,7 @@ import {
   MessageCircle,
   Send,
   TriangleAlert,
+  ChevronDown,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -115,6 +116,7 @@ const usedIcons = {
   MessageCircle,
   Send,
   TriangleAlert,
+  ChevronDown,
 };
 
 function initializeKeycloak(auth: AuthService) {
