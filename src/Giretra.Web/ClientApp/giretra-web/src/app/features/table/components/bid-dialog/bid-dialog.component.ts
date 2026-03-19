@@ -1,4 +1,4 @@
-import { Component, input, output, computed, inject } from '@angular/core';
+import { Component, input, output, computed, inject, signal } from '@angular/core';
 import { GameMode, PlayerPosition } from '../../../../api/generated/signalr-types.generated';
 import { ValidAction, NegotiationAction } from '../../../../core/services/api.service';
 import { BidButtonRowComponent } from '../hand-area/bid-button-row/bid-button-row.component';
@@ -8,11 +8,12 @@ import { MultiplierBadgeComponent } from '../../../../shared/components/multipli
 import { MultiplierState } from '../../../../core/services/game-state.service';
 import { TranslocoDirective, TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-bid-dialog',
   standalone: true,
-  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, MultiplierBadgeComponent, TranslocoDirective, TranslocoPipe],
+  imports: [BidButtonRowComponent, GameModeBadgeComponent, GameModeIconComponent, MultiplierBadgeComponent, TranslocoDirective, TranslocoPipe, LucideAngularModule],
   template: `
     <ng-container *transloco="let t">
     <div class="backdrop"></div>
@@ -31,33 +32,42 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
           <p class="no-bid">{{ t('bidDialog.noBidYouOpen') }}</p>
         }
 
-        <!-- Bid history (newest first) -->
+        <!-- Bid history (newest first, collapsible) -->
         @if (reversedHistory().length > 0) {
-          <div class="history-list">
-            @for (action of reversedHistory(); track $index) {
-              <div class="history-row" [class.latest]="$index === 0" [style.opacity]="$index === 0 ? 1 : Math.max(0.4, 1 - $index * 0.15)">
-                <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ translatedInitial(action.player) }}</span>
-                <span class="player-name" [class.latest-name]="$index === 0">{{ positionKey(action.player) | transloco }}</span>
-                <span class="action-badge" [class]="getActionBadgeClass(action)">
-                  @if (action.actionType === 'Announce') {
-                    <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
-                    <span>{{ formatModeName(action.mode) }}</span>
-                  } @else if (action.actionType === 'Double') {
-                    <span class="multiplier-symbol">\u00d72</span>
-                    <span>{{ t('negotiation.double') }}</span>
-                  } @else if (action.actionType === 'Redouble') {
-                    <span class="multiplier-symbol">\u00d74</span>
-                    <span>{{ t('negotiation.redouble') }}</span>
-                  } @else if (action.actionType === 'ReRedouble') {
-                    <span class="multiplier-symbol">\u00d78</span>
-                    <span>{{ t('negotiation.reRedouble') }}</span>
-                  } @else {
-                    <span>{{ t('negotiation.accept') }}</span>
-                    @if (action.mode) {
-                      <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
-                    }
-                  }
-                </span>
+          <div class="history-section">
+            <button class="history-toggle" (click)="historyExpanded.set(!historyExpanded())">
+              <span class="history-toggle-label">{{ t('bidDialog.history') }}</span>
+              <span class="history-count">{{ reversedHistory().length }}</span>
+              <lucide-icon name="chevron-down" [size]="14" class="history-chevron" [class.collapsed]="!historyExpanded()" />
+            </button>
+            @if (historyExpanded()) {
+              <div class="history-list">
+                @for (action of reversedHistory(); track $index) {
+                  <div class="history-row" [class.latest]="$index === 0" [style.opacity]="$index === 0 ? 1 : Math.max(0.4, 1 - $index * 0.15)">
+                    <span class="player-avatar" [class.latest-avatar]="$index === 0">{{ translatedInitial(action.player) }}</span>
+                    <span class="player-name" [class.latest-name]="$index === 0">{{ positionKey(action.player) | transloco }}</span>
+                    <span class="action-badge" [class]="getActionBadgeClass(action)">
+                      @if (action.actionType === 'Announce') {
+                        <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                        <span>{{ formatModeName(action.mode) }}</span>
+                      } @else if (action.actionType === 'Double') {
+                        <span class="multiplier-symbol">\u00d72</span>
+                        <span>{{ t('negotiation.double') }}</span>
+                      } @else if (action.actionType === 'Redouble') {
+                        <span class="multiplier-symbol">\u00d74</span>
+                        <span>{{ t('negotiation.redouble') }}</span>
+                      } @else if (action.actionType === 'ReRedouble') {
+                        <span class="multiplier-symbol">\u00d78</span>
+                        <span>{{ t('negotiation.reRedouble') }}</span>
+                      } @else {
+                        <span>{{ t('negotiation.accept') }}</span>
+                        @if (action.mode) {
+                          <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                        }
+                      }
+                    </span>
+                  </div>
+                }
               </div>
             }
           </div>
@@ -160,6 +170,61 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
       font-size: 0.875rem;
     }
 
+    /* History section */
+    .history-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .history-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      width: 100%;
+      padding: 0.375rem 0.625rem;
+      border: none;
+      background: hsl(var(--muted) / 0.2);
+      border-radius: 0.375rem;
+      cursor: pointer;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: background 0.15s ease;
+    }
+
+    .history-toggle:hover {
+      background: hsl(var(--muted) / 0.35);
+    }
+
+    .history-toggle-label {
+      flex: 1;
+      text-align: left;
+    }
+
+    .history-count {
+      font-size: 0.625rem;
+      font-weight: 700;
+      background: hsl(var(--muted) / 0.5);
+      color: hsl(var(--muted-foreground));
+      border-radius: 9999px;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.25rem;
+    }
+
+    .history-chevron {
+      transition: transform 0.2s ease;
+    }
+
+    .history-chevron.collapsed {
+      transform: rotate(-90deg);
+    }
+
     /* History list */
     .history-list {
       display: flex;
@@ -168,6 +233,7 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
       width: 100%;
       max-height: 160px;
       overflow-y: auto;
+      margin-top: 0.375rem;
     }
 
     .history-row {
@@ -272,6 +338,7 @@ export class BidDialogComponent {
   readonly validActions = input<ValidAction[]>([]);
   readonly negotiationHistory = input<NegotiationAction[]>([]);
   readonly activePlayer = input<PlayerPosition | null>(null);
+  readonly historyExpanded = signal(true);
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
 
