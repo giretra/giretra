@@ -241,7 +241,8 @@ public static class NegotiationEngine
         {
             foreach (var mode in doubleableModes)
             {
-                actions.Add(new DoubleAction(player, mode));
+                var announcement = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == mode);
+                actions.Add(new DoubleAction(player, mode, announcement));
             }
         }
 
@@ -250,7 +251,8 @@ public static class NegotiationEngine
         {
             foreach (var mode in redoubleableModes)
             {
-                actions.Add(new RedoubleAction(player, mode));
+                var doubleAction = state.Actions.OfType<DoubleAction>().First(a => a.TargetMode == mode);
+                actions.Add(new RedoubleAction(player, mode, doubleAction));
             }
         }
 
@@ -259,7 +261,8 @@ public static class NegotiationEngine
         {
             foreach (var mode in reRedoubleableModes)
             {
-                actions.Add(new ReRedoubleAction(player, mode));
+                var redoubleAction = state.Actions.OfType<RedoubleAction>().First(a => a.TargetMode == mode);
+                actions.Add(new ReRedoubleAction(player, mode, redoubleAction));
             }
         }
 

@@ -184,17 +184,19 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces ColourClubs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs));
+        var annClubs = new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs);
+        state = state.Apply(annClubs);
 
         // 2. Bottom (Team1) explicitly doubles ColourClubs
-        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.ColourClubs));
+        var dblClubs = new DoubleAction(PlayerPosition.Bottom, GameMode.ColourClubs, annClubs);
+        state = state.Apply(dblClubs);
         Assert.False(state.AutoDoubledModes.Contains(GameMode.ColourClubs));
 
         // 3. Left (Team2, announcer's team) CAN redouble (normal chain)
         Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
 
         // But no re-redouble allowed for any mode
-        state = state.Apply(new RedoubleAction(PlayerPosition.Left, GameMode.ColourClubs));
+        state = state.Apply(new RedoubleAction(PlayerPosition.Left, GameMode.ColourClubs, dblClubs));
         Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
     }
 
@@ -205,10 +207,11 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces NoTrumps
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+        var annNT = new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps);
+        state = state.Apply(annNT);
 
         // 2. Bottom (Team1) explicitly doubles NoTrumps
-        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps));
+        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps, annNT));
         Assert.False(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
 
         // 3. Left (Team2, announcer's team) cannot redouble NoTrumps
@@ -228,7 +231,8 @@ public class NoTrumpsFlowTests
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
         // Left (Team2) doubles NoTrumps (explicit)
-        var doubleNT = new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps);
+        var annNT2 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.NoTrumps);
+        var doubleNT = new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps, annNT2);
         state = state.Apply(doubleNT);
 
         // Top (Team1) accepts
