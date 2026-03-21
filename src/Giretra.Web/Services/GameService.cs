@@ -491,7 +491,10 @@ public sealed class GameService : IGameService
                     EloAfter = kvp.Value.EloAfter,
                     EloChange = kvp.Value.EloChange
                 }),
-            CompletedDeals = matchState.IsComplete ? NotificationService.MapToCompletedDeals(matchState) : null
+            CompletedDeals = matchState.IsComplete ? NotificationService.MapToCompletedDeals(matchState) : null,
+            Achievements = matchState.IsComplete && session.EarnedAchievements.Count > 0
+                ? session.EarnedAchievements
+                : null
         };
     }
 

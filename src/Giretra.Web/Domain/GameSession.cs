@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Giretra.Core;
 using Giretra.Core.Players;
 using Giretra.Core.State;
+using Giretra.Web.Achievements;
 using Giretra.Web.Players;
 
 namespace Giretra.Web.Domain;
@@ -98,6 +99,11 @@ public sealed class GameSession
     /// Null for unranked or offline games.
     /// </summary>
     public IReadOnlyDictionary<PlayerPosition, EloChangePreview>? EloResults { get; set; }
+
+    /// <summary>
+    /// Achievements earned during this game session (accumulated at deal-end and match-end).
+    /// </summary>
+    public List<EarnedAchievementInfo> EarnedAchievements { get; } = [];
 
     /// <summary>
     /// Gets the current match state.
