@@ -11,6 +11,9 @@ import { TranslocoService } from '@jsverse/transloco';
     <div class="speech-bubble" [class]="positionClass()">
       @if (actionType() === 'Announce' && mode()) {
         <app-game-mode-icon [mode]="mode()!" size="1.25rem" />
+      } @else if (actionType() === 'Accept' && mode()) {
+        <span class="text">{{ textDisplay() }}</span>
+        <app-game-mode-icon [mode]="mode()!" size="1rem" />
       } @else {
         <span class="text">{{ textDisplay() }}</span>
       }
