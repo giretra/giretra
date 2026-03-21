@@ -90,8 +90,8 @@ public class SpecExamplesTests
         state = state.Apply(annClubs);
         var annHearts = new AnnouncementAction(PlayerPosition.Left, GameMode.ColourHearts);
         state = state.Apply(annHearts);
-        state = state.Apply(new DoubleAction(PlayerPosition.Top, GameMode.ColourHearts, annHearts));
-        var doubleClubs = new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs, annClubs);
+        state = state.Apply(new DoubleAction(PlayerPosition.Top, annHearts));
+        var doubleClubs = new DoubleAction(PlayerPosition.Right, annClubs);
         state = state.Apply(doubleClubs);
 
         // Need 3 accepts to complete
@@ -128,11 +128,11 @@ public class SpecExamplesTests
 
         var annSpades = new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourSpades);
         state = state.Apply(annSpades);
-        var doubleSpades = new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades, annSpades);
+        var doubleSpades = new DoubleAction(PlayerPosition.Left, annSpades);
         state = state.Apply(doubleSpades);
         state = state.Apply(new AcceptAction(PlayerPosition.Top, doubleSpades));
         state = state.Apply(new AcceptAction(PlayerPosition.Right, doubleSpades));
-        var redoubleSpades = new RedoubleAction(PlayerPosition.Bottom, GameMode.ColourSpades, doubleSpades);
+        var redoubleSpades = new RedoubleAction(PlayerPosition.Bottom, doubleSpades);
         state = state.Apply(redoubleSpades);
         state = state.Apply(new AcceptAction(PlayerPosition.Left, redoubleSpades));
         state = state.Apply(new AcceptAction(PlayerPosition.Top, redoubleSpades));

@@ -188,7 +188,7 @@ public class NoTrumpsFlowTests
         state = state.Apply(annClubs);
 
         // 2. Bottom (Team1) explicitly doubles ColourClubs
-        var dblClubs = new DoubleAction(PlayerPosition.Bottom, GameMode.ColourClubs, annClubs);
+        var dblClubs = new DoubleAction(PlayerPosition.Bottom, annClubs);
         state = state.Apply(dblClubs);
         Assert.False(state.AutoDoubledModes.Contains(GameMode.ColourClubs));
 
@@ -196,7 +196,7 @@ public class NoTrumpsFlowTests
         Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
 
         // But no re-redouble allowed for any mode
-        state = state.Apply(new RedoubleAction(PlayerPosition.Left, GameMode.ColourClubs, dblClubs));
+        state = state.Apply(new RedoubleAction(PlayerPosition.Left, dblClubs));
         Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
     }
 
@@ -211,7 +211,7 @@ public class NoTrumpsFlowTests
         state = state.Apply(annNT);
 
         // 2. Bottom (Team1) explicitly doubles NoTrumps
-        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps, annNT));
+        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, annNT));
         Assert.False(state.AutoDoubledModes.Contains(GameMode.NoTrumps));
 
         // 3. Left (Team2, announcer's team) cannot redouble NoTrumps
@@ -232,7 +232,7 @@ public class NoTrumpsFlowTests
 
         // Left (Team2) doubles NoTrumps (explicit)
         var annNT2 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.NoTrumps);
-        var doubleNT = new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps, annNT2);
+        var doubleNT = new DoubleAction(PlayerPosition.Left, annNT2);
         state = state.Apply(doubleNT);
 
         // Top (Team1) accepts

@@ -108,19 +108,19 @@ public class GamesController : ControllerBase
                 if (request.Mode == null)
                     return BadRequest("Mode is required for Double action.");
                 // Announcement is resolved by GameService from the pre-computed valid actions
-                action = new DoubleAction(position.Value, request.Mode.Value, null!);
+                action = new DoubleAction(position.Value, null!);
                 break;
             case "redouble":
                 if (request.Mode == null)
                     return BadRequest("Mode is required for Redouble action.");
                 // Double is resolved by GameService from the pre-computed valid actions
-                action = new RedoubleAction(position.Value, request.Mode.Value, null!);
+                action = new RedoubleAction(position.Value, null!);
                 break;
             case "reredouble":
                 if (request.Mode == null)
                     return BadRequest("Mode is required for ReRedouble action.");
                 // Redouble is resolved by GameService from the pre-computed valid actions
-                action = new ReRedoubleAction(position.Value, request.Mode.Value, null!);
+                action = new ReRedoubleAction(position.Value, null!);
                 break;
             default:
                 return BadRequest($"Unknown action type: {request.ActionType}");

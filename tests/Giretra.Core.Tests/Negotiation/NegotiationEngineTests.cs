@@ -159,7 +159,7 @@ public class NegotiationEngineTests
         state = state.Apply(announceSpades);
 
         // Left doubles
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades, announceSpades));
+        state = state.Apply(new DoubleAction(PlayerPosition.Left, announceSpades));
 
         // Top (announcer's team) can redouble
         Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourSpades));
@@ -175,7 +175,7 @@ public class NegotiationEngineTests
         state = state.Apply(announceNT);
 
         // Left doubles NoTrumps
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps, announceNT));
+        state = state.Apply(new DoubleAction(PlayerPosition.Left, announceNT));
 
         // Top (announcer's team) cannot redouble NoTrumps
         Assert.False(NegotiationEngine.CanRedouble(state, GameMode.NoTrumps));
@@ -191,7 +191,7 @@ public class NegotiationEngineTests
         state = state.Apply(announceClubs);
 
         // Left doubles Clubs (mandatory before accept)
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourClubs, announceClubs));
+        state = state.Apply(new DoubleAction(PlayerPosition.Left, announceClubs));
 
         // Top (announcer's team) can redouble Clubs
         Assert.True(NegotiationEngine.CanRedouble(state, GameMode.ColourClubs));
@@ -207,7 +207,7 @@ public class NegotiationEngineTests
         state = state.Apply(announceSpades2);
 
         // Left (Team2) doubles
-        var doubleSpades = new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades, announceSpades2);
+        var doubleSpades = new DoubleAction(PlayerPosition.Left, announceSpades2);
         state = state.Apply(doubleSpades);
 
         // Top (Team1) can redouble
@@ -246,7 +246,7 @@ public class NegotiationEngineTests
 
         var announceH = new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourHearts);
         state = state.Apply(announceH);
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourHearts, announceH));
+        state = state.Apply(new DoubleAction(PlayerPosition.Left, announceH));
 
         // Top cannot announce after double
         Assert.False(NegotiationEngine.CanAnnounce(state, GameMode.AllTrumps));
@@ -266,10 +266,10 @@ public class NegotiationEngineTests
         state = state.Apply(announceHearts2);
 
         // Top doubles Hearts
-        state = state.Apply(new DoubleAction(PlayerPosition.Top, GameMode.ColourHearts, announceHearts2));
+        state = state.Apply(new DoubleAction(PlayerPosition.Top, announceHearts2));
 
         // Right doubles Clubs
-        var doubleClubs = new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs, announceClubs);
+        var doubleClubs = new DoubleAction(PlayerPosition.Right, announceClubs);
         state = state.Apply(doubleClubs);
 
         // Complete negotiation
@@ -299,7 +299,7 @@ public class NegotiationEngineTests
 
         // Right (Team2) doubles Diamonds
         var announceDiamonds = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourDiamonds);
-        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourDiamonds, announceDiamonds));
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, announceDiamonds));
 
         // Now it's Bottom's turn (Team1)
         // Available choices should be: Accept, Double Clubs, Redouble Diamonds
@@ -326,11 +326,11 @@ public class NegotiationEngineTests
 
         // Right (Team2) doubles Hearts
         var announceH2 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourHearts);
-        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourHearts, announceH2));
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, announceH2));
 
         // Bottom (Team1) doubles Diamonds
         var announceD2 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourDiamonds);
-        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, GameMode.ColourDiamonds, announceD2));
+        state = state.Apply(new DoubleAction(PlayerPosition.Bottom, announceD2));
 
         // Now it's Left's turn (Team2)
         // ONLY available choices should be: Accept, Redouble Diamonds
@@ -398,11 +398,11 @@ public class NegotiationEngineTests
 
         // Step 3: Top doubles Hearts
         var announceH3 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourHearts);
-        var doubleHearts = new DoubleAction(PlayerPosition.Top, GameMode.ColourHearts, announceH3);
+        var doubleHearts = new DoubleAction(PlayerPosition.Top, announceH3);
         state = state.Apply(doubleHearts);
 
         // Step 4: Right redoubles Hearts (Right is on Left's team who announced Hearts)
-        var redoubleHearts = new RedoubleAction(PlayerPosition.Right, GameMode.ColourHearts, doubleHearts);
+        var redoubleHearts = new RedoubleAction(PlayerPosition.Right, doubleHearts);
         state = state.Apply(redoubleHearts);
 
         // Step 5: Bottom accepts
@@ -415,7 +415,7 @@ public class NegotiationEngineTests
 
         // Verify validation also rejects it
         var announceD3 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourDiamonds);
-        var error = NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Left, GameMode.ColourDiamonds, announceD3));
+        var error = NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Left, announceD3));
         Assert.NotNull(error);
     }
 
@@ -458,11 +458,11 @@ public class NegotiationEngineTests
         state = state.Apply(annClubs);
 
         // Left doubles
-        var dblClubs = new DoubleAction(PlayerPosition.Left, GameMode.ColourClubs, annClubs);
+        var dblClubs = new DoubleAction(PlayerPosition.Left, annClubs);
         state = state.Apply(dblClubs);
 
         // Top redoubles
-        state = state.Apply(new RedoubleAction(PlayerPosition.Top, GameMode.ColourClubs, dblClubs));
+        state = state.Apply(new RedoubleAction(PlayerPosition.Top, dblClubs));
 
         // Right cannot re-redouble
         Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourClubs));
@@ -478,11 +478,11 @@ public class NegotiationEngineTests
         state = state.Apply(annSpades);
 
         // Left doubles
-        var dblSpades = new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades, annSpades);
+        var dblSpades = new DoubleAction(PlayerPosition.Left, annSpades);
         state = state.Apply(dblSpades);
 
         // Top redoubles
-        state = state.Apply(new RedoubleAction(PlayerPosition.Top, GameMode.ColourSpades, dblSpades));
+        state = state.Apply(new RedoubleAction(PlayerPosition.Top, dblSpades));
 
         // Right cannot re-redouble
         Assert.False(NegotiationEngine.CanReRedouble(state, GameMode.ColourSpades));
@@ -519,7 +519,7 @@ public class NegotiationEngineTests
         // Right (Team2) doubles ColourClubs (not NoTrumps!)
         // HasDoubleOccurred = true, but NoTrumps is NOT doubled
         var annClubs2 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourClubs);
-        var doubleClubs = new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs, annClubs2);
+        var doubleClubs = new DoubleAction(PlayerPosition.Right, annClubs2);
         state = state.Apply(doubleClubs);
 
         // Bottom (Team1, NoTrumps announcer's team) can accept despite NoTrumps being undoubled
@@ -571,11 +571,11 @@ public class NegotiationEngineTests
 
         // Top (Team1) doubles ColourClubs (opponent bid)
         var annClubs3 = state.Actions.OfType<AnnouncementAction>().First(a => a.Mode == GameMode.ColourClubs);
-        var dblClubs2 = new DoubleAction(PlayerPosition.Top, GameMode.ColourClubs, annClubs3);
+        var dblClubs2 = new DoubleAction(PlayerPosition.Top, annClubs3);
         state = state.Apply(dblClubs2);
 
         // Right (Team2, ColourClubs announcer's team) redoubles ColourClubs
-        var redoubleClubs = new RedoubleAction(PlayerPosition.Right, GameMode.ColourClubs, dblClubs2);
+        var redoubleClubs = new RedoubleAction(PlayerPosition.Right, dblClubs2);
         state = state.Apply(redoubleClubs);
 
         // Now it's Bottom's turn
@@ -718,7 +718,7 @@ public class NegotiationEngineTests
         Assert.Equal(26, announceResult.Team1MatchPoints + announceResult.Team2MatchPoints);
 
         // Option 3: Double NoTrumps — NoTrumps ×2 → 104 match points total
-        var doubleNT = new DoubleAction(PlayerPosition.Bottom, GameMode.NoTrumps, announceNT);
+        var doubleNT = new DoubleAction(PlayerPosition.Bottom, announceNT);
         var doubleState = state
             .Apply(doubleNT)
             .Apply(new AcceptAction(PlayerPosition.Left, doubleNT))

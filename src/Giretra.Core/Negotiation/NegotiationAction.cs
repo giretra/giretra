@@ -30,9 +30,10 @@ public sealed record AcceptAction(PlayerPosition Player, NegotiationAction Accep
 /// <summary>
 /// A player doubles the opponent's bid.
 /// </summary>
-public sealed record DoubleAction(PlayerPosition Player, GameMode TargetMode, AnnouncementAction Announcement)
+public sealed record DoubleAction(PlayerPosition Player, AnnouncementAction Announcement)
     : NegotiationAction(Player)
 {
+    public GameMode TargetMode => Announcement.Mode;
     public override string ToString() => $"{Player} doubles {TargetMode}";
 }
 
@@ -40,9 +41,10 @@ public sealed record DoubleAction(PlayerPosition Player, GameMode TargetMode, An
 /// A player redoubles after their bid was doubled.
 /// Available for all modes.
 /// </summary>
-public sealed record RedoubleAction(PlayerPosition Player, GameMode TargetMode, DoubleAction Double)
+public sealed record RedoubleAction(PlayerPosition Player, DoubleAction Double)
     : NegotiationAction(Player)
 {
+    public GameMode TargetMode => Double.TargetMode;
     public override string ToString() => $"{Player} redoubles {TargetMode}";
 }
 
@@ -50,8 +52,9 @@ public sealed record RedoubleAction(PlayerPosition Player, GameMode TargetMode, 
 /// A player re-redoubles after their opponent's bid was redoubled.
 /// Only available for ColourClubs.
 /// </summary>
-public sealed record ReRedoubleAction(PlayerPosition Player, GameMode TargetMode, RedoubleAction Redouble)
+public sealed record ReRedoubleAction(PlayerPosition Player, RedoubleAction Redouble)
     : NegotiationAction(Player)
 {
+    public GameMode TargetMode => Redouble.TargetMode;
     public override string ToString() => $"{Player} re-redoubles {TargetMode}";
 }
