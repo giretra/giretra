@@ -395,7 +395,7 @@ public sealed class GameServiceTests
         var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
         var session = _gameService.CreateGame(room)!;
 
-        var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom) };
+        var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom, new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts)) };
         session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Negotiate,
@@ -406,7 +406,7 @@ public sealed class GameServiceTests
         };
 
         // Act
-        var result = _gameService.SubmitNegotiation(session.GameId, clientId, new AcceptAction(PlayerPosition.Bottom));
+        var result = _gameService.SubmitNegotiation(session.GameId, clientId, new AcceptAction(PlayerPosition.Bottom, new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts)));
 
         // Assert
         Assert.True(result);
@@ -420,7 +420,7 @@ public sealed class GameServiceTests
         var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
         var session = _gameService.CreateGame(room)!;
 
-        var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom) };
+        var validActions = new List<NegotiationAction> { new AcceptAction(PlayerPosition.Bottom, new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts)) };
         session.PendingActions[PlayerPosition.Bottom] = new PendingAction
         {
             ActionType = PendingActionType.Negotiate,
@@ -446,7 +446,7 @@ public sealed class GameServiceTests
         var session = _gameService.CreateGame(room);
 
         // Act
-        var result = _gameService.SubmitNegotiation(session!.GameId, clientId, new AcceptAction(PlayerPosition.Bottom));
+        var result = _gameService.SubmitNegotiation(session!.GameId, clientId, new AcceptAction(PlayerPosition.Bottom, new AnnouncementAction(PlayerPosition.Top, GameMode.ColourHearts)));
 
         // Assert
         Assert.False(result);
