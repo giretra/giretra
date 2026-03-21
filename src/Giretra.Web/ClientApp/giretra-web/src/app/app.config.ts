@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideHotToastConfig } from '@ngxpert/hot-toast';
+
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
@@ -137,17 +137,5 @@ export const appConfig: ApplicationConfig = {
     { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(usedIcons) },
     provideAppTransloco(),
-    provideHotToastConfig({
-      position: 'bottom-center',
-      dismissible: true,
-      autoClose: true,
-      duration: 2000,
-      theme: 'snackbar',
-      style: {
-        background: 'hsl(220 20% 14%)',
-        color: 'hsl(210 40% 96%)',
-        border: '1px solid hsl(220 15% 25%)',
-      },
-    }),
   ],
 };

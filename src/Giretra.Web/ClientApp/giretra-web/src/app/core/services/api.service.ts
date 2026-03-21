@@ -2,8 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { HotToastService } from '@ngxpert/hot-toast';
 import { TranslocoService } from '@jsverse/transloco';
+import { ErrorBannerService } from './error-banner.service';
 import { API_BASE_URL } from '../../app.config';
 import {
   CardRank,
@@ -316,7 +316,7 @@ export interface PlayerProfileResponse {
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
-  private readonly toast = inject(HotToastService);
+  private readonly errorBanner = inject(ErrorBannerService);
   private readonly transloco = inject(TranslocoService);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -667,7 +667,7 @@ export class ApiService {
 
     console.error('API Error:', error);
     if (error.status !== 404) {
-      this.toast.error(message);
+      this.errorBanner.show(message);
     }
     return throwError(() => new Error(message));
   };
