@@ -37,4 +37,5 @@ public sealed class MatchEndedEvent
     /// Recap of all completed deals in the match.
     /// </summary>
     public required IReadOnlyList<DealRecapResponse> CompletedDeals { get; init; }
+
 }

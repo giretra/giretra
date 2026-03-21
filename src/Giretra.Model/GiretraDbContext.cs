@@ -17,6 +17,8 @@ public class GiretraDbContext(DbContextOptions<GiretraDbContext> options) : DbCo
     public DbSet<Friendship> Friendships => Set<Friendship>();
     public DbSet<Block> Blocks => Set<Block>();
     public DbSet<BlobStore> BlobStore => Set<BlobStore>();
+    public DbSet<Achievement> Achievements => Set<Achievement>();
+    public DbSet<PlayerAchievement> PlayerAchievements => Set<PlayerAchievement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
