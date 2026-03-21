@@ -297,12 +297,14 @@ public sealed class GameService : IGameService
         if (pending.ActionType != PendingActionType.Negotiate)
             return false;
 
-        // Validate the action is one of the valid options
+        // Validate the action is one of the valid options and resolve to the pre-computed valid action
+        // (which carries full context, e.g. AcceptAction.AcceptedAction)
         if (pending.ValidNegotiationActions != null)
         {
-            var isValid = pending.ValidNegotiationActions.Any(va => ActionsMatch(va, action));
-            if (!isValid)
+            var matchedAction = pending.ValidNegotiationActions.FirstOrDefault(va => ActionsMatch(va, action));
+            if (matchedAction == null)
                 return false;
+            action = matchedAction;
         }
 
         // Complete the pending action
@@ -453,15 +455,9 @@ public sealed class GameService : IGameService
         IReadOnlyList<NegotiationActionResponse>? negotiationHistory = null;
         if (deal?.Negotiation != null)
         {
-            GameMode? currentBid = null;
-            var history = new List<NegotiationActionResponse>(deal.Negotiation.Actions.Count);
-            foreach (var action in deal.Negotiation.Actions)
-            {
-                if (action is AnnouncementAction announcement)
-                    currentBid = announcement.Mode;
-                history.Add(NegotiationActionResponse.FromAction(action, currentBid));
-            }
-            negotiationHistory = history;
+            negotiationHistory = deal.Negotiation.Actions
+                .Select(NegotiationActionResponse.FromAction)
+                .ToList();
         }
 
         return new GameStateResponse

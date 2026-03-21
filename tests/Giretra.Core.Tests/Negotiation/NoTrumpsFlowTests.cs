@@ -14,7 +14,8 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // Right (Team2) announces NoTrumps
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+        var announceNT = new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
 
         // Bottom (Team1, opponent) CAN accept
         Assert.Equal(PlayerPosition.Bottom, state.CurrentPlayer);
@@ -25,7 +26,7 @@ public class NoTrumpsFlowTests
         Assert.Contains(validActions, a => a is AnnouncementAction { Mode: GameMode.AllTrumps });
         Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.NoTrumps });
 
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceNT));
 
         // Accepting NoTrumps locks negotiation (blocks announcements) but does NOT double
         Assert.False(state.DoubledModes.ContainsKey(GameMode.NoTrumps));
@@ -41,10 +42,11 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces NoTrumps
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+        var announceNT = new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
 
         // 2. Bottom (Team1) accepts — locks negotiation (blocks announcements)
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceNT));
 
         // 3. Left (Team2, announcer's teammate) — can only Accept (announcements blocked, can't double own team)
         Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
@@ -54,7 +56,7 @@ public class NoTrumpsFlowTests
         Assert.Single(validActions);
         Assert.Contains(validActions, a => a is AcceptAction);
 
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceNT));
 
         // 4. Top (Team1) — can Accept or Double NoTrumps (announcements blocked, but double still allowed)
         Assert.Equal(PlayerPosition.Top, state.CurrentPlayer);
@@ -72,18 +74,19 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces NoTrumps
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
+        var announceNT = new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
 
         // 2. Bottom (Team1) accepts — no auto-double
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceNT));
         Assert.False(state.IsComplete);
 
         // 3. Left (Team2) accepts
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceNT));
         Assert.False(state.IsComplete);
 
         // 4. Top (Team1) accepts → 3 consecutive accepts, negotiation ends
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, announceNT));
         Assert.True(state.IsComplete);
 
         // Resolve: NoTrumps, announced by Team2, normal (no auto-double)
@@ -103,11 +106,12 @@ public class NoTrumpsFlowTests
         state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps));
 
         // Bottom (Team1) announces AllTrumps (overcalls)
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.AllTrumps));
+        var announceAT = new AnnouncementAction(PlayerPosition.Bottom, GameMode.AllTrumps);
+        state = state.Apply(announceAT);
 
         // Left (Team2) accepts — same team as NoTrumps announcer, no auto-double on AllTrumps
         // (AllTrumps doesn't auto-double anyway since it's not NoTrumps/ColourClubs)
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceAT));
         Assert.False(state.DoubledModes.ContainsKey(GameMode.AllTrumps));
         Assert.Empty(state.AutoDoubledModes);
     }
@@ -119,10 +123,11 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces ColourClubs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs));
+        var announceClubs = new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs);
+        state = state.Apply(announceClubs);
 
         // 2. Bottom (Team1, opponent) accepts → locks but no score double
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceClubs));
         Assert.False(state.DoubledModes.ContainsKey(GameMode.ColourClubs));
         Assert.False(state.AutoDoubledModes.Contains(GameMode.ColourClubs));
         Assert.True(state.HasDoubleOccurred); // Locked — no more announcements
@@ -133,7 +138,7 @@ public class NoTrumpsFlowTests
         Assert.Single(leftActions);
         Assert.Contains(leftActions, a => a is AcceptAction);
 
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceClubs));
 
         // 4. Top (Team1, opponent) — can Accept or Double ColourClubs
         Assert.Equal(PlayerPosition.Top, state.CurrentPlayer);
@@ -150,18 +155,19 @@ public class NoTrumpsFlowTests
         var state = NegotiationState.Create(PlayerPosition.Top);
 
         // 1. Right (Team2) announces ColourClubs
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs));
+        var announceClubs = new AnnouncementAction(PlayerPosition.Right, GameMode.ColourClubs);
+        state = state.Apply(announceClubs);
 
         // 2. Bottom (Team1) accepts — locks but no auto-double
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceClubs));
         Assert.False(state.IsComplete);
 
         // 3. Left (Team2) accepts
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceClubs));
         Assert.False(state.IsComplete);
 
         // 4. Top (Team1) accepts → 3 consecutive accepts, negotiation ends
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, announceClubs));
         Assert.True(state.IsComplete);
 
         // Resolve: ColourClubs, announced by Team2, normal (no auto-double)
@@ -222,10 +228,11 @@ public class NoTrumpsFlowTests
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps));
 
         // Left (Team2) doubles NoTrumps (explicit)
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps));
+        var doubleNT = new DoubleAction(PlayerPosition.Left, GameMode.NoTrumps);
+        state = state.Apply(doubleNT);
 
         // Top (Team1) accepts
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, doubleNT));
 
         // NoTrumps is explicitly doubled, ColourClubs is undoubled
         Assert.True(state.DoubledModes.ContainsKey(GameMode.NoTrumps));

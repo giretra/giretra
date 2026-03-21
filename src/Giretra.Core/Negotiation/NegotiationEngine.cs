@@ -232,7 +232,8 @@ public static class NegotiationEngine
         // Accept
         if (CanAccept(state))
         {
-            actions.Add(new AcceptAction(player));
+            var acceptedAction = state.Actions.LastOrDefault(a => a is not AcceptAction);
+            actions.Add(new AcceptAction(player, acceptedAction!));
         }
 
         // Double

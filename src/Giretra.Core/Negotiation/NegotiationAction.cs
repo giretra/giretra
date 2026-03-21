@@ -21,10 +21,10 @@ public sealed record AnnouncementAction(PlayerPosition Player, GameMode Mode)
 /// A player accepts the current bid.
 /// For NoTrumps/ColourClubs, opponents cannot accept until the mode has been explicitly doubled.
 /// </summary>
-public sealed record AcceptAction(PlayerPosition Player)
+public sealed record AcceptAction(PlayerPosition Player, NegotiationAction AcceptedAction)
     : NegotiationAction(Player)
 {
-    public override string ToString() => $"{Player} accepts";
+    public override string ToString() => $"{Player} accepts {AcceptedAction}";
 }
 
 /// <summary>

@@ -29,6 +29,9 @@ import { TranslocoDirective } from '@jsverse/transloco';
               <span class="timeline-initial">{{ getInitial(action.player) }}</span>
               @if (action.actionType === 'Announce' && action.mode) {
                 <app-game-mode-icon [mode]="action.mode" size="0.75rem" />
+              } @else if (action.actionType === 'Accept' && action.mode) {
+                <span class="timeline-action">{{ formatAction(action) }}</span>
+                <app-game-mode-icon [mode]="action.mode" size="0.625rem" />
               } @else {
                 <span class="timeline-action">{{ formatAction(action) }}</span>
               }

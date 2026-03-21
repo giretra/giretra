@@ -96,7 +96,8 @@ public class GamesController : ControllerBase
         switch (request.ActionType.ToLowerInvariant())
         {
             case "accept":
-                action = new AcceptAction(position.Value);
+                // AcceptedAction is resolved by GameService from the pre-computed valid actions
+                action = new AcceptAction(position.Value, null!);
                 break;
             case "announce":
                 if (request.Mode == null)

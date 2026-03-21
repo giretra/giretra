@@ -28,10 +28,11 @@ public class SpecExamplesTests
         // Dealer is Right, so Bottom speaks first
         var state = NegotiationState.Create(PlayerPosition.Right);
 
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourHearts));
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+        var announceHearts = new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourHearts);
+        state = state.Apply(announceHearts);
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, announceHearts));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, announceHearts));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right, announceHearts));
 
         Assert.True(state.IsComplete);
 
@@ -57,10 +58,11 @@ public class SpecExamplesTests
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourSpades));
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        var announceSpades = new AnnouncementAction(PlayerPosition.Left, GameMode.ColourSpades);
+        state = state.Apply(announceSpades);
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, announceSpades));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right, announceSpades));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceSpades));
 
         Assert.True(state.IsComplete);
 
@@ -87,12 +89,13 @@ public class SpecExamplesTests
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs));
         state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourHearts));
         state = state.Apply(new DoubleAction(PlayerPosition.Top, GameMode.ColourHearts));
-        state = state.Apply(new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs));
+        var doubleClubs = new DoubleAction(PlayerPosition.Right, GameMode.ColourClubs);
+        state = state.Apply(doubleClubs);
 
         // Need 3 accepts to complete
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, doubleClubs));
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, doubleClubs));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, doubleClubs));
 
         Assert.True(state.IsComplete);
 
@@ -122,13 +125,15 @@ public class SpecExamplesTests
         var state = NegotiationState.Create(PlayerPosition.Right);
 
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourSpades));
-        state = state.Apply(new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades));
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
-        state = state.Apply(new RedoubleAction(PlayerPosition.Bottom, GameMode.ColourSpades));
-        state = state.Apply(new AcceptAction(PlayerPosition.Left));
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+        var doubleSpades = new DoubleAction(PlayerPosition.Left, GameMode.ColourSpades);
+        state = state.Apply(doubleSpades);
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, doubleSpades));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right, doubleSpades));
+        var redoubleSpades = new RedoubleAction(PlayerPosition.Bottom, GameMode.ColourSpades);
+        state = state.Apply(redoubleSpades);
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, redoubleSpades));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, redoubleSpades));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right, redoubleSpades));
 
         Assert.True(state.IsComplete);
 
@@ -343,13 +348,14 @@ public class SpecExamplesTests
         // 1. Bottom: Colour Diamonds
         state = state.Apply(new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourDiamonds));
         // 2. Left: Colour Spades
-        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourSpades));
+        var announceSpades = new AnnouncementAction(PlayerPosition.Left, GameMode.ColourSpades);
+        state = state.Apply(announceSpades);
         // 3. Top: Accept
-        state = state.Apply(new AcceptAction(PlayerPosition.Top));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, announceSpades));
         // 4. Right: Accept
-        state = state.Apply(new AcceptAction(PlayerPosition.Right));
+        state = state.Apply(new AcceptAction(PlayerPosition.Right, announceSpades));
         // 5. Bottom: Accept
-        state = state.Apply(new AcceptAction(PlayerPosition.Bottom));
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceSpades));
 
         Assert.True(state.IsComplete);
 
@@ -406,11 +412,11 @@ public class SpecExamplesTests
         // Negotiation
         Assert.Equal(PlayerPosition.Bottom, deal.Negotiation!.CurrentPlayer);
 
-        deal = deal.ApplyNegotiationAction(
-            new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourHearts));
-        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Left));
-        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Top));
-        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Right));
+        var announceHearts = new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourHearts);
+        deal = deal.ApplyNegotiationAction(announceHearts);
+        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Left, announceHearts));
+        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Top, announceHearts));
+        deal = deal.ApplyNegotiationAction(new AcceptAction(PlayerPosition.Right, announceHearts));
 
         Assert.Equal(DealPhase.FinalDistribution, deal.Phase);
         Assert.Equal(GameMode.ColourHearts, deal.ResolvedMode);
