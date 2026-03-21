@@ -12,7 +12,7 @@ import { CreateRoomFormComponent } from './components/create-room-form/create-ro
 import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
-import { HotToastService } from '@ngxpert/hot-toast';
+import { ErrorBannerService } from '../../core/services/error-banner.service';
 import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { QuickGameDialogComponent } from './components/quick-game-dialog/quick-game-dialog.component';
 import { WelcomeDialogComponent } from '../../shared/components/welcome-dialog/welcome-dialog.component';
@@ -34,6 +34,13 @@ import { environment } from '../../../environments/environment';
   template: `
     <ng-container *transloco="let t">
     <div class="home-shell">
+      <!-- Error Banner -->
+      @if (errorBanner.message()) {
+        <div class="error-banner">
+          {{ errorBanner.message() }}
+        </div>
+      }
+
       <!-- Hero header with felt texture -->
       <header class="hero">
         <div class="hero-felt"></div>
@@ -184,6 +191,7 @@ import { environment } from '../../../environments/environment';
   `,
   styles: [`
     .home-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
+    .error-banner { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.375rem 1rem; font-size:0.75rem; font-weight:500; z-index:100; background:hsl(0 72% 51%/0.15); color:hsl(0 72% 65%); border-bottom:1px solid hsl(0 72% 51%/0.3); }
     .hero { position:relative; overflow:hidden; padding:0 1rem; height:48px; display:flex; align-items:center; flex-shrink:0; }
     .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
     .hero-content { position:relative; z-index:1; max-width:960px; width:100%; margin:0 auto; display:flex; justify-content:space-between; align-items:center; height:100%; }
@@ -270,7 +278,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly hub = inject(GameHubService);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
-  private readonly toast = inject(HotToastService);
+  readonly errorBanner = inject(ErrorBannerService);
 
   private roomsChangedSubscription: Subscription | null = null;
   private reconnectedSubscription: Subscription | null = null;
@@ -513,9 +521,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private async copyToClipboard(url: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(url);
-      this.toast.success(this.transloco.translate('home.linkCopied'));
+      this.errorBanner.show(this.transloco.translate('home.linkCopied'));
     } catch {
-      this.toast.error(this.transloco.translate('home.linkCopyFailed'));
+      this.errorBanner.show(this.transloco.translate('home.linkCopyFailed'));
     }
   }
 

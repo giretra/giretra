@@ -23,7 +23,7 @@ import {
 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { LanguageSwitcherComponent } from '../../../../shared/components/language-switcher/language-switcher.component';
-import { HotToastService } from '@ngxpert/hot-toast';
+import { ErrorBannerService } from '../../../../core/services/error-banner.service';
 
 @Component({
   selector: 'app-score-bar',
@@ -578,7 +578,7 @@ import { HotToastService } from '@ngxpert/hot-toast';
 })
 export class ScoreBarComponent {
   private readonly transloco = inject(TranslocoService);
-  private readonly toast = inject(HotToastService);
+  private readonly errorBanner = inject(ErrorBannerService);
   readonly fullscreen = inject(FullscreenService);
   readonly sound = inject(SoundService);
 
@@ -648,9 +648,9 @@ export class ScoreBarComponent {
     if (!roomId) return;
     try {
       await navigator.clipboard.writeText(roomId);
-      this.toast.success(this.transloco.translate('scoreBar.copied'));
+      this.errorBanner.show(this.transloco.translate('scoreBar.copied'));
     } catch {
-      this.toast.error(this.transloco.translate('scoreBar.copyFailed'));
+      this.errorBanner.show(this.transloco.translate('scoreBar.copyFailed'));
     }
     this.menuOpen.set(false);
   }

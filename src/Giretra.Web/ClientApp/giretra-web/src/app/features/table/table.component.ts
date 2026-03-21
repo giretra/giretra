@@ -23,7 +23,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { LucideAngularModule, Maximize, MessageCircle } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
-import { HotToastService } from '@ngxpert/hot-toast';
+import { ErrorBannerService } from '../../core/services/error-banner.service';
 
 @Component({
   selector: 'app-table',
@@ -58,6 +58,13 @@ import { HotToastService } from '@ngxpert/hot-toast';
         <div class="connection-banner disconnected">
           {{ t('table.connectionLost') }}
           <button class="retry-btn" (click)="onRetryConnection()">{{ t('common.retry') }}</button>
+        </div>
+      }
+
+      <!-- Error Banner -->
+      @if (errorBanner.message()) {
+        <div class="connection-banner error">
+          {{ errorBanner.message() }}
         </div>
       }
 
@@ -306,7 +313,8 @@ import { HotToastService } from '@ngxpert/hot-toast';
       border-bottom: 1px solid hsl(45 90% 55% / 0.3);
     }
 
-    .connection-banner.disconnected {
+    .connection-banner.disconnected,
+    .connection-banner.error {
       background: hsl(0 72% 51% / 0.15);
       color: hsl(0 72% 65%);
       border-bottom: 1px solid hsl(0 72% 51% / 0.3);
@@ -487,7 +495,7 @@ export class TableComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
-  private readonly toast = inject(HotToastService);
+  readonly errorBanner = inject(ErrorBannerService);
   private readonly fullscreenService = inject(FullscreenService);
   private readonly sound = inject(SoundService);
 
@@ -896,9 +904,9 @@ export class TableComponent implements OnInit, OnDestroy {
   private async copyToClipboard(url: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(url);
-      this.toast.success(this.transloco.translate('waiting.linkCopied'));
+      this.errorBanner.show(this.transloco.translate('waiting.linkCopied'));
     } catch {
-      this.toast.error(this.transloco.translate('waiting.linkCopyFailed'));
+      this.errorBanner.show(this.transloco.translate('waiting.linkCopyFailed'));
     }
   }
 
