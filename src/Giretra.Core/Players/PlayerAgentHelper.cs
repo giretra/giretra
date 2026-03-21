@@ -31,61 +31,29 @@ public static class PlayerAgentHelper
     /// A card is master if every card of the same suit that is stronger than it
     /// has either already been played or is held in the player's own hand.
     /// </summary>
-    public static bool IsMasterCard(Card card, GameMode mode, IReadOnlyList<Card> hand, HashSet<Card> playedCards)
+    public static bool IsMasterCard(Card card,
+        GameMode mode, IReadOnlyList<Card> hand, HashSet<Card> playedCards, bool extended = false)
     {
+        var opponentCards = AllCards
+            .Where(c => c.Suit == card.Suit && !c.Equals(card) && !hand.Contains(c) && !playedCards.Contains(c))
+            .ToList();
+
         int cardStrength = card.GetStrength(mode);
 
-        var allCardsOfSuit = Deck.CreateStandard()
-            .Cards.Where(c => c.Suit == card.Suit);
-        
-        var otherCardsNotInHand = 
-            allCardsOfSuit
-                .Where(c => !hand.Contains(c) && !playedCards.Contains(c)).ToList();
-
-        var strongerCardInHand = hand
-            .Where(c => c.GetStrength(mode) > cardStrength)
-            .ToList();
-
-        var strongerCardNotInHand = otherCardsNotInHand
-            .Where(c => c.GetStrength(mode) > cardStrength)
-            .ToList();
-
-        var strongerCardAboveInHand = 0; 
-        var strongerCardAboveNotOwned = 0; 
-
-        foreach (var potentialCard in Enum.GetValues<CardRank>().Select(s => new Card(s, card.Suit))
-                     .OrderByDescending(r => r.GetStrength(mode)))
-        {
-            if (potentialCard.Equals(card))
-                continue;
-            if (playedCards.Contains(potentialCard))
-                continue;
-
-            if (hand.Contains(potentialCard))
-            {
-                strongerCardAboveInHand++;
-                continue;
-            }
-
-            if (potentialCard.GetStrength(mode) > cardStrength)
-            {
-                //var aboveCardsOwned = 
-                //    strongerCardInHand.Where(c => c.GetStrength(mode) > potentialCard.GetStrength(mode)).ToList();
-                return false;
-                strongerCardAboveNotOwned++;
-                continue;
-            }
-
-            break;
-        }
-
-        return true;
-
-        if (strongerCardAboveNotOwned == 0)
+        if (opponentCards.All(c => c.GetStrength(mode) < cardStrength))
             return true;
 
-        //return (strongerCardAboveInHand) > (strongerCardAboveNotOwned);
-        return true;
+        if (!extended)
+            return false;
+
+        // Extended: card becomes master if we have enough true masters in this suit
+        // to drain all stronger opponent cards by leading them first.
+        int strongerOpponentCount = opponentCards.Count(c => c.GetStrength(mode) > cardStrength);
+        int masterCount = hand.Count(c => c.Suit == card.Suit
+                                          && c.GetStrength(mode) > cardStrength
+                                          && IsMasterCard(c, mode, hand, playedCards));
+
+        return masterCount >= strongerOpponentCount;
     }
 
     // Get suits that needs to be protected. 
@@ -156,9 +124,9 @@ public static class PlayerAgentHelper
     /// <summary>
     /// Gets all master cards from the given hand.
     /// </summary>
-    public static List<Card> GetMasterCards(IReadOnlyList<Card> hand, GameMode mode, HashSet<Card> playedCards)
+    public static List<Card> GetMasterCards(IReadOnlyList<Card> hand, GameMode mode, HashSet<Card> playedCards, bool extended = false)
     {
-        return hand.Where(c => IsMasterCard(c, mode, hand, playedCards)).ToList();
+        return hand.Where(c => IsMasterCard(c, mode, hand, playedCards, extended)).ToList();
     }
 
     /// <summary>

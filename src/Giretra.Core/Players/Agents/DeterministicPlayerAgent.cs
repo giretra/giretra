@@ -257,7 +257,16 @@ public class DeterministicPlayerAgent : IPlayerAgent
     /// </summary>
     private void InferOpponentVoids(TrickState trick, GameMode mode)
     {
-        if (trick.PlayedCards.Count < 2) return;
+        if (trick.PlayedCards.Count < 2) 
+            return;
+
+        foreach (var remainingPlay in trick.PlayedCards.Skip(1))
+        {
+            if (remainingPlay.Card.Suit != trick.LeadSuit)
+            {
+                _knownVoids[remainingPlay.Player].Add(trick.LeadSuit!.Value);
+            }
+        }
 
         var leadSuit = trick.LeadSuit!.Value;
         var trumpSuit = mode.GetTrumpSuit();
@@ -434,9 +443,15 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private bool IsPlayerVoidIn(PlayerPosition player, CardSuit suit)
         => _knownVoids[player].Contains(suit);
 
+    private bool IsAllOtherPlayersVoidIn(CardSuit suit)
+        => _knownVoids[Position.Next()].Contains(suit)
+           && _knownVoids[Position.Teammate()].Contains(suit)
+           && _knownVoids[Position.Teammate().Next()].Contains(suit);
+    
     private bool IsAllOpponentsVoidIn(CardSuit suit)
-        => _opponentVoidSuits[Position.Next()].Contains(suit)
-           && _opponentVoidSuits[Position.Teammate().Next()].Contains(suit);
+        => 
+            _knownVoids[Position.Next()].Contains(suit)
+           && _knownVoids[Position.Teammate().Next()].Contains(suit);
 
     private bool IsOpponentOutOfTrump(PlayerPosition opponent)
         => _opponentNoTrump.Contains(opponent);
@@ -804,8 +819,9 @@ public class DeterministicPlayerAgent : IPlayerAgent
         }
 
         // 1. Cash master cards (guaranteed winners)
-        var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards)
+        var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
             .Where(validPlays.Contains).ToList();
+
 
         if (masterCards.Count > 0 && !ShouldHoldBackMasters(masterCards, hand, trickNumber, mode))
         {
@@ -918,11 +934,35 @@ public class DeterministicPlayerAgent : IPlayerAgent
         int suitCount = masterCards.Select(c => c.Suit).Distinct().Count();
         double masterRatio = masterCards.Count / (8.0 - (trickNumber - 1));
 
+        var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
+
+        var maxSuit = masterCards.GroupBy(c => c.Suit)
+            .OrderByDescending(g => g.Count()).First();
+
         if (mode == GameMode.AllTrumps)
         {
-            var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
+            if (masterRatio < 0.26)
+            {
+                if (kickableSuits.Any())
+                    return true;
+            }
 
-            if (trickNumber < 2 && masterRatio < 0.45 && suitCount >= 2)
+            if (trickNumber < 3 && masterRatio < 0.3)
+            {
+                if (kickableSuits.Any())
+                    return true;
+            }
+        }
+
+        if (mode == GameMode.NoTrumps)
+        {
+            if (masterRatio < 0.26)
+            {
+                if (kickableSuits.Any())
+                    return true;
+            }
+
+            if (trickNumber < 3 && masterRatio < 0.3)
             {
                 if (kickableSuits.Any())
                     return true;
