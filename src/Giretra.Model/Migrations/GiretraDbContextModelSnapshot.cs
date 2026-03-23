@@ -65,6 +65,12 @@ namespace Giretra.Model.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_hidden");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
                     b.Property<int>("SortOrder")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")

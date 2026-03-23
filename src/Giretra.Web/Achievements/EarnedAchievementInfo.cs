@@ -9,6 +9,7 @@ namespace Giretra.Web.Achievements;
 public sealed record EarnedAchievementInfo(
     PlayerPosition PlayerPosition,
     string Code,
+    string Name,
     string Category,
     int Tier,
     string? IconName,

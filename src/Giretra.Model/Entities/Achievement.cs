@@ -12,6 +12,9 @@ public class Achievement
     [Required, MaxLength(100)]
     public string Code { get; set; } = null!;
 
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = null!;
+
     [Required, MaxLength(50)]
     public string Category { get; set; } = null!;
 
