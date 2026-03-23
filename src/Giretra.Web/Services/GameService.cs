@@ -411,8 +411,9 @@ public sealed class GameService : IGameService
         {
             (AcceptAction, AcceptAction) => true,
             (AnnouncementAction aa, AnnouncementAction ab) => aa.Mode == ab.Mode,
-            (DoubleAction da, DoubleAction db) => da.TargetMode == db.TargetMode,
-            (RedoubleAction ra, RedoubleAction rb) => ra.TargetMode == rb.TargetMode,
+            (DoubleAction, DoubleAction) => true,
+            (RedoubleAction, RedoubleAction) => true,
+            (ReRedoubleAction, ReRedoubleAction) => true,
             _ => false
         };
     }
