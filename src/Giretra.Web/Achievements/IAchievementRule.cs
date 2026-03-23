@@ -18,6 +18,11 @@ public interface IAchievementRule
     string Code { get; }
 
     /// <summary>
+    /// Language-independent display name (e.g. "Ganan'i Mama").
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
     /// Grouping category (e.g. "scoring", "streaks", "modes").
     /// </summary>
     string Category { get; }

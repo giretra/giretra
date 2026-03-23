@@ -26,6 +26,7 @@ public class AchievementsController : ControllerBase
             {
                 Id = a.Id,
                 Code = a.Code,
+                Name = a.Name,
                 Category = a.Category,
                 Tier = a.Tier,
                 IconName = a.IconName,
@@ -58,6 +59,7 @@ public class AchievementsController : ControllerBase
             .Select(x => new PlayerAchievementResponse
             {
                 Code = x.a.Code,
+                Name = x.a.Name,
                 Category = x.a.Category,
                 Tier = x.a.Tier,
                 IconName = x.a.IconName,
@@ -76,6 +78,7 @@ public sealed class AchievementResponse
 {
     public required Guid Id { get; init; }
     public required string Code { get; init; }
+    public required string Name { get; init; }
     public required string Category { get; init; }
     public required int Tier { get; init; }
     public string? IconName { get; init; }
@@ -85,6 +88,7 @@ public sealed class AchievementResponse
 public sealed class PlayerAchievementResponse
 {
     public required string Code { get; init; }
+    public required string Name { get; init; }
     public required string Category { get; init; }
     public required int Tier { get; init; }
     public string? IconName { get; init; }

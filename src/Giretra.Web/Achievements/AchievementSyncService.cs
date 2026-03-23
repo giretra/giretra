@@ -40,6 +40,7 @@ public sealed class AchievementSyncService : IHostedService
             {
                 var changed = false;
 
+                if (existing.Name != rule.Name) { existing.Name = rule.Name; changed = true; }
                 if (existing.Category != rule.Category) { existing.Category = rule.Category; changed = true; }
                 if (existing.Tier != rule.Tier) { existing.Tier = rule.Tier; changed = true; }
                 if (existing.IconName != rule.IconName) { existing.IconName = rule.IconName; changed = true; }
@@ -67,6 +68,7 @@ public sealed class AchievementSyncService : IHostedService
                 {
                     Id = rule.Id,
                     Code = rule.Code,
+                    Name = rule.Name,
                     Category = rule.Category,
                     Tier = rule.Tier,
                     IconName = rule.IconName,

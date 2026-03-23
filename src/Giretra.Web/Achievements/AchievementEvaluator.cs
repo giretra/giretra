@@ -158,8 +158,8 @@ public sealed class AchievementEvaluator
                 earnedSet.Add(rule.Code);
 
                 earned.Add(new EarnedAchievementInfo(
-                    context.PlayerPosition, rule.Code, rule.Category,
-                    rule.Tier, rule.IconName, rule.IsHidden, dealNumber));
+                    context.PlayerPosition, rule.Code, rule.Name,
+                    rule.Category, rule.Tier, rule.IconName, rule.IsHidden, dealNumber));
 
                 _logger.LogInformation(
                     "Player {PlayerId} earned achievement {Code} at position {Position}",

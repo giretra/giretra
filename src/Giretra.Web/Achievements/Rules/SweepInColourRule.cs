@@ -9,6 +9,7 @@ public sealed class SweepInColourRule : IAchievementRule
 {
     public Guid Id => new("0E137618-5E2E-45A5-AB8B-AFBA696746BD");
     public string Code => "sweep_in_colour";
+    public string Name => "Marche Royale";
     public string Category => "scoring";
     public int Tier => 3;
     public string? IconName => "sweep";
