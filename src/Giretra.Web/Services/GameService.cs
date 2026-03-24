@@ -411,9 +411,9 @@ public sealed class GameService : IGameService
         {
             (AcceptAction, AcceptAction) => true,
             (AnnouncementAction aa, AnnouncementAction ab) => aa.Mode == ab.Mode,
-            (DoubleAction, DoubleAction) => true,
-            (RedoubleAction, RedoubleAction) => true,
-            (ReRedoubleAction, ReRedoubleAction) => true,
+            (DoubleAction da, DoubleAction db) => da.TargetMode == db.TargetMode,
+            (RedoubleAction ra, RedoubleAction rb) => ra.TargetMode == rb.TargetMode,
+            (ReRedoubleAction rra, ReRedoubleAction rrb) => rra.TargetMode == rrb.TargetMode,
             _ => false
         };
     }
@@ -422,7 +422,18 @@ public sealed class GameService : IGameService
     {
         return action switch
         {
-            AcceptAction => new ValidActionResponse { ActionType = "Accept", Mode = null },
+            AcceptAction a => new ValidActionResponse
+            {
+                ActionType = "Accept",
+                Mode = a.AcceptedAction switch
+                {
+                    AnnouncementAction ann => ann.Mode,
+                    DoubleAction d => d.TargetMode,
+                    RedoubleAction r => r.TargetMode,
+                    ReRedoubleAction rr => rr.TargetMode,
+                    _ => null
+                }
+            },
             AnnouncementAction a => new ValidActionResponse { ActionType = "Announce", Mode = a.Mode },
             DoubleAction d => new ValidActionResponse { ActionType = "Double", Mode = d.TargetMode },
             RedoubleAction r => new ValidActionResponse { ActionType = "Redouble", Mode = r.TargetMode },
