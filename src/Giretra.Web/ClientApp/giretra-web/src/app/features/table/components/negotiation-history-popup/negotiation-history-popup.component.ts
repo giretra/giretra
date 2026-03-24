@@ -58,14 +58,26 @@ import { getPositionTranslationKey } from '../../../../core/utils/position-utils
                     } @else if (action.actionType === 'Double') {
                       <span class="multiplier-symbol">\u00d72</span>
                       <span>{{ t('negotiation.double') }}</span>
+                      @if (action.mode) {
+                        <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                      }
                     } @else if (action.actionType === 'Redouble') {
                       <span class="multiplier-symbol">\u00d74</span>
                       <span>{{ t('negotiation.redouble') }}</span>
+                      @if (action.mode) {
+                        <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                      }
                     } @else if (action.actionType === 'ReRedouble') {
                       <span class="multiplier-symbol">\u00d78</span>
                       <span>{{ t('negotiation.reRedouble') }}</span>
+                      @if (action.mode) {
+                        <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                      }
                     } @else {
                       <span>{{ t('negotiation.accept') }}</span>
+                      @if (action.mode) {
+                        <app-game-mode-icon [mode]="action.mode!" size="0.875rem" />
+                      }
                     }
                   </span>
                 </div>

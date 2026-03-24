@@ -176,7 +176,6 @@ export class BidButtonRowComponent {
   private readonly transloco = inject(TranslocoService);
 
   readonly validActions = input<ValidAction[]>([]);
-  readonly currentBidMode = input<GameMode | null>(null);
   readonly currentMultiplier = input<MultiplierState>('Normal');
 
   readonly actionSelected = output<{ actionType: string; mode?: string | null }>();
@@ -208,12 +207,13 @@ export class BidButtonRowComponent {
     const actions = this.validActions();
     const buttons: BidButton[] = [];
 
-    // Accept button
-    if (actions.some((a) => a.actionType === 'Accept')) {
+    // Accept button (mode comes from backend ValidAction)
+    const acceptAction = actions.find((a) => a.actionType === 'Accept');
+    if (acceptAction) {
       buttons.push({
         label: 'Accept',
         actionType: 'Accept',
-        mode: this.currentBidMode(),
+        mode: acceptAction.mode,
         variant: 'default',
       });
     }
