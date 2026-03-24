@@ -6,11 +6,11 @@ namespace Giretra.Web.Achievements.Rules;
 /// Earned when the player's team wins a deal while the player's initial 5-card hand
 /// contained only Queens, Eights, and Sevens (the weakest cards).
 /// </summary>
-public sealed class GananIMamaRule : IAchievementRule
+public sealed class QueenMaxRule : IAchievementRule
 {
     public Guid Id => new("B7F3A1E4-6C89-4D2B-9A15-3E8F0C7D4B61");
     public string Code => "ganan_i_mama";
-    public string Name => "Ganan'i Mama";
+    public string Name => "Mpibaby varatra";
     public string Category => "style";
     public int Tier => 4;
     public string? IconName => "mama";
