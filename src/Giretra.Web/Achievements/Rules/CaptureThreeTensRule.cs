@@ -13,7 +13,7 @@ public sealed class CaptureThreeTensRule : IAchievementRule
     public string Code => "mpitsapa_lanitra_aminy_tanana";
     public string Name => "Mpitsapa lanitra aminy tanana";
     public string Category => "style";
-    public int Tier => 4;
+    public int Tier => 3;
     public string? IconName => null;
     public bool IsHidden => true;
     public int SortOrder => 460;

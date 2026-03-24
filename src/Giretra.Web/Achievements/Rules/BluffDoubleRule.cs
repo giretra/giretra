@@ -14,7 +14,7 @@ public sealed class BluffDoubleRule : IAchievementRule
     public string Code => "manafosafo_sy_mividy_tena_lafo";
     public string Name => "Manafosafo sy mividy tena lafo";
     public string Category => "style";
-    public int Tier => 5;
+    public int Tier => 2;
     public string? IconName => null;
     public bool IsHidden => true;
     public int SortOrder => 480;
