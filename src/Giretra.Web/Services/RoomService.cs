@@ -473,7 +473,14 @@ public sealed class RoomService : IRoomService
             var position = existingEntry.Key;
 
             if (existingClient.ConnectionId != null)
-                return (null, "Player is already connected");
+            {
+                // Connection takeover: the old SignalR connection may still be lingering
+                // (e.g. page refresh, network glitch). Null it out so the new connection can bind.
+                _logger.LogInformation(
+                    "Player {UserId} taking over stale connection in room {RoomId} at position {Position} (clientId {ClientId})",
+                    userId, roomId, position, existingClient.ClientId);
+                existingClient.ConnectionId = null;
+            }
 
             // Player still has a client slot — reuse the existing clientId
             _logger.LogInformation(
@@ -482,6 +489,8 @@ public sealed class RoomService : IRoomService
 
             // Cancel any pending removal for this client
             CancelPendingRemoval(roomId, existingClient.ClientId);
+
+            _roomRepository.Update(room);
 
             return (new JoinRoomResponse
             {
