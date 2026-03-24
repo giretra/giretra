@@ -11,7 +11,7 @@ public sealed class ComebackRule : IAchievementRule
     public string Code => "mpamadika_basy_marovava";
     public string Name => "Mpamadika basy marovava";
     public string Category => "milestones";
-    public int Tier => 5;
+    public int Tier => 3;
     public string? IconName => "trophy";
     public bool IsHidden => true;
     public int SortOrder => 200;

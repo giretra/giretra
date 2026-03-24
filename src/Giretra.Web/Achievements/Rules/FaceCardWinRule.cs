@@ -14,7 +14,7 @@ public sealed class FaceCardWinRule : IAchievementRule
     public string Code => "feno_sary_sarim_pahasambarana";
     public string Name => "Feno sary, sarim-pahasambarana";
     public string Category => "style";
-    public int Tier => 3;
+    public int Tier => 4;
     public string? IconName => null;
     public bool IsHidden => false;
     public int SortOrder => 490;

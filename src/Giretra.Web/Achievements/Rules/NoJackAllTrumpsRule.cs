@@ -13,7 +13,7 @@ public sealed class NoJackAllTrumpsRule : IAchievementRule
     public string Code => "mbola_tsy_bedy";
     public string Name => "Mbola tsy bedy";
     public string Category => "style";
-    public int Tier => 4;
+    public int Tier => 5;
     public string? IconName => null;
     public bool IsHidden => true;
     public int SortOrder => 420;
