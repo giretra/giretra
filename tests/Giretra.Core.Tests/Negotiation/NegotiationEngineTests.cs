@@ -738,6 +738,59 @@ public class NegotiationEngineTests
     }
 
     [Fact]
+    public void LeftOptions_AfterThreeAnnouncesAndBottomAcceptsNoTrumps()
+    {
+        // Dealer is Bottom, so Left speaks first
+        // Turn order: Left → Top → Right → Bottom → Left → ...
+        // │ # │ Player │ Action                 │
+        // │ 1 │ Left   │ Announces Clubs ♣      │
+        // │ 2 │ Top    │ Announces Diamonds ♦   │
+        // │ 3 │ Right  │ Announces NoTrumps     │
+        // │ 4 │ Bottom │ Accepts NoTrumps       │
+        // │ 5 │ Left   │ ???                    │
+        //
+        // Left (Team2) should have: Accept NoTrumps, Double Diamonds
+        // - Accept: always available when there's a bid
+        // - Double Diamonds: Top (Team1) announced it, Left is Team2
+        // - Cannot double NoTrumps: Right is on same team (Team2)
+        // - Cannot double Clubs: Left announced it (own bid)
+        // - Cannot announce: HasDoubleOccurred is false, but Left already
+        //   announced a Colour, and NoTrumps lock applies after opponent accept
+
+        var state = NegotiationState.Create(PlayerPosition.Bottom);
+
+        // Left (Team2) announces Clubs
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Left, GameMode.ColourClubs));
+
+        // Top (Team1) announces Diamonds
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.ColourDiamonds));
+
+        // Right (Team2) announces NoTrumps
+        var announceNT = new AnnouncementAction(PlayerPosition.Right, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
+
+        // Bottom (Team1) accepts NoTrumps — locks announcements (opponent accept on NoTrumps)
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, announceNT));
+
+        // Now it's Left's turn
+        Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
+
+        var validActions = NegotiationEngine.GetValidActions(state);
+
+        // Left should be able to: Accept, Double Diamonds
+        Assert.Contains(validActions, a => a is AcceptAction);
+        Assert.Contains(validActions, a => a is DoubleAction { TargetMode: GameMode.ColourDiamonds });
+
+        // Left should NOT be able to double NoTrumps (same team as Right who announced it)
+        Assert.DoesNotContain(validActions, a => a is DoubleAction { TargetMode: GameMode.NoTrumps });
+
+        // Left should NOT be able to double Clubs (own bid)
+        Assert.DoesNotContain(validActions, a => a is DoubleAction { TargetMode: GameMode.ColourClubs });
+
+        Assert.Equal(2, validActions.Count);
+    }
+
+    [Fact]
     public void RightNoTrumps_BottomAccepts_LeftOnlyAccept_TopAcceptOrDouble()
     {
         // Dealer is Top, so Right speaks first
