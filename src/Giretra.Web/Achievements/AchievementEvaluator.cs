@@ -1,3 +1,5 @@
+using Giretra.Core.Cards;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
@@ -248,6 +250,8 @@ public sealed class AchievementEvaluator
                 or RecordedActionType.ReRedouble)
             .ToList() ?? [];
 
+        var tricks = BuildTricks(recordedDeal, dealResult);
+
         return new AchievementContext
         {
             Trigger = trigger,
@@ -261,7 +265,51 @@ public sealed class AchievementEvaluator
             InitialHand = initialHand,
             FullHand = fullHand,
             NegotiationActions = negotiationActions,
+            Tricks = tricks,
             AlreadyEarnedCodes = alreadyEarned
         };
+    }
+
+    private static List<CompletedTrick> BuildTricks(RecordedDeal? recordedDeal, DealResult? dealResult)
+    {
+        if (recordedDeal == null || dealResult == null)
+            return [];
+
+        var gameMode = dealResult.GameMode;
+        var playActions = recordedDeal.Actions
+            .Where(a => a.ActionType is RecordedActionType.PlayCard)
+            .GroupBy(a => a.TrickNumber)
+            .OrderBy(g => g.Key);
+
+        var tricks = new List<CompletedTrick>();
+
+        foreach (var group in playActions)
+        {
+            var plays = group.OrderBy(a => a.ActionOrder).ToList();
+            if (plays.Count != 4)
+                continue;
+
+            var playedCards = plays
+                .Select(a => new PlayedCard(a.PlayerPosition, new Card(a.CardRank!.Value, a.CardSuit!.Value)))
+                .ToList();
+
+            var leadSuit = playedCards[0].Card.Suit;
+
+            // Determine winner by comparing each card against the current best
+            var winnerIndex = 0;
+            for (var i = 1; i < playedCards.Count; i++)
+            {
+                if (CardComparer.Beats(playedCards[i].Card, playedCards[winnerIndex].Card, leadSuit, gameMode))
+                    winnerIndex = i;
+            }
+
+            tricks.Add(new CompletedTrick(
+                group.Key!.Value,
+                playedCards,
+                leadSuit,
+                playedCards[winnerIndex].Player));
+        }
+
+        return tricks;
     }
 }

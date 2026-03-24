@@ -1,10 +1,20 @@
 using Giretra.Core.Cards;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Core.Scoring;
 using Giretra.Core.State;
 using Giretra.Web.Players;
 
 namespace Giretra.Web.Achievements;
+
+/// <summary>
+/// A completed trick with its plays and winner, pre-computed for achievement rules.
+/// </summary>
+public sealed record CompletedTrick(
+    int TrickNumber,
+    IReadOnlyList<PlayedCard> Plays,
+    CardSuit LeadSuit,
+    PlayerPosition Winner);
 
 /// <summary>
 /// All the data an achievement rule needs to decide if it was earned.
@@ -66,6 +76,11 @@ public sealed record AchievementContext
     /// All negotiation actions in the current deal.
     /// </summary>
     public IReadOnlyList<RecordedAction> NegotiationActions { get; init; } = [];
+
+    /// <summary>
+    /// Completed tricks in the current deal, with pre-computed winners.
+    /// </summary>
+    public IReadOnlyList<CompletedTrick> Tricks { get; init; } = [];
 
     /// <summary>
     /// Achievement codes this player already has. Used to skip already-earned achievements.
