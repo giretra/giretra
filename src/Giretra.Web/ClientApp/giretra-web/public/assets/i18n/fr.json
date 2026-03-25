@@ -160,6 +160,9 @@
   "matchEnd.mode": "Mode",
   "matchEnd.sweep": "Capot",
   "matchEnd.autoClose": "Départ auto dans",
+  "matchEnd.achievementEarned": "Succès Débloqué",
+  "matchEnd.achievementsEarned": "{{count}} Succès Débloqués",
+  "matchEnd.achievementDeal": "Donne #{{deal}}",
 
   "scoreBar.yourTurn": "À vous",
   "scoreBar.dealNumber": "Donne {{number}}",

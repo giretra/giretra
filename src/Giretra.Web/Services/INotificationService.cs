@@ -48,6 +48,11 @@ public interface INotificationService
     Task NotifyMatchEndedAsync(string gameId, MatchState matchState);
 
     /// <summary>
+    /// Notifies all clients in a room that achievements were earned after match persistence.
+    /// </summary>
+    Task NotifyAchievementsEarnedAsync(string gameId, string roomId);
+
+    /// <summary>
     /// Notifies all clients in a room that a player joined.
     /// </summary>
     Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position);

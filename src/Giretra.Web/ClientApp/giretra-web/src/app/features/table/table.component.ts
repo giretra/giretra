@@ -199,6 +199,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
         <app-match-end-overlay
           [winner]="gameState.matchWinner()"
           [myTeam]="gameState.myTeam()"
+          [myPosition]="gameState.myPosition()"
           [team1Points]="gameState.team1MatchPoints()"
           [team2Points]="gameState.team2MatchPoints()"
           [totalDeals]="gameState.dealNumber() - 1"
@@ -208,6 +209,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
           [isWatcher]="gameState.isWatcher()"
           [idleDeadline]="gameState.idleDeadline()"
           [waiting]="waitingForContinue()"
+          [achievements]="gameState.earnedAchievements()"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
         />

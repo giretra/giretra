@@ -160,6 +160,9 @@
   "matchEnd.mode": "Mode",
   "matchEnd.sweep": "Sweep",
   "matchEnd.autoClose": "Auto-leave in",
+  "matchEnd.achievementEarned": "Achievement Unlocked",
+  "matchEnd.achievementsEarned": "{{count}} Achievements Unlocked",
+  "matchEnd.achievementDeal": "Deal #{{deal}}",
 
   "scoreBar.yourTurn": "Your turn",
   "scoreBar.dealNumber": "Deal {{number}}",

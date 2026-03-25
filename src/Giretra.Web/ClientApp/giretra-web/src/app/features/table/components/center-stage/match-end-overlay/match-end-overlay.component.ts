@@ -1,9 +1,9 @@
-import { Component, input, output, computed, inject } from '@angular/core';
-import { Team, DealRecapResponse } from '../../../../../api/generated/signalr-types.generated';
+import { Component, input, output, computed, inject, signal, effect } from '@angular/core';
+import { Team, DealRecapResponse, AchievementEarnedDto, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
 import { EloChangeResponse } from '../../../../../core/services/api.service';
 import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, Trophy, ArrowUp, ArrowDown, Zap } from 'lucide-angular';
+import { LucideAngularModule, Trophy, ArrowUp, ArrowDown, Zap, Star } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/turn-timer.component';
 import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
@@ -70,6 +70,44 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
             </div>
           } @else {
             <p class="deals-played">{{ t('matchEnd.dealsPlayed', { count: totalDeals() }) }}</p>
+          }
+
+          <!-- Achievements -->
+          @if (visibleAchievements().length > 0) {
+            <div class="achievements-section">
+              <div class="achievements-header">
+                <i-lucide [img]="StarIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                <span>{{ visibleAchievements().length === 1 ? t('matchEnd.achievementEarned') : t('matchEnd.achievementsEarned', { count: visibleAchievements().length }) }}</span>
+              </div>
+              <div class="achievements-list">
+                @for (ach of visibleAchievements(); track ach.code) {
+                  <div
+                    class="achievement-pill"
+                    [class.tier-high]="ach.tier >= 4"
+                    [class.tier-mid]="ach.tier === 3"
+                    [class.revealed]="revealedCodes().has(ach.code)"
+                    [class.hidden-ach]="ach.isHidden && !revealedCodes().has(ach.code)"
+                    [style.animation-delay]="$index * 200 + 'ms'"
+                  >
+                    <span class="ach-tier">
+                      @for (_ of tierDots(ach.tier); track $index) {
+                        <span class="tier-dot"></span>
+                      }
+                    </span>
+                    <span class="ach-body">
+                      @if (ach.isHidden && !revealedCodes().has(ach.code)) {
+                        <span class="ach-name ach-hidden-text">???</span>
+                      } @else {
+                        <span class="ach-name">{{ ach.name }}</span>
+                      }
+                      @if (ach.dealNumber) {
+                        <span class="ach-deal">{{ t('matchEnd.achievementDeal', { deal: ach.dealNumber }) }}</span>
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
           }
 
         </div>
@@ -320,6 +358,117 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
       margin: 0 0 0.75rem;
     }
 
+    /* ── Achievements ── */
+
+    .achievements-section {
+      margin-bottom: 0.75rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .achievements-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--gold));
+      margin-bottom: 0.5rem;
+    }
+
+    .achievements-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .achievement-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.5rem;
+      background: hsl(var(--secondary));
+      border: 1px solid hsl(var(--border));
+      text-align: left;
+      animation: pillIn 0.3s ease both;
+    }
+
+    @keyframes pillIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .achievement-pill.tier-mid {
+      border-color: hsl(var(--gold) / 0.3);
+    }
+
+    .achievement-pill.tier-high {
+      border-color: hsl(var(--gold) / 0.5);
+      background: hsl(var(--gold) / 0.06);
+      animation: pillIn 0.3s ease both, shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { box-shadow: 0 0 0 0 hsl(var(--gold) / 0); }
+      50% { box-shadow: 0 0 8px 0 hsl(var(--gold) / 0.15); }
+    }
+
+    /* Hidden achievement pre-reveal */
+    .achievement-pill.hidden-ach {
+      border-style: dashed;
+    }
+
+    .achievement-pill.hidden-ach .ach-hidden-text {
+      font-style: italic;
+      color: hsl(var(--muted-foreground));
+      letter-spacing: 0.1em;
+    }
+
+    /* Reveal transition */
+    .achievement-pill .ach-name {
+      transition: all 0.3s ease;
+    }
+
+    .ach-tier {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .tier-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 9999px;
+      background: hsl(var(--gold));
+    }
+
+    .ach-body {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .ach-name {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      line-height: 1.3;
+    }
+
+    .ach-deal {
+      font-size: 0.625rem;
+      color: hsl(var(--muted-foreground));
+      line-height: 1.2;
+    }
+
     /* ── ELO ── */
 
     .elo-card {
@@ -392,9 +541,11 @@ export class MatchEndOverlayComponent {
   readonly ArrowUpIcon = ArrowUp;
   readonly ArrowDownIcon = ArrowDown;
   readonly ZapIcon = Zap;
+  readonly StarIcon = Star;
 
   readonly winner = input<Team | null>(null);
   readonly myTeam = input<Team | null>(null);
+  readonly myPosition = input<PlayerPosition | null>(null);
   readonly team1Points = input<number>(0);
   readonly team2Points = input<number>(0);
   readonly totalDeals = input<number>(0);
@@ -404,6 +555,7 @@ export class MatchEndOverlayComponent {
   readonly isWatcher = input<boolean>(false);
   readonly idleDeadline = input<Date | null>(null);
   readonly waiting = input<boolean>(false);
+  readonly achievements = input<AchievementEarnedDto[]>([]);
 
   private static readonly COLOUR_MODES = new Set(['ColourClubs', 'ColourDiamonds', 'ColourHearts', 'ColourSpades']);
   isColourMode(mode: string): boolean {
@@ -431,4 +583,46 @@ export class MatchEndOverlayComponent {
 
   readonly team1Label = computed(() => getTeamLabel('Team1', this.myTeam(), (k) => this.transloco.translate(k)));
   readonly team2Label = computed(() => getTeamLabel('Team2', this.myTeam(), (k) => this.transloco.translate(k)));
+
+  /** Filter achievements to current player only, sorted by tier descending */
+  readonly myAchievements = computed(() => {
+    const pos = this.myPosition();
+    if (!pos) return [];
+    return this.achievements()
+      .filter(a => a.playerPosition === pos)
+      .sort((a, b) => b.tier - a.tier);
+  });
+
+  /** Achievements currently visible (drives stagger — updated as reveals complete) */
+  readonly visibleAchievements = this.myAchievements;
+
+  /** Tracks which hidden achievements have been revealed */
+  readonly revealedCodes = signal<Set<string>>(new Set());
+
+  constructor() {
+    // When achievements arrive, schedule reveal for hidden ones
+    effect(() => {
+      const achs = this.myAchievements();
+      if (achs.length === 0) return;
+
+      const hiddenCodes = achs.filter(a => a.isHidden).map(a => a.code);
+      if (hiddenCodes.length === 0) return;
+
+      // Reveal hidden achievements after a delay (stagger base + 400ms per achievement)
+      hiddenCodes.forEach((code, i) => {
+        const delay = (achs.length * 200) + 400 + (i * 300);
+        setTimeout(() => {
+          this.revealedCodes.update(set => {
+            const next = new Set(set);
+            next.add(code);
+            return next;
+          });
+        }, delay);
+      });
+    });
+  }
+
+  tierDots(tier: number): number[] {
+    return Array.from({ length: Math.min(tier, 5) });
+  }
 }
