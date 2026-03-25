@@ -19,7 +19,8 @@
       "applicationUrl": "http://localhost:5067",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "Giretra_Db_User": "giretra_app"
+        "Giretra_Db_User": "giretra_app",
+        "DebugAchievements": "true"
       }
     }
   }

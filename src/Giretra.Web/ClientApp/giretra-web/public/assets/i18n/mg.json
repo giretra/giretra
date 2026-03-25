@@ -160,6 +160,9 @@
   "matchEnd.mode": "Karazana",
   "matchEnd.sweep": "Capot",
   "matchEnd.autoClose": "Hiala ho azy ao anatin'ny",
+  "matchEnd.achievementEarned": "Zava-bita Voasokafy",
+  "matchEnd.achievementsEarned": "{{count}} Zava-bita Voasokafy",
+  "matchEnd.achievementDeal": "Fizarana #{{deal}}",
 
   "scoreBar.yourTurn": "Anjaranao",
   "scoreBar.dealNumber": "Fizarana {{number}}",
