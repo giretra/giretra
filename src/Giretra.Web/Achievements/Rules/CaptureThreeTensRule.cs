@@ -15,7 +15,7 @@ public sealed class CaptureThreeTensRule : IAchievementRule
     public string Category => "style";
     public int Tier => 3;
     public string? IconName => null;
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 460;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

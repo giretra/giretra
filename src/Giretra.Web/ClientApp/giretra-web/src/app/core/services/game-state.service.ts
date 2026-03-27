@@ -695,7 +695,6 @@ export class GameStateService {
       this._gameId.set(event.gameId);
       this._idleDeadline.set(null);
       this._matchDealHistory.set([]);
-      this._earnedAchievements.set([]);
       this._currentDealDealer = null;
       this._currentDealNumber = 0;
       // Also refresh the room to get updated status

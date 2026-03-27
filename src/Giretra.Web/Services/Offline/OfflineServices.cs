@@ -1,9 +1,13 @@
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using Giretra.Core.Cards;
+using Giretra.Core.Play;
 using Giretra.Core.Players;
 using Giretra.Model.Entities;
+using Giretra.Web.Achievements;
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Responses;
+using Giretra.Web.Players;
 using Giretra.Web.Services.Elo;
 using UserRole = Giretra.Model.Enums.UserRole;
 
@@ -53,12 +57,176 @@ public sealed class OfflineUserSyncService : IUserSyncService
 }
 
 /// <summary>
-/// No-op match persistence (no database to write to).
+/// Offline match persistence: no database writes but evaluates achievements in-memory.
+/// Skips ranked/rating eligibility checks so achievements can be tested offline.
 /// </summary>
 public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
 {
-    public Task PersistCompletedMatchAsync(GameSession session) => Task.CompletedTask;
+    private readonly IEnumerable<IAchievementRule> _rules;
+    private readonly ILogger<OfflineMatchPersistenceService> _logger;
+    private readonly HashSet<string> _earnedCodes = [];
+
+    public OfflineMatchPersistenceService(
+        IEnumerable<IAchievementRule> rules,
+        ILogger<OfflineMatchPersistenceService> logger)
+    {
+        _rules = rules;
+        _logger = logger;
+    }
+
+    public async Task PersistCompletedMatchAsync(GameSession session)
+    {
+        var matchState = session.MatchState;
+        if (matchState == null) return;
+
+        var dealRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.DealEnd)).ToList();
+        var matchRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.MatchEnd)).ToList();
+        if (dealRules.Count == 0 && matchRules.Count == 0) return;
+
+        var recordedDeals = session.ActionRecorder?.GetDeals() ?? [];
+
+        // Find human player positions (no DB lookup — use a deterministic fake ID)
+        var humanPlayers = new Dictionary<PlayerPosition, Guid>();
+        foreach (var position in Enum.GetValues<PlayerPosition>())
+        {
+            var info = session.PlayerComposition[position];
+            if (!info.IsBot)
+                humanPlayers[position] = info.UserId ?? Guid.NewGuid();
+        }
+
+        if (humanPlayers.Count == 0) return;
+
+        // Pass 1: deal-level rules
+        foreach (var (i, dealResult) in matchState.CompletedDeals.Select((d, i) => (i, d)))
+        {
+            var dealNumber = (short)(i + 1);
+            var recordedDeal = recordedDeals.FirstOrDefault(rd => rd.DealNumber == dealNumber);
+
+            foreach (var (position, playerId) in humanPlayers)
+            {
+                var context = BuildContext(
+                    AchievementTrigger.DealEnd, dealResult, dealNumber,
+                    matchState, position, playerId, recordedDeal, _earnedCodes);
+
+                await EvaluateRulesAsync(dealRules, context, dealNumber, session);
+            }
+        }
+
+        // Pass 2: match-level rules
+        var lastRecordedDeal = recordedDeals.LastOrDefault();
+        foreach (var (position, playerId) in humanPlayers)
+        {
+            var context = BuildContext(
+                AchievementTrigger.MatchEnd, null, null,
+                matchState, position, playerId, lastRecordedDeal, _earnedCodes);
+
+            await EvaluateRulesAsync(matchRules, context, null, session);
+        }
+
+        if (session.EarnedAchievements.Count > 0)
+            _logger.LogInformation("Offline: {Count} achievement(s) earned", session.EarnedAchievements.Count);
+    }
+
     public Task PersistAbandonedMatchAsync(GameSession session, PlayerPosition abandonerPosition) => Task.CompletedTask;
+
+    private async Task EvaluateRulesAsync(
+        List<IAchievementRule> rules, AchievementContext context, short? dealNumber, GameSession session)
+    {
+        foreach (var rule in rules)
+        {
+            if (_earnedCodes.Contains(rule.Code)) continue;
+
+            try
+            {
+                if (!await rule.IsEarnedAsync(context)) continue;
+
+                _earnedCodes.Add(rule.Code);
+                session.EarnedAchievements.Add(new EarnedAchievementInfo(
+                    context.PlayerPosition, rule.Code, rule.Name,
+                    rule.Category, rule.Tier, rule.IconName, rule.IsHidden, dealNumber));
+
+                _logger.LogInformation("Offline: achievement {Code} earned at position {Position}",
+                    rule.Code, context.PlayerPosition);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error evaluating offline achievement {Code}", rule.Code);
+            }
+        }
+    }
+
+    private static AchievementContext BuildContext(
+        AchievementTrigger trigger, Core.Scoring.DealResult? dealResult, short? dealNumber,
+        Core.State.MatchState matchState, PlayerPosition position, Guid playerId,
+        RecordedDeal? recordedDeal, IReadOnlySet<string> alreadyEarned)
+    {
+        var initialHand = recordedDeal?.InitialHands.GetValueOrDefault(position)
+            ?? (IReadOnlyList<Card>)[];
+        var fullHand = recordedDeal?.FullHands.GetValueOrDefault(position)
+            ?? (IReadOnlyList<Card>)[];
+
+        var negotiationActions = recordedDeal?.Actions
+            .Where(a => a.ActionType is RecordedActionType.Announce
+                or RecordedActionType.Accept
+                or RecordedActionType.Double
+                or RecordedActionType.Redouble
+                or RecordedActionType.ReRedouble)
+            .ToList() ?? [];
+
+        var tricks = BuildTricks(recordedDeal, dealResult);
+
+        return new AchievementContext
+        {
+            Trigger = trigger,
+            DealResult = dealResult,
+            DealNumber = dealNumber,
+            MatchState = matchState,
+            CompletedDeals = matchState.CompletedDeals,
+            PlayerPosition = position,
+            PlayerTeam = position.GetTeam(),
+            PlayerId = playerId,
+            InitialHand = initialHand,
+            FullHand = fullHand,
+            NegotiationActions = negotiationActions,
+            Tricks = tricks,
+            AlreadyEarnedCodes = alreadyEarned
+        };
+    }
+
+    private static List<CompletedTrick> BuildTricks(RecordedDeal? recordedDeal, Core.Scoring.DealResult? dealResult)
+    {
+        if (recordedDeal == null || dealResult == null) return [];
+
+        var gameMode = dealResult.GameMode;
+        var playActions = recordedDeal.Actions
+            .Where(a => a.ActionType is RecordedActionType.PlayCard)
+            .GroupBy(a => a.TrickNumber)
+            .OrderBy(g => g.Key);
+
+        var tricks = new List<CompletedTrick>();
+        foreach (var group in playActions)
+        {
+            var plays = group.OrderBy(a => a.ActionOrder).ToList();
+            if (plays.Count != 4) continue;
+
+            var playedCards = plays
+                .Select(a => new PlayedCard(a.PlayerPosition, new Card(a.CardRank!.Value, a.CardSuit!.Value)))
+                .ToList();
+
+            var leadSuit = playedCards[0].Card.Suit;
+            var winnerIndex = 0;
+            for (var j = 1; j < playedCards.Count; j++)
+            {
+                if (CardComparer.Beats(playedCards[j].Card, playedCards[winnerIndex].Card, leadSuit, gameMode))
+                    winnerIndex = j;
+            }
+
+            tricks.Add(new CompletedTrick(
+                group.Key!.Value, playedCards, leadSuit, playedCards[winnerIndex].Player));
+        }
+
+        return tricks;
+    }
 }
 
 /// <summary>
@@ -208,6 +376,13 @@ public static class ServiceCollectionExtensions
         var userSync = new OfflineUserSyncService();
         services.AddSingleton(userSync);
         services.AddSingleton<IUserSyncService>(userSync);
+
+        // Achievement rules (same discovery as online mode, no DB sync needed)
+        var achievementRuleTypes = typeof(IAchievementRule).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false }
+                && typeof(IAchievementRule).IsAssignableFrom(t));
+        foreach (var type in achievementRuleTypes)
+            services.AddSingleton(typeof(IAchievementRule), type);
 
         services.AddSingleton<IMatchPersistenceService, OfflineMatchPersistenceService>();
         services.AddSingleton<IEloService, OfflineEloService>();

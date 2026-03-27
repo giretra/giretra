@@ -13,7 +13,7 @@ public sealed class SweepInColourDoubledRule : IAchievementRule
     public string Category => "scoring";
     public int Tier => 5;
     public string? IconName => "sweep";
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 120;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

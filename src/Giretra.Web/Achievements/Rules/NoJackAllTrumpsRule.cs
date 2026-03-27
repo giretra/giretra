@@ -15,7 +15,7 @@ public sealed class NoJackAllTrumpsRule : IAchievementRule
     public string Category => "style";
     public int Tier => 5;
     public string? IconName => null;
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 420;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

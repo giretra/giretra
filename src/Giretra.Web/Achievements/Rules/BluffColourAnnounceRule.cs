@@ -15,7 +15,7 @@ public sealed class BluffColourAnnounceRule : IAchievementRule
     public string Category => "style";
     public int Tier => 4;
     public string? IconName => null;
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 440;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

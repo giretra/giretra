@@ -1,11 +1,11 @@
-import { Component, inject, OnInit, OnDestroy, effect, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, effect, signal, computed } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService, GamePhase, MultiplierState } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { FullscreenService } from '../../core/services/fullscreen.service';
-import { GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
+import { AchievementEarnedDto, GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
@@ -20,7 +20,7 @@ import { ChatPopupComponent } from './components/chat-popup/chat-popup.component
 import { ChatService } from '../../core/services/chat.service';
 import { environment } from '../../../environments/environment';
 import { SoundService } from '../../core/services/sound.service';
-import { LucideAngularModule, Maximize, MessageCircle } from 'lucide-angular';
+import { LucideAngularModule, Maximize, MessageCircle, Award, X } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
@@ -213,6 +213,61 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
         />
+      }
+
+      <!-- Achievements FAB -->
+      @if (myAchievements().length > 0 && !showAchievementsPopup()) {
+        <button class="achievements-fab" (click)="showAchievementsPopup.set(true)" [title]="t('achievements.title')">
+          <i-lucide [img]="AwardIcon" [size]="18" [strokeWidth]="1.5"></i-lucide>
+          <span class="achievements-fab-badge">{{ myAchievements().length }}</span>
+        </button>
+      }
+
+      <!-- Achievements Popup -->
+      @if (showAchievementsPopup() && myAchievements().length > 0) {
+        <div class="achievements-popup-backdrop" (click)="showAchievementsPopup.set(false)">
+          <div class="achievements-popup" (click)="$event.stopPropagation()">
+            <div class="achievements-popup-header">
+              <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+              <span>{{ myAchievements().length === 1 ? t('achievements.earned') : t('achievements.earnedMultiple', { count: myAchievements().length }) }}</span>
+              <button class="achievements-popup-close" (click)="showAchievementsPopup.set(false)">
+                <i-lucide [img]="XIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+              </button>
+            </div>
+            <div class="achievements-popup-list">
+              @for (ach of myAchievements(); track ach.code) {
+                <div
+                  class="ach-item"
+                  [class.tier-high]="ach.tier >= 4"
+                  [class.tier-mid]="ach.tier === 3"
+                  [class.hidden-ach]="ach.isHidden"
+                  [class.expanded]="expandedAchievement() === ach.code"
+                  [style.animation-delay]="$index * 100 + 'ms'"
+                  (click)="toggleAchievementExpand(ach.code)"
+                >
+                  <div class="ach-info">
+                    @if (ach.isHidden) {
+                      <span class="ach-name ach-hidden-text">???</span>
+                    } @else {
+                      <span class="ach-name">{{ ach.name }}</span>
+                    }
+                    <span class="ach-stars">
+                      @for (_ of tierDots(ach.tier); track $index) {
+                        <span class="ach-star filled" [style.animation-delay]="($index * 80) + 'ms'">★</span>
+                      }
+                      @for (_ of tierDots(5 - ach.tier); track $index) {
+                        <span class="ach-star empty">★</span>
+                      }
+                    </span>
+                    @if (expandedAchievement() === ach.code && !ach.isHidden) {
+                      <span class="ach-desc">{{ t('achievements.desc.' + ach.code) }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
       }
 
       <!-- Chat FAB -->
@@ -485,6 +540,266 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
         width: 2.75rem;
         height: 2.75rem;
       }
+      .achievements-fab {
+        bottom: 0.5rem;
+        left: 0.5rem;
+        width: 2.25rem;
+        height: 2.25rem;
+      }
+    }
+
+    /* ── Achievements FAB ── */
+    .achievements-fab {
+      position: fixed;
+      bottom: 0.625rem;
+      left: 0.625rem;
+      z-index: 50;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: none;
+      background: hsl(var(--gold));
+      color: hsl(220 20% 10%);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow:
+        0 2px 12px hsl(var(--gold) / 0.4),
+        0 0 20px hsl(var(--gold) / 0.15);
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+      animation: achFabIn 0.5s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .achievements-fab::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 1.5px solid hsl(var(--gold) / 0.4);
+      animation: achPulse 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .achievements-fab:hover {
+      transform: scale(1.1);
+      box-shadow:
+        0 4px 20px hsl(var(--gold) / 0.5),
+        0 0 30px hsl(var(--gold) / 0.2);
+    }
+
+    .achievements-fab:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes achFabIn {
+      0% { opacity: 0; transform: scale(0) rotate(-180deg); }
+      60% { transform: scale(1.15) rotate(10deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes achPulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0; transform: scale(1.25); }
+    }
+
+    .achievements-fab-badge {
+      position: absolute;
+      top: -0.1875rem;
+      right: -0.1875rem;
+      min-width: 0.9375rem;
+      height: 0.9375rem;
+      padding: 0 0.25rem;
+      border-radius: 9999px;
+      background: hsl(var(--primary));
+      color: #fff;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      pointer-events: none;
+      box-shadow: 0 1px 4px hsl(0 0% 0% / 0.25);
+      animation: badgePop 0.2s cubic-bezier(0.2, 0, 0, 1) 0.4s both;
+    }
+
+    /* ── Achievements Popup ── */
+    .achievements-popup-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 110;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 1.25rem;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .achievements-popup {
+      width: 320px;
+      max-height: 60vh;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4);
+      backdrop-filter: blur(40px) saturate(1.8);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: achPopupIn 0.25s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes achPopupIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .achievements-popup-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid hsl(var(--border));
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: hsl(var(--gold));
+    }
+
+    .achievements-popup-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 0.375rem;
+      display: grid;
+      place-items: center;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .achievements-popup-close:hover {
+      color: hsl(var(--foreground));
+      background: hsl(var(--muted) / 0.5);
+    }
+
+    .achievements-popup-list {
+      padding: 0.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .ach-item {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.5rem 0.625rem;
+      border-radius: 0.625rem;
+      background: hsl(var(--secondary) / 0.5);
+      border: 1px solid hsl(var(--border) / 0.5);
+      animation: achItemIn 0.3s ease both;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .ach-item:hover {
+      background: hsl(var(--secondary) / 0.8);
+    }
+
+    .ach-item.expanded {
+      align-items: flex-start;
+    }
+
+    .ach-item.tier-high {
+      border-color: hsl(var(--gold) / 0.4);
+      background: hsl(var(--gold) / 0.08);
+      box-shadow: 0 0 12px hsl(var(--gold) / 0.1);
+    }
+
+    .ach-item.tier-mid {
+      border-color: hsl(var(--gold) / 0.25);
+    }
+
+    .ach-item.hidden-ach {
+      border-style: dashed;
+    }
+
+    @keyframes achItemIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .ach-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1875rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .ach-name {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: hsl(var(--foreground));
+    }
+
+    .ach-stars {
+      display: flex;
+      gap: 1px;
+    }
+
+    .ach-star {
+      font-size: 0.6875rem;
+      line-height: 1;
+    }
+
+    .ach-star.filled {
+      color: hsl(var(--gold));
+      animation: starPop 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+    }
+
+    .ach-star.empty {
+      color: hsl(var(--muted) / 0.6);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.3); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .ach-hidden-text {
+      color: hsl(var(--muted-foreground));
+      font-style: italic;
+    }
+
+    .ach-desc {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      line-height: 1.4;
+      margin-top: 0.25rem;
+      animation: descIn 0.2s ease;
+    }
+
+    @keyframes descIn {
+      from { opacity: 0; max-height: 0; }
+      to { opacity: 1; max-height: 4rem; }
+    }
+
+    @media (max-width: 480px) {
+      .achievements-popup-backdrop {
+        padding: 0.75rem;
+      }
+      .achievements-popup {
+        width: 280px;
+      }
     }
   `],
 })
@@ -503,6 +818,8 @@ export class TableComponent implements OnInit, OnDestroy {
 
   readonly MaximizeIcon = Maximize;
   readonly MessageCircleIcon = MessageCircle;
+  readonly AwardIcon = Award;
+  readonly XIcon = X;
 
   readonly profilePopupData = signal<PlayerProfileResponse | null>(null);
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
@@ -510,6 +827,15 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly showNegotiationHistory = signal(false);
   readonly showMatchHistory = signal(false);
   readonly showFullscreenSuggestion = signal(false);
+  readonly showAchievementsPopup = signal(false);
+  readonly expandedAchievement = signal<string | null>(null);
+
+  readonly myAchievements = computed(() => {
+    const pos = this.gameState.myPosition();
+    const all = this.gameState.earnedAchievements();
+    if (!pos || !all.length) return [];
+    return all.filter(a => a.playerPosition === pos).sort((a, b) => b.tier - a.tier);
+  });
 
   readonly gameModePopup = signal<{
     mode: GameMode;
@@ -557,6 +883,14 @@ export class TableComponent implements OnInit, OnDestroy {
       const phase = this.gameState.phase();
       if (phase !== 'dealSummary' && phase !== 'matchEnd') {
         this.waitingForContinue.set(false);
+      }
+    });
+
+    // Log achievements when earned
+    effect(() => {
+      const achs = this.myAchievements();
+      if (achs.length > 0) {
+        console.log(`[Table] 🏆 ${achs.length} achievement(s) earned:`, achs.map(a => `${a.name} (tier ${a.tier})`));
       }
     });
 
@@ -951,6 +1285,14 @@ export class TableComponent implements OnInit, OnDestroy {
 
   closeProfilePopup(): void {
     this.profilePopupData.set(null);
+  }
+
+  tierDots(tier: number): number[] {
+    return Array.from({ length: Math.min(tier, 5) });
+  }
+
+  toggleAchievementExpand(code: string): void {
+    this.expandedAchievement.update(c => c === code ? null : code);
   }
 
   async onLeaveTable(): Promise<void> {

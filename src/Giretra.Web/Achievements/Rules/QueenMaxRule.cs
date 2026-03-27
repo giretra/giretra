@@ -14,7 +14,7 @@ public sealed class QueenMaxRule : IAchievementRule
     public string Category => "style";
     public int Tier => 4;
     public string? IconName => "mama";
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 400;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 
