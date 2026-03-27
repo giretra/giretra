@@ -16,7 +16,7 @@ public sealed class CaptureThreeNinesRule : IAchievementRule
     public string Category => "style";
     public int Tier => 4;
     public string? IconName => null;
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 450;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

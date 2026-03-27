@@ -13,7 +13,7 @@ public sealed class SweepNoTrumpsDoubledRule : IAchievementRule
     public string Category => "scoring";
     public int Tier => 5;
     public string? IconName => "sweep";
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 110;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

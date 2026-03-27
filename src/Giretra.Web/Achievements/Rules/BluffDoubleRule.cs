@@ -16,7 +16,7 @@ public sealed class BluffDoubleRule : IAchievementRule
     public string Category => "style";
     public int Tier => 2;
     public string? IconName => null;
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 480;
     public AchievementTrigger Trigger => AchievementTrigger.DealEnd;
 

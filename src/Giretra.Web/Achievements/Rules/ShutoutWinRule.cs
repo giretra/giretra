@@ -13,7 +13,7 @@ public sealed class ShutoutWinRule : IAchievementRule
     public string Category => "scoring";
     public int Tier => 5;
     public string? IconName => "trophy";
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 130;
     public AchievementTrigger Trigger => AchievementTrigger.MatchEnd;
 

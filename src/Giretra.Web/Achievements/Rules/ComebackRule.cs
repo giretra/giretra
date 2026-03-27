@@ -13,7 +13,7 @@ public sealed class ComebackRule : IAchievementRule
     public string Category => "milestones";
     public int Tier => 3;
     public string? IconName => "trophy";
-    public bool IsHidden => true;
+    public bool IsHidden => false;
     public int SortOrder => 200;
     public AchievementTrigger Trigger => AchievementTrigger.MatchEnd;
 
