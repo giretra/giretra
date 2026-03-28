@@ -72,6 +72,16 @@ export const routes: Routes = [
       import('./features/settings/settings.component').then((m) => m.SettingsComponent),
   },
   {
+    path: 'achievements',
+    loadComponent: () =>
+      import('./features/achievements/achievements.component').then((m) => m.AchievementsComponent),
+  },
+  {
+    path: 'achievements/:playerId',
+    loadComponent: () =>
+      import('./features/achievements/achievements.component').then((m) => m.AchievementsComponent),
+  },
+  {
     path: 'leaderboard',
     loadComponent: () =>
       import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),

@@ -6,6 +6,7 @@ using Giretra.Core.Players;
 using Giretra.Web.Domain;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -32,7 +33,8 @@ public sealed class GameServiceTests
         _loggerFactory = Substitute.For<ILoggerFactory>();
         var aiRegistry = AiPlayerRegistry.CreateFromAssembly();
         var serviceProvider = Substitute.For<IServiceProvider>();
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, _logger, _loggerFactory);
+        var configuration = Substitute.For<IConfiguration>();
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, configuration, _logger, _loggerFactory);
     }
 
     #region CreateGame Tests

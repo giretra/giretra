@@ -5,6 +5,7 @@ using Giretra.Web.Domain;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -36,7 +37,8 @@ public sealed class RoomToGameFlowTests
 
         var aiRegistry = AiPlayerRegistry.CreateFromAssembly();
         var serviceProvider = Substitute.For<IServiceProvider>();
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, logger, loggerFactory);
+        var configuration = Substitute.For<IConfiguration>();
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, configuration, logger, loggerFactory);
         _roomService = new RoomService(_roomRepository, _gameService, _notifications, Substitute.For<IChatService>(), aiRegistry, Substitute.For<ILogger<RoomService>>());
         serviceProvider.GetService(typeof(IRoomService)).Returns(_roomService);
     }

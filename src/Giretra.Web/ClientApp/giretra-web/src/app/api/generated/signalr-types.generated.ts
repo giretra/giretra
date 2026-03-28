@@ -191,6 +191,22 @@ export interface MatchEndedEvent {
   completedDeals: DealRecapResponse[];
 }
 
+export interface AchievementEarnedDto {
+  playerPosition: PlayerPosition;
+  code: string;
+  name: string;
+  category: string;
+  tier: number;
+  iconName: string | null;
+  isHidden: boolean;
+  dealNumber: number | null;
+}
+
+export interface AchievementsEarnedEvent {
+  gameId: string;
+  achievements: AchievementEarnedDto[];
+}
+
 export interface PlayerKickedEvent {
   roomId: string;
   playerName: string;
@@ -257,6 +273,7 @@ export interface GameHubEvents {
   onCardPlayed(callback: (event: CardPlayedEvent) => void): void;
   onTrickCompleted(callback: (event: TrickCompletedEvent) => void): void;
   onMatchEnded(callback: (event: MatchEndedEvent) => void): void;
+  onAchievementsEarned(callback: (event: AchievementsEarnedEvent) => void): void;
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
@@ -281,6 +298,7 @@ export const GameHubEventNames = {
   CardPlayed: 'CardPlayed',
   TrickCompleted: 'TrickCompleted',
   MatchEnded: 'MatchEnded',
+  AchievementsEarned: 'AchievementsEarned',
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',
   RoomIdleClosed: 'RoomIdleClosed',

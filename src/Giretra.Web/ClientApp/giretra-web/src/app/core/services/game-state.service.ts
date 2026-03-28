@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AchievementEarnedDto,
   CardResponse,
   CardPointsBreakdownResponse,
   CardPlayType,
@@ -382,6 +383,10 @@ export class GameStateService {
 
   /** Completed deal recaps (only available when match is complete) */
   readonly completedDeals = computed(() => this._gameState()?.completedDeals ?? null);
+
+  /** Achievements earned during the match */
+  private readonly _earnedAchievements = signal<AchievementEarnedDto[]>([]);
+  readonly earnedAchievements = this._earnedAchievements.asReadonly();
 
   /** Match deal history (accumulated during the match from events) */
   readonly matchDealHistory = this._matchDealHistory.asReadonly();
@@ -845,6 +850,7 @@ export class GameStateService {
     this.hub.matchEnded$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: matchEnded', event);
       this._turnTimeoutAt.set(null);
+      this._earnedAchievements.set([]);
       this.refreshState();
       // Refresh room to pick up new idleDeadline (room resets to Waiting after match)
       const room = this._currentRoom();
@@ -854,6 +860,12 @@ export class GameStateService {
           this._idleDeadline.set(r.idleDeadline ? new Date(r.idleDeadline) : null);
         });
       }
+    });
+
+    // Achievements earned (arrives after match persistence)
+    this.hub.achievementsEarned$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: achievementsEarned', event);
+      this._earnedAchievements.set(event.achievements);
     });
 
     // Player kicked

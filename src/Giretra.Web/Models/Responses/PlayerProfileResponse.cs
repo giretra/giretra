@@ -3,8 +3,10 @@ namespace Giretra.Web.Models.Responses;
 public sealed class PlayerProfileResponse
 {
     // Common
+    public Guid? PlayerId { get; init; }
     public required string DisplayName { get; init; }
     public required bool IsBot { get; init; }
+    public int AchievementCount { get; init; }
     public required int GamesPlayed { get; init; }
     public required int GamesWon { get; init; }
     public required int WinStreak { get; init; }

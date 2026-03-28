@@ -8,5 +8,6 @@ public sealed class LeaderboardPlayerEntry
     public string? AvatarUrl { get; init; }
     public required int Rating { get; init; }
     public required int GamesPlayed { get; init; }
+    public int AchievementCount { get; set; }
     public required double WinRate { get; init; }
 }

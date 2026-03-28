@@ -4,6 +4,7 @@ using Giretra.Core.GameModes;
 using Giretra.Core.Negotiation;
 using Giretra.Core.Players;
 using Giretra.Core.State;
+using Giretra.Web.Achievements;
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Players;
@@ -22,6 +23,7 @@ public sealed class GameService : IGameService
     private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -31,6 +33,7 @@ public sealed class GameService : IGameService
         INotificationService notifications,
         AiPlayerRegistry aiRegistry,
         IServiceProvider serviceProvider,
+        IConfiguration configuration,
         ILogger<GameService> logger,
         ILoggerFactory loggerFactory)
     {
@@ -38,6 +41,7 @@ public sealed class GameService : IGameService
         _roomRepository = roomRepository;
         _notifications = notifications;
         _aiRegistry = aiRegistry;
+        _configuration = configuration;
         _serviceProvider = serviceProvider;
         _logger = logger;
         _loggerFactory = loggerFactory;
@@ -172,6 +176,13 @@ public sealed class GameService : IGameService
                 // so ratings and history are up-to-date when clients navigate away.
                 if (session.IsRanked && session.CompletedAt != null)
                     await PersistMatchAsync(session);
+
+                // Debug: inject fake achievements when DebugAchievements is enabled
+                if (string.Equals(_configuration["DebugAchievements"], "true", StringComparison.OrdinalIgnoreCase)
+                    && session.CompletedAt != null)
+                {
+                    await InjectDebugAchievementsAsync(session);
+                }
 
                 var roomService = _serviceProvider.GetRequiredService<IRoomService>();
                 roomService.ResetToWaiting(room.RoomId);
@@ -503,7 +514,10 @@ public sealed class GameService : IGameService
                     EloAfter = kvp.Value.EloAfter,
                     EloChange = kvp.Value.EloChange
                 }),
-            CompletedDeals = matchState.IsComplete ? NotificationService.MapToCompletedDeals(matchState) : null
+            CompletedDeals = matchState.IsComplete ? NotificationService.MapToCompletedDeals(matchState) : null,
+            Achievements = matchState.IsComplete && session.EarnedAchievements.Count > 0
+                ? session.EarnedAchievements
+                : null
         };
     }
 
@@ -738,10 +752,45 @@ public sealed class GameService : IGameService
             using var scope = _serviceProvider.CreateScope();
             var persistence = scope.ServiceProvider.GetRequiredService<IMatchPersistenceService>();
             await persistence.PersistCompletedMatchAsync(session);
+
+            // Notify achievements after persistence (achievements are evaluated during persistence)
+            if (session.EarnedAchievements.Count > 0)
+            {
+                var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                await notifications.NotifyAchievementsEarnedAsync(session.GameId, session.RoomId);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist match for game {GameId}", session.GameId);
+        }
+    }
+
+    private async Task InjectDebugAchievementsAsync(GameSession session)
+    {
+        try
+        {
+            // Find the human player position (fall back to Bottom)
+            var humanPosition = Enum.GetValues<PlayerPosition>()
+                .FirstOrDefault(p => session.PlayerComposition.TryGetValue(p, out var info)
+                    && !info.IsBot);
+
+            var lastDeal = (short)Math.Max(1, session.MatchState?.CompletedDeals.Count ?? 1);
+
+            session.EarnedAchievements.AddRange([
+                new EarnedAchievementInfo(humanPosition, "tapakazo_no_mba_basy", "Tapakazo no mba basy", "style", 3, null, false, lastDeal),
+                new EarnedAchievementInfo(humanPosition, "laoka_na_vary_tena_tsara_sy_lafo", "Laoka na vary, tena tsara sy lafo", "style", 3, null, false, (short)(lastDeal - 1 > 0 ? lastDeal - 1 : lastDeal)),
+            ]);
+
+            _logger.LogInformation(
+                "Debug: injected {Count} achievements for position {Position} in game {GameId}",
+                session.EarnedAchievements.Count, humanPosition, session.GameId);
+
+            await _notifications.NotifyAchievementsEarnedAsync(session.GameId, session.RoomId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to inject debug achievements for game {GameId}", session.GameId);
         }
     }
 }

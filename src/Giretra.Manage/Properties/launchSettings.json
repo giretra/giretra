@@ -21,9 +21,17 @@
       "commandName": "Project",
       "commandLineArgs": "benchmark random-node-bot Eva"
     },
+    "Benchmark (Razazavavy vs Eva)": {
+      "commandName": "Project",
+      "commandLineArgs": "benchmark Razazavavy Eva -s 17"
+    },
     "Swiss (all agents)": {
       "commandName": "Project",
       "commandLineArgs": "swiss"
+    },
+    "Swiss (internal bots)": {
+      "commandName": "Project",
+      "commandLineArgs": "swiss Eva Baomijijy Razazavavy MasayMasay"
     },
     "Swiss (bot vs eva)": {
       "commandName": "Project",

@@ -78,7 +78,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                     <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
                     <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
                     <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                    <div class="col-games">{{ t('leaderboard.columns.games') }}</div>
+                    <div class="col-games">{{ t('achievements.page.title') }}</div>
                     <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
                   </div>
 
@@ -104,7 +104,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                         <span class="entry-name">{{ p.displayName }}</span>
                       </div>
                       <div class="col-rating">{{ p.rating }}</div>
-                      <div class="col-games">{{ p.gamesPlayed }}</div>
+                      <div class="col-games">{{ p.achievementCount }}</div>
                       <div class="col-winrate">{{ p.winRate }}%</div>
                     </div>
                   }

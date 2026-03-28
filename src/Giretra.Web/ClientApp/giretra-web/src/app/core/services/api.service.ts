@@ -264,6 +264,7 @@ export interface LeaderboardPlayerEntry {
   avatarUrl: string | null;
   rating: number;
   gamesPlayed: number;
+  achievementCount: number;
   winRate: number;
 }
 
@@ -285,9 +286,29 @@ export interface LeaderboardResponse {
   botCount: number;
 }
 
+export interface AchievementShowcaseResponse {
+  playerName: string;
+  earnedCount: number;
+  totalCount: number;
+  achievements: AchievementShowcaseItem[];
+}
+
+export interface AchievementShowcaseItem {
+  code: string;
+  name: string;
+  category: string;
+  tier: number;
+  iconName: string | null;
+  isHidden: boolean;
+  isEarned: boolean;
+  earnedAt: string | null;
+}
+
 export interface PlayerProfileResponse {
+  playerId: string | null;
   displayName: string;
   isBot: boolean;
+  achievementCount: number;
   gamesPlayed: number;
   gamesWon: number;
   winStreak: number;
@@ -633,6 +654,22 @@ export class ApiService {
   getLeaderboardProfile(playerId: string): Observable<PlayerProfileResponse> {
     return this.http
       .get<PlayerProfileResponse>(`${this.baseUrl}/api/leaderboard/players/${playerId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Achievements
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getMyAchievementShowcase(): Observable<AchievementShowcaseResponse> {
+    return this.http
+      .get<AchievementShowcaseResponse>(`${this.baseUrl}/api/achievements/showcase/me`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getPlayerAchievementShowcase(playerId: string): Observable<AchievementShowcaseResponse> {
+    return this.http
+      .get<AchievementShowcaseResponse>(`${this.baseUrl}/api/achievements/showcase/${playerId}`)
       .pipe(catchError(this.handleError));
   }
 

@@ -1,4 +1,5 @@
 using Giretra.Model;
+using Giretra.Web.Achievements;
 using Giretra.Web.Auth;
 using Giretra.Web.Hubs;
 using Giretra.Web.Middleware;
@@ -162,6 +163,15 @@ public class Program
                 // Elo
                 builder.Services.AddSingleton<EloCalculationService>();
                 builder.Services.AddScoped<IEloService, EloService>();
+
+                // Achievements
+                var achievementRuleTypes = typeof(IAchievementRule).Assembly.GetTypes()
+                    .Where(t => t is { IsAbstract: false, IsInterface: false }
+                        && typeof(IAchievementRule).IsAssignableFrom(t));
+                foreach (var type in achievementRuleTypes)
+                    builder.Services.AddSingleton(typeof(IAchievementRule), type);
+                builder.Services.AddScoped<AchievementEvaluator>();
+                builder.Services.AddHostedService<AchievementSyncService>();
 
                 // Settings
                 builder.Services.AddScoped<IProfileService, ProfileService>();
