@@ -42,12 +42,16 @@ public sealed class LeaderboardService : ILeaderboardService
         if (player == null)
             return null;
 
+        var achCount = await _db.PlayerAchievements.CountAsync(pa => pa.PlayerId == playerId);
+
         if (player.PlayerType == PlayerType.Bot)
         {
             return new PlayerProfileResponse
             {
+                PlayerId = player.Id,
                 DisplayName = player.Bot?.DisplayName ?? "Bot",
                 IsBot = true,
+                AchievementCount = achCount,
                 GamesPlayed = player.GamesPlayed,
                 GamesWon = player.GamesWon,
                 WinStreak = player.WinStreak,
@@ -65,8 +69,10 @@ public sealed class LeaderboardService : ILeaderboardService
         var showElo = player.EloIsPublic;
         return new PlayerProfileResponse
         {
+            PlayerId = player.Id,
             DisplayName = player.User?.EffectiveDisplayName ?? "Unknown",
             IsBot = false,
+            AchievementCount = achCount,
             GamesPlayed = player.GamesPlayed,
             GamesWon = player.GamesWon,
             WinStreak = player.WinStreak,

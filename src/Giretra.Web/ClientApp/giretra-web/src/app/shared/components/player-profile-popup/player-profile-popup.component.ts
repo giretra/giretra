@@ -1,4 +1,5 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, inject, input, output, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { PlayerProfileResponse } from '../../../core/services/api.service';
 import {
   LucideAngularModule,
@@ -10,6 +11,7 @@ import {
   Bot,
   X,
   Github,
+  Award,
 } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 
@@ -51,9 +53,12 @@ import { TranslocoDirective } from '@jsverse/transloco';
           }
 
           <div class="stats-grid">
-            <div class="stat-cell">
-              <span class="stat-value">{{ profile().gamesPlayed }}</span>
-              <span class="stat-label">{{ t('playerProfile.played') }}</span>
+            <div class="stat-cell stat-cell-clickable" (click)="goToAchievements($event)">
+              <span class="stat-value ach-value">
+                <i-lucide [img]="AwardIcon" [size]="14" [strokeWidth]="2" class="ach-icon"></i-lucide>
+                {{ profile().achievementCount }}
+              </span>
+              <span class="stat-label">{{ t('achievements.page.title') }}</span>
             </div>
             <div class="stat-cell">
               @if (profile().eloRating != null) {
@@ -429,6 +434,24 @@ import { TranslocoDirective } from '@jsverse/transloco';
       color: hsl(var(--gold));
     }
 
+    .stat-cell-clickable {
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: background 0.15s ease;
+    }
+
+    .stat-cell-clickable:hover {
+      background: hsl(var(--gold) / 0.1);
+    }
+
+    .ach-value {
+      color: hsl(var(--gold));
+    }
+
+    .ach-icon {
+      color: hsl(var(--gold));
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -447,6 +470,8 @@ import { TranslocoDirective } from '@jsverse/transloco';
   `],
 })
 export class PlayerProfilePopupComponent {
+  private readonly router = inject(Router);
+
   readonly XIcon = X;
   readonly TrophyIcon = Trophy;
   readonly FlameIcon = Flame;
@@ -455,6 +480,7 @@ export class PlayerProfilePopupComponent {
   readonly EyeOffIcon = EyeOff;
   readonly BotIcon = Bot;
   readonly GithubIcon = Github;
+  readonly AwardIcon = Award;
 
   readonly profile = input.required<PlayerProfileResponse>();
   readonly teamClass = input<'team1' | 'team2'>('team1');
@@ -502,4 +528,15 @@ export class PlayerProfilePopupComponent {
     if (bt === 'ml') return 'ml';
     return null;
   });
+
+  goToAchievements(event: Event): void {
+    event.stopPropagation();
+    const playerId = this.profile().playerId;
+    if (playerId) {
+      this.router.navigate(['/achievements', playerId]);
+    } else {
+      this.router.navigate(['/achievements']);
+    }
+    this.closed.emit();
+  }
 }

@@ -88,10 +88,16 @@ public sealed class ProfileService : IProfileService
             var isSelf = user.Id == requestingUserId;
             var showElo = player != null && (player.EloIsPublic || isSelf);
 
+            var humanAchCount = player != null
+                ? await _db.PlayerAchievements.CountAsync(pa => pa.PlayerId == player.Id)
+                : 0;
+
             return new PlayerProfileResponse
             {
+                PlayerId = player?.Id,
                 DisplayName = user.EffectiveDisplayName,
                 IsBot = false,
+                AchievementCount = humanAchCount,
                 GamesPlayed = player?.GamesPlayed ?? 0,
                 GamesWon = player?.GamesWon ?? 0,
                 WinStreak = player?.WinStreak ?? 0,
@@ -114,6 +120,7 @@ public sealed class ProfileService : IProfileService
 
             return new PlayerProfileResponse
             {
+                PlayerId = bot.Player?.Id,
                 DisplayName = bot.DisplayName,
                 IsBot = true,
                 GamesPlayed = bot.Player?.GamesPlayed ?? 0,
