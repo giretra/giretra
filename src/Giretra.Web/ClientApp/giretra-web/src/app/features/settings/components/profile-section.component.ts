@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye, Volume2, VolumeOff } from 'lucide-angular';
+import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye, Volume2, VolumeOff, Award } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { ApiService, ProfileResponse } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -132,6 +133,13 @@ import { SoundService } from '../../../core/services/sound.service';
               <span class="stat-value">{{ winRate() }}%</span>
               <span class="stat-label">{{ t('settings.profile.winRate') }}</span>
             </div>
+            <div class="stat-card stat-card-clickable" (click)="goToAchievements()">
+              <span class="stat-value ach-stat-value">
+                <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+                {{ achievementCount() }}
+              </span>
+              <span class="stat-label">{{ t('achievements.page.title') }}</span>
+            </div>
             <div class="stat-card">
               <span class="stat-value">{{ p.winStreak }}</span>
               <span class="stat-label">{{ t('settings.profile.winStreak') }}</span>
@@ -188,6 +196,9 @@ import { SoundService } from '../../../core/services/sound.service';
     .stat-card { display:flex; flex-direction:column; align-items:center; gap:0.25rem; padding:1rem 0.5rem; background:hsl(var(--secondary)); border:1px solid hsl(var(--border)); border-radius:var(--radius); }
     .stat-value { font-size:1.25rem; font-weight:700; color:hsl(var(--foreground)); }
     .stat-label { font-size:0.625rem; font-weight:500; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.04em; }
+    .stat-card-clickable { cursor:pointer; transition:all 0.15s ease; }
+    .stat-card-clickable:hover { background:hsl(var(--gold)/0.1); border-color:hsl(var(--gold)/0.3); }
+    .ach-stat-value { color:hsl(var(--gold)); display:flex; align-items:center; gap:0.25rem; }
     .loading { padding:2rem; text-align:center; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
     @media (max-width:480px) {
       .stats-grid { grid-template-columns:repeat(2, 1fr); }
@@ -202,13 +213,16 @@ export class ProfileSectionComponent implements OnInit {
   readonly EyeIcon = Eye;
   readonly Volume2Icon = Volume2;
   readonly VolumeOffIcon = VolumeOff;
+  readonly AwardIcon = Award;
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   readonly soundService = inject(SoundService);
   private readonly transloco = inject(TranslocoService);
 
   readonly profile = signal<ProfileResponse | null>(null);
+  readonly achievementCount = signal(0);
   readonly editingName = signal(false);
   readonly savingName = signal(false);
   readonly nameError = signal<string | null>(null);
@@ -226,6 +240,9 @@ export class ProfileSectionComponent implements OnInit {
         this.profile.set(p);
         this.eloPublic.set(p.eloIsPublic);
       },
+    });
+    this.api.getMyAchievementShowcase().subscribe({
+      next: (data) => this.achievementCount.set(data.earnedCount),
     });
   }
 
@@ -303,6 +320,10 @@ export class ProfileSectionComponent implements OnInit {
         if (p) this.profile.set({ ...p, avatarUrl: null });
       },
     });
+  }
+
+  goToAchievements(): void {
+    this.router.navigate(['/achievements']);
   }
 
   toggleEloVisibility(): void {

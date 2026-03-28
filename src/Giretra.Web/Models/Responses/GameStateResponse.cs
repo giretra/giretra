@@ -1,6 +1,7 @@
 using Giretra.Core.GameModes;
 using Giretra.Core.Players;
 using Giretra.Core.State;
+using Giretra.Web.Achievements;
 using Giretra.Web.Domain;
 
 namespace Giretra.Web.Models.Responses;
@@ -124,4 +125,9 @@ public sealed class GameStateResponse
     /// Recap of all completed deals (only present when match is complete).
     /// </summary>
     public IReadOnlyList<DealRecapResponse>? CompletedDeals { get; init; }
+
+    /// <summary>
+    /// Achievements earned during this match (only present when match is complete and ranked).
+    /// </summary>
+    public IReadOnlyList<EarnedAchievementInfo>? Achievements { get; init; }
 }

@@ -211,6 +211,9 @@ public sealed class AiPlayerRegistry : IDisposable
     public string GetDisplayName(string aiType) =>
         _bots.TryGetValue(aiType, out var bot) ? bot.DisplayName : aiType;
 
+    public int? GetRating(string aiType) =>
+        _bots.TryGetValue(aiType, out var bot) ? bot.Rating : null;
+
     public void Dispose()
     {
         foreach (var bot in _bots.Values)

@@ -42,12 +42,16 @@ public sealed class LeaderboardService : ILeaderboardService
         if (player == null)
             return null;
 
+        var achCount = await _db.PlayerAchievements.CountAsync(pa => pa.PlayerId == playerId);
+
         if (player.PlayerType == PlayerType.Bot)
         {
             return new PlayerProfileResponse
             {
+                PlayerId = player.Id,
                 DisplayName = player.Bot?.DisplayName ?? "Bot",
                 IsBot = true,
+                AchievementCount = achCount,
                 GamesPlayed = player.GamesPlayed,
                 GamesWon = player.GamesWon,
                 WinStreak = player.WinStreak,
@@ -65,8 +69,10 @@ public sealed class LeaderboardService : ILeaderboardService
         var showElo = player.EloIsPublic;
         return new PlayerProfileResponse
         {
+            PlayerId = player.Id,
             DisplayName = player.User?.EffectiveDisplayName ?? "Unknown",
             IsBot = false,
+            AchievementCount = achCount,
             GamesPlayed = player.GamesPlayed,
             GamesWon = player.GamesWon,
             WinStreak = player.WinStreak,
@@ -91,8 +97,19 @@ public sealed class LeaderboardService : ILeaderboardService
             .Select(ToPlayerEntry)
             .ToList();
 
+        // Batch-load achievement counts
+        var playerIds = entries.Select(e => e.PlayerId).ToList();
+        var achCounts = await _db.PlayerAchievements
+            .Where(pa => playerIds.Contains(pa.PlayerId))
+            .GroupBy(pa => pa.PlayerId)
+            .Select(g => new { PlayerId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PlayerId, x => x.Count);
+
         for (var i = 0; i < entries.Count; i++)
+        {
             entries[i].Rank = i + 1;
+            entries[i].AchievementCount = achCounts.GetValueOrDefault(entries[i].PlayerId);
+        }
 
         return entries;
     }

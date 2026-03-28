@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { ApiService, RoomResponse, AiTypeInfo, AiSeat } from '../../core/services/api.service';
+import { ApiService, RoomResponse, AiTypeInfo, AiSeat, AchievementShowcaseResponse } from '../../core/services/api.service';
 import { JoinRoomEvent } from './components/room-list/room-list.component';
 import { ClientSessionService } from '../../core/services/client-session.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,7 +9,7 @@ import { GameStateService } from '../../core/services/game-state.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
@@ -86,6 +86,15 @@ import { environment } from '../../../environments/environment';
       <!-- Main body -->
       <main class="main">
         <div class="main-inner">
+          <!-- Achievement banner -->
+          @if (auth.user() && achievementShowcase()) {
+            <a class="ach-banner" (click)="goToAchievements()">
+              <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2" class="ach-banner-icon"></i-lucide>
+              <span class="ach-banner-text">{{ t('home.achievementBanner', { earned: achievementShowcase()!.earnedCount, total: achievementShowcase()!.totalCount }) }}</span>
+              <i-lucide [img]="ChevronRightIcon" [size]="14" [strokeWidth]="2" class="ach-banner-arrow"></i-lucide>
+            </a>
+          }
+
           <!-- Quick Game -->
           <section class="panel">
             <button class="quick-game-btn" (click)="showQuickGame.set(true)">
@@ -208,6 +217,12 @@ import { environment } from '../../../environments/environment';
     .main { flex:1; padding:1.5rem 1rem; }
     .main-inner { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
+    .ach-banner { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:hsl(var(--secondary)); border:1px solid hsl(var(--border)); border-radius:0.625rem; cursor:pointer; transition:all 0.15s ease; text-decoration:none; color:inherit; margin-bottom:-0.25rem; }
+    .ach-banner:hover { background:hsl(var(--muted)); border-color:hsl(var(--muted-foreground)/0.3); }
+    .ach-banner-icon { color:hsl(var(--muted-foreground)); flex-shrink:0; }
+    .ach-banner-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); flex:1; }
+    .ach-banner-arrow { color:hsl(var(--muted-foreground)); flex-shrink:0; }
+
     .quick-game-btn { width:100%; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--gold)/0.08); border:2px solid hsl(var(--gold)/0.35); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
     .quick-game-btn:hover { border-color:hsl(var(--gold)/0.7); background:hsl(var(--gold)/0.12); transform:translateY(-1px); box-shadow:0 4px 20px hsl(var(--gold)/0.15); }
     .quick-game-btn:active { transform:translateY(0); }
@@ -269,6 +284,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly Share2Icon = Share2;
   readonly ZapIcon = Zap;
   readonly BotIcon = Bot;
+  readonly AwardIcon = Award;
+  readonly ChevronRightIcon = ChevronRight;
   readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
@@ -293,11 +310,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly activeGameRoomId = signal<string | null>(null);
   readonly showWelcome = signal(WelcomeDialogComponent.shouldShow());
   private readonly joining = signal(false);
+  readonly achievementShowcase = signal<AchievementShowcaseResponse | null>(null);
 
   ngOnInit(): void {
     this.loadRooms();
     this.loadPendingFriendCount();
     this.loadAiTypes();
+    this.loadAchievements();
     this.checkActiveSession();
 
     this.connectToLobby();
@@ -366,6 +385,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.api.getAiTypes().subscribe({
       next: (types) => this.aiTypes.set(types),
     });
+  }
+
+  private loadAchievements(): void {
+    if (!this.auth.user()) return;
+    this.api.getMyAchievementShowcase().subscribe({
+      next: (data) => this.achievementShowcase.set(data),
+    });
+  }
+
+  goToAchievements(): void {
+    this.router.navigate(['/achievements']);
   }
 
   quickGame(event: { aiType: string; isRanked: boolean }): void {

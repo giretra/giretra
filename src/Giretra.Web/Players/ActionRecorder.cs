@@ -33,6 +33,8 @@ public sealed record RecordedDeal
     public required int DealNumber { get; init; }
     public required PlayerPosition DealerPosition { get; init; }
     public required IReadOnlyList<RecordedAction> Actions { get; init; }
+    public required IReadOnlyDictionary<PlayerPosition, IReadOnlyList<Card>> InitialHands { get; init; }
+    public required IReadOnlyDictionary<PlayerPosition, IReadOnlyList<Card>> FullHands { get; init; }
 }
 
 public sealed class ActionRecorder
@@ -43,6 +45,8 @@ public sealed class ActionRecorder
     private PlayerPosition _currentDealerPosition;
     private List<RecordedAction> _currentActions = [];
     private int _actionOrder;
+    private Dictionary<PlayerPosition, IReadOnlyList<Card>> _currentInitialHands = [];
+    private Dictionary<PlayerPosition, IReadOnlyList<Card>> _currentFullHands = [];
 
     public void StartDeal(int dealNumber, PlayerPosition dealerPosition)
     {
@@ -55,7 +59,9 @@ public sealed class ActionRecorder
                 {
                     DealNumber = _currentDealNumber,
                     DealerPosition = _currentDealerPosition,
-                    Actions = _currentActions.ToList()
+                    Actions = _currentActions.ToList(),
+                    InitialHands = _currentInitialHands,
+                    FullHands = _currentFullHands
                 });
             }
 
@@ -63,6 +69,24 @@ public sealed class ActionRecorder
             _currentDealerPosition = dealerPosition;
             _currentActions = [];
             _actionOrder = 0;
+            _currentInitialHands = [];
+            _currentFullHands = [];
+        }
+    }
+
+    public void RecordInitialHand(PlayerPosition player, IReadOnlyList<Card> hand)
+    {
+        lock (_lock)
+        {
+            _currentInitialHands[player] = hand.ToList();
+        }
+    }
+
+    public void RecordFullHand(PlayerPosition player, IReadOnlyList<Card> hand)
+    {
+        lock (_lock)
+        {
+            _currentFullHands[player] = hand.ToList();
         }
     }
 
@@ -123,7 +147,9 @@ public sealed class ActionRecorder
                 {
                     DealNumber = _currentDealNumber,
                     DealerPosition = _currentDealerPosition,
-                    Actions = _currentActions.ToList()
+                    Actions = _currentActions.ToList(),
+                    InitialHands = _currentInitialHands,
+                    FullHands = _currentFullHands
                 });
             }
             return result;

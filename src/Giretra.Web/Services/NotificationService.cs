@@ -405,6 +405,30 @@ public sealed class NotificationService : INotificationService
             $"{winnerLabel} wins! Final score: {matchState.Team1MatchPoints}-{matchState.Team2MatchPoints}");
     }
 
+    public async Task NotifyAchievementsEarnedAsync(string gameId, string roomId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null || session.EarnedAchievements.Count == 0) return;
+
+        var ev = new AchievementsEarnedEvent
+        {
+            GameId = gameId,
+            Achievements = session.EarnedAchievements.Select(a => new AchievementEarnedDto
+            {
+                PlayerPosition = a.PlayerPosition,
+                Code = a.Code,
+                Name = a.Name,
+                Category = a.Category,
+                Tier = a.Tier,
+                IconName = a.IconName,
+                IsHidden = a.IsHidden,
+                DealNumber = a.DealNumber
+            }).ToList()
+        };
+
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("AchievementsEarned", ev);
+    }
+
     public async Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position)
     {
         var ev = new PlayerJoinedEvent

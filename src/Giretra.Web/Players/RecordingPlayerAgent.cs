@@ -10,6 +10,8 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
 {
     private readonly IPlayerAgent _inner;
     private readonly ActionRecorder _recorder;
+    private bool _initialHandRecorded;
+    private bool _fullHandRecorded;
 
     public RecordingPlayerAgent(IPlayerAgent inner, ActionRecorder recorder)
     {
@@ -32,6 +34,12 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<NegotiationAction> validActions)
     {
+        if (!_initialHandRecorded)
+        {
+            _recorder.RecordInitialHand(Position, hand);
+            _initialHandRecorded = true;
+        }
+
         var result = await _inner.ChooseNegotiationActionAsync(hand, negotiationState, matchState, validActions);
 
         var (actionType, gameMode) = result switch
@@ -54,6 +62,12 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<Card> validPlays)
     {
+        if (!_fullHandRecorded)
+        {
+            _recorder.RecordFullHand(Position, hand);
+            _fullHandRecorded = true;
+        }
+
         var result = await _inner.ChooseCardAsync(hand, handState, matchState, validPlays);
         var trickNumber = handState.CompletedTricks.Count + 1;
         _recorder.RecordCardPlay(Position, result, trickNumber);
@@ -63,6 +77,8 @@ public sealed class RecordingPlayerAgent : IPlayerAgent
     public Task OnDealStartedAsync(MatchState matchState)
     {
         _recorder.StartDeal(matchState.CompletedDeals.Count + 1, matchState.CurrentDealer);
+        _initialHandRecorded = false;
+        _fullHandRecorded = false;
         return _inner.OnDealStartedAsync(matchState);
     }
 

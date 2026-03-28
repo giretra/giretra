@@ -22,6 +22,83 @@ namespace Giretra.Model.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Giretra.Model.Entities.Achievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("IconName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("icon_name");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsHidden")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_hidden");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("sort_order");
+
+                    b.Property<int>("Tier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("tier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_achievements");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_achievements_code");
+
+                    b.ToTable("achievements", (string)null);
+                });
+
             modelBuilder.Entity("Giretra.Model.Entities.BlobStore", b =>
                 {
                     b.Property<string>("Key")
@@ -686,6 +763,56 @@ namespace Giretra.Model.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Giretra.Model.Entities.PlayerAchievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("AchievementId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("achievement_id");
+
+                    b.Property<short?>("DealNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("deal_number");
+
+                    b.Property<DateTimeOffset>("EarnedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("earned_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("MatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("match_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_player_achievements");
+
+                    b.HasIndex("AchievementId")
+                        .HasDatabaseName("ix_player_achievements_achievement_id");
+
+                    b.HasIndex("MatchId")
+                        .HasDatabaseName("ix_player_achievements_match_id");
+
+                    b.HasIndex("PlayerId", "AchievementId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_player_achievements_player_id_achievement_id");
+
+                    b.HasIndex("PlayerId", "EarnedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_player_achievements_player_id_earned_at");
+
+                    b.ToTable("player_achievements", (string)null);
+                });
+
             modelBuilder.Entity("Giretra.Model.Entities.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -965,6 +1092,36 @@ namespace Giretra.Model.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Giretra.Model.Entities.PlayerAchievement", b =>
+                {
+                    b.HasOne("Giretra.Model.Entities.Achievement", "Achievement")
+                        .WithMany("PlayerAchievements")
+                        .HasForeignKey("AchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_player_achievements_achievements_achievement_id");
+
+                    b.HasOne("Giretra.Model.Entities.Match", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_player_achievements_matches_match_id");
+
+                    b.HasOne("Giretra.Model.Entities.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_player_achievements_players_player_id");
+
+                    b.Navigation("Achievement");
+
+                    b.Navigation("Match");
+
+                    b.Navigation("Player");
+                });
+
             modelBuilder.Entity("Giretra.Model.Entities.Room", b =>
                 {
                     b.HasOne("Giretra.Model.Entities.Player", "CreatorPlayer")
@@ -983,6 +1140,11 @@ namespace Giretra.Model.Migrations
                     b.Navigation("CreatorPlayer");
 
                     b.Navigation("Match");
+                });
+
+            modelBuilder.Entity("Giretra.Model.Entities.Achievement", b =>
+                {
+                    b.Navigation("PlayerAchievements");
                 });
 
             modelBuilder.Entity("Giretra.Model.Entities.Bot", b =>

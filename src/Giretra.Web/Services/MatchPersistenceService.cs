@@ -1,5 +1,6 @@
 using Giretra.Core.Players;
 using Giretra.Model;
+using Giretra.Web.Achievements;
 using Giretra.Web.Domain;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services.Elo;
@@ -13,16 +14,19 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
     private readonly GiretraDbContext _dbContext;
     private readonly IRoomRepository _roomRepository;
     private readonly IEloService _eloService;
+    private readonly AchievementEvaluator _achievementEvaluator;
     private readonly ILogger<MatchPersistenceService> _logger;
 
     public MatchPersistenceService(GiretraDbContext dbContext,
         IRoomRepository roomRepository,
         IEloService eloService,
+        AchievementEvaluator achievementEvaluator,
         ILogger<MatchPersistenceService> logger)
     {
         _dbContext = dbContext;
         _roomRepository = roomRepository;
         _eloService = eloService;
+        _achievementEvaluator = achievementEvaluator;
         _logger = logger;
     }
 
@@ -149,14 +153,26 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
             }
         }
 
+        // Evaluate achievements before committing the transaction
+        try
+        {
+            var earned = await _achievementEvaluator.EvaluateMatchAsync(
+                _dbContext, matchId, session, matchState);
+            session.EarnedAchievements.AddRange(earned);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Achievement evaluation failed for game {GameId}, continuing with persistence", session.GameId);
+        }
+
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
         await _dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
 
         _logger.LogInformation(
-            "Persisted match {MatchId} for game {GameId}: {DealCount} deals, {ActionCount} actions",
+            "Persisted match {MatchId} for game {GameId}: {DealCount} deals, {ActionCount} actions, {AchievementCount} achievements",
             matchId, session.GameId, matchState.CompletedDeals.Count,
-            recordedDeals.Sum(d => d.Actions.Count));
+            recordedDeals.Sum(d => d.Actions.Count), session.EarnedAchievements.Count);
     }
 
     public async Task PersistAbandonedMatchAsync(GameSession session, PlayerPosition abandonerPosition)
