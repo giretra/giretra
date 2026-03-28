@@ -264,6 +264,7 @@ export interface LeaderboardPlayerEntry {
   avatarUrl: string | null;
   rating: number;
   gamesPlayed: number;
+  achievementCount: number;
   winRate: number;
 }
 
