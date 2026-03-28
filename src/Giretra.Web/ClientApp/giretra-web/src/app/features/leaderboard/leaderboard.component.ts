@@ -251,10 +251,11 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
       .columns { grid-template-columns:1fr; }
     }
 
-    /* Responsive: hide Games column on small screens */
+    /* Responsive: hide less important columns on small screens */
     @media (max-width:480px) {
-      .col-games { display:none; }
+      .col-games, .col-winrate, .col-author { display:none; }
       .row { gap:0.375rem; padding:0.375rem 0.375rem; }
+      .my-rank-banner { flex-wrap:wrap; gap:0.5rem; }
     }
   `],
 })
