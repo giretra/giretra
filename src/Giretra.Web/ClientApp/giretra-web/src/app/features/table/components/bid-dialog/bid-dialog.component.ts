@@ -338,6 +338,13 @@ import { LucideAngularModule } from 'lucide-angular';
       font-weight: 800;
       font-size: 0.8125rem;
     }
+
+    @media (max-width: 640px) {
+      .dialog-container {
+        align-items: flex-start;
+        padding-top: 2rem;
+      }
+    }
   `],
 })
 export class BidDialogComponent {
