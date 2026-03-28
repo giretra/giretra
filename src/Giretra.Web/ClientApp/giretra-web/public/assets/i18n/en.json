@@ -194,6 +194,7 @@
   "achievements.page.back": "Back",
   "achievements.page.noAchievements": "No achievements yet. Keep playing!",
   "achievements.page.tier": "Tier {{tier}}",
+  "home.achievementBanner": "You've unlocked {{earned}} of {{total}} achievements. Tap to view all.",
   "achievements.page.info": "Achievements are earned in rated games against two 1400+ rated bots (currently Eva).",
 
   "scoreBar.yourTurn": "Your turn",

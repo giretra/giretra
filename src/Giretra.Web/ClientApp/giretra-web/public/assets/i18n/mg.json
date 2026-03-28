@@ -194,6 +194,7 @@
   "achievements.page.back": "Hiverina",
   "achievements.page.noAchievements": "Tsy mbola misy zava-bita. Manohy milalao!",
   "achievements.page.tier": "Ambaratonga {{tier}}",
+  "home.achievementBanner": "Nahazo zava-bita {{earned}} amin'ny {{total}} ianao. Tsindrio hijery ny rehetra.",
   "achievements.page.info": "Ny zava-bita dia azo amin'ny lalao misy naoty mifanandrina amin'ny bot roa 1400+ (Eva ankehitriny).",
 
   "scoreBar.yourTurn": "Anjaranao",
