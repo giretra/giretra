@@ -12,9 +12,9 @@ public sealed class SaveSingletonRule : IAchievementRule
 {
     public Guid Id => new("A1B5C9D3-7E42-4F86-9D2A-8C3F6E1B4D57");
     public string Code => "kamokamo_mitsoaka_raharaha";
-    public string Name => "kamokamo mitsoaka raharaha";
+    public string Name => "Kamokamo mitsoaka raharaha";
     public string Category => "style";
-    public int Tier => 3;
+    public int Tier => 1;
     public string? IconName => null;
     public bool IsHidden => false;
     public int SortOrder => 470;

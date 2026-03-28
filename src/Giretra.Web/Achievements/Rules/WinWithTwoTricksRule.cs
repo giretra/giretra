@@ -9,7 +9,7 @@ public sealed class WinWithTwoTricksRule : IAchievementRule
 {
     public Guid Id => new("A5C8E2F6-1D47-4B93-8F3A-9E7B6C4D2A18");
     public string Code => "laoka_na_vary_tena_tsara_sy_lafo";
-    public string Name => "Laoka na vary, tena tsara sy lafo";
+    public string Name => "Laoka sy vary, tena tsara sy lafo";
     public string Category => "style";
     public int Tier => 3;
     public string? IconName => null;

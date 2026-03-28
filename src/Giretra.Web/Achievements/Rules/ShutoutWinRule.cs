@@ -11,7 +11,7 @@ public sealed class ShutoutWinRule : IAchievementRule
     public string Code => "fotsy_marik_ilay_fahadiovana";
     public string Name => "Fotsy marik'ilay fahadiovana";
     public string Category => "scoring";
-    public int Tier => 5;
+    public int Tier => 2;
     public string? IconName => "trophy";
     public bool IsHidden => false;
     public int SortOrder => 130;
