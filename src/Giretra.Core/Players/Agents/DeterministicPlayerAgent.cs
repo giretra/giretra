@@ -368,7 +368,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var cannotFollowCards = cannotFollowTricks
             .Select(t => t.PlayedCards.First(f => f.Player == Position.Teammate()).Card)
             .ToList();
-
+        
         foreach (var group in cannotFollowCards.GroupBy(g => g.Suit))
         {
             var played = group.ToList();
@@ -388,25 +388,33 @@ public class DeterministicPlayerAgent : IPlayerAgent
                     _partnerPrioritySuits.Remove(group.Key);
                 }
             }
-            else if (played[0].GetStrength(mode) >= 10)
+            else if (played[0].GetPointValue(mode) >= 2)
             {
                 _partnerDislikedSuits.Add(group.Key);
-                _partnerPrioritySuits.Remove(group.Key);
+                _partnerPreferredSuits.Remove(group.Key);
             }
         }
+        
 
         if (!mode.IsColourMode())
         {
             if (cannotFollowCards.Count >= 2 && !_partnerPrioritySuits.Any()
-                                             && !_partnerDislikedSuits.Any() && !_partnerPreferredSuits.Any())
+                                             && !_partnerDislikedSuits.Any() 
+                                             && !_partnerPreferredSuits.Any())
             {
                 var allSuits = Enum.GetValues<CardSuit>();
-                var partnerPlayedSuits = cannotFollowCards.Select(s => s.Suit).ToHashSet();
+                var partnerPlayedSuits = cannotFollowCards.Select(s => s.Suit).Distinct().ToList();
                 var playedTricks = _playedCards.Select(c => c.Suit).ToHashSet();
 
-                foreach (var suit in allSuits.Where(s => !partnerPlayedSuits.Contains(s) && !playedTricks.Contains(s)))
+                foreach (var suit in
+                         allSuits.Where(s => !partnerPlayedSuits.Contains(s) && !playedTricks.Contains(s)))
                 {
                     _partnerPreferredSuits.Add(suit);
+                }
+
+                if (!partnerPlayedSuits.Any())
+                {
+                    _partnerPreferredSuits.Add(partnerPlayedSuits.Last());
                 }
             }
         }
