@@ -73,6 +73,9 @@ public static class PlayerAgentHelper
             var strongerCardsInHandForSuit = 
                 cards.OrderByDescending(r => r.GetStrength(mode)).First();
 
+            if (PlayerAgentHelper.IsMasterCard(strongerCardsInHandForSuit, mode, hand, playedCards))
+                continue;
+
             var strongerRemainingPlayingCardCount = allCards.Where(p => p.Suit == suit)
                 .Count(c => c.GetStrength(mode) > strongerCardsInHandForSuit.GetStrength(mode));
 
