@@ -97,8 +97,19 @@ public sealed class LeaderboardService : ILeaderboardService
             .Select(ToPlayerEntry)
             .ToList();
 
+        // Batch-load achievement counts
+        var playerIds = entries.Select(e => e.PlayerId).ToList();
+        var achCounts = await _db.PlayerAchievements
+            .Where(pa => playerIds.Contains(pa.PlayerId))
+            .GroupBy(pa => pa.PlayerId)
+            .Select(g => new { PlayerId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PlayerId, x => x.Count);
+
         for (var i = 0; i < entries.Count; i++)
+        {
             entries[i].Rank = i + 1;
+            entries[i].AchievementCount = achCounts.GetValueOrDefault(entries[i].PlayerId);
+        }
 
         return entries;
     }
