@@ -297,6 +297,7 @@
 
   "leaderboard.title": "Laharana",
   "leaderboard.players": "Mpilalao",
+  "leaderboard.topPlayers": "Top 15 Mpilalao",
   "leaderboard.bots": "Bot",
   "leaderboard.playerCount": "{{count}} mpilalao",
   "leaderboard.botCount": "{{count}} bot",

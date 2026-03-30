@@ -63,7 +63,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
               <section class="column">
                 <div class="column-head">
                   <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
-                  <span class="column-label">{{ t('leaderboard.players') }}</span>
+                  <span class="column-label">{{ t('leaderboard.topPlayers') }}</span>
                   <span class="column-count">{{ playerCount() }}</span>
                 </div>
 
