@@ -297,6 +297,7 @@
 
   "leaderboard.title": "Classement",
   "leaderboard.players": "Joueurs",
+  "leaderboard.topPlayers": "Top 15 Joueurs",
   "leaderboard.bots": "Bots",
   "leaderboard.playerCount": "{{count}} joueurs",
   "leaderboard.botCount": "{{count}} bots",

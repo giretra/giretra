@@ -297,6 +297,7 @@
 
   "leaderboard.title": "Leaderboard",
   "leaderboard.players": "Players",
+  "leaderboard.topPlayers": "Top 15 Players",
   "leaderboard.bots": "Bots",
   "leaderboard.playerCount": "{{count}} players",
   "leaderboard.botCount": "{{count}} bots",
