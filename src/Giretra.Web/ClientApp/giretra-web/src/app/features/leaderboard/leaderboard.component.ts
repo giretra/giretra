@@ -45,11 +45,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
             @if (currentUserEntry(); as me) {
               <div class="my-rank-banner">
                 <span class="my-rank-label">{{ t('leaderboard.yourRanking') }}</span>
-                <span class="my-rank-stat">
-                  <span class="my-rank-value">#{{ me.rank }}</span>
-                  <span class="my-rank-sep">/</span>
-                  <span class="my-rank-total">{{ playerCount() }}</span>
-                </span>
+                <span class="my-rank-value">#{{ me.rank }}</span>
                 <span class="my-rank-divider"></span>
                 <span class="my-rank-stat">
                   <span class="my-rank-rating">{{ me.rating }}</span>
@@ -285,7 +281,7 @@ export class LeaderboardComponent implements OnInit {
   ngOnInit(): void {
     this.api.getLeaderboard().subscribe({
       next: (res) => {
-        this.players.set(res.players);
+        this.players.set(res.players.slice(0, 15));
         this.bots.set(res.bots);
         this.playerCount.set(res.playerCount);
         this.botCount.set(res.botCount);
