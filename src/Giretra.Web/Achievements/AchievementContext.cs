@@ -78,6 +78,11 @@ public sealed record AchievementContext
     public IReadOnlyList<RecordedAction> NegotiationActions { get; init; } = [];
 
     /// <summary>
+    /// The player who cut the deck for the current deal (null when unknown).
+    /// </summary>
+    public PlayerPosition? CutterPosition { get; init; }
+
+    /// <summary>
     /// Completed tricks in the current deal, with pre-computed winners.
     /// </summary>
     public IReadOnlyList<CompletedTrick> Tricks { get; init; } = [];

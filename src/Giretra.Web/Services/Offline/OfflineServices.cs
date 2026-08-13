@@ -173,6 +173,9 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
                 or RecordedActionType.ReRedouble)
             .ToList() ?? [];
 
+        var cutterPosition = recordedDeal?.Actions
+            .FirstOrDefault(a => a.ActionType == RecordedActionType.Cut)?.PlayerPosition;
+
         var tricks = BuildTricks(recordedDeal, dealResult);
 
         return new AchievementContext
@@ -188,6 +191,7 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
             InitialHand = initialHand,
             FullHand = fullHand,
             NegotiationActions = negotiationActions,
+            CutterPosition = cutterPosition,
             Tricks = tricks,
             AlreadyEarnedCodes = alreadyEarned
         };
