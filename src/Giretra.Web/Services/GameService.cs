@@ -86,6 +86,11 @@ public sealed class GameService : IGameService
             IsRanked = room.IsRanked
         };
 
+        // Optional override of the play-again window (mainly for tests)
+        TimeSpan? continueMatchWindow = null;
+        if (int.TryParse(_configuration["Game:ContinueMatchWindowSeconds"], out var windowSeconds) && windowSeconds > 0)
+            continueMatchWindow = TimeSpan.FromSeconds(windowSeconds);
+
         // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI)
         var agents = new Dictionary<PlayerPosition, IPlayerAgent>();
         foreach (var position in Enum.GetValues<PlayerPosition>())
@@ -99,7 +104,8 @@ public sealed class GameService : IGameService
                     client.ClientId,
                     session,
                     _notifications,
-                    TimeSpan.FromSeconds(room.TurnTimerSeconds));
+                    TimeSpan.FromSeconds(room.TurnTimerSeconds),
+                    continueMatchWindow);
             }
             else
             {
