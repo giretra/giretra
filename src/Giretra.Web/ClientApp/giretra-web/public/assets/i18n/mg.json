@@ -315,10 +315,10 @@
   "leaderboard.columns.author": "Mpanoratra",
   "leaderboard.builtIn": "Voarafitra",
   "leaderboard.noBots": "Mbola tsy misy bot voaisa.",
-  "leaderboard.sortRating": "Laharana",
-  "leaderboard.sortAchievements": "Zava-bita",
   "leaderboard.columns.points": "Isa",
+  "leaderboard.columns.count": "Isany",
   "leaderboard.noAchievers": "Mbola tsy misy zava-bita azo.",
+  "leaderboard.topAchievers": "Top 15 Zava-bita",
   "home.bestPlayers": "Laharana",
 
   "quickGame.title": "Lalao Haingana",
