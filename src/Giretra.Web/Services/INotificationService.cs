@@ -88,6 +88,12 @@ public interface INotificationService
     Task NotifyRoomIdleClosedAsync(string roomId);
 
     /// <summary>
+    /// Notifies all clients in a room that the room returned to Waiting
+    /// after a match ended without a new game being started.
+    /// </summary>
+    Task NotifyRoomResetAsync(string roomId);
+
+    /// <summary>
     /// Notifies all lobby members that the room list has changed.
     /// </summary>
     Task NotifyRoomsChangedAsync();
