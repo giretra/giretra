@@ -196,6 +196,7 @@
   "achievements.desc.mbola_tsy_bedy": "Win an AllTrumps deal without either teammate holding any Jack.",
   "achievements.desc.laoka_na_vary_tena_tsara_sy_lafo": "Win a deal while your team only won 2 tricks.",
   "achievements.desc.sweep_in_colour": "Sweep all 8 tricks in a Colour game mode.",
+  "achievements.desc.namoronako_ny_tsy_nananako": "Cut the deck, then let your partner win 6+ tricks on their own while your team wins the deal.",
   "achievements.page.title": "Achievements",
   "achievements.page.subtitle": "{{earned}} / {{total}} unlocked",
   "achievements.page.earned": "Earned",
