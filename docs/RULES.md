@@ -60,6 +60,7 @@ Be the first team to accumulate **150 match points** across multiple deals.
 - Minimum cut: 6 cards from either end
 - Maximum cut: 26 cards
 - After each hand, the winner of the last trick collects all cards
+- The deck for the next deal is rebuilt from the completed tricks: the dealer team's won tricks are placed on top of the other team's tricks (within each team's pile, tricks are stacked in the order they were won, cards in play order)
 
 ---
 
