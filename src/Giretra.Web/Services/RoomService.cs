@@ -15,6 +15,7 @@ public sealed class RoomService : IRoomService
 {
     private static readonly TimeSpan RoomCleanupDelay = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan RoomIdleTimeout = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan AbandonedRoomTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
@@ -22,11 +23,13 @@ public sealed class RoomService : IRoomService
     private readonly IChatService _chatService;
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly ILogger<RoomService> _logger;
+    private readonly TimeSpan _abandonedRoomTimeout;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingRemovals = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingIdleCleanups = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingAbandonedCleanups = new();
     private static int _roomCounter;
 
-    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, IChatService chatService, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger)
+    public RoomService(IRoomRepository roomRepository, IGameService gameService, INotificationService notifications, IChatService chatService, AiPlayerRegistry aiRegistry, ILogger<RoomService> logger, TimeSpan? abandonedRoomTimeout = null)
     {
         _roomRepository = roomRepository;
         _gameService = gameService;
@@ -34,6 +37,7 @@ public sealed class RoomService : IRoomService
         _chatService = chatService;
         _aiRegistry = aiRegistry;
         _logger = logger;
+        _abandonedRoomTimeout = abandonedRoomTimeout ?? AbandonedRoomTimeout;
     }
 
     public RoomListResponse GetAllRooms(Guid? requestingUserId = null)
@@ -314,9 +318,17 @@ public sealed class RoomService : IRoomService
         if (!removed)
             return (false, null, null);
 
-        // Remove the room if no one is left
-        if (room.IsEmpty)
+        if (room.Status == RoomStatus.Playing)
         {
+            // Game in progress — keep the room so the game session isn't orphaned,
+            // but schedule deletion if no human is connected anymore.
+            _roomRepository.Update(room);
+            if (!room.HasConnectedHumans)
+                ScheduleAbandonedCleanup(roomId);
+        }
+        else if (room.IsEmpty)
+        {
+            // Remove the room if no one is left
             _chatService.ClearRoom(roomId);
             _roomRepository.Remove(roomId);
         }
@@ -489,6 +501,7 @@ public sealed class RoomService : IRoomService
 
             // Cancel any pending removal for this client
             CancelPendingRemoval(roomId, existingClient.ClientId);
+            CancelAbandonedCleanup(roomId);
 
             _roomRepository.Update(room);
 
@@ -521,6 +534,7 @@ public sealed class RoomService : IRoomService
             // Place in the stored position
             room.PlayerSlots[position] = newClient;
             room.DisconnectedPlayers.Remove(position);
+            CancelAbandonedCleanup(roomId);
 
             // Remap in the game session
             // We need the old clientId — we don't have it anymore in DisconnectedPlayers,
@@ -576,6 +590,9 @@ public sealed class RoomService : IRoomService
 
             // Cancel any pending cleanup for this client (reconnection)
             CancelPendingRemoval(room.RoomId, clientId);
+
+            // A human is connected again — the table is no longer abandoned
+            CancelAbandonedCleanup(room.RoomId);
         }
     }
 
@@ -593,6 +610,11 @@ public sealed class RoomService : IRoomService
 
         // Schedule delayed removal
         ScheduleDelayedRemoval(room.RoomId, client.ClientId);
+
+        // If a game is running and no human is connected anymore, the bots-only
+        // table gets deleted after a timeout unless someone reconnects.
+        if (room.Status == RoomStatus.Playing && !room.HasConnectedHumans)
+            ScheduleAbandonedCleanup(room.RoomId);
     }
 
     public (StartGameResponse? Response, string? Error) AutoStartGame(string roomId)
@@ -636,6 +658,8 @@ public sealed class RoomService : IRoomService
         _roomRepository.Update(room);
         _logger.LogInformation("Room {RoomId} reset to Waiting state", roomId);
 
+        // Game over — the idle timeout takes over from the abandoned-table timeout
+        CancelAbandonedCleanup(roomId);
         ScheduleIdleCleanup(roomId);
     }
 
@@ -702,6 +726,63 @@ public sealed class RoomService : IRoomService
         {
             room.IdleDeadline = null;
             _roomRepository.Update(room);
+        }
+    }
+
+    /// <summary>
+    /// Schedules deletion of a Playing room where every human has left or disconnected
+    /// (the game keeps running bots-only in the meantime). Cancelled if anyone reconnects.
+    /// </summary>
+    private void ScheduleAbandonedCleanup(string roomId)
+    {
+        CancelAbandonedCleanup(roomId);
+
+        var cts = new CancellationTokenSource();
+        _pendingAbandonedCleanups[roomId] = cts;
+
+        _logger.LogInformation(
+            "Room {RoomId} has no connected human players, scheduling deletion in {Timeout}s",
+            roomId, _abandonedRoomTimeout.TotalSeconds);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(_abandonedRoomTimeout, cts.Token);
+                _pendingAbandonedCleanups.TryRemove(roomId, out _);
+                cts.Dispose();
+
+                var room = _roomRepository.GetById(roomId);
+                if (room == null || room.Status != RoomStatus.Playing || room.HasConnectedHumans)
+                    return;
+
+                _logger.LogInformation(
+                    "Room {RoomId} abandoned timeout expired, terminating game and deleting room", roomId);
+
+                if (room.GameSessionId != null)
+                    await _gameService.TerminateGameAsync(room.GameSessionId);
+
+                // The game loop's cleanup may have reset the room to Waiting and
+                // re-armed the idle timer — cancel it and delete the room for good.
+                CancelIdleCleanup(roomId);
+                _chatService.ClearRoom(roomId);
+                _roomRepository.Remove(roomId);
+
+                await _notifications.NotifyRoomsChangedAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // A human reconnected or the game ended, cleanup cancelled
+            }
+        });
+    }
+
+    private void CancelAbandonedCleanup(string roomId)
+    {
+        if (_pendingAbandonedCleanups.TryRemove(roomId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
         }
     }
 
