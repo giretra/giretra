@@ -257,7 +257,18 @@ public class Program
             }
 
             app.UseDefaultFiles();
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = context =>
+                {
+                    // i18n files are fetched by path without a content hash, so make
+                    // browsers revalidate them instead of relying on heuristic caching.
+                    if (context.Context.Request.Path.StartsWithSegments("/assets/i18n"))
+                    {
+                        context.Context.Response.Headers.CacheControl = "no-cache";
+                    }
+                }
+            });
 
             app.UseSerilogRequestLogging(options =>
             {
