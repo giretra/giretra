@@ -21,6 +21,7 @@ public sealed class GameManager
     private readonly ILogger<GameManager> _logger;
 
     private MatchState _matchState;
+    private Deck? _nextDeck;
     private CancellationToken _cancellationToken;
 
     /// <summary>
@@ -33,7 +34,8 @@ public sealed class GameManager
     /// </summary>
     /// <param name="players">Dictionary mapping positions to player implementations.</param>
     /// <param name="firstDealer">The position of the first dealer.</param>
-    /// <param name="deckProvider">Optional function to provide the deck for each deal. Defaults to standard deck.</param>
+    /// <param name="deckProvider">Optional function to provide the first deal's deck. Defaults to a shuffled deck.
+    /// Subsequent deals reuse the deck collected from the previous hand's tricks (never reshuffled).</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
     /// <param name="colourSweepMatchPoints">
     /// When set, Colour sweeps award this many base match points (× multiplier)
@@ -82,7 +84,8 @@ public sealed class GameManager
     /// <param name="top">Player at the Top position.</param>
     /// <param name="right">Player at the Right position.</param>
     /// <param name="firstDealer">The position of the first dealer.</param>
-    /// <param name="deckProvider">Optional function to provide the deck for each deal.</param>
+    /// <param name="deckProvider">Optional function to provide the first deal's deck. Defaults to a shuffled deck.
+    /// Subsequent deals reuse the deck collected from the previous hand's tricks (never reshuffled).</param>
     /// <param name="targetScore">The target score to win the match (default 150).</param>
     /// <param name="colourSweepMatchPoints">
     /// When set, Colour sweeps award this many base match points (× multiplier)
@@ -152,11 +155,14 @@ public sealed class GameManager
     private async Task PlayDealAsync()
     {
         var dealNumber = _matchState.CompletedDeals.Count + 1;
+        var dealer = _matchState.CurrentDealer;
         _logger.LogDebug("Deal {DealNumber} started. Dealer: {Dealer}. Score: Team1={Team1Score}, Team2={Team2Score}",
-            dealNumber, _matchState.CurrentDealer, _matchState.Team1MatchPoints, _matchState.Team2MatchPoints);
+            dealNumber, dealer, _matchState.Team1MatchPoints, _matchState.Team2MatchPoints);
 
-        // Start the deal
-        var deck = _deckProvider();
+        // Start the deal. The deck is never shuffled during a match: only the first
+        // deal comes from the provider, subsequent deals reuse the deck collected
+        // from the previous hand's tricks.
+        var deck = _nextDeck ?? _deckProvider();
         _matchState = _matchState.StartDeal(deck);
 
         // Notify players that deal has started
@@ -185,6 +191,10 @@ public sealed class GameManager
 
         // Playing phase (8 tricks)
         var finalHandState = await PerformPlayingAsync();
+
+        // Rebuild the deck for the next deal from the tricks just played,
+        // dealer team's tricks on top of the other team's.
+        _nextDeck = finalHandState.CollectDeck(dealer.GetTeam());
 
         // Get the result and notify players
         var result = _matchState.CompletedDeals[^1];
@@ -334,22 +344,7 @@ public sealed class GameManager
             if (deal.Hand != null && deal.Hand.CompletedTricks.Count > trickCountBefore)
             {
                 var completedTrick = deal.Hand.CompletedTricks[^1];
-                // The winner is the leader of the next trick, or we can get it from completed trick
-                var winner = deal.Hand.CurrentTrick?.Leader ?? completedTrick.PlayedCards[0].Player;
-                // Actually, the next trick's leader IS the winner of the previous trick
-                if (deal.Hand.CurrentTrick != null)
-                {
-                    winner = deal.Hand.CurrentTrick.Leader;
-                }
-                else
-                {
-                    // Last trick - determine winner from the completed trick
-                    // The winner leads next, but there's no next trick. We need to find who won.
-                    // Look at who would have led - it's stored implicitly
-                    // Actually we can check Team1TricksWon vs previous to determine winner team
-                    // But simpler: iterate through completed trick to find winner
-                    winner = DetermineWinner(completedTrick, deal.Hand.GameMode);
-                }
+                var winner = deal.Hand.TrickWinners[^1];
 
                 _logger.LogDebug("Trick {TrickNumber} won by {Winner} ({Team}). Points: Team1={Team1Points}, Team2={Team2Points}",
                     trickNumber, winner, winner.GetTeam(), deal.Hand.Team1CardPoints, deal.Hand.Team2CardPoints);
@@ -362,55 +357,6 @@ public sealed class GameManager
             deal.Hand!.Team1TricksWon, deal.Hand.Team2TricksWon);
 
         return deal.Hand;
-    }
-
-    /// <summary>
-    /// Determines the winner of a completed trick.
-    /// </summary>
-    private static PlayerPosition DetermineWinner(State.TrickState trick, GameModes.GameMode gameMode)
-    {
-        var trumpSuit = gameMode.GetTrumpSuit();
-        var leadSuit = trick.LeadSuit!.Value;
-
-        var winningCard = trick.PlayedCards[0];
-
-        foreach (var playedCard in trick.PlayedCards.Skip(1))
-        {
-            if (IsBetter(playedCard, winningCard, leadSuit, trumpSuit, gameMode))
-            {
-                winningCard = playedCard;
-            }
-        }
-
-        return winningCard.Player;
-    }
-
-    private static bool IsBetter(Play.PlayedCard challenger, Play.PlayedCard current, Cards.CardSuit leadSuit, Cards.CardSuit? trumpSuit, GameModes.GameMode gameMode)
-    {
-        var challengerSuit = challenger.Card.Suit;
-        var currentSuit = current.Card.Suit;
-
-        // Trump beats non-trump
-        if (trumpSuit.HasValue)
-        {
-            if (challengerSuit == trumpSuit && currentSuit != trumpSuit)
-                return true;
-            if (currentSuit == trumpSuit && challengerSuit != trumpSuit)
-                return false;
-        }
-
-        // If different suits (and neither is trump, or no trump mode), lead suit wins
-        if (challengerSuit != currentSuit)
-        {
-            if (currentSuit == leadSuit && challengerSuit != leadSuit)
-                return false;
-            if (challengerSuit == leadSuit && currentSuit != leadSuit)
-                return true;
-            return false;
-        }
-
-        // Same suit: compare strength
-        return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
     }
 
     /// <summary>
