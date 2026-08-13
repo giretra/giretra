@@ -111,6 +111,14 @@ public sealed class Room
     public bool IsEmpty => PlayerCount == 0 && Watchers.Count == 0;
 
     /// <summary>
+    /// Gets whether any human (player or watcher) still has an active connection.
+    /// Seated players with a null ConnectionId are disconnected (grace period / rejoin pending).
+    /// </summary>
+    public bool HasConnectedHumans =>
+        PlayerSlots.Values.Any(p => p?.ConnectionId != null)
+        || Watchers.Any(w => w.ConnectionId != null);
+
+    /// <summary>
     /// Gets all connected clients (players and watchers).
     /// </summary>
     public IEnumerable<ConnectedClient> AllClients =>
