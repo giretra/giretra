@@ -745,6 +745,44 @@ public sealed class GameService : IGameService
         roomService.ResetToWaiting(session.RoomId);
     }
 
+    public async Task TerminateGameAsync(string gameId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session == null)
+            return;
+
+        _logger.LogInformation("Terminating game {GameId} (all human players left)", gameId);
+
+        // Cancel the game loop
+        session.CancellationTokenSource.Cancel();
+
+        // Force-complete any pending TaskCompletionSources so the game loop can unblock
+        foreach (var pending in session.PendingActions.Values)
+        {
+            pending.CutTcs?.TrySetCanceled();
+            pending.NegotiationTcs?.TrySetCanceled();
+            pending.PlayCardTcs?.TrySetCanceled();
+            pending.ContinueDealTcs?.TrySetCanceled();
+            pending.ContinueMatchTcs?.TrySetCanceled();
+        }
+        session.PendingActions.Clear();
+
+        // Wait briefly for the game loop to exit
+        if (session.GameLoopTask != null)
+        {
+            try
+            {
+                await session.GameLoopTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch
+            {
+                // Game loop may throw due to cancellation — that's expected
+            }
+        }
+
+        _gameRepository.Remove(gameId);
+    }
+
     private async Task PersistMatchAsync(GameSession session)
     {
         try

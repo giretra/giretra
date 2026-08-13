@@ -72,4 +72,10 @@ public interface IGameService
     /// Updates ClientPositions and the underlying WebApiPlayerAgent.
     /// </summary>
     bool RejoinPlayer(string gameId, string oldClientId, string newClientId, TimeSpan turnTimeout);
+
+    /// <summary>
+    /// Terminates a game whose humans have all left (no abandoner, no persistence).
+    /// Cancels the game loop, unblocks pending actions, and removes the session.
+    /// </summary>
+    Task TerminateGameAsync(string gameId);
 }
