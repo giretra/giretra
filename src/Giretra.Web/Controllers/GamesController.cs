@@ -66,15 +66,16 @@ public class GamesController : ControllerBase
     /// Submits a cut decision.
     /// </summary>
     [HttpPost("{gameId}/cut")]
-    public ActionResult SubmitCut(string gameId, [FromBody] CutRequest request)
+    public ActionResult<CutResponse> SubmitCut(string gameId, [FromBody] CutRequest request)
     {
         if (request.Position < 6 || request.Position > 26)
             return BadRequest("Cut position must be between 6 and 26.");
 
-        if (!_gameService.SubmitCut(gameId, request.ClientId, request.Position, request.FromTop))
+        var finalPosition = _gameService.SubmitCut(gameId, request.ClientId, request.Position, request.FromTop);
+        if (finalPosition == null)
             return BadRequest("Invalid cut submission. Either it's not your turn or the game doesn't exist.");
 
-        return Ok();
+        return Ok(new CutResponse { Position = finalPosition.Value });
     }
 
     /// <summary>

@@ -298,11 +298,103 @@ public sealed class GameServiceTests
         var result = _gameService.SubmitCut(session.GameId, clientId, 16, true);
 
         // Assert
-        Assert.True(result);
+        Assert.NotNull(result);
+        Assert.InRange(result.Value, 15, 17);
     }
 
     [Fact]
-    public void SubmitCut_WithInvalidPosition_ReturnsFalse()
+    public void SubmitCut_AppliesNudgeWithinOneCard()
+    {
+        // Arrange
+        var room = CreateTestRoomWithHumanPlayer();
+        var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
+        var session = _gameService.CreateGame(room)!;
+
+        for (var i = 0; i < 50; i++)
+        {
+            var pending = new PendingAction
+            {
+                ActionType = PendingActionType.Cut,
+                Player = PlayerPosition.Bottom,
+                CutTcs = new TaskCompletionSource<(int, bool)>(),
+                TimeoutDuration = TimeSpan.FromMinutes(2)
+            };
+            session.PendingActions[PlayerPosition.Bottom] = pending;
+
+            // Act
+            var result = _gameService.SubmitCut(session.GameId, clientId, 16, false);
+
+            // Assert - the nudged position stays within one card and the engine
+            // receives exactly the value returned to the client
+            Assert.NotNull(result);
+            Assert.InRange(result.Value, 15, 17);
+            var (enginePosition, fromTop) = pending.CutTcs.Task.Result;
+            Assert.Equal(result.Value, enginePosition);
+            Assert.False(fromTop);
+        }
+    }
+
+    [Fact]
+    public void SubmitCut_ClampsNudgeToValidRange()
+    {
+        // Arrange
+        var room = CreateTestRoomWithHumanPlayer();
+        var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
+        var session = _gameService.CreateGame(room)!;
+
+        for (var i = 0; i < 50; i++)
+        {
+            session.PendingActions[PlayerPosition.Bottom] = new PendingAction
+            {
+                ActionType = PendingActionType.Cut,
+                Player = PlayerPosition.Bottom,
+                CutTcs = new TaskCompletionSource<(int, bool)>(),
+                TimeoutDuration = TimeSpan.FromMinutes(2)
+            };
+            var atMin = _gameService.SubmitCut(session.GameId, clientId, 6, true);
+            Assert.NotNull(atMin);
+            Assert.InRange(atMin.Value, 6, 7);
+
+            session.PendingActions[PlayerPosition.Bottom] = new PendingAction
+            {
+                ActionType = PendingActionType.Cut,
+                Player = PlayerPosition.Bottom,
+                CutTcs = new TaskCompletionSource<(int, bool)>(),
+                TimeoutDuration = TimeSpan.FromMinutes(2)
+            };
+            var atMax = _gameService.SubmitCut(session.GameId, clientId, 26, true);
+            Assert.NotNull(atMax);
+            Assert.InRange(atMax.Value, 25, 26);
+        }
+    }
+
+    [Fact]
+    public void SubmitCut_NudgeVaries()
+    {
+        // Arrange
+        var room = CreateTestRoomWithHumanPlayer();
+        var clientId = room.PlayerSlots[PlayerPosition.Bottom]!.ClientId;
+        var session = _gameService.CreateGame(room)!;
+        var results = new HashSet<int>();
+
+        for (var i = 0; i < 100; i++)
+        {
+            session.PendingActions[PlayerPosition.Bottom] = new PendingAction
+            {
+                ActionType = PendingActionType.Cut,
+                Player = PlayerPosition.Bottom,
+                CutTcs = new TaskCompletionSource<(int, bool)>(),
+                TimeoutDuration = TimeSpan.FromMinutes(2)
+            };
+            results.Add(_gameService.SubmitCut(session.GameId, clientId, 16, true)!.Value);
+        }
+
+        // P(all 100 nudges identical) = (1/3)^99 - effectively impossible
+        Assert.True(results.Count >= 2);
+    }
+
+    [Fact]
+    public void SubmitCut_WithInvalidPosition_ReturnsNull()
     {
         // Arrange
         var room = CreateTestRoomWithHumanPlayer();
@@ -322,11 +414,11 @@ public sealed class GameServiceTests
         var result = _gameService.SubmitCut(session.GameId, clientId, 5, true);
 
         // Assert
-        Assert.False(result);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void SubmitCut_WhenNoPendingAction_ReturnsFalse()
+    public void SubmitCut_WhenNoPendingAction_ReturnsNull()
     {
         // Arrange
         var room = CreateTestRoomWithHumanPlayer();
@@ -337,11 +429,11 @@ public sealed class GameServiceTests
         var result = _gameService.SubmitCut(session!.GameId, clientId, 16, true);
 
         // Assert
-        Assert.False(result);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void SubmitCut_WhenWrongActionType_ReturnsFalse()
+    public void SubmitCut_WhenWrongActionType_ReturnsNull()
     {
         // Arrange
         var room = CreateTestRoomWithHumanPlayer();
@@ -359,11 +451,11 @@ public sealed class GameServiceTests
         var result = _gameService.SubmitCut(session.GameId, clientId, 16, true);
 
         // Assert
-        Assert.False(result);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void SubmitCut_WhenWrongPlayer_ReturnsFalse()
+    public void SubmitCut_WhenWrongPlayer_ReturnsNull()
     {
         // Arrange
         var room = CreateTestRoomWithMultipleHumans();
@@ -382,7 +474,7 @@ public sealed class GameServiceTests
         var result = _gameService.SubmitCut(session.GameId, wrongClientId, 16, true);
 
         // Assert
-        Assert.False(result);
+        Assert.Null(result);
     }
 
     #endregion
