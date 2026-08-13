@@ -268,6 +268,15 @@ export interface LeaderboardPlayerEntry {
   winRate: number;
 }
 
+export interface LeaderboardAchieverEntry {
+  playerId: string;
+  rank: number;
+  displayName: string;
+  avatarUrl: string | null;
+  achievementPoints: number;
+  achievementCount: number;
+}
+
 export interface LeaderboardBotEntry {
   playerId: string;
   rank: number;
@@ -281,6 +290,7 @@ export interface LeaderboardBotEntry {
 
 export interface LeaderboardResponse {
   players: LeaderboardPlayerEntry[];
+  topAchievers: LeaderboardAchieverEntry[];
   bots: LeaderboardBotEntry[];
   playerCount: number;
   botCount: number;

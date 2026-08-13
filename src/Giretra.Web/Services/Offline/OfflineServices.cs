@@ -356,6 +356,7 @@ public sealed class OfflineLeaderboardService : ILeaderboardService
         => Task.FromResult(new LeaderboardResponse
         {
             Players = [],
+            TopAchievers = [],
             Bots = [],
             PlayerCount = 0,
             BotCount = 0,
