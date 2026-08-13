@@ -896,6 +896,29 @@ export class GameStateService {
       }
     });
 
+    // Room reset to Waiting after a match ended without a new game starting.
+    // Drop the game state so the UI leaves the match-end overlay and shows
+    // the waiting room, where a new game can be started manually.
+    this.hub.roomReset$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: roomReset', event);
+      const room = this._currentRoom();
+      if (!room || room.roomId !== event.roomId) return;
+
+      this._gameId.set(null);
+      this._gameState.set(null);
+      this._playerState.set(null);
+      this._playerCardCounts.set(null);
+      this._turnTimeoutAt.set(null);
+      this._matchDealHistory.set([]);
+      this._currentDealDealer = null;
+      this._currentDealNumber = 0;
+
+      this.api.getRoom(event.roomId).subscribe((r) => {
+        this._currentRoom.set(r);
+        this._idleDeadline.set(r.idleDeadline ? new Date(r.idleDeadline) : null);
+      });
+    });
+
     // Room idle closed
     this.hub.roomIdleClosed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: roomIdleClosed', event);

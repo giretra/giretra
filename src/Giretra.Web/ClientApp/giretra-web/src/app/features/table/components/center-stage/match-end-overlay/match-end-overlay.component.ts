@@ -134,6 +134,11 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
               <span class="idle-label">{{ t('matchEnd.autoClose') }}</span>
               <app-turn-timer [deadline]="idleDeadline()" (expired)="leaveTable.emit()" />
             </div>
+          } @else if (!isWatcher() && playAgainDeadline()) {
+            <div class="idle-timer">
+              <span class="idle-label">{{ t('matchEnd.playAgainWindow') }}</span>
+              <app-turn-timer [deadline]="playAgainDeadline()" />
+            </div>
           }
 
           <div class="actions">
@@ -554,6 +559,7 @@ export class MatchEndOverlayComponent {
   readonly isRanked = input<boolean>(false);
   readonly isWatcher = input<boolean>(false);
   readonly idleDeadline = input<Date | null>(null);
+  readonly playAgainDeadline = input<Date | null>(null);
   readonly waiting = input<boolean>(false);
   readonly achievements = input<AchievementEarnedDto[]>([]);
 

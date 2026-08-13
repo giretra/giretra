@@ -163,6 +163,8 @@
   "matchEnd.achievementEarned": "Achievement Unlocked",
   "matchEnd.achievementsEarned": "{{count}} Achievements Unlocked",
   "matchEnd.achievementDeal": "Deal #{{deal}}",
+  "matchEnd.playAgainWindow": "Play again within",
+  "matchEnd.playAgainFailed": "Could not start a new game. The play-again window may have closed.",
 
   "achievements.title": "Achievements",
   "achievements.earned": "Achievement Unlocked!",
