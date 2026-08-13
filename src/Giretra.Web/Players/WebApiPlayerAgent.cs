@@ -20,12 +20,13 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     /// short for players reading the match recap. Kept in sync with the
     /// room idle timeout so a stuck table still closes in reasonable time.
     /// </summary>
-    private static readonly TimeSpan ContinueMatchTimeout = TimeSpan.FromSeconds(120);
+    public static readonly TimeSpan DefaultContinueMatchTimeout = TimeSpan.FromSeconds(120);
 
     private readonly GameSession _session;
     private readonly INotificationService _notifications;
     private string _clientId;
     private readonly TimeSpan _timeout;
+    private readonly TimeSpan _continueMatchTimeout;
 
     public PlayerPosition Position { get; }
     public string ClientId => _clientId;
@@ -43,13 +44,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         string clientId,
         GameSession session,
         INotificationService notifications,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        TimeSpan? continueMatchTimeout = null)
     {
         Position = position;
         _clientId = clientId;
         _session = session;
         _notifications = notifications;
         _timeout = timeout ?? TimeSpan.FromMinutes(2);
+        _continueMatchTimeout = continueMatchTimeout ?? DefaultContinueMatchTimeout;
     }
 
     public async Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
@@ -238,7 +241,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             ActionType = PendingActionType.ContinueMatch,
             Player = Position,
             ContinueMatchTcs = tcs,
-            TimeoutDuration = ContinueMatchTimeout
+            TimeoutDuration = _continueMatchTimeout
         };
         _session.PendingActions[Position] = pending;
 
@@ -246,7 +249,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, pending.TimeoutAt);
 
         // Wait for the confirmation with timeout
-        using var cts = new CancellationTokenSource(ContinueMatchTimeout);
+        using var cts = new CancellationTokenSource(_continueMatchTimeout);
         try
         {
             await tcs.Task.WaitAsync(cts.Token);
