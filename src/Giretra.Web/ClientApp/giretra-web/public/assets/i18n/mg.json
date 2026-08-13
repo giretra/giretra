@@ -93,6 +93,15 @@
   "cut.cutTheDeck": "Tapaho ny Katra",
   "cut.playerCutting": "{{player}} manapaka...",
   "cut.waiting": "Miandry...",
+  "cut.justCut": "Tapaho fotsiny",
+  "cut.dragHint": "Tsindrio ny katra, tarito miakatra na midina, avelao hanapaka",
+  "cut.infoLabel": "Ny fomba amerenana ny katra",
+
+  "cutInfo.title": "Ny fomba amerenana ny katra",
+  "cutInfo.intro": "Tsy akorontana mihitsy ny katra mandritra ny lalao, indray mandeha ihany alohan'ny donne voalohany.",
+  "cutInfo.collect": "Eo anelanelan'ny donne dia averina amboarina avy amin'ny pli vao nilalaovina izy: ny pli azon'ny ekipan'ny mpizara no apetraka eo ambonin'ny an'ny ekipa hafa. Ao anatin'ny antontany tsirairay, ny pli dia mijanona araka ny filaharana nahazoana azy, ary ny karatra ao anaty pli dia mitoetra araka ny filaharana nilalaovana azy.",
+  "cutInfo.cutOnly": "Ny fanapahana ihany no manova ny filaharan'ny katra eo anelanelan'ny donne, ka tena zava-dehibe ny toerana anapahanao.",
+  "cutInfo.nudge": "Mba tsy hahamarina tanteraka ny fanapahana, ny mpizara lalao dia mamindra ny fanapahana tsirairay hatramin'ny karatra iray miakatra na midina.",
 
   "negotiation.noBidYet": "Mbola tsy misy filazana",
   "negotiation.bidBy": "nataon'i {{player}}",

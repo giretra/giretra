@@ -14,6 +14,8 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
 import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
+import { CutInfoPopupComponent } from './components/cut-info-popup/cut-info-popup.component';
+import { CutOutcome } from './components/center-stage/cut-stage/cut-deck-3d.component';
 import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 import { ChatPopupComponent } from './components/chat-popup/chat-popup.component';
@@ -36,6 +38,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
     BidDialogComponent,
     GameModePopupComponent,
     NegotiationHistoryPopupComponent,
+    CutInfoPopupComponent,
     MatchHistoryPopupComponent,
     PlayerProfilePopupComponent,
     ChatPopupComponent,
@@ -124,8 +127,11 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
         [tricksWonByPosition]="gameState.tricksWonByPosition()"
         [idleDeadline]="gameState.idleDeadline()"
         [waitingForContinue]="waitingForContinue()"
+        [cutOutcome]="cutOutcome()"
         (startGame)="onStartGame()"
-        (submitCut)="onSubmitCut()"
+        (submitCut)="onSubmitCut($event)"
+        (cutAnimationDone)="onCutAnimationDone()"
+        (cutInfo)="showCutInfo.set(true)"
         (hideDealSummary)="onHideDealSummary()"
         (dismissCompletedTrick)="onDismissCompletedTrick()"
         (setSeatMode)="onSetSeatMode($event)"
@@ -172,6 +178,11 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
           [multiplier]="popup.multiplier"
           (dismissed)="dismissGameModePopup()"
         />
+      }
+
+      <!-- Cut Info Popup -->
+      @if (showCutInfo()) {
+        <app-cut-info-popup (closed)="showCutInfo.set(false)" />
       }
 
       <!-- Negotiation History Popup -->
@@ -826,6 +837,8 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
   readonly waitingForContinue = signal(false);
   readonly showNegotiationHistory = signal(false);
+  readonly showCutInfo = signal(false);
+  readonly cutOutcome = signal<CutOutcome | null>(null);
   readonly showMatchHistory = signal(false);
   readonly showFullscreenSuggestion = signal(false);
   readonly showAchievementsPopup = signal(false);
@@ -1050,25 +1063,33 @@ export class TableComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSubmitCut(): void {
+  onSubmitCut(position: number): void {
     if (this.gameState.isSubmittingAction()) return;
     this.sound.play('general_click');
 
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
+    if (!gameId || !clientId) return;
 
-    if (gameId && clientId) {
-      this.gameState.beginSubmit();
-      // Random cut position between 6 and 26
-      const position = Math.floor(Math.random() * 21) + 6;
-      this.api.submitCut(gameId, clientId, position, true).subscribe({
-        next: () => this.gameState.endSubmit(),
-        error: (err) => {
-          console.error('Failed to submit cut', err);
-          this.gameState.endSubmit();
-        },
-      });
-    }
+    this.cutOutcome.set(null);
+    this.gameState.beginSubmit();
+    // Keep the cutter on the cut stage while the deck animation plays
+    this.gameState.holdCutStage();
+    this.api.submitCut(gameId, clientId, position, true).subscribe({
+      next: (res) => this.cutOutcome.set({ status: 'confirmed', position: res.position }),
+      error: (err) => {
+        console.error('Failed to submit cut', err);
+        this.cutOutcome.set({ status: 'error' });
+        this.gameState.releaseCutStage();
+        this.gameState.endSubmit();
+      },
+    });
+  }
+
+  onCutAnimationDone(): void {
+    this.cutOutcome.set(null);
+    this.gameState.releaseCutStage();
+    this.gameState.endSubmit();
   }
 
   onPlayCard(card: { rank: string; suit: string }): void {

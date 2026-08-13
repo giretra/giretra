@@ -93,6 +93,15 @@
   "cut.cutTheDeck": "Couper le Jeu",
   "cut.playerCutting": "{{player}} coupe...",
   "cut.waiting": "En attente...",
+  "cut.justCut": "Couper au hasard",
+  "cut.dragHint": "Appuyez sur le paquet, glissez vers le haut ou le bas pour pincer, relâchez pour couper",
+  "cut.infoLabel": "Comment le paquet est reconstitué",
+
+  "cutInfo.title": "Comment le paquet est reconstitué",
+  "cutInfo.intro": "Le paquet n'est jamais mélangé pendant une partie, une seule fois avant la première donne.",
+  "cutInfo.collect": "Entre les donnes, il est reconstitué à partir des plis joués : les plis remportés par l'équipe du donneur sont placés au-dessus de ceux de l'autre équipe. Dans chaque pile, les plis restent dans l'ordre où ils ont été gagnés, et chaque pli garde ses cartes dans l'ordre où elles ont été jouées.",
+  "cutInfo.cutOnly": "La coupe est la seule chose qui réordonne le paquet entre les donnes, donc l'endroit où vous pincez compte vraiment.",
+  "cutInfo.nudge": "Pour que la coupe reste imprécise, le serveur décale chaque coupe d'au plus une carte, vers le haut ou vers le bas.",
 
   "negotiation.noBidYet": "Pas encore d'annonce",
   "negotiation.bidBy": "par {{player}}",
