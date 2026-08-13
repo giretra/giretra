@@ -197,6 +197,7 @@
   "achievements.desc.laoka_na_vary_tena_tsara_sy_lafo": "Gagner une donne alors que votre équipe n'a remporté que 2 plis.",
   "achievements.desc.sweep_in_colour": "Faire capot (8 plis) en mode Couleur.",
   "achievements.desc.namoronako_ny_tsy_nananako": "Couper le paquet, puis laisser votre partenaire remporter 6+ plis à lui seul pendant que votre équipe gagne la donne.",
+  "achievements.desc.asio_siramamy": "Gagner un match dans lequel vous avez personnellement contré ou surcontré sur 3 donnes ou plus.",
   "achievements.page.title": "Succès",
   "achievements.page.subtitle": "{{earned}} / {{total}} débloqués",
   "achievements.page.earned": "Obtenu",

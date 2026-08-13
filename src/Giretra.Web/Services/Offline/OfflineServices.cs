@@ -106,7 +106,7 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
             {
                 var context = BuildContext(
                     AchievementTrigger.DealEnd, dealResult, dealNumber,
-                    matchState, position, playerId, recordedDeal, _earnedCodes);
+                    matchState, position, playerId, recordedDeal, recordedDeals, _earnedCodes);
 
                 await EvaluateRulesAsync(dealRules, context, dealNumber, session);
             }
@@ -118,7 +118,7 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
         {
             var context = BuildContext(
                 AchievementTrigger.MatchEnd, null, null,
-                matchState, position, playerId, lastRecordedDeal, _earnedCodes);
+                matchState, position, playerId, lastRecordedDeal, recordedDeals, _earnedCodes);
 
             await EvaluateRulesAsync(matchRules, context, null, session);
         }
@@ -158,20 +158,19 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
     private static AchievementContext BuildContext(
         AchievementTrigger trigger, Core.Scoring.DealResult? dealResult, short? dealNumber,
         Core.State.MatchState matchState, PlayerPosition position, Guid playerId,
-        RecordedDeal? recordedDeal, IReadOnlySet<string> alreadyEarned)
+        RecordedDeal? recordedDeal, IReadOnlyList<RecordedDeal> allRecordedDeals,
+        IReadOnlySet<string> alreadyEarned)
     {
         var initialHand = recordedDeal?.InitialHands.GetValueOrDefault(position)
             ?? (IReadOnlyList<Card>)[];
         var fullHand = recordedDeal?.FullHands.GetValueOrDefault(position)
             ?? (IReadOnlyList<Card>)[];
 
-        var negotiationActions = recordedDeal?.Actions
-            .Where(a => a.ActionType is RecordedActionType.Announce
-                or RecordedActionType.Accept
-                or RecordedActionType.Double
-                or RecordedActionType.Redouble
-                or RecordedActionType.ReRedouble)
-            .ToList() ?? [];
+        var negotiationActions = recordedDeal?.NegotiationActions() ?? [];
+
+        var matchNegotiations = allRecordedDeals
+            .Select(d => new DealNegotiation(d.DealNumber, d.NegotiationActions()))
+            .ToList();
 
         var cutterPosition = recordedDeal?.Actions
             .FirstOrDefault(a => a.ActionType == RecordedActionType.Cut)?.PlayerPosition;
@@ -191,6 +190,7 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
             InitialHand = initialHand,
             FullHand = fullHand,
             NegotiationActions = negotiationActions,
+            MatchNegotiations = matchNegotiations,
             CutterPosition = cutterPosition,
             Tricks = tricks,
             AlreadyEarnedCodes = alreadyEarned
