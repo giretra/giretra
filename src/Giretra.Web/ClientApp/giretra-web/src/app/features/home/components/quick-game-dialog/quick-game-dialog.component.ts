@@ -414,12 +414,9 @@ export class QuickGameDialogComponent {
 
   constructor() {
     effect(() => {
-      const types = this.aiTypes();
+      const types = this.sortedAiTypes();
       if (types.length > 0 && !this.selectedBot()) {
-        const eva = types.find(t => t.name.toLowerCase() === 'eva');
-        if (eva) {
-          this.selectedBot.set(eva.name);
-        }
+        this.selectedBot.set(types[0].name);
       }
     });
   }
