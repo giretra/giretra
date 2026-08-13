@@ -283,29 +283,32 @@ public sealed class GameService : IGameService
         };
     }
 
-    public bool SubmitCut(string gameId, string clientId, int position, bool fromTop)
+    public int? SubmitCut(string gameId, string clientId, int position, bool fromTop)
     {
         var session = _gameRepository.GetById(gameId);
         if (session == null)
-            return false;
+            return null;
 
         var playerPosition = session.GetPositionForClient(clientId);
         if (playerPosition == null)
-            return false;
+            return null;
 
         if (!session.PendingActions.TryGetValue(playerPosition.Value, out var pending))
-            return false;
+            return null;
 
         if (pending.ActionType != PendingActionType.Cut)
-            return false;
+            return null;
 
         // Validate cut position
         if (position < 6 || position > 26)
-            return false;
+            return null;
+
+        // Nudge the cut by -1/0/+1 so no client can cut with perfect precision
+        var finalPosition = Math.Clamp(position + Random.Shared.Next(-1, 2), 6, 26);
 
         // Complete the pending action
-        pending.CutTcs?.TrySetResult((position, fromTop));
-        return true;
+        pending.CutTcs?.TrySetResult((finalPosition, fromTop));
+        return finalPosition;
     }
 
     public bool SubmitNegotiation(string gameId, string clientId, NegotiationAction action)

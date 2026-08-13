@@ -325,7 +325,7 @@ public sealed class RoomToGameFlowTests
             game.PendingAction.Player == PlayerPosition.Bottom)
         {
             var result = _gameService.SubmitCut(game.GameId, createResponse.ClientId, 16, true);
-            Assert.True(result);
+            Assert.NotNull(result);
         }
     }
 

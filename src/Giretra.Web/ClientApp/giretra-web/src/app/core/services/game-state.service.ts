@@ -146,6 +146,29 @@ export class GameStateService {
   readonly completedTrickToShow = this._completedTrickToShow.asReadonly();
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Cut Animation Hold (keeps the cutter on the cut stage while the deck
+  // animation plays, since the engine advances to negotiation immediately)
+  // ─────────────────────────────────────────────────────────────────────────
+  private readonly _cutAnimationHold = signal<boolean>(false);
+  private _cutHoldTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private readonly CUT_HOLD_SAFETY_MS = 5000;
+
+  holdCutStage(): void {
+    if (this._cutHoldTimeoutId) clearTimeout(this._cutHoldTimeoutId);
+    this._cutAnimationHold.set(true);
+    // Safety net: never keep the UI stuck on the cut stage
+    this._cutHoldTimeoutId = setTimeout(() => this.releaseCutStage(), this.CUT_HOLD_SAFETY_MS);
+  }
+
+  releaseCutStage(): void {
+    if (this._cutHoldTimeoutId) {
+      clearTimeout(this._cutHoldTimeoutId);
+      this._cutHoldTimeoutId = null;
+    }
+    this._cutAnimationHold.set(false);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Turn Timer State
   // ─────────────────────────────────────────────────────────────────────────
   private readonly _turnTimeoutAt = signal<Date | null>(null);
@@ -189,6 +212,12 @@ export class GameStateService {
     if (showingCompletedTrick) {
       console.log('[GameState] → phase = playing (showing completed trick)');
       return 'playing';
+    }
+
+    // Keep the cutter on the cut stage while the deck animation plays
+    if (this._cutAnimationHold() && gameState && !gameState.isComplete) {
+      console.log('[GameState] → phase = cut (cut animation hold)');
+      return 'cut';
     }
 
     // Match end — only after deal summary has been shown and dismissed
@@ -481,6 +510,7 @@ export class GameStateService {
     this._pendingDealSummary = null;
     this._turnTimeoutAt.set(null);
     this._idleDeadline.set(null);
+    this.releaseCutStage();
     this._matchDealHistory.set([]);
     this._currentDealDealer = null;
     this._currentDealNumber = 0;

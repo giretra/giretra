@@ -4,6 +4,7 @@ import { RoomResponse, NegotiationAction, TrickResponse } from '../../../../core
 import { GamePhase } from '../../../../core/services/game-state.service';
 import { WaitingStageComponent } from './waiting-stage/waiting-stage.component';
 import { CutStageComponent } from './cut-stage/cut-stage.component';
+import { CutOutcome } from './cut-stage/cut-deck-3d.component';
 import { NegotiationStageComponent } from './negotiation-stage/negotiation-stage.component';
 import { TrickAreaComponent } from './trick-area/trick-area.component';
 import { DealSummaryComponent } from './deal-summary/deal-summary.component';
@@ -38,7 +39,10 @@ import { DealSummaryComponent } from './deal-summary/deal-summary.component';
             [activePlayer]="activePlayer()"
             [myPosition]="myPosition()"
             [isWatcher]="isWatcher()"
-            (submitCut)="submitCut.emit()"
+            [cutOutcome]="cutOutcome()"
+            (submitCut)="submitCut.emit($event)"
+            (cutAnimationDone)="cutAnimationDone.emit()"
+            (infoClicked)="cutInfo.emit()"
           />
         }
         @case ('negotiation') {
@@ -105,9 +109,13 @@ export class CenterStageComponent {
   readonly myTeam = input<Team | null>(null);
   readonly idleDeadline = input<Date | null>(null);
   readonly waiting = input<boolean>(false);
+  readonly cutOutcome = input<CutOutcome | null>(null);
 
   readonly startGame = output<void>();
-  readonly submitCut = output<void>();
+  /** Aimed cut position (6-26) chosen by the pinch. */
+  readonly submitCut = output<number>();
+  readonly cutAnimationDone = output<void>();
+  readonly cutInfo = output<void>();
   readonly hideDealSummary = output<void>();
   readonly dismissCompletedTrick = output<void>();
   readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();

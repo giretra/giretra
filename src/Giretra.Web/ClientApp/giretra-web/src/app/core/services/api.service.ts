@@ -157,6 +157,11 @@ export interface WatcherStateResponse {
   playerCardCounts: Record<PlayerPosition, number>;
 }
 
+export interface CutResponse {
+  /** Final cut position after the server's random -1/0/+1 nudge */
+  position: number;
+}
+
 export interface ApiError {
   type: string;
   title: string;
@@ -483,9 +488,9 @@ export class ApiService {
     clientId: string,
     position: number,
     fromTop: boolean
-  ): Observable<void> {
+  ): Observable<CutResponse> {
     return this.http
-      .post<void>(`${this.baseUrl}/api/games/${gameId}/cut`, {
+      .post<CutResponse>(`${this.baseUrl}/api/games/${gameId}/cut`, {
         clientId,
         position,
         fromTop,
