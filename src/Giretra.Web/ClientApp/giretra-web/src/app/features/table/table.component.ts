@@ -208,6 +208,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
           [isRanked]="gameState.isRanked()"
           [isWatcher]="gameState.isWatcher()"
           [idleDeadline]="gameState.idleDeadline()"
+          [playAgainDeadline]="gameState.turnTimeoutAt()"
           [waiting]="waitingForContinue()"
           [achievements]="gameState.earnedAchievements()"
           (playAgain)="onPlayAgain()"
@@ -1185,14 +1186,19 @@ export class TableComponent implements OnInit, OnDestroy {
     this.sound.play('general_click');
     const gameId = this.gameState.gameId();
     const clientId = this.session.clientId();
-    const pendingAction = this.gameState.pendingActionType();
 
-    if (pendingAction === PendingActionType.ContinueMatch && gameId && clientId) {
+    // Always attempt the submit — the server validates the pending action.
+    // Relying on the client's cached pendingActionType made the click a
+    // silent no-op whenever the client was out of sync with the server.
+    if (gameId && clientId) {
       this.waitingForContinue.set(true);
       this.api.submitContinueMatch(gameId, clientId).subscribe({
         error: (err) => {
           console.error('Failed to submit continue match', err);
           this.waitingForContinue.set(false);
+          this.errorBanner.show(this.transloco.translate('matchEnd.playAgainFailed'));
+          // Re-sync with the server (the play-again window may have closed)
+          this.gameState.refreshState();
         },
       });
     }

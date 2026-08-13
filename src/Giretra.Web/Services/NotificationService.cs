@@ -506,6 +506,11 @@ public sealed class NotificationService : INotificationService
         await _hubContext.Clients.Group($"room_{roomId}").SendAsync("RoomIdleClosed", new { RoomId = roomId });
     }
 
+    public async Task NotifyRoomResetAsync(string roomId)
+    {
+        await _hubContext.Clients.Group($"room_{roomId}").SendAsync("RoomReset", new { RoomId = roomId });
+    }
+
     public async Task NotifyRoomsChangedAsync()
     {
         await _hubContext.Clients.Group("lobby").SendAsync("RoomsChanged");

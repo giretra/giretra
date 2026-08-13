@@ -163,6 +163,8 @@
   "matchEnd.achievementEarned": "Zava-bita Voasokafy",
   "matchEnd.achievementsEarned": "{{count}} Zava-bita Voasokafy",
   "matchEnd.achievementDeal": "Fizarana #{{deal}}",
+  "matchEnd.playAgainWindow": "Milalao indray ao anatin'ny",
+  "matchEnd.playAgainFailed": "Tsy afaka nanomboka lalao vaovao. Mety tapitra ny fotoana hilalaovana indray.",
 
   "achievements.title": "Zava-bita",
   "achievements.earned": "Zava-bita Voasokafy!",

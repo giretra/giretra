@@ -163,6 +163,8 @@
   "matchEnd.achievementEarned": "Succès Débloqué",
   "matchEnd.achievementsEarned": "{{count}} Succès Débloqués",
   "matchEnd.achievementDeal": "Donne #{{deal}}",
+  "matchEnd.playAgainWindow": "Rejouer avant",
+  "matchEnd.playAgainFailed": "Impossible de lancer une nouvelle partie. Le délai pour rejouer est peut-être écoulé.",
 
   "achievements.title": "Succès",
   "achievements.earned": "Succès Débloqué !",
