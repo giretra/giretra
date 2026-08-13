@@ -3,6 +3,8 @@ import { LucideAngularModule, X, Trophy, Bot } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { AiTypeInfo } from '../../../../core/services/api.service';
 
+const DEFAULT_AI_TYPE = 'DeterministicPlayer';
+
 @Component({
   selector: 'app-quick-game-dialog',
   standalone: true,
@@ -416,7 +418,8 @@ export class QuickGameDialogComponent {
     effect(() => {
       const types = this.sortedAiTypes();
       if (types.length > 0 && !this.selectedBot()) {
-        this.selectedBot.set(types[0].name);
+        const preferred = types.find((bot) => bot.name === DEFAULT_AI_TYPE);
+        this.selectedBot.set((preferred ?? types[0]).name);
       }
     });
   }
