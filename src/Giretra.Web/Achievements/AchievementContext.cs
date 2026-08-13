@@ -78,6 +78,12 @@ public sealed record AchievementContext
     public IReadOnlyList<RecordedAction> NegotiationActions { get; init; } = [];
 
     /// <summary>
+    /// Negotiation actions for every deal of the match, oldest first.
+    /// Match-level rules use this; deal-level rules normally want NegotiationActions.
+    /// </summary>
+    public IReadOnlyList<DealNegotiation> MatchNegotiations { get; init; } = [];
+
+    /// <summary>
     /// The player who cut the deck for the current deal (null when unknown).
     /// </summary>
     public PlayerPosition? CutterPosition { get; init; }

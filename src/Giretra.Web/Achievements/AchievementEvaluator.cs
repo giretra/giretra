@@ -86,7 +86,8 @@ public sealed class AchievementEvaluator
                 {
                     var context = BuildContext(
                         AchievementTrigger.DealEnd, dealResult, dealNumber,
-                        matchState, position, playerId, recordedDeal, earnedSets[position]);
+                        matchState, position, playerId, recordedDeal, recordedDeals,
+                        earnedSets[position]);
 
                     var newlyEarned = await EvaluateRulesAsync(
                         db, dealRules, context, matchId, dealNumber,
@@ -106,7 +107,8 @@ public sealed class AchievementEvaluator
             {
                 var context = BuildContext(
                     AchievementTrigger.MatchEnd, null, null,
-                    matchState, position, playerId, lastRecordedDeal, earnedSets[position]);
+                    matchState, position, playerId, lastRecordedDeal, recordedDeals,
+                    earnedSets[position]);
 
                 var newlyEarned = await EvaluateRulesAsync(
                     db, matchRules, context, matchId, null,
@@ -235,6 +237,7 @@ public sealed class AchievementEvaluator
         PlayerPosition position,
         Guid playerId,
         RecordedDeal? recordedDeal,
+        IReadOnlyList<RecordedDeal> allRecordedDeals,
         IReadOnlySet<string> alreadyEarned)
     {
         var initialHand = recordedDeal?.InitialHands.GetValueOrDefault(position)
@@ -242,13 +245,11 @@ public sealed class AchievementEvaluator
         var fullHand = recordedDeal?.FullHands.GetValueOrDefault(position)
             ?? (IReadOnlyList<Core.Cards.Card>)[];
 
-        var negotiationActions = recordedDeal?.Actions
-            .Where(a => a.ActionType is RecordedActionType.Announce
-                or RecordedActionType.Accept
-                or RecordedActionType.Double
-                or RecordedActionType.Redouble
-                or RecordedActionType.ReRedouble)
-            .ToList() ?? [];
+        var negotiationActions = recordedDeal?.NegotiationActions() ?? [];
+
+        var matchNegotiations = allRecordedDeals
+            .Select(d => new DealNegotiation(d.DealNumber, d.NegotiationActions()))
+            .ToList();
 
         var cutterPosition = recordedDeal?.Actions
             .FirstOrDefault(a => a.ActionType == RecordedActionType.Cut)?.PlayerPosition;
@@ -268,6 +269,7 @@ public sealed class AchievementEvaluator
             InitialHand = initialHand,
             FullHand = fullHand,
             NegotiationActions = negotiationActions,
+            MatchNegotiations = matchNegotiations,
             CutterPosition = cutterPosition,
             Tricks = tricks,
             AlreadyEarnedCodes = alreadyEarned
