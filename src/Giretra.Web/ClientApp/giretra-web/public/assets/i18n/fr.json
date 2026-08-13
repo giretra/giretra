@@ -315,6 +315,10 @@
   "leaderboard.columns.author": "Auteur",
   "leaderboard.builtIn": "Intégré",
   "leaderboard.noBots": "Aucun bot classé.",
+  "leaderboard.columns.points": "Pts",
+  "leaderboard.columns.count": "Nb",
+  "leaderboard.noAchievers": "Aucun succès obtenu pour le moment.",
+  "leaderboard.topAchievers": "Top 15 Succès",
   "home.bestPlayers": "Meilleurs joueurs",
 
   "quickGame.title": "Partie Rapide",

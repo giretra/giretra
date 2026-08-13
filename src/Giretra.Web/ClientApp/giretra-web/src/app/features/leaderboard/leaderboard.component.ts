@@ -3,11 +3,12 @@ import { Router } from '@angular/router';
 import {
   ApiService,
   LeaderboardPlayerEntry,
+  LeaderboardAchieverEntry,
   LeaderboardBotEntry,
   PlayerProfileResponse,
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users } from 'lucide-angular';
+import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users, Award } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
@@ -74,7 +75,6 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                     <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
                     <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
                     <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                    <div class="col-games">{{ t('achievements.page.title') }}</div>
                     <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
                   </div>
 
@@ -100,8 +100,53 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
                         <span class="entry-name">{{ p.displayName }}</span>
                       </div>
                       <div class="col-rating">{{ p.rating }}</div>
-                      <div class="col-games">{{ p.achievementCount }}</div>
                       <div class="col-winrate">{{ p.winRate }}%</div>
+                    </div>
+                  }
+                }
+              </section>
+
+              <!-- Achievers Column -->
+              <section class="column">
+                <div class="column-head column-head-ach">
+                  <i-lucide [img]="AwardIcon" [size]="14"></i-lucide>
+                  <span class="column-label">{{ t('leaderboard.topAchievers') }}</span>
+                  <span class="column-count">{{ achievers().length }}</span>
+                </div>
+
+                @if (achievers().length === 0) {
+                  <div class="empty-col">{{ t('leaderboard.noAchievers') }}</div>
+                } @else {
+                  <div class="row row-header">
+                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                    <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
+                    <div class="col-rating">{{ t('leaderboard.columns.points') }}</div>
+                    <div class="col-games">{{ t('leaderboard.columns.count') }}</div>
+                  </div>
+
+                  @for (a of achievers(); track a.rank) {
+                    <div class="row row-clickable" [class.row-top3]="a.rank <= 3" (click)="openProfile(a.playerId)">
+                      <div class="col-rank">
+                        @if (a.rank === 1) {
+                          <span class="medal medal-gold">1</span>
+                        } @else if (a.rank === 2) {
+                          <span class="medal medal-silver">2</span>
+                        } @else if (a.rank === 3) {
+                          <span class="medal medal-bronze">3</span>
+                        } @else {
+                          <span class="rank-num">{{ a.rank }}</span>
+                        }
+                      </div>
+                      <div class="col-name">
+                        @if (a.avatarUrl) {
+                          <img class="avatar" [src]="a.avatarUrl" [alt]="a.displayName" />
+                        } @else {
+                          <span class="avatar avatar-placeholder">{{ a.displayName.charAt(0).toUpperCase() }}</span>
+                        }
+                        <span class="entry-name">{{ a.displayName }}</span>
+                      </div>
+                      <div class="col-rating col-points">{{ a.achievementPoints }}</div>
+                      <div class="col-games">{{ a.achievementCount }}</div>
                     </div>
                   }
                 }
@@ -169,7 +214,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
 
     /* Header */
     .lb-header { background:hsl(var(--card)); border-bottom:1px solid hsl(var(--border)); padding:1rem; flex-shrink:0; }
-    .header-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
+    .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
     .back-btn { display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
     .back-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .header-title { margin:0; font-size:1.125rem; font-weight:700; color:hsl(var(--foreground)); display:flex; align-items:center; gap:0.5rem; }
@@ -179,7 +224,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
 
     /* Main */
     .lb-main { flex:1; padding:1rem; }
-    .lb-inner { max-width:960px; margin:0 auto; }
+    .lb-inner { max-width:1200px; margin:0 auto; }
 
     .loading-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
 
@@ -197,13 +242,14 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     .my-rank-unranked-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
 
     /* Columns */
-    .columns { display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:start; }
+    .columns { display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; align-items:start; }
 
     .column { background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; padding:1rem; display:flex; flex-direction:column; }
 
     /* Column header */
     .column-head { display:flex; align-items:center; gap:0.375rem; margin-bottom:0.75rem; padding-bottom:0.625rem; border-bottom:1px solid hsl(var(--border)); color:hsl(var(--muted-foreground)); }
     .column-head-bot { color:hsl(var(--gold)); }
+    .column-head-ach { color:hsl(var(--gold)); }
     .column-label { font-size:0.8125rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; }
     .column-count { margin-left:auto; font-size:0.625rem; font-weight:600; background:hsl(var(--foreground)/0.06); padding:0.0625rem 0.4375rem; border-radius:9999px; }
 
@@ -220,10 +266,11 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     /* Columns */
     .col-rank { width:2rem; flex-shrink:0; text-align:center; }
     .col-name { flex:1; min-width:0; display:flex; align-items:center; gap:0.375rem; }
-    .col-rating { width:3.25rem; flex-shrink:0; text-align:right; font-weight:700; font-size:0.8125rem; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
-    .col-games { width:2.75rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
+    .col-rating { width:4rem; flex-shrink:0; text-align:right; font-weight:700; font-size:0.8125rem; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
+    .col-games { width:3.5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
     .col-winrate { width:3rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
     .col-author { width:5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .col-points { color:hsl(var(--gold)); }
 
     /* Medal */
     .medal { display:inline-flex; align-items:center; justify-content:center; width:1.375rem; height:1.375rem; border-radius:50%; font-size:0.625rem; font-weight:800; }
@@ -242,7 +289,10 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     .name-group { display:flex; flex-direction:column; gap:0; min-width:0; }
     .bot-author { font-size:0.625rem; color:hsl(var(--muted-foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; }
 
-    /* Responsive: stack columns on narrow screens */
+    /* Responsive: 2 columns on medium screens, stack on narrow */
+    @media (max-width:1024px) {
+      .columns { grid-template-columns:1fr 1fr; }
+    }
     @media (max-width:640px) {
       .columns { grid-template-columns:1fr; }
     }
@@ -260,12 +310,14 @@ export class LeaderboardComponent implements OnInit {
   readonly TrophyIcon = Trophy;
   readonly BotIcon = Bot;
   readonly UsersIcon = Users;
+  readonly AwardIcon = Award;
 
   private readonly api = inject(ApiService);
   readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly players = signal<LeaderboardPlayerEntry[]>([]);
+  readonly achievers = signal<LeaderboardAchieverEntry[]>([]);
   readonly bots = signal<LeaderboardBotEntry[]>([]);
   readonly playerCount = signal<number>(0);
   readonly botCount = signal<number>(0);
@@ -282,6 +334,7 @@ export class LeaderboardComponent implements OnInit {
     this.api.getLeaderboard().subscribe({
       next: (res) => {
         this.players.set(res.players.slice(0, 15));
+        this.achievers.set(res.topAchievers);
         this.bots.set(res.bots);
         this.playerCount.set(res.playerCount);
         this.botCount.set(res.botCount);
