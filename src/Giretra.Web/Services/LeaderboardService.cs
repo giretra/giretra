@@ -128,9 +128,11 @@ public sealed class LeaderboardService : ILeaderboardService
                 PlayerId = g.Key,
                 Points = g.Sum(pa => pa.Achievement.Tier),
                 Count = g.Count(),
+                Rating = g.Max(pa => pa.Player.EloRating),
             })
             .OrderByDescending(x => x.Points)
             .ThenByDescending(x => x.Count)
+            .ThenByDescending(x => x.Rating)
             .Take(MaxAchieverEntries)
             .ToListAsync();
 

@@ -206,6 +206,21 @@ public sealed class LeaderboardServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetLeaderboard_TopAchieversTiedOnPointsAndCount_SortedByRating()
+    {
+        AddHuman("Alice", rating: 1600, gamesPlayed: 10, gamesWon: 7);
+        AddHuman("Bob", rating: 1900, gamesPlayed: 10, gamesWon: 6);
+        AddAchievements("Alice", tiers: [2, 2]); // 4 points, 2 achievements
+        AddAchievements("Bob", tiers: [1, 3]);   // 4 points, 2 achievements
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Equal("Bob", result.TopAchievers[0].DisplayName);
+        Assert.Equal("Alice", result.TopAchievers[1].DisplayName);
+    }
+
+    [Fact]
     public async Task GetLeaderboard_TopAchievers_ExcludesBots()
     {
         AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
