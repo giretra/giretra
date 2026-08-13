@@ -5,6 +5,7 @@ import { GamePhase } from '../../../../core/services/game-state.service';
 import { getRelativePositions } from '../../../../core/utils/position-utils';
 import { PlayerSeatComponent } from '../../../../shared/components/player-seat/player-seat.component';
 import { CenterStageComponent } from '../center-stage/center-stage.component';
+import { CutOutcome } from '../center-stage/cut-stage/cut-deck-3d.component';
 import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component';
 
 @Component({
@@ -102,8 +103,11 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
             [myTeam]="myTeam()"
             [idleDeadline]="idleDeadline()"
             [waiting]="waitingForContinue()"
+            [cutOutcome]="cutOutcome()"
             (startGame)="startGame.emit()"
-            (submitCut)="submitCut.emit()"
+            (submitCut)="submitCut.emit($event)"
+            (cutAnimationDone)="cutAnimationDone.emit()"
+            (cutInfo)="cutInfo.emit()"
             (hideDealSummary)="hideDealSummary.emit()"
             (dismissCompletedTrick)="dismissCompletedTrick.emit()"
             (setSeatMode)="setSeatMode.emit($event)"
@@ -323,9 +327,13 @@ export class TableSurfaceComponent {
   readonly tricksWonByPosition = input<Record<PlayerPosition, number> | null>(null);
   readonly idleDeadline = input<Date | null>(null);
   readonly waitingForContinue = input<boolean>(false);
+  readonly cutOutcome = input<CutOutcome | null>(null);
 
   readonly startGame = output<void>();
-  readonly submitCut = output<void>();
+  /** Aimed cut position (6-26) chosen by the pinch. */
+  readonly submitCut = output<number>();
+  readonly cutAnimationDone = output<void>();
+  readonly cutInfo = output<void>();
   readonly hideDealSummary = output<void>();
   readonly dismissCompletedTrick = output<void>();
   readonly setSeatMode = output<{ position: PlayerPosition; accessMode: SeatAccessMode }>();

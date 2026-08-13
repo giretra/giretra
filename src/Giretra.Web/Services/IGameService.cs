@@ -32,9 +32,10 @@ public interface IGameService
     PlayerStateResponse? GetPlayerState(string gameId, string clientId);
 
     /// <summary>
-    /// Submits a cut decision.
+    /// Submits a cut decision. Returns the final cut position after applying
+    /// a random -1/0/+1 nudge (clamped to 6-26), or null if the submission is invalid.
     /// </summary>
-    bool SubmitCut(string gameId, string clientId, int position, bool fromTop);
+    int? SubmitCut(string gameId, string clientId, int position, bool fromTop);
 
     /// <summary>
     /// Submits a negotiation action.

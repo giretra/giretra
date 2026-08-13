@@ -93,6 +93,15 @@
   "cut.cutTheDeck": "Cut the Deck",
   "cut.playerCutting": "{{player}} is cutting...",
   "cut.waiting": "Waiting...",
+  "cut.justCut": "Just cut",
+  "cut.dragHint": "Press the deck, drag up or down to pinch, release to cut",
+  "cut.infoLabel": "How the deck is rebuilt",
+
+  "cutInfo.title": "How the deck is rebuilt",
+  "cutInfo.intro": "The deck is never shuffled during a match, only once before the first deal.",
+  "cutInfo.collect": "Between deals it is rebuilt from the tricks just played: the dealer team's won tricks go on top of the other team's. Within each pile, tricks stay in the order they were won, and each trick keeps its cards in the order they were played.",
+  "cutInfo.cutOnly": "The cut is the only thing that reorders the deck between deals, so where you pinch really matters.",
+  "cutInfo.nudge": "To keep cuts imprecise, the server nudges every cut by up to one card either way.",
 
   "negotiation.noBidYet": "No bid yet",
   "negotiation.bidBy": "by {{player}}",
