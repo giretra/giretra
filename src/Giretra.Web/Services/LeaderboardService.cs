@@ -10,6 +10,7 @@ public sealed class LeaderboardService : ILeaderboardService
 {
     private const int MinGamesForRanking = 2;
     private const int MaxPlayerEntries = 100;
+    private const int MaxAchieverEntries = 15;
 
     private readonly GiretraDbContext _db;
 
@@ -21,11 +22,13 @@ public sealed class LeaderboardService : ILeaderboardService
     public async Task<LeaderboardResponse> GetLeaderboardAsync()
     {
         var players = await GetPlayerEntriesAsync();
+        var topAchievers = await GetTopAchieversAsync();
         var bots = await GetBotEntriesAsync();
 
         return new LeaderboardResponse
         {
             Players = players,
+            TopAchievers = topAchievers,
             Bots = bots,
             PlayerCount = players.Count,
             BotCount = bots.Count,
@@ -109,6 +112,54 @@ public sealed class LeaderboardService : ILeaderboardService
         {
             entries[i].Rank = i + 1;
             entries[i].AchievementCount = achCounts.GetValueOrDefault(entries[i].PlayerId);
+        }
+
+        return entries;
+    }
+
+    private async Task<IReadOnlyList<LeaderboardAchieverEntry>> GetTopAchieversAsync()
+    {
+        // Achievement points = sum of the tiers of a player's earned achievements
+        var topByPoints = await _db.PlayerAchievements
+            .Where(pa => pa.Player.PlayerType != PlayerType.Bot)
+            .GroupBy(pa => pa.PlayerId)
+            .Select(g => new
+            {
+                PlayerId = g.Key,
+                Points = g.Sum(pa => pa.Achievement.Tier),
+                Count = g.Count(),
+            })
+            .OrderByDescending(x => x.Points)
+            .ThenByDescending(x => x.Count)
+            .Take(MaxAchieverEntries)
+            .ToListAsync();
+
+        if (topByPoints.Count == 0)
+            return [];
+
+        var playerIds = topByPoints.Select(x => x.PlayerId).ToList();
+        var playersById = await _db.Players
+            .Include(p => p.User)
+            .Where(p => playerIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id);
+
+        var entries = new List<LeaderboardAchieverEntry>(topByPoints.Count);
+        foreach (var row in topByPoints)
+        {
+            if (!playersById.TryGetValue(row.PlayerId, out var player))
+                continue;
+
+            entries.Add(new LeaderboardAchieverEntry
+            {
+                PlayerId = row.PlayerId,
+                Rank = entries.Count + 1,
+                DisplayName = player.EloIsPublic
+                    ? player.User?.EffectiveDisplayName ?? "Unknown"
+                    : "Anonymous Player",
+                AvatarUrl = player.EloIsPublic ? player.User?.AvatarUrl : null,
+                AchievementPoints = row.Points,
+                AchievementCount = row.Count,
+            });
         }
 
         return entries;
