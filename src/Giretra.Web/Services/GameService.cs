@@ -189,11 +189,21 @@ public sealed class GameService : IGameService
             }
 
             // Auto-restart if any human player actively clicked "Play Again"
+            var restarted = false;
             if (!session.ContinueMatchConfirmed.IsEmpty)
             {
                 var roomService = _serviceProvider.GetRequiredService<IRoomService>();
-                roomService.AutoStartGame(room.RoomId);
+                var (response, error) = roomService.AutoStartGame(room.RoomId);
+                restarted = response != null;
+                if (!restarted)
+                    _logger.LogWarning("Auto-restart failed for room {RoomId}: {Error}", room.RoomId, error);
             }
+
+            // No new game: tell clients the room is back to Waiting so they can
+            // leave the match-end view. Skip cancelled games (abandon/terminate
+            // flows send their own notifications).
+            if (!restarted && session.CompletedAt != null)
+                await _notifications.NotifyRoomResetAsync(room.RoomId);
         });
 
         return session;

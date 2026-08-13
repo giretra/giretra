@@ -26,6 +26,7 @@ import {
   PlayerLeftEvent,
   PlayerTurnEvent,
   RoomIdleClosedEvent,
+  RoomResetEvent,
   SeatModeChangedEvent,
   TrickCompletedEvent,
   YourTurnEvent,
@@ -59,6 +60,7 @@ export class GameHubService implements OnDestroy {
   readonly playerKicked$ = new Subject<PlayerKickedEvent>();
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
   readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
+  readonly roomReset$ = new Subject<RoomResetEvent>();
   readonly roomsChanged$ = new Subject<void>();
   readonly pendingFriendCountChanged$ = new Subject<PendingFriendCountChangedEvent>();
   readonly chatMessageReceived$ = new Subject<ChatMessageEvent>();
@@ -156,6 +158,7 @@ export class GameHubService implements OnDestroy {
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
     this.roomIdleClosed$.complete();
+    this.roomReset$.complete();
     this.roomsChanged$.complete();
     this.pendingFriendCountChanged$.complete();
     this.chatMessageReceived$.complete();
@@ -255,6 +258,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.RoomIdleClosed, (event: RoomIdleClosedEvent) => {
       console.log('[Hub] RoomIdleClosed', event);
       this.ngZone.run(() => this.roomIdleClosed$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.RoomReset, (event: RoomResetEvent) => {
+      console.log('[Hub] RoomReset', event);
+      this.ngZone.run(() => this.roomReset$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.RoomsChanged, () => {

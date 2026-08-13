@@ -223,6 +223,10 @@ export interface RoomIdleClosedEvent {
   roomId: string;
 }
 
+export interface RoomResetEvent {
+  roomId: string;
+}
+
 export interface PendingFriendCountChangedEvent {
   count: number;
 }
@@ -277,6 +281,7 @@ export interface GameHubEvents {
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
+  onRoomReset(callback: (event: RoomResetEvent) => void): void;
   onRoomsChanged(callback: () => void): void;
   onPendingFriendCountChanged(callback: (event: PendingFriendCountChangedEvent) => void): void;
   onChatMessageReceived(callback: (event: ChatMessageEvent) => void): void;
@@ -302,6 +307,7 @@ export const GameHubEventNames = {
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',
   RoomIdleClosed: 'RoomIdleClosed',
+  RoomReset: 'RoomReset',
   RoomsChanged: 'RoomsChanged',
   PendingFriendCountChanged: 'PendingFriendCountChanged',
   ChatMessageReceived: 'ChatMessageReceived',
