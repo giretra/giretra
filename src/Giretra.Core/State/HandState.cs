@@ -22,6 +22,11 @@ public sealed class HandState
     public ImmutableList<TrickState> CompletedTricks { get; }
 
     /// <summary>
+    /// Gets the winners of the completed tricks (parallel to <see cref="CompletedTricks"/>).
+    /// </summary>
+    public ImmutableList<PlayerPosition> TrickWinners { get; }
+
+    /// <summary>
     /// Gets the current trick being played, or null if hand is complete.
     /// </summary>
     public TrickState? CurrentTrick { get; }
@@ -68,6 +73,7 @@ public sealed class HandState
     private HandState(
         GameMode gameMode,
         ImmutableList<TrickState> completedTricks,
+        ImmutableList<PlayerPosition> trickWinners,
         TrickState? currentTrick,
         int team1CardPoints,
         int team2CardPoints,
@@ -76,6 +82,7 @@ public sealed class HandState
     {
         GameMode = gameMode;
         CompletedTricks = completedTricks;
+        TrickWinners = trickWinners;
         CurrentTrick = currentTrick;
         Team1CardPoints = team1CardPoints;
         Team2CardPoints = team2CardPoints;
@@ -92,6 +99,7 @@ public sealed class HandState
         return new HandState(
             gameMode,
             ImmutableList<TrickState>.Empty,
+            ImmutableList<PlayerPosition>.Empty,
             firstTrick,
             0,
             0,
@@ -119,6 +127,7 @@ public sealed class HandState
         return new HandState(
             GameMode,
             CompletedTricks,
+            TrickWinners,
             newTrick,
             Team1CardPoints,
             Team2CardPoints,
@@ -138,6 +147,7 @@ public sealed class HandState
         }
 
         var newCompletedTricks = CompletedTricks.Add(completedTrick);
+        var newTrickWinners = TrickWinners.Add(winner);
         var winnerTeam = winner.GetTeam();
 
         var newTeam1Points = Team1CardPoints + (winnerTeam == Team.Team1 ? trickPoints : 0);
@@ -154,6 +164,7 @@ public sealed class HandState
         return new HandState(
             GameMode,
             newCompletedTricks,
+            newTrickWinners,
             nextTrick,
             newTeam1Points,
             newTeam2Points,
@@ -225,4 +236,35 @@ public sealed class HandState
     /// </summary>
     public int GetTricksWon(Team team)
         => team == Team.Team1 ? Team1TricksWon : Team2TricksWon;
+
+    /// <summary>
+    /// Rebuilds the deck from the completed tricks for the next deal.
+    /// The given team's won tricks are placed on top of the other team's tricks;
+    /// within each team's pile, tricks are stacked in the order they were won,
+    /// cards in play order.
+    /// </summary>
+    /// <param name="topTeam">The team whose tricks go on top of the deck.</param>
+    public Deck CollectDeck(Team topTeam)
+    {
+        if (!IsComplete)
+        {
+            throw new InvalidOperationException(
+                "Cannot collect the deck before all 8 tricks are complete.");
+        }
+
+        var cards = new List<Card>(32);
+
+        foreach (var team in new[] { topTeam, topTeam.Opponent() })
+        {
+            for (var i = 0; i < CompletedTricks.Count; i++)
+            {
+                if (TrickWinners[i].GetTeam() == team)
+                {
+                    cards.AddRange(CompletedTricks[i].PlayedCards.Select(pc => pc.Card));
+                }
+            }
+        }
+
+        return Deck.FromCards(cards);
+    }
 }
