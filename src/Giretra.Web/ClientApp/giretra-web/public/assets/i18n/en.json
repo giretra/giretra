@@ -315,6 +315,10 @@
   "leaderboard.columns.author": "Author",
   "leaderboard.builtIn": "Built-in",
   "leaderboard.noBots": "No bots ranked yet.",
+  "leaderboard.columns.points": "Pts",
+  "leaderboard.columns.count": "Count",
+  "leaderboard.noAchievers": "No achievements earned yet.",
+  "leaderboard.topAchievers": "Top 15 Achievers",
   "home.bestPlayers": "Best Players",
 
   "quickGame.title": "Quick Game",

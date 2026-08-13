@@ -156,6 +156,118 @@ public sealed class LeaderboardServiceTests : IDisposable
 
     #endregion
 
+    #region Top achievers
+
+    [Fact]
+    public async Task GetLeaderboard_NoAchievements_TopAchieversEmpty()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Empty(result.TopAchievers);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchieversRankedByPointsDescending()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
+        AddHuman("Bob", rating: 1900, gamesPlayed: 10, gamesWon: 6);
+        AddAchievements("Alice", tiers: [5, 4]);   // 9 points
+        AddAchievements("Bob", tiers: [1, 2, 3]);  // 6 points
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Equal(2, result.TopAchievers.Count);
+        Assert.Equal("Alice", result.TopAchievers[0].DisplayName);
+        Assert.Equal(1, result.TopAchievers[0].Rank);
+        Assert.Equal(9, result.TopAchievers[0].AchievementPoints);
+        Assert.Equal(2, result.TopAchievers[0].AchievementCount);
+        Assert.Equal("Bob", result.TopAchievers[1].DisplayName);
+        Assert.Equal(2, result.TopAchievers[1].Rank);
+        Assert.Equal(6, result.TopAchievers[1].AchievementPoints);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchieversTiedOnPoints_SortedByCount()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
+        AddHuman("Bob", rating: 1900, gamesPlayed: 10, gamesWon: 6);
+        AddAchievements("Alice", tiers: [4]);      // 4 points, 1 achievement
+        AddAchievements("Bob", tiers: [1, 3]);     // 4 points, 2 achievements
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Equal("Bob", result.TopAchievers[0].DisplayName);
+        Assert.Equal("Alice", result.TopAchievers[1].DisplayName);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchieversTiedOnPointsAndCount_SortedByRating()
+    {
+        AddHuman("Alice", rating: 1600, gamesPlayed: 10, gamesWon: 7);
+        AddHuman("Bob", rating: 1900, gamesPlayed: 10, gamesWon: 6);
+        AddAchievements("Alice", tiers: [2, 2]); // 4 points, 2 achievements
+        AddAchievements("Bob", tiers: [1, 3]);   // 4 points, 2 achievements
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Equal("Bob", result.TopAchievers[0].DisplayName);
+        Assert.Equal("Alice", result.TopAchievers[1].DisplayName);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchievers_ExcludesBots()
+    {
+        AddHuman("Alice", rating: 1800, gamesPlayed: 10, gamesWon: 7);
+        AddBot("Bot1", rating: 1500, gamesPlayed: 10, gamesWon: 5);
+        AddAchievements("Alice", tiers: [1]);
+        AddBotAchievements("Bot1", tiers: [5, 5]);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Single(result.TopAchievers);
+        Assert.Equal("Alice", result.TopAchievers[0].DisplayName);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchievers_PrivatePlayerShowsAnonymous()
+    {
+        AddHuman("Secret", rating: 1800, gamesPlayed: 10, gamesWon: 7,
+            eloIsPublic: false, avatarUrl: "https://example.com/s.png");
+        AddAchievements("Secret", tiers: [3]);
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Single(result.TopAchievers);
+        Assert.Equal("Anonymous Player", result.TopAchievers[0].DisplayName);
+        Assert.Null(result.TopAchievers[0].AvatarUrl);
+    }
+
+    [Fact]
+    public async Task GetLeaderboard_TopAchievers_LimitedTo15()
+    {
+        for (var i = 0; i < 20; i++)
+        {
+            AddHuman($"Player{i}", rating: 1500, gamesPlayed: 10, gamesWon: 5);
+            AddAchievements($"Player{i}", tiers: [i % 5 + 1]);
+        }
+        await _db.SaveChangesAsync();
+
+        var result = await _service.GetLeaderboardAsync();
+
+        Assert.Equal(15, result.TopAchievers.Count);
+        Assert.Equal(5, result.TopAchievers[0].AchievementPoints);
+    }
+
+    #endregion
+
     #region Bot ranking
 
     [Fact]
@@ -443,6 +555,49 @@ public sealed class LeaderboardServiceTests : IDisposable
             GamesWon = gamesWon,
         };
         _db.Players.Add(player);
+    }
+
+    private void AddAchievements(string displayName, int[] tiers)
+    {
+        var player = _db.Players.Local
+            .First(p => p.User != null && p.User.DisplayName == displayName);
+        AddAchievementsFor(player, tiers);
+    }
+
+    private void AddBotAchievements(string displayName, int[] tiers)
+    {
+        var player = _db.Players.Local
+            .First(p => p.Bot != null && p.Bot.DisplayName == displayName);
+        AddAchievementsFor(player, tiers);
+    }
+
+    private void AddAchievementsFor(Player player, int[] tiers)
+    {
+        foreach (var tier in tiers)
+        {
+            var achievement = new Achievement
+            {
+                Id = Guid.NewGuid(),
+                Code = Guid.NewGuid().ToString(),
+                Name = $"Achievement T{tier}",
+                Category = "test",
+                Tier = tier,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            _db.Achievements.Add(achievement);
+
+            _db.PlayerAchievements.Add(new PlayerAchievement
+            {
+                Id = Guid.NewGuid(),
+                PlayerId = player.Id,
+                Player = player,
+                AchievementId = achievement.Id,
+                Achievement = achievement,
+                MatchId = Guid.NewGuid(),
+                EarnedAt = DateTimeOffset.UtcNow,
+            });
+        }
     }
 
     private void AddBot(
