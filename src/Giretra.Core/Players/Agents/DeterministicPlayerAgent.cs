@@ -955,7 +955,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         }
 
         if (playingTrump)
-            return ChooseSmartTrump(validPlays, trick, mode, teammateWinning, winningCard);
+            return ChooseSmartTrump(hand, validPlays, trick, mode, teammateWinning, winningCard);
 
         // Following suit — use positional play
         return seatPosition switch
@@ -1065,10 +1065,12 @@ public class DeterministicPlayerAgent : IPlayerAgent
         bool teammateWinning,
         Card? winningCard)
     {
-        // escape
-
-        if (mode == GameMode.NoTrumps 
-              || (mode.IsColourMode() && mode.GetTrumpSuit() != trick.LeadSuit))
+        // Escape: bank a vulnerable 10-pointer on a trick the team already holds,
+        // keeping any master for later. Only when teammate is winning — dumping it
+        // on an opponent's trick would donate the points.
+        if (teammateWinning
+            && (mode == GameMode.NoTrumps
+                || (mode.IsColourMode() && mode.GetTrumpSuit() != trick.LeadSuit)))
         {
             var escapableCards =
                 validPlays.Where(s => s.GetPointValue(mode) >= 10 &&
@@ -1098,6 +1100,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     #region Trump & Discard Strategy
 
     private Card ChooseSmartTrump(
+        IReadOnlyList<Card> hand,
         IReadOnlyList<Card> validPlays,
         TrickState trick,
         GameMode mode,
@@ -1120,6 +1123,12 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (teammateWinning && winningCard.HasValue &&
             trumpSuit.HasValue && winningCard.Value.Suit != trumpSuit.Value)
         {
+            // A doomed trump 10/A can only be saved by a trump play, so trumping
+            // the team's own trick banks points that would otherwise be captured.
+            var escapeRuff = FindSafeEscapeTrump(trumpPlays, hand, trick, mode);
+            if (escapeRuff.HasValue)
+                return escapeRuff.Value;
+
             if (nonTrumpPlays.Count > 0)
                 return ChooseSmartDiscard(validPlays, nonTrumpPlays, mode, opponentHasMaster);
         }
@@ -1139,12 +1148,101 @@ public class DeterministicPlayerAgent : IPlayerAgent
             if (overtrumps.Count > 0)
                 return overtrumps[0]; // Minimum overtrump
 
-            // Can't overtrump — play lowest trump (undertrump)
+            // Can't overtrump. If teammate holds the trick with an uncatchable
+            // trump, this is the escape moment: bank the at-risk 10/A under it.
+            if (teammateWinning
+                && (trick.PlayedCards.Count == 3
+                    || PlayerAgentHelper.IsMasterCard(winningCard.Value, mode, [], _playedCards)))
+            {
+                var escape = trumpPlays
+                    .Where(c => IsTrumpAtRiskOfCapture(c, hand, mode))
+                    .OrderByDescending(c => c.GetPointValue(mode))
+                    .ToList();
+
+                if (escape.Count > 0)
+                    return escape[0];
+            }
+
+            // Play lowest trump (undertrump)
             return trumpPlays.OrderBy(c => c.GetStrength(mode)).First();
         }
 
-        // No trump in trick yet — play lowest trump to win cheaply
+        // No trump in trick yet — ruffing with the at-risk 10/A banks it when no
+        // opponent still to play can overtrump; otherwise ruff low to win cheaply.
+        var safeEscape = FindSafeEscapeTrump(trumpPlays, hand, trick, mode);
+        if (safeEscape.HasValue)
+            return safeEscape.Value;
+
         return trumpPlays.OrderBy(c => c.GetStrength(mode)).First();
+    }
+
+    /// <summary>
+    /// Picks the highest-point trump that is doomed to capture and can be ruffed
+    /// with safely right now. Returns null when no such escape play exists.
+    /// </summary>
+    private Card? FindSafeEscapeTrump(
+        IReadOnlyList<Card> trumpPlays, IReadOnlyList<Card> hand, TrickState trick, GameMode mode)
+    {
+        foreach (var card in trumpPlays.OrderByDescending(c => c.GetPointValue(mode)))
+        {
+            if (IsTrumpAtRiskOfCapture(card, hand, mode) && IsRuffSafeFromOpponents(card, trick, mode))
+                return card;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A trump 10 or A is at risk when it is not master and cannot be protected:
+    /// more higher trumps remain unseen than we hold spare low trumps to feed under
+    /// the pulls. Such a card should be banked ("escaped") onto a trick the team is
+    /// winning before opponents drag it out with J/9/A.
+    /// </summary>
+    private bool IsTrumpAtRiskOfCapture(Card card, IReadOnlyList<Card> hand, GameMode mode)
+    {
+        var trumpSuit = mode.GetTrumpSuit();
+        if (!trumpSuit.HasValue || card.Suit != trumpSuit.Value)
+            return false;
+
+        if (card.Rank is not (CardRank.Ten or CardRank.Ace))
+            return false;
+
+        if (PlayerAgentHelper.IsMasterCard(card, mode, hand, _playedCards))
+            return false;
+
+        int strongerUnseen = _remainingCards.Count(c =>
+            c.Suit == trumpSuit.Value && c.GetStrength(mode) > card.GetStrength(mode));
+        int lowerGuards = hand.Count(c =>
+            c.Suit == trumpSuit.Value && c.GetStrength(mode) < card.GetStrength(mode));
+
+        return strongerUnseen > lowerGuards;
+    }
+
+    /// <summary>
+    /// True when no opponent still to play in this trick can capture the given
+    /// trump: each is known to be out of trump, or no unseen trump beats the card.
+    /// A teammate overtrumping is fine — the points stay in the team.
+    /// </summary>
+    private bool IsRuffSafeFromOpponents(Card trumpCard, TrickState trick, GameMode mode)
+    {
+        bool strongerUnseen = _remainingCards.Any(c =>
+            c.Suit == trumpCard.Suit && c.GetStrength(mode) > trumpCard.GetStrength(mode));
+
+        var player = Position;
+        for (int playsAfterUs = 3 - trick.PlayedCards.Count; playsAfterUs > 0; playsAfterUs--)
+        {
+            player = player.Next();
+            if (player.GetTeam() == _myTeam)
+                continue;
+
+            if (IsOpponentOutOfTrump(player) || IsPlayerVoidIn(player, trumpCard.Suit))
+                continue;
+
+            if (strongerUnseen)
+                return false;
+        }
+
+        return true;
     }
 
     private Card ChooseSmartDiscard(
