@@ -55,6 +55,7 @@ Be the first team to accumulate **150 match points** across multiple deals.
 ### 3.2 Deck Handling
 
 - The deck is **never shuffled** during a match
+- The deck is not shuffled between matches either: a new match at the same table is dealt from the deck left by the previous one, so only the table's very first deal comes from a shuffled deck
 - Before each deal, the player to the dealer's left must **cut** the deck
 - Cut rules: Split the deck into two portions, place the bottom portion on top
 - Minimum cut: 6 cards from either end

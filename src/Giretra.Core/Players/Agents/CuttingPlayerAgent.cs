@@ -77,7 +77,7 @@ public sealed class CuttingPlayerAgent : IPlayerAgent
     {
         var deck = _deckTracker.PredictedDeck;
 
-        // First deal of a match comes from a shuffled deck we have never seen: nothing to optimise.
+        // The very first deal at a table comes from a shuffled deck we have never seen: nothing to optimise.
         if (deck is null || deckSize != CutPlanner.DeckSize || deck.Count != deckSize)
             return Task.FromResult((position: FallbackCutPosition, fromTop: true));
 
@@ -269,8 +269,9 @@ public sealed class CuttingPlayerAgent : IPlayerAgent
 
     public Task OnMatchEndedAsync(MatchState matchState)
     {
-        // A new match starts from a shuffled deck, so the tracked order no longer applies.
-        _deckTracker.Reset();
+        // The deck stays as collected from the last hand and hosts carry it into the next
+        // match, so the tracked order is kept. If the next match is dealt from a fresh
+        // shuffle instead, the cut projection check catches the mismatch and drops it.
         return _inner.OnMatchEndedAsync(matchState);
     }
 
