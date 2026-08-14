@@ -55,6 +55,28 @@ public static class NegotiationEngine
     }
 
     /// <summary>
+    /// Gets the mode that wins the priority rule if negotiation ended now:
+    /// the first-announced mode that has been doubled. Null when no double has occurred.
+    /// </summary>
+    private static GameMode? GetPriorityDoubledMode(NegotiationState state, out int announcementIndex)
+    {
+        announcementIndex = -1;
+
+        if (state.DoubledModes.Count == 0) return null;
+
+        for (int i = 0; i < state.Actions.Count; i++)
+        {
+            if (state.Actions[i] is AnnouncementAction a && state.DoubledModes.ContainsKey(a.Mode))
+            {
+                announcementIndex = i;
+                return a.Mode;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Checks if the current player can double.
     /// </summary>
     public static bool CanDouble(NegotiationState state)
@@ -74,6 +96,10 @@ public static class NegotiationEngine
 
         var playerTeam = state.CurrentPlayer.GetTeam();
         var modes = new List<GameMode>();
+
+        // Priority rule: the first-announced doubled mode is played, so doubling a mode
+        // announced after it can never change the outcome and is not allowed
+        GetPriorityDoubledMode(state, out var priorityIndex);
 
         // Find the index of first announcement or accept by the current player (if any)
         // If the player has announced or accepted, they implicitly passed on doubling all earlier opponent bids
@@ -102,7 +128,10 @@ public static class NegotiationEngine
                         // (they passed on earlier bids)
                         if (playerFirstPassIndex == -1 || i > playerFirstPassIndex)
                         {
-                            modes.Add(announcement.Mode);
+                            if (priorityIndex == -1 || i < priorityIndex)
+                            {
+                                modes.Add(announcement.Mode);
+                            }
                         }
                     }
                 }
@@ -128,6 +157,10 @@ public static class NegotiationEngine
 
         // Mode must not already be redoubled
         if (state.RedoubledModes.Contains(mode)) return false;
+
+        // Priority rule: only the first-announced doubled mode is played,
+        // so redoubling any other mode can never affect the game
+        if (GetPriorityDoubledMode(state, out _) != mode) return false;
 
         var playerTeam = state.CurrentPlayer.GetTeam();
 
@@ -178,6 +211,9 @@ public static class NegotiationEngine
 
         // Re-redouble only allowed for ColourClubs
         if (!mode.CanReRedouble()) return false;
+
+        // Priority rule: only the first-announced doubled mode is played
+        if (GetPriorityDoubledMode(state, out _) != mode) return false;
 
         var playerTeam = state.CurrentPlayer.GetTeam();
 
@@ -387,6 +423,12 @@ public static class NegotiationEngine
             return $"Cannot double {action.TargetMode}: you implicitly passed on this bid.";
         }
 
+        var priorityMode = GetPriorityDoubledMode(state, out var priorityIndex);
+        if (priorityMode.HasValue && targetModeIndex > priorityIndex)
+        {
+            return $"Cannot double {action.TargetMode}: {priorityMode.Value} was announced earlier and is already doubled, so it takes priority.";
+        }
+
         return null;
     }
 
@@ -405,6 +447,12 @@ public static class NegotiationEngine
         if (state.RedoubledModes.Contains(action.TargetMode))
         {
             return $"{action.TargetMode} has already been redoubled.";
+        }
+
+        var priorityMode = GetPriorityDoubledMode(state, out _);
+        if (priorityMode != action.TargetMode)
+        {
+            return $"Cannot redouble {action.TargetMode}: {priorityMode} was announced earlier and doubled, so it takes priority.";
         }
 
         var playerTeam = action.Player.GetTeam();
@@ -453,6 +501,12 @@ public static class NegotiationEngine
         if (!action.TargetMode.CanReRedouble())
         {
             return $"Cannot re-redouble {action.TargetMode}.";
+        }
+
+        var priorityMode = GetPriorityDoubledMode(state, out _);
+        if (priorityMode != action.TargetMode)
+        {
+            return $"Cannot re-redouble {action.TargetMode}: {priorityMode} was announced earlier and doubled, so it takes priority.";
         }
 
         var playerTeam = action.Player.GetTeam();

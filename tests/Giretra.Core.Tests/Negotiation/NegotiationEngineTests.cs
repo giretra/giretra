@@ -820,4 +820,113 @@ public class NegotiationEngineTests
         Assert.Contains(topActions, a => a is AcceptAction);
         Assert.Contains(topActions, a => a is DoubleAction { TargetMode: GameMode.NoTrumps });
     }
+
+    [Fact]
+    public void CannotRedouble_ModeThatLostPriority()
+    {
+        // Dealer is Right, so Bottom speaks first
+        // │ # │ Player │ Action              │
+        // │ 1 │ Bottom │ Announces NoTrumps  │
+        // │ 2 │ Left   │ Announces AllTrumps │
+        // │ 3 │ Top    │ Double AllTrumps    │
+        // │ 4 │ Right  │ Double NoTrumps     │  <- NoTrumps announced first, takes priority
+        // │ 5 │ Bottom │ Accept              │
+        // │ 6 │ Left   │ Redouble AllTrumps  │  <- Should fail: AllTrumps can no longer be played
+
+        var state = NegotiationState.Create(PlayerPosition.Right);
+
+        var announceNT = new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
+
+        var announceAT = new AnnouncementAction(PlayerPosition.Left, GameMode.AllTrumps);
+        state = state.Apply(announceAT);
+
+        var doubleAT = new DoubleAction(PlayerPosition.Top, announceAT);
+        state = state.Apply(doubleAT);
+
+        var doubleNT = new DoubleAction(PlayerPosition.Right, announceNT);
+        state = state.Apply(doubleNT);
+
+        state = state.Apply(new AcceptAction(PlayerPosition.Bottom, doubleNT));
+
+        // Left cannot redouble AllTrumps: NoTrumps was announced earlier and doubled
+        Assert.Equal(PlayerPosition.Left, state.CurrentPlayer);
+        Assert.False(NegotiationEngine.CanRedouble(state, GameMode.AllTrumps));
+
+        var error = NegotiationEngine.ValidateAction(state, new RedoubleAction(PlayerPosition.Left, doubleAT));
+        Assert.NotNull(error);
+
+        // Left's only option is Accept
+        var leftActions = NegotiationEngine.GetValidActions(state);
+        Assert.Single(leftActions);
+        Assert.Contains(leftActions, a => a is AcceptAction);
+
+        // Complete negotiation: NoTrumps doubled is played
+        state = state.Apply(new AcceptAction(PlayerPosition.Left, doubleNT));
+        state = state.Apply(new AcceptAction(PlayerPosition.Top, doubleNT));
+
+        var (mode, team, multiplier) = state.ResolveFinalMode();
+        Assert.Equal(GameMode.NoTrumps, mode);
+        Assert.Equal(Team.Team1, team); // Bottom's team
+        Assert.Equal(MultiplierState.Doubled, multiplier);
+    }
+
+    [Fact]
+    public void CannotDouble_ModeAnnouncedAfterPriorityDoubledMode()
+    {
+        // Dealer is Right, so Bottom speaks first
+        // │ # │ Player │ Action              │
+        // │ 1 │ Bottom │ Announces Clubs ♣   │
+        // │ 2 │ Left   │ Announces NoTrumps  │
+        // │ 3 │ Top    │ Announces AllTrumps │
+        // │ 4 │ Right  │ Double Clubs ♣      │  <- Clubs takes priority
+        // │ 5 │ Bottom │ Double NoTrumps     │  <- Should fail: NoTrumps can no longer be played
+
+        var state = NegotiationState.Create(PlayerPosition.Right);
+
+        var announceClubs = new AnnouncementAction(PlayerPosition.Bottom, GameMode.ColourClubs);
+        state = state.Apply(announceClubs);
+
+        var announceNT = new AnnouncementAction(PlayerPosition.Left, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
+
+        state = state.Apply(new AnnouncementAction(PlayerPosition.Top, GameMode.AllTrumps));
+
+        state = state.Apply(new DoubleAction(PlayerPosition.Right, announceClubs));
+
+        // Bottom cannot double NoTrumps: it was announced after Clubs, which is already doubled
+        Assert.Equal(PlayerPosition.Bottom, state.CurrentPlayer);
+        NegotiationEngine.CanDouble(state, out var doubleableModes);
+        Assert.DoesNotContain(GameMode.NoTrumps, doubleableModes);
+
+        var error = NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Bottom, announceNT));
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void CanDouble_ModeAnnouncedBeforePriorityDoubledMode()
+    {
+        // Doubling an earlier-announced mode steals priority and must stay allowed
+        // │ # │ Player │ Action              │
+        // │ 1 │ Bottom │ Announces NoTrumps  │
+        // │ 2 │ Left   │ Announces AllTrumps │
+        // │ 3 │ Top    │ Double AllTrumps    │
+        // │ 4 │ Right  │ Double NoTrumps     │  <- Allowed: NoTrumps was announced first
+
+        var state = NegotiationState.Create(PlayerPosition.Right);
+
+        var announceNT = new AnnouncementAction(PlayerPosition.Bottom, GameMode.NoTrumps);
+        state = state.Apply(announceNT);
+
+        var announceAT = new AnnouncementAction(PlayerPosition.Left, GameMode.AllTrumps);
+        state = state.Apply(announceAT);
+
+        state = state.Apply(new DoubleAction(PlayerPosition.Top, announceAT));
+
+        Assert.Equal(PlayerPosition.Right, state.CurrentPlayer);
+        Assert.True(NegotiationEngine.CanDouble(state, out var doubleableModes));
+        Assert.Contains(GameMode.NoTrumps, doubleableModes);
+
+        Assert.Null(NegotiationEngine.ValidateAction(state, new DoubleAction(PlayerPosition.Right, announceNT)));
+    }
 }
