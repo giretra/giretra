@@ -1,3 +1,4 @@
+using Giretra.Core.Cards;
 using Giretra.Core.Players;
 
 namespace Giretra.Web.Domain;
@@ -74,6 +75,13 @@ public sealed class Room
     /// ID of the associated game session once started.
     /// </summary>
     public string? GameSessionId { get; set; }
+
+    /// <summary>
+    /// The deck left on the table by the previous match in this room, dealt as-is into the
+    /// next match's first deal. Null until a match completes a deal: only the room's very
+    /// first deal comes from a shuffled deck.
+    /// </summary>
+    public Deck? TableDeck { get; set; }
 
     /// <summary>
     /// Whether games in this room affect player ratings.

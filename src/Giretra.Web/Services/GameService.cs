@@ -149,10 +149,17 @@ public sealed class GameService : IGameService
         // Set agents on the session
         session.PlayerAgents = agents;
 
-        // Create the GameManager with logger
+        // Create the GameManager with logger. The deck left by the previous match in this
+        // room carries into this match's first deal; only the room's very first deal is
+        // dealt from a shuffled deck.
         var firstDealer = (PlayerPosition)Random.Shared.Next(4);
         var gameManagerLogger = _loggerFactory.CreateLogger<GameManager>();
-        var gameManager = new GameManager(agents, firstDealer, logger: gameManagerLogger);
+        var tableDeck = room.TableDeck;
+        var gameManager = new GameManager(
+            agents,
+            firstDealer,
+            deckProvider: tableDeck is null ? null : () => tableDeck,
+            logger: gameManagerLogger);
         session.GameManager = gameManager;
 
         _gameRepository.Add(session);
@@ -178,6 +185,10 @@ public sealed class GameService : IGameService
             }
             finally
             {
+                // Whatever the outcome, the collected deck stays on the table for the
+                // room's next match.
+                room.TableDeck = gameManager.FinalDeck ?? room.TableDeck;
+
                 // Persist match to database before resetting room,
                 // so ratings and history are up-to-date when clients navigate away.
                 if (session.IsRanked && session.CompletedAt != null)
