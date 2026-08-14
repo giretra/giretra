@@ -26,7 +26,7 @@ internal class Program
             left: leftAgent,
             top: topAgent,
             right: rightAgent,
-            firstDealer: PlayerPosition.Right);
+            firstDealer: (PlayerPosition)Random.Shared.Next(4));
 
         // Play the match
         try
