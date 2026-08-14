@@ -212,6 +212,7 @@ When it is a player's turn to speak, they may:
 - Multiple bids can be Doubled in the same negotiation
 - **Priority rule**: If multiple bids are Doubled, the **first announced game mode** that was Doubled is played
 - After a Double, subsequent players may only Accept or Redouble (for announcer team)
+- Calls that cannot affect the played game are not allowed: once a mode is Doubled, a mode announced **after** it cannot be Doubled, and only the priority mode (first announced Doubled mode) can be Redoubled
 
 ### 7.5 Automatic Double
 
