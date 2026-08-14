@@ -150,7 +150,7 @@ public sealed class GameService : IGameService
         session.PlayerAgents = agents;
 
         // Create the GameManager with logger
-        var firstDealer = PlayerPosition.Bottom;
+        var firstDealer = (PlayerPosition)Random.Shared.Next(4);
         var gameManagerLogger = _loggerFactory.CreateLogger<GameManager>();
         var gameManager = new GameManager(agents, firstDealer, logger: gameManagerLogger);
         session.GameManager = gameManager;
