@@ -244,4 +244,44 @@ public sealed class MatchEndTransitionTests
         // Cleanup: stop the restarted game running in the background
         _ = ctx.GameService.TerminateGameAsync(room.GameSessionId!);
     }
+
+    /// <summary>
+    /// The deck is never shuffled between games: the restarted match's first deal must be cut
+    /// from exactly the deck the previous match left on the table.
+    /// </summary>
+    [Fact]
+    public async Task MatchEnd_PlayAgain_NextMatchIsDealtFromTheDeckLeftOnTheTable()
+    {
+        var ctx = CreateServices();
+        var (roomId, gameId, session) = StartFourHumanGame(ctx);
+
+        await PlayUntilMatchEndAsync(ctx.GameService, gameId, session);
+
+        foreach (var clientId in session.ClientPositions.Keys.ToList())
+            Assert.True(ctx.GameService.SubmitContinueMatch(gameId, clientId));
+
+        await session.GameLoopTask!.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var room = ctx.RoomRepository.GetById(roomId);
+        Assert.NotNull(room);
+        Assert.NotNull(room.TableDeck);
+        Assert.Equal(32, room.TableDeck.Count);
+
+        // The restarted game blocks on its first cut (all four players are humans who never
+        // submit), so the deck it is about to cut is observable and must be the table deck.
+        var newSession = ctx.GameService.GetGame(room.GameSessionId!);
+        Assert.NotNull(newSession);
+
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (newSession.MatchState?.CurrentDeal == null)
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Restarted game never started its first deal");
+            await Task.Delay(10);
+        }
+
+        Assert.Equal(room.TableDeck.Cards, newSession.MatchState.CurrentDeal.Deck.Cards);
+
+        // Cleanup: stop the restarted game running in the background
+        _ = ctx.GameService.TerminateGameAsync(room.GameSessionId!);
+    }
 }

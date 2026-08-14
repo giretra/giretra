@@ -13,8 +13,10 @@ namespace Giretra.Core.Players.Agents;
 /// </para>
 /// <para>
 /// Feed this from the observation callbacks of <see cref="IPlayerAgent"/>:
-/// <see cref="OnDealStarted"/> from <c>OnDealStartedAsync</c>, <see cref="OnDealEnded"/> from
-/// <c>OnDealEndedAsync</c> and <see cref="Reset"/> from <c>OnMatchEndedAsync</c>.
+/// <see cref="OnDealStarted"/> from <c>OnDealStartedAsync</c> and <see cref="OnDealEnded"/>
+/// from <c>OnDealEndedAsync</c>. Hosts carry the collected deck from one match into the next
+/// (see <c>GameManager.FinalDeck</c>), so the tracked order stays valid across matches; call
+/// <see cref="Reset"/> only when the next deal is known to come from a fresh shuffle.
 /// </para>
 /// </summary>
 public sealed class DeckTracker
@@ -66,8 +68,8 @@ public sealed class DeckTracker
     public void Invalidate() => PredictedDeck = null;
 
     /// <summary>
-    /// Clears all tracking. Call this between matches, since a fresh match starts from a
-    /// shuffled deck.
+    /// Clears all tracking. Call this when the next deal is known to come from a freshly
+    /// shuffled deck the tracked order cannot apply to.
     /// </summary>
     public void Reset()
     {

@@ -95,11 +95,12 @@ public class CuttingPlayerAgentTests
     /// <summary>
     /// Plays real matches and checks the tracked deck order against reality: every cut the agents
     /// made from a tracked deck must have been followed by exactly the cards they projected.
-    /// Several matches in a row also exercise the reset between matches, since each one starts
-    /// from a freshly shuffled deck.
+    /// Matches are chained the way hosts run them — each dealt from the deck the previous one
+    /// left on the table — so the tracked order stays valid across match boundaries and only
+    /// the very first deal of the first match is cut blind.
     /// </summary>
     [Fact]
-    public async Task OverSeveralMatches_EveryTrackedCutProjectsTheHandThatIsDealt()
+    public async Task OverChainedMatches_EveryTrackedCutProjectsTheHandThatIsDealt()
     {
         var agents = new[]
         {
@@ -110,8 +111,55 @@ public class CuttingPlayerAgentTests
         };
 
         var deals = 0;
+        Deck? tableDeck = null;
 
-        for (var seed = 1; seed <= 5; seed++)
+        for (var match = 1; match <= 5; match++)
+        {
+            var deck = tableDeck;
+            var gameManager = new GameManager(
+                agents[0],
+                agents[1],
+                agents[2],
+                agents[3],
+                PlayerPosition.Bottom,
+                deck is null ? () => Deck.CreateShuffled(new Random(1)) : () => deck);
+
+            var matchState = await gameManager.PlayMatchAsync();
+
+            Assert.True(matchState.IsComplete);
+            deals += matchState.CompletedDeals.Count;
+            tableDeck = gameManager.FinalDeck;
+        }
+
+        Assert.True(deals > 4, $"Expected several deals to cut in, got {deals}.");
+
+        foreach (var agent in agents)
+        {
+            Assert.True(agent.TrackedCuts > 0, $"{agent.Position} never cut from a tracked deck.");
+            Assert.Equal(0, agent.CutProjectionMismatches);
+        }
+
+        // Only the very first deal of the first match was cut without a tracked deck.
+        Assert.Equal(deals - 1, agents.Sum(agent => agent.TrackedCuts));
+    }
+
+    /// <summary>
+    /// If a host does reshuffle between matches, the order remembered from the previous match is
+    /// wrong exactly once: the first cut of the new match projects a hand that is not dealt, and
+    /// the tracker is dropped rather than trusted any further.
+    /// </summary>
+    [Fact]
+    public async Task WhenTheNextMatchIsReshuffled_TheStaleOrderIsCaughtAtTheFirstCut()
+    {
+        var agents = new[]
+        {
+            new CuttingPlayerAgent(PlayerPosition.Bottom),
+            new CuttingPlayerAgent(PlayerPosition.Left),
+            new CuttingPlayerAgent(PlayerPosition.Top),
+            new CuttingPlayerAgent(PlayerPosition.Right),
+        };
+
+        for (var seed = 1; seed <= 2; seed++)
         {
             var deckRandom = new Random(seed);
             var gameManager = new GameManager(
@@ -122,19 +170,10 @@ public class CuttingPlayerAgentTests
                 PlayerPosition.Bottom,
                 () => Deck.CreateShuffled(deckRandom));
 
-            var matchState = await gameManager.PlayMatchAsync();
-
-            Assert.True(matchState.IsComplete);
-            deals += matchState.CompletedDeals.Count;
+            await gameManager.PlayMatchAsync();
         }
 
-        Assert.True(deals > 4, $"Expected several deals to cut in, got {deals}.");
-
-        foreach (var agent in agents)
-        {
-            Assert.True(agent.TrackedCuts > 0, $"{agent.Position} never cut from a tracked deck.");
-            Assert.Equal(0, agent.CutProjectionMismatches);
-        }
+        Assert.Equal(1, agents.Sum(agent => agent.CutProjectionMismatches));
     }
 
     /// <summary>

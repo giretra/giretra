@@ -30,6 +30,14 @@ public sealed class GameManager
     public MatchState MatchState => _matchState;
 
     /// <summary>
+    /// Gets the deck as it sits on the table: rebuilt from the tricks of the last completed
+    /// deal, dealer team's tricks on top. Null until a deal has completed. After the match
+    /// ends, pass this as the next match's deck provider to keep the same physical deck in
+    /// play from one game to the next.
+    /// </summary>
+    public Deck? FinalDeck => _nextDeck;
+
+    /// <summary>
     /// Creates a new game manager with the specified players.
     /// </summary>
     /// <param name="players">Dictionary mapping positions to player implementations.</param>
