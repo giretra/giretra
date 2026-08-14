@@ -58,6 +58,18 @@ public sealed class BenchmarkSettings : CommandSettings
     [CommandOption("--connection-string")]
     [Description("PostgreSQL connection string (default: from environment)")]
     public string? ConnectionString { get; init; }
+
+    [CommandOption("--json")]
+    [Description("Write the benchmark result as JSON to the given file")]
+    public string? JsonOutputPath { get; init; }
+
+    [CommandOption("--no-save")]
+    [Description("Never prompt to save adjusted ratings to the database (for scripted runs)")]
+    public bool NoSave { get; init; }
+
+    [CommandOption("-q|--quiet")]
+    [Description("Suppress per-match output, only show the summary")]
+    public bool Quiet { get; init; }
 }
 
 public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
@@ -100,13 +112,22 @@ public sealed class BenchmarkCommand : AsyncCommand<BenchmarkSettings>
             await runner.InitializeAsync(cancellation);
 
             renderer.RenderHeader();
-            runner.OnMatchCompleted += renderer.RenderMatchResult;
+            if (!settings.Quiet)
+                runner.OnMatchCompleted += renderer.RenderMatchResult;
 
             var result = await runner.RunAsync();
             renderer.RenderSummary(result, team1Factory.AgentName, team2Factory.AgentName);
 
-            var adjustedRatings = AdjustedEloCalculator.FromBenchmark(
-                team1Factory, team2Factory, result.Team1FinalElo, result.Team2FinalElo);
+            if (settings.JsonOutputPath is not null)
+            {
+                BenchmarkJsonWriter.Write(settings.JsonOutputPath, result, config);
+                AnsiConsole.MarkupLine($"[dim]Result written to {settings.JsonOutputPath}[/]");
+            }
+
+            var adjustedRatings = settings.NoSave || !AnsiConsole.Profile.Capabilities.Interactive
+                ? null
+                : AdjustedEloCalculator.FromBenchmark(
+                    team1Factory, team2Factory, result.Team1FinalElo, result.Team2FinalElo);
             if (adjustedRatings is not null
                 && AnsiConsole.Confirm("Save adjusted ratings to database?", defaultValue: false))
             {
