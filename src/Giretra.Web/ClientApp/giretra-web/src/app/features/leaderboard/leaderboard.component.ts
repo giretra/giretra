@@ -242,7 +242,7 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     .my-rank-unranked-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
 
     /* Columns */
-    .columns { display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; align-items:start; }
+    .columns { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1rem; align-items:start; }
 
     .column { background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; padding:1rem; display:flex; flex-direction:column; }
 
@@ -291,10 +291,10 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
 
     /* Responsive: 2 columns on medium screens, stack on narrow */
     @media (max-width:1024px) {
-      .columns { grid-template-columns:1fr 1fr; }
+      .columns { grid-template-columns:repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width:640px) {
-      .columns { grid-template-columns:1fr; }
+      .columns { grid-template-columns:minmax(0, 1fr); }
     }
 
     /* Responsive: hide less important columns on small screens */
