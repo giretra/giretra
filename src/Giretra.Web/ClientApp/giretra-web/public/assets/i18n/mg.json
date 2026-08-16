@@ -372,5 +372,10 @@
   "chat.noMessages": "Tsy mbola misy hafatra. Miarahaba!",
   "chat.disabledDuringPlay": "Tsy azo ampiasaina ny chat mandritra ny lalao",
   "chat.disclaimer": "Na dia taimbava aza no anisan'ny fototra iorenan'ity lalao ity, manasa antsika rehetra hitoetra ho mpanaja sy hendry am-pitenenana izahay. Ny tsy fanajana izany dia mety hitarika fandroahana.",
-  "chat.spectator": "Mpijery"
+  "chat.spectator": "Mpijery",
+  "admin.title": "Fitantanana",
+  "admin.moderatorBadge": "Mpanara-maso",
+  "admin.subtitle": "Fitaovana fitantanana ho an’ny mpanara-maso.",
+  "admin.empty.title": "Mbola tsy misy fitaovana fitantanana",
+  "admin.empty.text": "Eto no hipoitra ireo fitaovana fitantanana ho avy."
 }

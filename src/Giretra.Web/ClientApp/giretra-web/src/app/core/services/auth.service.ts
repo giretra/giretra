@@ -30,6 +30,10 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly hasUser = computed(() => !!this._user());
   readonly offlineMode = this._offlineMode.asReadonly();
+  readonly isModerator = computed(() => {
+    const roles = this._user()?.roles ?? [];
+    return roles.includes('moderator') || roles.includes('admin');
+  });
 
   async init(): Promise<void> {
     // Check auth mode from server
@@ -114,7 +118,8 @@ export class AuthService {
       username: username,
       displayName: username,
       email: `${username}@offline`,
-      roles: [],
+      // Offline mode is dev-only: the backend grants moderator too
+      roles: ['moderator'],
     });
   }
 

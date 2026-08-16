@@ -32,6 +32,14 @@ export const hasClientIdGuard = () => {
   return router.createUrlTree(['/']);
 };
 
+// Guard restricting a route to moderators/admins (realm roles from the Keycloak token)
+export const moderatorGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  return auth.isModerator() ? true : router.createUrlTree(['/']);
+};
+
 // Guard to warn user before navigating away from an active game
 export const confirmLeaveGameGuard = async () => {
   const gameState = inject(GameStateService);
@@ -85,6 +93,12 @@ export const routes: Routes = [
     path: 'leaderboard',
     loadComponent: () =>
       import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),
+  },
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./features/admin/admin.component').then((m) => m.AdminComponent),
+    canActivate: [moderatorGuard],
   },
   {
     path: '**',

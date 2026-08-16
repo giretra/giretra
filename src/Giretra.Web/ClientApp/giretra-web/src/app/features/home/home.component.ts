@@ -9,7 +9,7 @@ import { GameStateService } from '../../core/services/game-state.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight, Shield } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
@@ -60,6 +60,11 @@ import { environment } from '../../../environments/environment';
                 <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
+                @if (auth.isModerator()) {
+                  <button class="pill-btn" (click)="goToAdmin()" title="Administration">
+                    <i-lucide [img]="ShieldIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  </button>
+                }
                 <button class="pill-btn settings-btn" (click)="goToSettings()" title="Settings">
                   <i-lucide [img]="SettingsIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                   @if (pendingFriendCount() > 0) {
@@ -286,6 +291,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly BotIcon = Bot;
   readonly AwardIcon = Award;
   readonly ChevronRightIcon = ChevronRight;
+  readonly ShieldIcon = Shield;
   readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
@@ -428,6 +434,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   goToSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  goToAdmin(): void {
+    this.router.navigate(['/admin']);
   }
 
   logout(): void {

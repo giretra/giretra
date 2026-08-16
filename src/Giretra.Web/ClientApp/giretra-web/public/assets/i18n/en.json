@@ -372,5 +372,10 @@
   "chat.noMessages": "No messages yet. Say hi!",
   "chat.disabledDuringPlay": "Chat is disabled during play",
   "chat.disclaimer": "Even if trash talk is a core feature of this game, we invite you to remain polite and respectful. Failure to comply may result in a ban.",
-  "chat.spectator": "Spectator"
+  "chat.spectator": "Spectator",
+  "admin.title": "Administration",
+  "admin.moderatorBadge": "Moderator",
+  "admin.subtitle": "Management tools for moderators.",
+  "admin.empty.title": "No management features yet",
+  "admin.empty.text": "Future admin tools will show up here."
 }
