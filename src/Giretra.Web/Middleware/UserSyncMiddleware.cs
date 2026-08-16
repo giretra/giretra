@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Giretra.Model.Entities;
 using Giretra.Web.Services;
 
 namespace Giretra.Web.Middleware;
@@ -11,11 +13,26 @@ public sealed class UserSyncMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IUserSyncService userSyncService)
+    public async Task InvokeAsync(HttpContext context, IUserSyncService userSyncService, UserSyncCache cache)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
-            var user = await userSyncService.SyncUserAsync(context.User);
+            var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? context.User.FindFirstValue("sub");
+
+            User? user;
+            if (Guid.TryParse(sub, out var keycloakId))
+            {
+                if (!cache.TryGet(keycloakId, out user!))
+                {
+                    user = await userSyncService.SyncUserAsync(context.User);
+                    cache.Set(keycloakId, user);
+                }
+            }
+            else
+            {
+                user = await userSyncService.SyncUserAsync(context.User);
+            }
 
             if (user.IsBanned)
             {

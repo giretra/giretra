@@ -8,10 +8,12 @@ namespace Giretra.Web.Services;
 public sealed class AdminUserService : IAdminUserService
 {
     private readonly GiretraDbContext _db;
+    private readonly UserSyncCache _userSyncCache;
 
-    public AdminUserService(GiretraDbContext db)
+    public AdminUserService(GiretraDbContext db, UserSyncCache userSyncCache)
     {
         _db = db;
+        _userSyncCache = userSyncCache;
     }
 
     public async Task<AdminUserListResponse> GetUsersAsync(string? search, int page, int pageSize)
@@ -80,6 +82,7 @@ public sealed class AdminUserService : IAdminUserService
         user.BanReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
+        _userSyncCache.Invalidate(user.KeycloakId);
         return (true, null);
     }
 
@@ -93,6 +96,7 @@ public sealed class AdminUserService : IAdminUserService
         user.BanReason = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
+        _userSyncCache.Invalidate(user.KeycloakId);
         return (true, null);
     }
 
@@ -105,6 +109,7 @@ public sealed class AdminUserService : IAdminUserService
         user.CustomDisplayName = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
+        _userSyncCache.Invalidate(user.KeycloakId);
         return (true, null);
     }
 }

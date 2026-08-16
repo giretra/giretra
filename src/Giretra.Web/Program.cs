@@ -107,6 +107,7 @@ public class Program
             builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
 
             // Register services
+            builder.Services.AddSingleton<UserSyncCache>();
             builder.Services.AddSingleton<AiPlayerRegistry>();
             builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IGameService, GameService>();
