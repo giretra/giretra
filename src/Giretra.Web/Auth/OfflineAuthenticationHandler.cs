@@ -67,6 +67,8 @@ public sealed class OfflineAuthenticationHandler : AuthenticationHandler<Authent
             new Claim("name", username),
             new Claim(ClaimTypes.Email, $"{username}@offline"),
             new Claim("email", $"{username}@offline"),
+            // Offline mode is dev-only: grant moderator so admin features are reachable locally
+            new Claim("realm_role", "moderator"),
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
