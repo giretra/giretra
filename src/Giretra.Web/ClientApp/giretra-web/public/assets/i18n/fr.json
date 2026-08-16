@@ -116,6 +116,9 @@
   "negotiationHistory.title": "Négociation",
   "negotiationHistory.empty": "Pas encore de négociation",
 
+  "wonTricks.title": "Plis Remportés",
+  "wonTricks.empty": "Votre équipe n'a pas encore remporté de pli",
+
   "matchHistory.title": "Score de la Partie",
   "matchHistory.mode": "Mode",
   "matchHistory.dealer": "Donneur",

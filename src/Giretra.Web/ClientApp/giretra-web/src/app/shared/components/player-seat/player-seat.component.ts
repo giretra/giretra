@@ -44,7 +44,12 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
 
       <!-- Tricks won indicator -->
       @if (tricksWon() > 0) {
-        <div class="tricks-badge" [class.highlight]="tricksWon() >= 4">
+        <div
+          class="tricks-badge"
+          [class.highlight]="tricksWon() >= 4"
+          [class.clickable]="tricksClickable()"
+          (click)="onTricksClick($event)"
+        >
           <i-lucide [img]="LayersIcon" [size]="12" [strokeWidth]="2"></i-lucide>
           <span class="tricks-count">{{ tricksWon() }}</span>
         </div>
@@ -244,6 +249,16 @@ import { LucideAngularModule, Layers, Bot, UserPlus } from 'lucide-angular';
       color: hsl(var(--primary));
     }
 
+    .tricks-badge.clickable {
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .tricks-badge.clickable:hover {
+      border-color: hsl(var(--primary) / 0.6);
+      background: hsl(var(--primary) / 0.12);
+    }
+
     /* Turn ring */
     .turn-ring {
       position: absolute;
@@ -294,8 +309,10 @@ export class PlayerSeatComponent {
   readonly isDealer = input<boolean>(false);
   readonly isOccupied = input<boolean>(false);
   readonly showCardBacks = input<boolean>(true);
+  readonly tricksClickable = input<boolean>(false);
 
   readonly seatClicked = output<PlayerPosition>();
+  readonly tricksClicked = output<PlayerPosition>();
 
   readonly team = computed(() => getTeam(this.position()));
 
@@ -314,5 +331,11 @@ export class PlayerSeatComponent {
     if (this.isOccupied()) {
       this.seatClicked.emit(this.position());
     }
+  }
+
+  onTricksClick(event: MouseEvent): void {
+    if (!this.tricksClickable()) return;
+    event.stopPropagation();
+    this.tricksClicked.emit(this.position());
   }
 }
