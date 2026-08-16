@@ -2,7 +2,7 @@ import { Component, input, output, computed } from '@angular/core';
 import { GameMode, PlayerPosition, SeatAccessMode, Team } from '../../../../api/generated/signalr-types.generated';
 import { RoomResponse, NegotiationAction, TrickResponse } from '../../../../core/services/api.service';
 import { GamePhase } from '../../../../core/services/game-state.service';
-import { getRelativePositions } from '../../../../core/utils/position-utils';
+import { getRelativePositions, getTeam } from '../../../../core/utils/position-utils';
 import { PlayerSeatComponent } from '../../../../shared/components/player-seat/player-seat.component';
 import { CenterStageComponent } from '../center-stage/center-stage.component';
 import { CutOutcome } from '../center-stage/cut-stage/cut-deck-3d.component';
@@ -34,7 +34,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
               [isDealer]="dealer() === slot.position"
               [cardCount]="getCardCount(slot.position)"
               [tricksWon]="getTricksWon(slot.position)"
+              [tricksClickable]="canViewTricks(slot.position)"
               (seatClicked)="seatClicked.emit($event)"
+              (tricksClicked)="tricksClicked.emit($event)"
             />
             @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
               <div class="bubble-position top">
@@ -73,7 +75,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
+                [tricksClickable]="canViewTricks(slot.position)"
                 (seatClicked)="seatClicked.emit($event)"
+                (tricksClicked)="tricksClicked.emit($event)"
                 />
             </div>
           }
@@ -129,7 +133,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
                 [isDealer]="dealer() === slot.position"
                 [cardCount]="getCardCount(slot.position)"
                 [tricksWon]="getTricksWon(slot.position)"
+                [tricksClickable]="canViewTricks(slot.position)"
                 (seatClicked)="seatClicked.emit($event)"
+                (tricksClicked)="tricksClicked.emit($event)"
                 />
               @if (phase() === 'negotiation' && getLastAction(slot.position); as action) {
                 <div class="bubble-position right">
@@ -167,7 +173,9 @@ import { SpeechBubbleComponent } from '../speech-bubble/speech-bubble.component'
               [isDealer]="dealer() === slot.position"
               [showCardBacks]="false"
               [tricksWon]="getTricksWon(slot.position)"
+              [tricksClickable]="canViewTricks(slot.position)"
               (seatClicked)="seatClicked.emit($event)"
+              (tricksClicked)="tricksClicked.emit($event)"
             />
           </div>
         }
@@ -340,6 +348,7 @@ export class TableSurfaceComponent {
   readonly generateInvite = output<PlayerPosition>();
   readonly kickPlayer = output<PlayerPosition>();
   readonly seatClicked = output<PlayerPosition>();
+  readonly tricksClicked = output<PlayerPosition>();
 
   // Get slots relative to my position (for proper table layout)
   readonly relativePositions = computed(() => {
@@ -379,6 +388,12 @@ export class TableSurfaceComponent {
   getTricksWon(position: PlayerPosition): number {
     const counts = this.tricksWonByPosition();
     return counts?.[position] ?? 0;
+  }
+
+  /** Won tricks are only viewable for seats on the viewer's own team */
+  canViewTricks(position: PlayerPosition): boolean {
+    const myTeam = this.myTeam();
+    return myTeam !== null && !this.isWatcher() && getTeam(position) === myTeam;
   }
 
   /** Get the last negotiation action for a player */

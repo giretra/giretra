@@ -116,6 +116,9 @@
   "negotiationHistory.title": "Negotiation",
   "negotiationHistory.empty": "No negotiation yet",
 
+  "wonTricks.title": "Tricks Won",
+  "wonTricks.empty": "Your team hasn't won any tricks yet",
+
   "matchHistory.title": "Match Score",
   "matchHistory.mode": "Mode",
   "matchHistory.dealer": "Dealer",
