@@ -121,6 +121,24 @@ public sealed class OfflineAdminUserService : IAdminUserService
 }
 
 /// <summary>
+/// Stub admin game service returning empty data (matches are not persisted offline).
+/// </summary>
+public sealed class OfflineAdminGameService : IAdminGameService
+{
+    public Task<AdminGameListResponse> GetGamesAsync(Guid? userId, int page, int pageSize)
+        => Task.FromResult(new AdminGameListResponse
+        {
+            Games = [],
+            TotalCount = 0,
+            Page = page,
+            PageSize = pageSize,
+        });
+
+    public Task<AdminGameDealsResponse?> GetGameDealsAsync(Guid matchId)
+        => Task.FromResult<AdminGameDealsResponse?>(null);
+}
+
+/// <summary>
 /// Offline match persistence: no database writes but evaluates achievements in-memory.
 /// Skips ranked/rating eligibility checks so achievements can be tested offline.
 /// </summary>
@@ -461,6 +479,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMatchHistoryService, OfflineMatchHistoryService>();
         services.AddSingleton<ILeaderboardService, OfflineLeaderboardService>();
         services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
+        services.AddSingleton<IAdminGameService, OfflineAdminGameService>();
 
         return services;
     }

@@ -70,7 +70,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
               @for (u of users(); track u.id) {
                 <div class="row" [class.row-banned]="u.isBanned">
-                  <div class="col-user">
+                  <div class="col-user col-user-link" (click)="goToGames(u)" [title]="t('adminUsers.viewGames')">
                     @if (u.avatarUrl) {
                       <img class="avatar" [src]="u.avatarUrl" [alt]="u.displayName" />
                     } @else {
@@ -189,6 +189,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
     .row-banned { opacity:0.75; background:hsl(0 60% 50% / 0.04); }
 
     .col-user { flex:1.4; min-width:11rem; display:flex; align-items:center; gap:0.5rem; }
+    .col-user-link { cursor:pointer; }
+    .col-user-link:hover .entry-name { color:hsl(var(--gold)); }
     .col-email { flex:1; min-width:8rem; font-size:0.75rem; color:hsl(var(--muted-foreground)); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .col-role { width:6rem; flex-shrink:0; }
     .col-num { width:4rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
@@ -280,6 +282,10 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/admin']);
+  }
+
+  goToGames(user: AdminUserEntry): void {
+    this.router.navigate(['/admin/games'], { queryParams: { userId: user.id, name: user.displayName } });
   }
 
   onSearchInput(event: Event): void {

@@ -107,6 +107,12 @@ export const routes: Routes = [
     canActivate: [moderatorGuard],
   },
   {
+    path: 'admin/games',
+    loadComponent: () =>
+      import('./features/admin/games/admin-games.component').then((m) => m.AdminGamesComponent),
+    canActivate: [moderatorGuard],
+  },
+  {
     path: '**',
     redirectTo: '',
   },

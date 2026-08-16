@@ -14,11 +14,16 @@ namespace Giretra.Web.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminUserService _adminUserService;
+    private readonly IAdminGameService _adminGameService;
     private readonly IProfileService _profileService;
 
-    public AdminController(IAdminUserService adminUserService, IProfileService profileService)
+    public AdminController(
+        IAdminUserService adminUserService,
+        IAdminGameService adminGameService,
+        IProfileService profileService)
     {
         _adminUserService = adminUserService;
+        _adminGameService = adminGameService;
         _profileService = profileService;
     }
 
@@ -30,6 +35,26 @@ public class AdminController : ControllerBase
     {
         var users = await _adminUserService.GetUsersAsync(search, page, pageSize);
         return Ok(users);
+    }
+
+    [HttpGet("games")]
+    public async Task<ActionResult<AdminGameListResponse>> GetGames(
+        [FromQuery] Guid? userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        var games = await _adminGameService.GetGamesAsync(userId, page, pageSize);
+        return Ok(games);
+    }
+
+    [HttpGet("games/{matchId}/deals")]
+    public async Task<ActionResult<AdminGameDealsResponse>> GetGameDeals(Guid matchId)
+    {
+        var deals = await _adminGameService.GetGameDealsAsync(matchId);
+        if (deals == null)
+            return NotFound();
+
+        return Ok(deals);
     }
 
     [HttpPost("users/{userId}/ban")]

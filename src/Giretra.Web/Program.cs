@@ -178,6 +178,7 @@ public class Program
                 // Settings
                 builder.Services.AddScoped<IProfileService, ProfileService>();
                 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+                builder.Services.AddScoped<IAdminGameService, AdminGameService>();
                 builder.Services.AddScoped<IFriendService, FriendService>();
                 builder.Services.AddScoped<IBlockService, BlockService>();
                 builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, ChevronLeft, Shield, Users, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, ChevronLeft, Shield, Users, Dices, ChevronRight } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -35,6 +35,16 @@ import { TranslocoDirective } from '@jsverse/transloco';
               <span class="tool-text">
                 <span class="tool-title">{{ t('admin.tools.users.title') }}</span>
                 <span class="tool-desc">{{ t('admin.tools.users.desc') }}</span>
+              </span>
+              <i-lucide [img]="ChevronRightIcon" [size]="16" [strokeWidth]="2" class="tool-arrow"></i-lucide>
+            </a>
+            <a class="tool-card" (click)="goToGames()">
+              <span class="tool-icon">
+                <i-lucide [img]="DicesIcon" [size]="20" [strokeWidth]="2"></i-lucide>
+              </span>
+              <span class="tool-text">
+                <span class="tool-title">{{ t('admin.tools.games.title') }}</span>
+                <span class="tool-desc">{{ t('admin.tools.games.desc') }}</span>
               </span>
               <i-lucide [img]="ChevronRightIcon" [size]="16" [strokeWidth]="2" class="tool-arrow"></i-lucide>
             </a>
@@ -74,6 +84,7 @@ export class AdminComponent {
   readonly ChevronLeftIcon = ChevronLeft;
   readonly ShieldIcon = Shield;
   readonly UsersIcon = Users;
+  readonly DicesIcon = Dices;
   readonly ChevronRightIcon = ChevronRight;
 
   private readonly router = inject(Router);
@@ -85,5 +96,9 @@ export class AdminComponent {
 
   goToUsers(): void {
     this.router.navigate(['/admin/users']);
+  }
+
+  goToGames(): void {
+    this.router.navigate(['/admin/games']);
   }
 }
