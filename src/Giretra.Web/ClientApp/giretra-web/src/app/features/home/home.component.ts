@@ -208,7 +208,7 @@ import { environment } from '../../../environments/environment';
     .error-banner { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.375rem 1rem; font-size:0.75rem; font-weight:500; z-index:100; background:hsl(0 72% 51%/0.15); color:hsl(0 72% 65%); border-bottom:1px solid hsl(0 72% 51%/0.3); }
     .hero { position:relative; overflow:hidden; padding:0 1rem; height:48px; display:flex; align-items:center; flex-shrink:0; }
     .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
-    .hero-content { position:relative; z-index:1; max-width:960px; width:100%; margin:0 auto; display:flex; justify-content:space-between; align-items:center; height:100%; }
+    .hero-content { position:relative; z-index:1; max-width:1200px; width:100%; margin:0 auto; display:flex; justify-content:space-between; align-items:center; height:100%; }
     .brand { display:flex; align-items:center; gap:0.5rem; }
     .hero-icon { width:1.5rem; height:1.5rem; flex-shrink:0; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3)); }
     .logo { font-family:'Urbanist',sans-serif; font-size:1.125rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 1px 4px rgba(0,0,0,0.3); }
@@ -220,7 +220,7 @@ import { environment } from '../../../environments/environment';
     .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
     .main { flex:1; padding:1.5rem 1rem; }
-    .main-inner { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
+    .main-inner { max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
     .panel { width:100%; }
     .ach-banner { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:hsl(var(--secondary)); border:1px solid hsl(var(--border)); border-radius:0.625rem; cursor:pointer; transition:all 0.15s ease; text-decoration:none; color:inherit; margin-bottom:-0.25rem; }
     .ach-banner:hover { background:hsl(var(--muted)); border-color:hsl(var(--muted-foreground)/0.3); }
@@ -269,7 +269,7 @@ import { environment } from '../../../environments/environment';
       .user-name { display:none; }
     }
     .footer { flex-shrink:0; padding:0.5rem 1rem; border-top:1px solid hsl(var(--border)); }
-    .footer-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:0.75rem; }
+    .footer-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:0.75rem; }
     .footer-links { display:flex; align-items:center; gap:0.625rem; }
     .footer-link { font-size:0.75rem; color:hsl(var(--muted-foreground)); text-decoration:none; transition:color 0.15s ease; }
     .footer-link:hover { color:hsl(var(--foreground)); }
