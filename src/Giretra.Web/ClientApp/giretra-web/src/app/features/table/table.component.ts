@@ -14,6 +14,7 @@ import { MatchEndOverlayComponent } from './components/center-stage/match-end-ov
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
 import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
+import { WonTricksPopupComponent } from './components/won-tricks-popup/won-tricks-popup.component';
 import { CutInfoPopupComponent } from './components/cut-info-popup/cut-info-popup.component';
 import { CutOutcome } from './components/center-stage/cut-stage/cut-deck-3d.component';
 import { MatchHistoryPopupComponent } from './components/match-history-popup/match-history-popup.component';
@@ -38,6 +39,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
     BidDialogComponent,
     GameModePopupComponent,
     NegotiationHistoryPopupComponent,
+    WonTricksPopupComponent,
     CutInfoPopupComponent,
     MatchHistoryPopupComponent,
     PlayerProfilePopupComponent,
@@ -138,6 +140,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
         (generateInvite)="onGenerateInvite($event)"
         (kickPlayer)="onKickPlayer($event)"
         (seatClicked)="onSeatClicked($event)"
+        (tricksClicked)="onTricksClicked($event)"
       />
 
       <!-- Zone C: Hand / Action Area -->
@@ -183,6 +186,16 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
       <!-- Cut Info Popup -->
       @if (showCutInfo()) {
         <app-cut-info-popup (closed)="showCutInfo.set(false)" />
+      }
+
+      <!-- Won Tricks Popup -->
+      @if (showWonTricks()) {
+        <app-won-tricks-popup
+          [tricks]="gameState.completedTricks()"
+          [myTeam]="gameState.myTeam()"
+          [myPosition]="gameState.myPosition()"
+          (closed)="showWonTricks.set(false)"
+        />
       }
 
       <!-- Negotiation History Popup -->
@@ -837,6 +850,7 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly profilePopupTeam = signal<'team1' | 'team2'>('team1');
   readonly waitingForContinue = signal(false);
   readonly showNegotiationHistory = signal(false);
+  readonly showWonTricks = signal(false);
   readonly showCutInfo = signal(false);
   readonly cutOutcome = signal<CutOutcome | null>(null);
   readonly showMatchHistory = signal(false);
@@ -1293,6 +1307,13 @@ export class TableComponent implements OnInit, OnDestroy {
         this.profilePopupData.set(profile);
       },
     });
+  }
+
+  onTricksClicked(position: PlayerPosition): void {
+    // Only the viewer's own team's won tricks may be inspected
+    const myTeam = this.gameState.myTeam();
+    if (this.gameState.isWatcher() || !myTeam || getTeam(position) !== myTeam) return;
+    this.showWonTricks.set(true);
   }
 
   onChatClicked(): void {
