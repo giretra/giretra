@@ -343,6 +343,35 @@ export interface PlayerProfileResponse {
 }
 
 // ============================================================================
+// Admin
+// ============================================================================
+
+export interface AdminUserEntry {
+  id: string;
+  username: string;
+  displayName: string;
+  customDisplayName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  role: 'Normal' | 'Moderator' | 'Admin';
+  isBanned: boolean;
+  banReason: string | null;
+  createdAt: string;
+  lastLoginAt: string | null;
+  eloRating: number | null;
+  gamesPlayed: number | null;
+  gamesWon: number | null;
+  blockedByCount: number;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+// ============================================================================
 // API Service
 // ============================================================================
 
@@ -685,6 +714,42 @@ export class ApiService {
   getPlayerAchievementShowcase(playerId: string): Observable<AchievementShowcaseResponse> {
     return this.http
       .get<AchievementShowcaseResponse>(`${this.baseUrl}/api/achievements/showcase/${playerId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Admin
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getAdminUsers(search: string | null, page: number, pageSize: number): Observable<AdminUserListResponse> {
+    const params: Record<string, string> = { page: `${page}`, pageSize: `${pageSize}` };
+    if (search) params['search'] = search;
+    return this.http
+      .get<AdminUserListResponse>(`${this.baseUrl}/api/admin/users`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  banUser(userId: string, reason: string | null): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/admin/users/${userId}/ban`, { reason })
+      .pipe(catchError(this.handleError));
+  }
+
+  unbanUser(userId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/admin/users/${userId}/unban`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  clearUserDisplayName(userId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/admin/users/${userId}/clear-display-name`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  removeUserAvatar(userId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/admin/users/${userId}/avatar`)
       .pipe(catchError(this.handleError));
   }
 

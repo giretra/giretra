@@ -101,6 +101,12 @@ export const routes: Routes = [
     canActivate: [moderatorGuard],
   },
   {
+    path: 'admin/users',
+    loadComponent: () =>
+      import('./features/admin/users/admin-users.component').then((m) => m.AdminUsersComponent),
+    canActivate: [moderatorGuard],
+  },
+  {
     path: '**',
     redirectTo: '',
   },

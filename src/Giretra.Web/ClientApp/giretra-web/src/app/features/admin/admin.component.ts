@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, ChevronLeft, Shield, Wrench } from 'lucide-angular';
+import { LucideAngularModule, ChevronLeft, Shield, Users, ChevronRight } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -27,12 +27,17 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <div class="admin-inner">
           <p class="subtitle">{{ t('admin.subtitle') }}</p>
 
-          <div class="empty-panel">
-            <span class="empty-icon">
-              <i-lucide [img]="WrenchIcon" [size]="28" [strokeWidth]="1.75"></i-lucide>
-            </span>
-            <span class="empty-title">{{ t('admin.empty.title') }}</span>
-            <span class="empty-text">{{ t('admin.empty.text') }}</span>
+          <div class="tools-grid">
+            <a class="tool-card" (click)="goToUsers()">
+              <span class="tool-icon">
+                <i-lucide [img]="UsersIcon" [size]="20" [strokeWidth]="2"></i-lucide>
+              </span>
+              <span class="tool-text">
+                <span class="tool-title">{{ t('admin.tools.users.title') }}</span>
+                <span class="tool-desc">{{ t('admin.tools.users.desc') }}</span>
+              </span>
+              <i-lucide [img]="ChevronRightIcon" [size]="16" [strokeWidth]="2" class="tool-arrow"></i-lucide>
+            </a>
           </div>
         </div>
       </main>
@@ -54,22 +59,31 @@ import { TranslocoDirective } from '@jsverse/transloco';
     .admin-inner { max-width:1200px; margin:0 auto; }
     .subtitle { margin:0 0 1rem; font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
 
-    /* Empty state */
-    .empty-panel { display:flex; flex-direction:column; align-items:center; gap:0.5rem; background:hsl(var(--card)); border:1px dashed hsl(var(--border)); border-radius:0.75rem; padding:3rem 1.5rem; text-align:center; }
-    .empty-icon { display:flex; align-items:center; justify-content:center; width:3.5rem; height:3.5rem; border-radius:50%; background:hsl(var(--muted)/0.5); color:hsl(var(--muted-foreground)); margin-bottom:0.25rem; }
-    .empty-title { font-size:0.9375rem; font-weight:600; color:hsl(var(--foreground)); }
-    .empty-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); max-width:26rem; }
+    /* Tools grid */
+    .tools-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(18rem, 1fr)); gap:1rem; }
+    .tool-card { display:flex; align-items:center; gap:0.875rem; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; padding:1rem 1.125rem; cursor:pointer; transition:all 0.15s ease; }
+    .tool-card:hover { border-color:hsl(var(--foreground)/0.25); background:hsl(var(--foreground)/0.02); }
+    .tool-icon { display:flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:0.625rem; background:hsl(var(--gold)/0.12); color:hsl(var(--gold)); flex-shrink:0; }
+    .tool-text { display:flex; flex-direction:column; gap:0.125rem; min-width:0; }
+    .tool-title { font-size:0.875rem; font-weight:700; color:hsl(var(--foreground)); }
+    .tool-desc { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
+    .tool-arrow { margin-left:auto; color:hsl(var(--muted-foreground)); flex-shrink:0; }
   `],
 })
 export class AdminComponent {
   readonly ChevronLeftIcon = ChevronLeft;
   readonly ShieldIcon = Shield;
-  readonly WrenchIcon = Wrench;
+  readonly UsersIcon = Users;
+  readonly ChevronRightIcon = ChevronRight;
 
   private readonly router = inject(Router);
   readonly auth = inject(AuthService);
 
   goBack(): void {
     this.router.navigate(['/']);
+  }
+
+  goToUsers(): void {
+    this.router.navigate(['/admin/users']);
   }
 }

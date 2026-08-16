@@ -54,6 +54,70 @@ public sealed class OfflineUserSyncService : IUserSyncService
     /// </summary>
     public User? FindByKeycloakId(Guid keycloakId)
         => _users.TryGetValue(keycloakId, out var user) ? user : null;
+
+    /// <summary>
+    /// All users synced so far this run (for the offline admin user list).
+    /// </summary>
+    public IReadOnlyCollection<User> AllUsers => _users.Values.ToList();
+}
+
+/// <summary>
+/// Read-only admin user service over the in-memory synced users.
+/// Moderation actions are unavailable offline.
+/// </summary>
+public sealed class OfflineAdminUserService : IAdminUserService
+{
+    private readonly OfflineUserSyncService _userSync;
+
+    public OfflineAdminUserService(OfflineUserSyncService userSync)
+    {
+        _userSync = userSync;
+    }
+
+    public Task<AdminUserListResponse> GetUsersAsync(string? search, int page, int pageSize)
+    {
+        var users = _userSync.AllUsers
+            .Where(u => string.IsNullOrWhiteSpace(search)
+                || u.Username.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)
+                || u.EffectiveDisplayName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(u => u.LastLoginAt)
+            .Select(u => new AdminUserEntry
+            {
+                Id = u.Id,
+                Username = u.Username,
+                DisplayName = u.EffectiveDisplayName,
+                CustomDisplayName = u.CustomDisplayName,
+                Email = u.Email,
+                AvatarUrl = u.AvatarUrl,
+                Role = u.Role,
+                IsBanned = u.IsBanned,
+                BanReason = u.BanReason,
+                CreatedAt = u.CreatedAt,
+                LastLoginAt = u.LastLoginAt,
+                EloRating = null,
+                GamesPlayed = null,
+                GamesWon = null,
+                BlockedByCount = 0,
+            })
+            .ToList();
+
+        return Task.FromResult(new AdminUserListResponse
+        {
+            Users = users,
+            TotalCount = users.Count,
+            Page = 1,
+            PageSize = pageSize,
+        });
+    }
+
+    public Task<(bool Success, string? Error)> BanAsync(Guid userId, string? reason)
+        => Task.FromResult((false, (string?)"Not available offline"));
+
+    public Task<(bool Success, string? Error)> UnbanAsync(Guid userId)
+        => Task.FromResult((false, (string?)"Not available offline"));
+
+    public Task<(bool Success, string? Error)> ClearDisplayNameAsync(Guid userId)
+        => Task.FromResult((false, (string?)"Not available offline"));
 }
 
 /// <summary>
@@ -396,6 +460,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBlockService, OfflineBlockService>();
         services.AddSingleton<IMatchHistoryService, OfflineMatchHistoryService>();
         services.AddSingleton<ILeaderboardService, OfflineLeaderboardService>();
+        services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
 
         return services;
     }
