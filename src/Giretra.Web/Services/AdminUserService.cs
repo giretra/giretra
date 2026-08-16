@@ -42,6 +42,7 @@ public sealed class AdminUserService : IAdminUserService
             .Select(u => new AdminUserEntry
             {
                 Id = u.Id,
+                PlayerId = u.Player != null ? u.Player.Id : null,
                 Username = u.Username,
                 DisplayName = u.CustomDisplayName ?? u.DisplayName,
                 CustomDisplayName = u.CustomDisplayName,

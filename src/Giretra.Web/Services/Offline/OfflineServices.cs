@@ -453,6 +453,18 @@ public sealed class OfflineLeaderboardService : ILeaderboardService
 }
 
 /// <summary>
+/// Stub highlights service returning an empty but well-shaped dashboard.
+/// </summary>
+public sealed class OfflineHighlightsService : IHighlightsService
+{
+    public Task<HighlightsResponse> GetHighlightsAsync(Guid userId)
+        => Task.FromResult(HighlightsResponse.CreateEmpty());
+
+    public Task<HighlightsResponse?> GetPlayerHighlightsAsync(Guid playerId)
+        => Task.FromResult<HighlightsResponse?>(null);
+}
+
+/// <summary>
 /// Extension methods to register all offline service stubs.
 /// </summary>
 public static class ServiceCollectionExtensions
@@ -478,6 +490,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBlockService, OfflineBlockService>();
         services.AddSingleton<IMatchHistoryService, OfflineMatchHistoryService>();
         services.AddSingleton<ILeaderboardService, OfflineLeaderboardService>();
+        services.AddSingleton<IHighlightsService, OfflineHighlightsService>();
         services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
         services.AddSingleton<IAdminGameService, OfflineAdminGameService>();
 

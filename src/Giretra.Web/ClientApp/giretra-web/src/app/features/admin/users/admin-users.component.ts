@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
 import { ApiService, AdminUserEntry } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
@@ -14,6 +14,7 @@ import {
   Eraser,
   ImageOff,
   ShieldAlert,
+  Layers,
 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
@@ -70,7 +71,12 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
               @for (u of users(); track u.id) {
                 <div class="row" [class.row-banned]="u.isBanned">
-                  <div class="col-user col-user-link" (click)="goToGames(u)" [title]="t('adminUsers.viewGames')">
+                  <div
+                    class="col-user"
+                    [class.col-user-link]="!!u.playerId"
+                    (click)="goToHighlights(u)"
+                    [title]="u.playerId ? t('adminUsers.viewStats') : ''"
+                  >
                     @if (u.avatarUrl) {
                       <img class="avatar" [src]="u.avatarUrl" [alt]="u.displayName" />
                     } @else {
@@ -97,6 +103,9 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
                   <div class="col-num" [class.col-warn]="u.blockedByCount >= 3">{{ u.blockedByCount }}</div>
                   <div class="col-date">{{ u.lastLoginAt ? (u.lastLoginAt | date: 'MMM d, y') : '–' }}</div>
                   <div class="col-actions">
+                    <button class="action-btn" (click)="goToGames(u)" [title]="t('adminUsers.viewGames')">
+                      <i-lucide [img]="LayersIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                    </button>
                     @if (u.customDisplayName) {
                       <button class="action-btn" (click)="clearDisplayName(u)" [title]="t('adminUsers.actions.clearName')">
                         <i-lucide [img]="EraserIcon" [size]="14" [strokeWidth]="2"></i-lucide>
@@ -196,7 +205,7 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
     .col-num { width:4rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
     .col-warn { color:hsl(0 70% 55%); font-weight:700; }
     .col-date { width:6.5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); white-space:nowrap; }
-    .col-actions { width:7.5rem; flex-shrink:0; display:flex; justify-content:flex-end; gap:0.25rem; }
+    .col-actions { width:8.5rem; flex-shrink:0; display:flex; justify-content:flex-end; gap:0.25rem; }
 
     .avatar { width:1.75rem; height:1.75rem; border-radius:50%; flex-shrink:0; object-fit:cover; }
     .avatar-placeholder { display:inline-flex; align-items:center; justify-content:center; background:hsl(var(--muted)); color:hsl(var(--muted-foreground)); font-size:0.75rem; font-weight:700; }
@@ -245,14 +254,17 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   readonly EraserIcon = Eraser;
   readonly ImageOffIcon = ImageOff;
   readonly ShieldAlertIcon = ShieldAlert;
+  readonly LayersIcon = Layers;
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
 
   private static readonly PAGE_SIZE = 25;
   private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+  private queryParamsSub: Subscription | null = null;
 
   readonly users = signal<AdminUserEntry[]>([]);
   readonly totalCount = signal(0);
@@ -273,11 +285,18 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.load();
+    // The URL is the source of truth for page and search, so browser back/forward
+    // restores the listing state.
+    this.queryParamsSub = this.route.queryParamMap.subscribe((params) => {
+      this.page.set(Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1));
+      this.search.set(params.get('q') ?? '');
+      this.load();
+    });
   }
 
   ngOnDestroy(): void {
     if (this.searchDebounce) clearTimeout(this.searchDebounce);
+    this.queryParamsSub?.unsubscribe();
   }
 
   goBack(): void {
@@ -288,19 +307,33 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     this.router.navigate(['/admin/games'], { queryParams: { userId: user.id, name: user.displayName } });
   }
 
+  goToHighlights(user: AdminUserEntry): void {
+    if (user.playerId) {
+      this.router.navigate(['/highlights', user.playerId]);
+    }
+  }
+
   onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.search.set(value);
     if (this.searchDebounce) clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => {
-      this.page.set(1);
-      this.load();
+      // replaceUrl keeps typing from flooding the browser history
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { q: value.trim() || null, page: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     }, 300);
   }
 
   setPage(page: number): void {
-    this.page.set(page);
-    this.load();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: page > 1 ? page : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   openBanDialog(user: AdminUserEntry): void {
