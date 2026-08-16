@@ -13,6 +13,9 @@ public sealed class AdminUserListResponse
 public sealed class AdminUserEntry
 {
     public required Guid Id { get; init; }
+
+    /// <summary>The user's Player row id (used to open their highlights page); null if none yet.</summary>
+    public Guid? PlayerId { get; init; }
     public required string Username { get; init; }
     public required string DisplayName { get; init; }
     public string? CustomDisplayName { get; init; }
