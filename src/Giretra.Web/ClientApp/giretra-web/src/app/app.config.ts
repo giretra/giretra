@@ -65,6 +65,13 @@ import {
   TriangleAlert,
   ChevronDown,
   Award,
+  ChartSpline,
+  Radar,
+  TrendingUp,
+  CalendarDays,
+  Megaphone,
+  Handshake,
+  Sparkles,
 } from 'lucide-angular';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
@@ -119,6 +126,13 @@ const usedIcons = {
   TriangleAlert,
   ChevronDown,
   Award,
+  ChartSpline,
+  Radar,
+  TrendingUp,
+  CalendarDays,
+  Megaphone,
+  Handshake,
+  Sparkles,
 };
 
 function initializeKeycloak(auth: AuthService) {

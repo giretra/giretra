@@ -184,6 +184,7 @@ public class Program
                 builder.Services.AddScoped<IBlockService, BlockService>();
                 builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
                 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+                builder.Services.AddScoped<IHighlightsService, HighlightsService>();
             }
 
             var app = builder.Build();

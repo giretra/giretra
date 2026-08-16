@@ -90,6 +90,16 @@ export const routes: Routes = [
       import('./features/achievements/achievements.component').then((m) => m.AchievementsComponent),
   },
   {
+    path: 'highlights',
+    loadComponent: () =>
+      import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
+  },
+  {
+    path: 'highlights/:playerId',
+    loadComponent: () =>
+      import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
+  },
+  {
     path: 'leaderboard',
     loadComponent: () =>
       import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),

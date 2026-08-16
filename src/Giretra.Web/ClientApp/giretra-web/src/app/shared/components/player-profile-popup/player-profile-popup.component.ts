@@ -60,7 +60,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
               </span>
               <span class="stat-label">{{ t('achievements.page.title') }}</span>
             </div>
-            <div class="stat-cell">
+            <div class="stat-cell stat-cell-clickable" (click)="goToHighlights($event)">
               @if (profile().eloRating != null) {
                 <span class="stat-value elo-value">{{ profile().eloRating }}</span>
               } @else {
@@ -538,5 +538,14 @@ export class PlayerProfilePopupComponent {
       this.router.navigate(['/achievements']);
     }
     this.closed.emit();
+  }
+
+  goToHighlights(event: Event): void {
+    event.stopPropagation();
+    const playerId = this.profile().playerId;
+    if (playerId) {
+      this.router.navigate(['/highlights', playerId]);
+      this.closed.emit();
+    }
   }
 }
