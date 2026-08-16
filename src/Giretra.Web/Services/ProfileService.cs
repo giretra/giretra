@@ -17,16 +17,18 @@ public sealed class ProfileService : IProfileService
 {
     private readonly GiretraDbContext _db;
     private readonly IRoomRepository _rooms;
+    private readonly UserSyncCache _userSyncCache;
 
     private const int MaxDimension = 256;
     private const long MaxInputSize = 5 * 1024 * 1024; // 5 MB raw upload limit
     private const int WebPQuality = 75;
     private static readonly HashSet<string> AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-    public ProfileService(GiretraDbContext db, IRoomRepository rooms)
+    public ProfileService(GiretraDbContext db, IRoomRepository rooms, UserSyncCache userSyncCache)
     {
         _db = db;
         _rooms = rooms;
+        _userSyncCache = userSyncCache;
     }
 
     public async Task<ProfileResponse> GetProfileAsync(Guid userId)
@@ -155,6 +157,7 @@ public sealed class ProfileService : IProfileService
         user.CustomDisplayName = trimmed;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
+        _userSyncCache.Invalidate(user.KeycloakId);
 
         return (true, null);
     }
