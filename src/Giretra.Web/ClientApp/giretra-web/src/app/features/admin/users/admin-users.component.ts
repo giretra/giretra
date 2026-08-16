@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
 import { ApiService, AdminUserEntry } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
@@ -259,10 +259,12 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
 
   private static readonly PAGE_SIZE = 25;
   private searchDebounce: ReturnType<typeof setTimeout> | null = null;
+  private queryParamsSub: Subscription | null = null;
 
   readonly users = signal<AdminUserEntry[]>([]);
   readonly totalCount = signal(0);
@@ -283,11 +285,18 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.load();
+    // The URL is the source of truth for page and search, so browser back/forward
+    // restores the listing state.
+    this.queryParamsSub = this.route.queryParamMap.subscribe((params) => {
+      this.page.set(Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1));
+      this.search.set(params.get('q') ?? '');
+      this.load();
+    });
   }
 
   ngOnDestroy(): void {
     if (this.searchDebounce) clearTimeout(this.searchDebounce);
+    this.queryParamsSub?.unsubscribe();
   }
 
   goBack(): void {
@@ -309,14 +318,22 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     this.search.set(value);
     if (this.searchDebounce) clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => {
-      this.page.set(1);
-      this.load();
+      // replaceUrl keeps typing from flooding the browser history
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { q: value.trim() || null, page: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     }, 300);
   }
 
   setPage(page: number): void {
-    this.page.set(page);
-    this.load();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: page > 1 ? page : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   openBanDialog(user: AdminUserEntry): void {
