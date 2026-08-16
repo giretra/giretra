@@ -9,7 +9,7 @@ import { GameStateService } from '../../core/services/game-state.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight, Shield } from 'lucide-angular';
+import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight, Shield, ChartSpline } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
@@ -59,6 +59,9 @@ import { environment } from '../../../environments/environment';
                 <app-language-switcher />
                 <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
                   <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                </button>
+                <button class="pill-btn" (click)="goToHighlights()" title="My Stats">
+                  <i-lucide [img]="ChartSplineIcon" [size]="14" [strokeWidth]="2"></i-lucide>
                 </button>
                 @if (auth.isModerator()) {
                   <button class="pill-btn" (click)="goToAdmin()" title="Administration">
@@ -285,6 +288,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly LogOutIcon = LogOut;
   readonly SettingsIcon = Settings;
   readonly TrophyIcon = Trophy;
+  readonly ChartSplineIcon = ChartSpline;
   readonly GithubIcon = Github;
   readonly Share2Icon = Share2;
   readonly ZapIcon = Zap;
@@ -430,6 +434,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   goToLeaderboard(): void {
     this.router.navigate(['/leaderboard']);
+  }
+
+  goToHighlights(): void {
+    this.router.navigate(['/highlights']);
   }
 
   goToSettings(): void {

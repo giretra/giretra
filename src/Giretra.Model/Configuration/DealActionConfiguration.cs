@@ -33,6 +33,7 @@ public class DealActionConfiguration : IEntityTypeConfiguration<DealAction>
         ActionType.Accept => "accept",
         ActionType.Double => "double",
         ActionType.Redouble => "redouble",
+        ActionType.ReRedouble => "re_redouble",
         ActionType.PlayCard => "play_card",
         _ => v.ToString().ToLowerInvariant()
     };
@@ -44,7 +45,10 @@ public class DealActionConfiguration : IEntityTypeConfiguration<DealAction>
         "accept" => ActionType.Accept,
         "double" => ActionType.Double,
         "redouble" => ActionType.Redouble,
+        "re_redouble" => ActionType.ReRedouble,
         "play_card" => ActionType.PlayCard,
+        // Rows written before ActionType was aligned with RecordedActionType carry the raw
+        // numeric string ("6" = PlayCard); Enum.Parse resolves them against the fixed values.
         _ => Enum.Parse<ActionType>(v, ignoreCase: true)
     };
 }

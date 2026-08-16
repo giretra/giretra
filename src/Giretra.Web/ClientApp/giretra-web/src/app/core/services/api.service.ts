@@ -348,6 +348,7 @@ export interface PlayerProfileResponse {
 
 export interface AdminUserEntry {
   id: string;
+  playerId: string | null;
   username: string;
   displayName: string;
   customDisplayName: string | null;
@@ -422,6 +423,95 @@ export interface AdminDealEntry {
 
 export interface AdminGameDealsResponse {
   deals: AdminDealEntry[];
+}
+
+export interface HighlightsHero {
+  eloRating: number | null;
+  gamesPlayed: number;
+  gamesWon: number;
+  winRate: number;
+  winStreak: number;
+  bestWinStreak: number;
+  recentForm: boolean[];
+}
+
+export interface HighlightsModeStats {
+  mode: GameMode;
+  dealsPlayed: number;
+  dealsWon: number;
+  dealWinRate: number;
+  timesAnnounced: number;
+  announceWins: number;
+  announceWinRate: number;
+  avgCardPoints: number;
+}
+
+export interface HighlightsEloPoint {
+  recordedAt: string;
+  elo: number;
+}
+
+export interface HighlightsBidding {
+  dealsPlayed: number;
+  dealsAnnounced: number;
+  announceRate: number;
+  announceWins: number;
+  announceWinRate: number;
+  doublesMade: number;
+  doublesWon: number;
+  redoublesMade: number;
+  redoublesWon: number;
+}
+
+export interface HighlightsSweeps {
+  sweepsFor: number;
+  sweepsAgainst: number;
+  instantWinsFor: number;
+  instantWinsAgainst: number;
+}
+
+export interface HighlightsTricks {
+  analyzedDeals: number;
+  tricksPlayed: number;
+  tricksWon: number;
+  trickWinRate: number;
+  lastTrickWins: number;
+  bestTricksInOneDeal: number;
+}
+
+export interface HighlightsPartner {
+  playerId: string;
+  displayName: string;
+  isBot: boolean;
+  games: number;
+  wins: number;
+  winRate: number;
+}
+
+export interface HighlightsCallout {
+  code: string;
+  kind: 'strength' | 'weakness';
+  mode: GameMode | null;
+  value: number | null;
+}
+
+export interface HighlightsActivityDay {
+  date: string;
+  count: number;
+}
+
+export interface HighlightsResponse {
+  playerName: string | null;
+  hero: HighlightsHero;
+  modeStats: HighlightsModeStats[];
+  eloTrend: HighlightsEloPoint[];
+  bidding: HighlightsBidding;
+  sweeps: HighlightsSweeps;
+  tricks: HighlightsTricks;
+  bestPartner: HighlightsPartner | null;
+  nemesis: HighlightsPartner | null;
+  callouts: HighlightsCallout[];
+  activity: HighlightsActivityDay[];
 }
 
 // ============================================================================
@@ -767,6 +857,22 @@ export class ApiService {
   getPlayerAchievementShowcase(playerId: string): Observable<AchievementShowcaseResponse> {
     return this.http
       .get<AchievementShowcaseResponse>(`${this.baseUrl}/api/achievements/showcase/${playerId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Highlights
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getMyHighlights(): Observable<HighlightsResponse> {
+    return this.http
+      .get<HighlightsResponse>(`${this.baseUrl}/api/highlights/me`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getPlayerHighlights(playerId: string): Observable<HighlightsResponse> {
+    return this.http
+      .get<HighlightsResponse>(`${this.baseUrl}/api/highlights/players/${playerId}`)
       .pipe(catchError(this.handleError));
   }
 
