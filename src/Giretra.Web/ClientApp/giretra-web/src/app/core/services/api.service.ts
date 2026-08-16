@@ -371,6 +371,59 @@ export interface AdminUserListResponse {
   pageSize: number;
 }
 
+export interface AdminGamePlayerEntry {
+  displayName: string;
+  userId: string | null;
+  isBot: boolean;
+  position: PlayerPosition;
+  team: Team;
+  isWinner: boolean;
+  eloChange: number | null;
+}
+
+export interface AdminGameEntry {
+  id: string;
+  roomName: string;
+  team1FinalScore: number;
+  team2FinalScore: number;
+  winnerTeam: Team | null;
+  totalDeals: number;
+  isRanked: boolean;
+  wasAbandoned: boolean;
+  startedAt: string;
+  completedAt: string | null;
+  durationSeconds: number | null;
+  players: AdminGamePlayerEntry[];
+}
+
+export interface AdminGameListResponse {
+  games: AdminGameEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminDealEntry {
+  dealNumber: number;
+  dealerPosition: PlayerPosition;
+  gameMode: GameMode | null;
+  announcerTeam: Team | null;
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled';
+  team1CardPoints: number | null;
+  team2CardPoints: number | null;
+  team1MatchPoints: number | null;
+  team2MatchPoints: number | null;
+  wasSweep: boolean;
+  sweepingTeam: Team | null;
+  isInstantWin: boolean;
+  announcerWon: boolean | null;
+  completedAt: string | null;
+}
+
+export interface AdminGameDealsResponse {
+  deals: AdminDealEntry[];
+}
+
 // ============================================================================
 // API Service
 // ============================================================================
@@ -750,6 +803,20 @@ export class ApiService {
   removeUserAvatar(userId: string): Observable<void> {
     return this.http
       .delete<void>(`${this.baseUrl}/api/admin/users/${userId}/avatar`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAdminGames(userId: string | null, page: number, pageSize: number): Observable<AdminGameListResponse> {
+    const params: Record<string, string> = { page: `${page}`, pageSize: `${pageSize}` };
+    if (userId) params['userId'] = userId;
+    return this.http
+      .get<AdminGameListResponse>(`${this.baseUrl}/api/admin/games`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  getAdminGameDeals(matchId: string): Observable<AdminGameDealsResponse> {
+    return this.http
+      .get<AdminGameDealsResponse>(`${this.baseUrl}/api/admin/games/${matchId}/deals`)
       .pipe(catchError(this.handleError));
   }
 
