@@ -118,7 +118,8 @@ public class Program
                 // Offline auth: simple username-based scheme
                 builder.Services.AddAuthentication("Offline")
                     .AddScheme<AuthenticationSchemeOptions, OfflineAuthenticationHandler>("Offline", null);
-                builder.Services.AddAuthorization();
+                builder.Services.AddAuthorization(options =>
+                    options.AddPolicy(AuthPolicies.Moderator, p => p.RequireClaim("realm_role", "moderator", "admin")));
 
                 // Offline service stubs (no DB needed)
                 builder.Services.AddOfflineServices();
@@ -148,7 +149,8 @@ public class Program
                             }
                         };
                     });
-                builder.Services.AddAuthorization();
+                builder.Services.AddAuthorization(options =>
+                    options.AddPolicy(AuthPolicies.Moderator, p => p.RequireClaim("realm_role", "moderator", "admin")));
                 builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformation>();
 
                 // Database

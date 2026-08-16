@@ -31,7 +31,9 @@ public sealed class UserSyncService : IUserSyncService
 
         // Determine role from realm_role claims (set by KeycloakClaimsTransformation)
         var roles = principal.FindAll("realm_role").Select(c => c.Value).ToList();
-        var role = roles.Contains("admin") ? UserRole.Admin : UserRole.Normal;
+        var role = roles.Contains("admin") ? UserRole.Admin
+            : roles.Contains("moderator") ? UserRole.Moderator
+            : UserRole.Normal;
 
         try
         {
