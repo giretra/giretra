@@ -295,6 +295,25 @@ public class SpecExamplesTests
     }
 
     [Fact]
+    public void AllTrumpsSweep_ByDefenders_45MatchPoints()
+    {
+        var calculator = new ScoringCalculator();
+
+        var result = calculator.Calculate(
+            GameMode.AllTrumps,
+            MultiplierState.Normal,
+            Team.Team1,
+            0,
+            258,
+            sweepingTeam: Team.Team2);
+
+        Assert.True(result.WasSweep);
+        Assert.Equal(45, result.Team2MatchPoints);
+        Assert.Equal(0, result.Team1MatchPoints);
+        Assert.False(result.IsInstantWin);
+    }
+
+    [Fact]
     public void NoTrumpsSweep_90MatchPoints()
     {
         var calculator = new ScoringCalculator();

@@ -133,7 +133,7 @@ public static class ScoreboardRenderer
             }
             else
             {
-                var sweepBonus = mode.GetSweepBonus();
+                var sweepBonus = mode.GetSweepBonus(sweepByDefenders: result.SweepingTeam != result.AnnouncerTeam);
                 calcTable.AddRow("Sweep Bonus:", $"{sweepBonus} match points");
                 if (result.Multiplier != MultiplierState.Normal)
                 {

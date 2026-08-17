@@ -89,12 +89,13 @@ public static class GameModeExtensions
 
     /// <summary>
     /// Gets the sweep bonus match points for this mode.
+    /// In AllTrumps, a sweep by the defenders (against the announcer) is worth 45 instead of 35.
     /// Note: Colour sweep results in instant match win (handled separately).
     /// </summary>
-    public static int GetSweepBonus(this GameMode mode)
+    public static int GetSweepBonus(this GameMode mode, bool sweepByDefenders = false)
         => mode.GetCategory() switch
         {
-            GameModeCategory.AllTrumps => 35,
+            GameModeCategory.AllTrumps => sweepByDefenders ? 45 : 35,
             GameModeCategory.NoTrumps => 90,
             GameModeCategory.Colour => 0, // Instant win, not a point bonus
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
