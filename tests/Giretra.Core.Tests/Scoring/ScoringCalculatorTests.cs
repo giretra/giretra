@@ -393,6 +393,38 @@ public class ScoringCalculatorTests
     }
 
     [Fact]
+    public void AllTrumps_Sweep_ByDefenders_45Points()
+    {
+        // Team1 announced AllTrumps but Team2 (defenders) won all 8 tricks
+        var result = _calculator.Calculate(
+            GameMode.AllTrumps,
+            MultiplierState.Normal,
+            Team.Team1,
+            0,
+            258,
+            sweepingTeam: Team.Team2);
+
+        Assert.Equal(0, result.Team1MatchPoints);
+        Assert.Equal(45, result.Team2MatchPoints);
+        Assert.True(result.WasSweep);
+        Assert.False(result.IsInstantWin);
+    }
+
+    [Fact]
+    public void AllTrumps_Sweep_ByDefenders_Doubled_90Points()
+    {
+        var result = _calculator.Calculate(
+            GameMode.AllTrumps,
+            MultiplierState.Doubled,
+            Team.Team1,
+            0,
+            258,
+            sweepingTeam: Team.Team2);
+
+        Assert.Equal(90, result.Team2MatchPoints);  // 45 × 2
+    }
+
+    [Fact]
     public void NoTrumps_Sweep_90Points()
     {
         var result = _calculator.Calculate(

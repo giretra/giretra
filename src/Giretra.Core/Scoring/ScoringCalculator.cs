@@ -94,8 +94,8 @@ public class ScoringCalculator
             };
         }
 
-        // AllTrumps sweep = 35, NoTrumps sweep = 90
-        var sweepBonus = gameMode.GetSweepBonus();
+        // AllTrumps sweep = 35 (45 when the defenders sweep the announcer), NoTrumps sweep = 90
+        var sweepBonus = gameMode.GetSweepBonus(sweepByDefenders: sweepingTeam != announcerTeam);
         var points = sweepBonus * multiplier.GetMultiplier();
 
         return new DealResult
