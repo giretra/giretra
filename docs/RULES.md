@@ -351,7 +351,7 @@ The team that wins the 8th (final) trick receives 10 bonus card points.
 
 | Game Mode | Base Match Points | Sweep Bonus | Minimum Card Points to Win |
 |-----------|-------------------|-------------|----------------------------|
-| AllTrumps | 26 (split) | 35 | 129 (to avoid losing) |
+| AllTrumps | 26 (split) | 35 (45 if defenders sweep) | 129 (to avoid losing) |
 | NoTrumps | 52 | 90 | 65 |
 | Colour | 16 | Instant match win | 82 |
 
@@ -410,7 +410,7 @@ If a team wins all 8 tricks:
 
 | Game Mode | Sweep Reward |
 |-----------|--------------|
-| AllTrumps | 35 match points (replaces normal scoring) |
+| AllTrumps | 35 match points if the announcer team sweeps; **45** match points if the defenders sweep the announcer (replaces normal scoring) |
 | NoTrumps | 90 match points (replaces normal scoring) |
 | Colour | **Instant match victory** (regardless of current score) |
 

@@ -93,6 +93,15 @@ public class GameModeTests
     }
 
     [Theory]
+    [InlineData(GameMode.AllTrumps, 45)] // Defenders sweeping the announcer earn more
+    [InlineData(GameMode.NoTrumps, 90)]
+    [InlineData(GameMode.ColourSpades, 0)] // Instant win, not points
+    public void GetSweepBonus_ByDefenders_ReturnsCorrectValue(GameMode mode, int expected)
+    {
+        Assert.Equal(expected, mode.GetSweepBonus(sweepByDefenders: true));
+    }
+
+    [Theory]
     [InlineData(GameMode.AllTrumps, true)]
     [InlineData(GameMode.ColourSpades, true)]
     [InlineData(GameMode.ColourHearts, true)]
