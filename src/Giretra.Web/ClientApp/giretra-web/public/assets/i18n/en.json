@@ -201,6 +201,7 @@
   "achievements.desc.sweep_in_colour": "Sweep all 8 tricks in a Colour game mode.",
   "achievements.desc.namoronako_ny_tsy_nananako": "Cut the deck, then let your partner win 6+ tricks on their own while your team wins the deal.",
   "achievements.desc.asio_siramamy": "Win a match in which you personally Doubled or Redoubled in 3 deals or more.",
+  "achievements.desc.tanalahy_ny_foko": "Announce a Colour, see the deal end in AllTrumps or NoTrumps, and personally win 5+ tricks with cards of one same suit different from the one you announced.",
   "achievements.page.title": "Achievements",
   "achievements.page.subtitle": "{{earned}} / {{total}} unlocked",
   "achievements.page.earned": "Earned",

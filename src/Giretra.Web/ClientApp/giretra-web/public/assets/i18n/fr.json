@@ -201,6 +201,7 @@
   "achievements.desc.sweep_in_colour": "Faire capot (8 plis) en mode Couleur.",
   "achievements.desc.namoronako_ny_tsy_nananako": "Couper le paquet, puis laisser votre partenaire remporter 6+ plis à lui seul pendant que votre équipe gagne la donne.",
   "achievements.desc.asio_siramamy": "Gagner un match dans lequel vous avez personnellement contré ou surcontré sur 3 donnes ou plus.",
+  "achievements.desc.tanalahy_ny_foko": "Annoncer une Couleur, voir la donne finir en Tout Atout ou Sans Atout, et remporter soi-même 5+ plis avec des cartes d'une même couleur différente de celle annoncée.",
   "achievements.page.title": "Succès",
   "achievements.page.subtitle": "{{earned}} / {{total}} débloqués",
   "achievements.page.earned": "Obtenu",
