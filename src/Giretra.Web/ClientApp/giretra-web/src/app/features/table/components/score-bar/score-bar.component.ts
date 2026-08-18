@@ -139,7 +139,7 @@ import { ErrorBannerService } from '../../../../core/services/error-banner.servi
 
           <button class="menu-row menu-row-danger" (click)="onLeaveFromMenu()">
             <i-lucide [img]="LogOutIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
-            <span class="menu-label">{{ t('scoreBar.leaveTable') }}</span>
+            <span class="menu-label">{{ t(gameInProgress() ? 'scoreBar.abandonGame' : 'scoreBar.leaveTable') }}</span>
           </button>
         </div>
       }
@@ -604,6 +604,9 @@ export class ScoreBarComponent {
   readonly turnTimeoutAt = input<Date | null>(null);
 
   readonly unreadCount = input<number>(0);
+
+  /** True while the local user is playing an active match (leaving = abandoning) */
+  readonly gameInProgress = input<boolean>(false);
 
   readonly leaveTable = output<void>();
   readonly modeBadgeClicked = output<void>();

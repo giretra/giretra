@@ -73,7 +73,8 @@
 
   "table.reconnecting": "Mamerina fifandraisana...",
   "table.connectionLost": "Tapaka ny fifandraisana",
-  "table.leaveConfirm": "Ny fialana mandritra ny lalao dia mety hanimba ny isanao. Tena hiala ve ianao?",
+  "table.leaveConfirm": "Raha miala ianao izao dia mandao ny lalao ary resy ny ekipanao. Tena hiala ve ianao?",
+  "table.matchAbandoned": "Nisy mpilalao nandao ny lalao.",
 
   "waiting.title": "Miandry mpilalao",
   "waiting.startGame": "Atombohy ny Lalao",
@@ -226,6 +227,7 @@
   "scoreBar.yourTurn": "Anjaranao",
   "scoreBar.dealNumber": "Fizarana {{number}}",
   "scoreBar.leaveTable": "Hiala amin'ny Latabatra",
+  "scoreBar.abandonGame": "Mandao ny Lalao",
   "scoreBar.menu": "Menu",
   "scoreBar.sound": "Feo",
   "scoreBar.soundOn": "Mandeha",

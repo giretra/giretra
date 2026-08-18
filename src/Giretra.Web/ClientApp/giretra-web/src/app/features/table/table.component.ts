@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, effect, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { GameStateService, GamePhase, MultiplierState } from '../../core/services/game-state.service';
 import { ClientSessionService } from '../../core/services/client-session.service';
@@ -97,6 +98,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
         [isMyTurn]="gameState.isMyTurn()"
         [turnTimeoutAt]="gameState.turnTimeoutAt()"
         [unreadCount]="chatService.unreadCount()"
+        [gameInProgress]="gameInProgress()"
         (leaveTable)="onLeaveTable()"
         (modeBadgeClicked)="onModeBadgeClicked()"
         (matchPointsClicked)="onMatchPointsClicked()"
@@ -858,6 +860,15 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly showAchievementsPopup = signal(false);
   readonly expandedAchievement = signal<string | null>(null);
 
+  /** True while the local user is playing an active match (leaving = abandoning) */
+  readonly gameInProgress = computed(() => {
+    const phase = this.gameState.phase();
+    return !!this.gameState.gameId()
+      && phase !== 'waiting'
+      && phase !== 'matchEnd'
+      && !this.session.isWatcher();
+  });
+
   readonly myAchievements = computed(() => {
     const pos = this.gameState.myPosition();
     const all = this.gameState.earnedAchievements();
@@ -873,14 +884,20 @@ export class TableComponent implements OnInit, OnDestroy {
   private previousPhase: GamePhase | null = null;
 
   private readonly beforeUnloadHandler = (e: BeforeUnloadEvent) => {
-    const phase = this.gameState.phase();
-    const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
-    if (gameInProgress && !this.session.isWatcher()) {
+    if (this.gameInProgress()) {
       e.preventDefault();
     }
   };
 
   constructor() {
+    // A player abandoned the match — tell the remaining players/watchers why
+    // the game just ended (the abandoner is already navigating home).
+    this.hub.matchAbandoned$.pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (event.abandoner !== this.gameState.myPosition()) {
+        this.errorBanner.show(this.transloco.translate('table.matchAbandoned'));
+      }
+    });
+
     // Watch for kick — navigate home
     effect(() => {
       if (this.gameState.wasKicked()) {
@@ -1346,10 +1363,8 @@ export class TableComponent implements OnInit, OnDestroy {
   async onLeaveTable(): Promise<void> {
     // The canDeactivate guard handles the confirmation dialog and session cleanup.
     // For the explicit "Leave Table" button, also call the leave API before navigating.
-    const phase = this.gameState.phase();
-    const gameInProgress = this.gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
-
-    if (gameInProgress && !this.session.isWatcher() && !confirm(this.transloco.translate('table.leaveConfirm'))) {
+    // Leaving an active match abandons it (the server forfeits the game).
+    if (this.gameInProgress() && !confirm(this.transloco.translate('table.leaveConfirm'))) {
       return;
     }
 

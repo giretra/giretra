@@ -73,7 +73,8 @@
 
   "table.reconnecting": "Reconnecting...",
   "table.connectionLost": "Connection lost",
-  "table.leaveConfirm": "Leaving during a match may result in a rating loss. Are you sure?",
+  "table.leaveConfirm": "Leaving now abandons the match and your team forfeits. Are you sure?",
+  "table.matchAbandoned": "A player abandoned the match.",
 
   "waiting.title": "Waiting for players",
   "waiting.startGame": "Start Game",
@@ -226,6 +227,7 @@
   "scoreBar.yourTurn": "Your turn",
   "scoreBar.dealNumber": "Deal {{number}}",
   "scoreBar.leaveTable": "Leave Table",
+  "scoreBar.abandonGame": "Abandon Game",
   "scoreBar.menu": "Menu",
   "scoreBar.sound": "Sound",
   "scoreBar.soundOn": "On",
