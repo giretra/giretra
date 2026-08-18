@@ -7,6 +7,7 @@ using Giretra.Web.Domain;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -22,6 +23,7 @@ public sealed class GameServiceTests
     private readonly INotificationService _notifications;
     private readonly ILogger<GameService> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IServiceProvider _serviceProvider;
     private readonly GameService _gameService;
 
     public GameServiceTests()
@@ -32,9 +34,9 @@ public sealed class GameServiceTests
         _logger = Substitute.For<ILogger<GameService>>();
         _loggerFactory = Substitute.For<ILoggerFactory>();
         var aiRegistry = AiPlayerRegistry.CreateFromAssembly();
-        var serviceProvider = Substitute.For<IServiceProvider>();
+        _serviceProvider = Substitute.For<IServiceProvider>();
         var configuration = Substitute.For<IConfiguration>();
-        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, serviceProvider, configuration, _logger, _loggerFactory);
+        _gameService = new GameService(_gameRepository, _roomRepository, _notifications, aiRegistry, _serviceProvider, configuration, _logger, _loggerFactory);
     }
 
     #region CreateGame Tests
@@ -624,6 +626,86 @@ public sealed class GameServiceTests
 
         // Assert
         Assert.False(result);
+    }
+
+    #endregion
+
+    #region AbandonGame Tests
+
+    private IMatchPersistenceService WireAbandonDependencies()
+    {
+        var persistence = Substitute.For<IMatchPersistenceService>();
+        var scopedProvider = Substitute.For<IServiceProvider>();
+        scopedProvider.GetService(typeof(IMatchPersistenceService)).Returns(persistence);
+        var scope = Substitute.For<IServiceScope>();
+        scope.ServiceProvider.Returns(scopedProvider);
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+        _serviceProvider.GetService(typeof(IServiceScopeFactory)).Returns(scopeFactory);
+        _serviceProvider.GetService(typeof(IRoomService)).Returns(Substitute.For<IRoomService>());
+        return persistence;
+    }
+
+    [Fact]
+    public void SubmitCut_MarksPlayerActed()
+    {
+        // Arrange — hand-built session (no game loop) so the pending action is stable
+        var session = new GameSession
+        {
+            GameId = "game_acted",
+            RoomId = "room_test",
+            PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
+            ClientPositions = new Dictionary<string, PlayerPosition> { ["client_human1"] = PlayerPosition.Bottom },
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
+        };
+        _gameRepository.Add(session);
+        session.PendingActions[PlayerPosition.Bottom] = new PendingAction
+        {
+            ActionType = PendingActionType.Cut,
+            Player = PlayerPosition.Bottom,
+            CutTcs = new TaskCompletionSource<(int, bool)>(),
+            TimeoutDuration = TimeSpan.FromMinutes(2)
+        };
+
+        // Act
+        Assert.False(session.PlayersActed.ContainsKey(PlayerPosition.Bottom));
+        _gameService.SubmitCut(session.GameId, "client_human1", 16, true);
+
+        // Assert
+        Assert.True(session.PlayersActed.ContainsKey(PlayerPosition.Bottom));
+    }
+
+    [Fact]
+    public async Task AbandonGame_BeforeAnyAction_DoesNotPersistForfeit()
+    {
+        // Arrange — reflex-click scenario: the player quits without ever acting
+        var persistence = WireAbandonDependencies();
+        var room = CreateTestRoomWithHumanPlayer();
+        var session = _gameService.CreateGame(room)!;
+
+        // Act
+        await _gameService.AbandonGameAsync(session.GameId, PlayerPosition.Bottom);
+
+        // Assert
+        await persistence.DidNotReceive()
+            .PersistAbandonedMatchAsync(Arg.Any<GameSession>(), Arg.Any<PlayerPosition>());
+    }
+
+    [Fact]
+    public async Task AbandonGame_AfterPlayerActed_PersistsForfeit()
+    {
+        // Arrange
+        var persistence = WireAbandonDependencies();
+        var room = CreateTestRoomWithHumanPlayer();
+        var session = _gameService.CreateGame(room)!;
+        session.PlayersActed[PlayerPosition.Bottom] = true;
+
+        // Act
+        await _gameService.AbandonGameAsync(session.GameId, PlayerPosition.Bottom);
+
+        // Assert
+        await persistence.Received(1)
+            .PersistAbandonedMatchAsync(session, PlayerPosition.Bottom);
     }
 
     #endregion

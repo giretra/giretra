@@ -74,6 +74,7 @@
   "table.reconnecting": "Reconnecting...",
   "table.connectionLost": "Connection lost",
   "table.leaveConfirm": "Leaving now abandons the match and your team forfeits. Are you sure?",
+  "table.leaveConfirmNoAction": "Leave the game? You have not played yet, so no penalty will be applied.",
   "table.matchAbandoned": "A player abandoned the match.",
 
   "waiting.title": "Waiting for players",

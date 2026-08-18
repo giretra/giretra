@@ -149,6 +149,7 @@ export interface PlayerStateResponse {
   pendingActionType: 'Cut' | 'Negotiate' | 'PlayCard' | 'ContinueDeal' | 'ContinueMatch' | null;
   validCards: CardResponse[] | null;
   validActions: ValidAction[] | null;
+  hasActed: boolean;
   gameState: GameStateResponse;
 }
 
