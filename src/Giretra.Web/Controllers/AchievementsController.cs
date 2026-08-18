@@ -1,5 +1,7 @@
 using Giretra.Model;
 using Giretra.Model.Entities;
+using Giretra.Web.Achievements;
+using Giretra.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -81,10 +83,11 @@ public class AchievementsController : ControllerBase
     [HttpGet("showcase/{playerId:guid}")]
     public async Task<ActionResult<AchievementShowcaseResponse>> GetShowcase(
         Guid playerId,
+        [FromServices] AiPlayerRegistry aiRegistry,
         [FromServices] GiretraDbContext? db = null)
     {
         if (db == null)
-            return Ok(new AchievementShowcaseResponse { PlayerName = "", Achievements = [] });
+            return Ok(new AchievementShowcaseResponse { PlayerName = "", Achievements = [], QualifyingBots = QualifyingBots(aiRegistry) });
 
         var player = await db.Players
             .Include(p => p.User)
@@ -95,7 +98,7 @@ public class AchievementsController : ControllerBase
 
         var playerName = player.User?.EffectiveDisplayName ?? player.Bot?.DisplayName ?? "Unknown";
 
-        return Ok(await BuildShowcase(db, playerId, playerName));
+        return Ok(await BuildShowcase(db, playerId, playerName, aiRegistry));
     }
 
     /// <summary>
@@ -104,21 +107,29 @@ public class AchievementsController : ControllerBase
     [HttpGet("showcase/me")]
     [Authorize]
     public async Task<ActionResult<AchievementShowcaseResponse>> GetMyShowcase(
+        [FromServices] AiPlayerRegistry aiRegistry,
         [FromServices] GiretraDbContext? db = null)
     {
         if (db == null)
-            return Ok(new AchievementShowcaseResponse { PlayerName = "", Achievements = [] });
+            return Ok(new AchievementShowcaseResponse { PlayerName = "", Achievements = [], QualifyingBots = QualifyingBots(aiRegistry) });
 
         var user = (User)HttpContext.Items["GiretraUser"]!;
         var player = await db.Players.FirstOrDefaultAsync(p => p.UserId == user.Id);
         if (player == null)
-            return Ok(new AchievementShowcaseResponse { PlayerName = user.EffectiveDisplayName, Achievements = [] });
+            return Ok(new AchievementShowcaseResponse { PlayerName = user.EffectiveDisplayName, Achievements = [], QualifyingBots = QualifyingBots(aiRegistry) });
 
-        return Ok(await BuildShowcase(db, player.Id, user.EffectiveDisplayName));
+        return Ok(await BuildShowcase(db, player.Id, user.EffectiveDisplayName, aiRegistry));
     }
 
+    private static List<string> QualifyingBots(AiPlayerRegistry aiRegistry) =>
+        aiRegistry.GetAvailableTypes()
+            .Where(t => t.Rating >= AchievementEvaluator.MinOpponentRating)
+            .OrderByDescending(t => t.Rating)
+            .Select(t => t.DisplayName)
+            .ToList();
+
     private static async Task<AchievementShowcaseResponse> BuildShowcase(
-        GiretraDbContext db, Guid playerId, string playerName)
+        GiretraDbContext db, Guid playerId, string playerName, AiPlayerRegistry aiRegistry)
     {
         var allAchievements = await db.Achievements
             .Where(a => a.IsActive)
@@ -148,7 +159,8 @@ public class AchievementsController : ControllerBase
             PlayerName = playerName,
             EarnedCount = items.Count(i => i.IsEarned),
             TotalCount = items.Count,
-            Achievements = items
+            Achievements = items,
+            QualifyingBots = QualifyingBots(aiRegistry)
         };
     }
 }
@@ -159,6 +171,7 @@ public sealed class AchievementShowcaseResponse
     public int EarnedCount { get; init; }
     public int TotalCount { get; init; }
     public required List<AchievementShowcaseItem> Achievements { get; init; }
+    public List<string> QualifyingBots { get; init; } = [];
 }
 
 public sealed class AchievementShowcaseItem

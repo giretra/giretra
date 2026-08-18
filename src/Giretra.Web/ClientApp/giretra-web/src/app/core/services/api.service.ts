@@ -306,6 +306,7 @@ export interface AchievementShowcaseResponse {
   earnedCount: number;
   totalCount: number;
   achievements: AchievementShowcaseItem[];
+  qualifyingBots: string[];
 }
 
 export interface AchievementShowcaseItem {
