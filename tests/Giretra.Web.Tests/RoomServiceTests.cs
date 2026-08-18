@@ -854,4 +854,66 @@ public sealed class RoomServiceTests
     }
 
     #endregion
+
+    #region CloseRoomIfNoHumanPlayers Tests
+
+    private string CreatePlayingRoomWithBots(out string creatorClientId)
+    {
+        var (createResponse, _) = _roomService.CreateRoom(new CreateRoomRequest
+        {
+            Name = "Bots Room",
+            CreatorName = "Human",
+            AiSeats =
+            [
+                new() { Position = PlayerPosition.Left, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Top, AiType = "CalculatingPlayer" },
+                new() { Position = PlayerPosition.Right, AiType = "CalculatingPlayer" }
+            ]
+        }, "Human", CreatorUserId);
+
+        var roomId = createResponse.Room.RoomId;
+        creatorClientId = createResponse.ClientId;
+
+        _gameService.CreateGame(Arg.Any<Room>()).Returns(ci => new GameSession
+        {
+            GameId = "game_abandon",
+            RoomId = roomId,
+            PlayerAgents = new Dictionary<PlayerPosition, IPlayerAgent>(),
+            ClientPositions = new Dictionary<string, PlayerPosition>(),
+            PlayerComposition = new Dictionary<PlayerPosition, MatchPlayerInfo>()
+        });
+        _roomService.StartGame(roomId, CreatorUserId);
+        return roomId;
+    }
+
+    [Fact]
+    public async Task CloseRoomIfNoHumanPlayers_WithBotsOnly_TerminatesGameAndRemovesRoom()
+    {
+        // Arrange — the only human explicitly leaves during the game
+        var roomId = CreatePlayingRoomWithBots(out var clientId);
+        _roomService.LeaveRoom(roomId, clientId);
+
+        // Act
+        await _roomService.CloseRoomIfNoHumanPlayersAsync(roomId);
+
+        // Assert
+        await _gameService.Received(1).TerminateGameAsync("game_abandon");
+        Assert.Null(_roomRepository.GetById(roomId));
+    }
+
+    [Fact]
+    public async Task CloseRoomIfNoHumanPlayers_WithHumanStillSeated_KeepsRoom()
+    {
+        // Arrange
+        var roomId = CreatePlayingRoomWithBots(out _);
+
+        // Act
+        await _roomService.CloseRoomIfNoHumanPlayersAsync(roomId);
+
+        // Assert
+        await _gameService.DidNotReceive().TerminateGameAsync(Arg.Any<string>());
+        Assert.NotNull(_roomRepository.GetById(roomId));
+    }
+
+    #endregion
 }

@@ -48,6 +48,12 @@ public interface IRoomService
     (bool Removed, string? PlayerName, PlayerPosition? Position) LeaveRoom(string roomId, string clientId);
 
     /// <summary>
+    /// Immediately closes a room that has no human players left (terminating any
+    /// running game and kicking remaining watchers). No-op while humans are seated.
+    /// </summary>
+    Task CloseRoomIfNoHumanPlayersAsync(string roomId);
+
+    /// <summary>
     /// Starts the game in a room.
     /// </summary>
     /// <returns>A tuple containing the response (or null on failure) and an error message.</returns>

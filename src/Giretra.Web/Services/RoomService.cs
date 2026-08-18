@@ -338,6 +338,31 @@ public sealed class RoomService : IRoomService
         return (true, playerName, position);
     }
 
+    public async Task CloseRoomIfNoHumanPlayersAsync(string roomId)
+    {
+        var room = _roomRepository.GetById(roomId);
+        if (room == null || room.PlayerCount > 0)
+            return;
+
+        _logger.LogInformation("Room {RoomId} has no human players left, closing immediately", roomId);
+
+        if (room.GameSessionId != null)
+            await _gameService.TerminateGameAsync(room.GameSessionId);
+
+        CancelIdleCleanup(roomId);
+        CancelAbandonedCleanup(roomId);
+
+        // Notify remaining watchers so their clients navigate away
+        await _notifications.NotifyRoomIdleClosedAsync(roomId);
+        foreach (var clientId in room.AllClients.Select(c => c.ClientId).ToList())
+            LeaveRoom(roomId, clientId);
+
+        _chatService.ClearRoom(roomId);
+        _roomRepository.Remove(roomId);
+
+        await _notifications.NotifyRoomsChangedAsync();
+    }
+
     public (StartGameResponse? Response, string? Error) StartGame(string roomId, Guid userId)
     {
         var room = _roomRepository.GetById(roomId);

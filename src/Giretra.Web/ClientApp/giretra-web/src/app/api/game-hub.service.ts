@@ -19,6 +19,7 @@ import {
   DealStartedEvent,
   GameHubEventNames,
   GameStartedEvent,
+  MatchAbandonedEvent,
   MatchEndedEvent,
   PendingFriendCountChangedEvent,
   PlayerJoinedEvent,
@@ -56,6 +57,7 @@ export class GameHubService implements OnDestroy {
   readonly cardPlayed$ = new Subject<CardPlayedEvent>();
   readonly trickCompleted$ = new Subject<TrickCompletedEvent>();
   readonly matchEnded$ = new Subject<MatchEndedEvent>();
+  readonly matchAbandoned$ = new Subject<MatchAbandonedEvent>();
   readonly achievementsEarned$ = new Subject<AchievementsEarnedEvent>();
   readonly playerKicked$ = new Subject<PlayerKickedEvent>();
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
@@ -154,6 +156,7 @@ export class GameHubService implements OnDestroy {
     this.cardPlayed$.complete();
     this.trickCompleted$.complete();
     this.matchEnded$.complete();
+    this.matchAbandoned$.complete();
     this.achievementsEarned$.complete();
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
@@ -238,6 +241,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.MatchEnded, (event: MatchEndedEvent) => {
       console.log('[Hub] MatchEnded', event);
       this.ngZone.run(() => this.matchEnded$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.MatchAbandoned, (event: MatchAbandonedEvent) => {
+      console.log('[Hub] MatchAbandoned', event);
+      this.ngZone.run(() => this.matchAbandoned$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.AchievementsEarned, (event: AchievementsEarnedEvent) => {
