@@ -223,6 +223,12 @@ export interface RoomIdleClosedEvent {
   roomId: string;
 }
 
+export interface MatchAbandonedEvent {
+  gameId: string;
+  abandoner: PlayerPosition;
+  winnerTeam: Team;
+}
+
 export interface RoomResetEvent {
   roomId: string;
 }
@@ -277,6 +283,7 @@ export interface GameHubEvents {
   onCardPlayed(callback: (event: CardPlayedEvent) => void): void;
   onTrickCompleted(callback: (event: TrickCompletedEvent) => void): void;
   onMatchEnded(callback: (event: MatchEndedEvent) => void): void;
+  onMatchAbandoned(callback: (event: MatchAbandonedEvent) => void): void;
   onAchievementsEarned(callback: (event: AchievementsEarnedEvent) => void): void;
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
@@ -303,6 +310,7 @@ export const GameHubEventNames = {
   CardPlayed: 'CardPlayed',
   TrickCompleted: 'TrickCompleted',
   MatchEnded: 'MatchEnded',
+  MatchAbandoned: 'MatchAbandoned',
   AchievementsEarned: 'AchievementsEarned',
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',

@@ -967,6 +967,34 @@ export class GameStateService {
       }
     });
 
+    // Match abandoned by a player who explicitly quit — the game is over,
+    // drop the game state so remaining players land back in the waiting room.
+    this.hub.matchAbandoned$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: matchAbandoned', event);
+      if (this._gameId() !== event.gameId) return;
+
+      this._gameId.set(null);
+      this._gameState.set(null);
+      this._playerState.set(null);
+      this._playerCardCounts.set(null);
+      this._turnTimeoutAt.set(null);
+      this._matchDealHistory.set([]);
+      this._currentDealDealer = null;
+      this._currentDealNumber = 0;
+      this.hideDealSummary();
+      this._pendingDealSummary = null;
+      this._hasPendingDealSummary.set(false);
+      this.dismissCompletedTrick();
+
+      const room = this._currentRoom();
+      if (room) {
+        this.api.getRoom(room.roomId).subscribe((r) => {
+          this._currentRoom.set(r);
+          this._idleDeadline.set(r.idleDeadline ? new Date(r.idleDeadline) : null);
+        });
+      }
+    });
+
     // Room reset to Waiting after a match ended without a new game starting.
     // Drop the game state so the UI leaves the match-end overlay and shows
     // the waiting room, where a new game can be started manually.

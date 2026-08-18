@@ -1,5 +1,6 @@
 using Giretra.Core.Players;
 using Giretra.Model.Entities;
+using Giretra.Web.Domain;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Services;
@@ -17,13 +18,15 @@ namespace Giretra.Web.Controllers;
 public class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
+    private readonly IGameService _gameService;
     private readonly INotificationService _notifications;
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly IProfileService _profileService;
 
-    public RoomsController(IRoomService roomService, INotificationService notifications, AiPlayerRegistry aiRegistry, IProfileService profileService)
+    public RoomsController(IRoomService roomService, IGameService gameService, INotificationService notifications, AiPlayerRegistry aiRegistry, IProfileService profileService)
     {
         _roomService = roomService;
+        _gameService = gameService;
         _notifications = notifications;
         _aiRegistry = aiRegistry;
         _profileService = profileService;
@@ -120,12 +123,25 @@ public class RoomsController : ControllerBase
     [HttpPost("{roomId}/leave")]
     public async Task<ActionResult> LeaveRoom(string roomId, [FromBody] LeaveRoomRequest request)
     {
+        // Capture the running game before removal: an explicit quit during a match
+        // forfeits it (disconnects go through a grace period instead, see RoomService).
+        var room = _roomService.GetRoomForClient(request.ClientId);
+        var activeGameId = room?.RoomId == roomId && room.Status == RoomStatus.Playing
+            ? room.GameSessionId
+            : null;
+
         var (removed, playerName, position) = _roomService.LeaveRoom(roomId, request.ClientId);
         if (!removed)
             return NotFound();
 
         if (playerName != null && position.HasValue)
             await _notifications.NotifyPlayerLeftAsync(roomId, playerName, position.Value);
+
+        if (activeGameId != null && position.HasValue)
+        {
+            await _gameService.AbandonGameAsync(activeGameId, position.Value);
+            await _roomService.CloseRoomIfNoHumanPlayersAsync(roomId);
+        }
 
         await _notifications.NotifyRoomsChangedAsync();
         return NoContent();

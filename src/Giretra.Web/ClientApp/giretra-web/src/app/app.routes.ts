@@ -4,7 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ClientSessionService } from './core/services/client-session.service';
 import { GameStateService } from './core/services/game-state.service';
 import { AuthService } from './core/services/auth.service';
+import { ApiService } from './core/services/api.service';
 import { TranslocoService } from '@jsverse/transloco';
+import { firstValueFrom } from 'rxjs';
 
 // Guard to ensure user has a clientId, invite token, or is authenticated before accessing table
 export const hasClientIdGuard = () => {
@@ -45,6 +47,7 @@ export const confirmLeaveGameGuard = async () => {
   const gameState = inject(GameStateService);
   const session = inject(ClientSessionService);
   const transloco = inject(TranslocoService);
+  const api = inject(ApiService);
 
   const phase = gameState.phase();
   const gameInProgress = gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
@@ -52,6 +55,18 @@ export const confirmLeaveGameGuard = async () => {
   if (gameInProgress && !session.isWatcher()) {
     if (!confirm(transloco.translate('table.leaveConfirm'))) {
       return false;
+    }
+
+    // Confirmed explicit quit during a match — leave the room on the server
+    // too, which abandons (forfeits) the game.
+    const roomId = gameState.currentRoom()?.roomId;
+    const clientId = session.clientId();
+    if (roomId && clientId) {
+      try {
+        await firstValueFrom(api.leaveRoom(roomId, clientId));
+      } catch (e) {
+        console.warn('Failed to leave room via API', e);
+      }
     }
   }
 
