@@ -39,6 +39,13 @@ public sealed class PlayerStateResponse
     public IReadOnlyList<ValidActionResponse>? ValidActions { get; init; }
 
     /// <summary>
+    /// Whether this player has submitted at least one deliberate game action
+    /// (cut, bid, card play) in this match. Quitting before acting is not
+    /// counted as a forfeit.
+    /// </summary>
+    public bool HasActed { get; init; }
+
+    /// <summary>
     /// The full game state.
     /// </summary>
     public required GameStateResponse GameState { get; init; }

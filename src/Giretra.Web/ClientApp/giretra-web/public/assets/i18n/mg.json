@@ -74,6 +74,7 @@
   "table.reconnecting": "Mamerina fifandraisana...",
   "table.connectionLost": "Tapaka ny fifandraisana",
   "table.leaveConfirm": "Raha miala ianao izao dia mandao ny lalao ary resy ny ekipanao. Tena hiala ve ianao?",
+  "table.leaveConfirmNoAction": "Hiala amin'ny lalao ve ianao? Mbola tsy nilalao ianao ka tsy hisy sazy.",
   "table.matchAbandoned": "Nisy mpilalao nandao ny lalao.",
 
   "waiting.title": "Miandry mpilalao",

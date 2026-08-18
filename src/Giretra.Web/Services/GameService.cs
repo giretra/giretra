@@ -290,6 +290,7 @@ public sealed class GameService : IGameService
             PendingActionType = pendingType,
             ValidCards = validCards,
             ValidActions = validActions,
+            HasActed = session.PlayersActed.ContainsKey(position.Value),
             GameState = MapToGameStateResponse(session)
         };
     }
@@ -318,6 +319,7 @@ public sealed class GameService : IGameService
         var finalPosition = Math.Clamp(position + Random.Shared.Next(-1, 2), 6, 26);
 
         // Complete the pending action
+        session.PlayersActed[playerPosition.Value] = true;
         pending.CutTcs?.TrySetResult((finalPosition, fromTop));
         return finalPosition;
     }
@@ -349,6 +351,7 @@ public sealed class GameService : IGameService
         }
 
         // Complete the pending action
+        session.PlayersActed[playerPosition.Value] = true;
         pending.NegotiationTcs?.TrySetResult(action);
         return true;
     }
@@ -374,6 +377,7 @@ public sealed class GameService : IGameService
             return false;
 
         // Complete the pending action
+        session.PlayersActed[playerPosition.Value] = true;
         pending.PlayCardTcs?.TrySetResult(card);
         return true;
     }
@@ -747,8 +751,18 @@ public sealed class GameService : IGameService
 
         session.CompletedAt = DateTime.UtcNow;
 
-        // Persist the abandoned match (skip for unranked games)
-        if (session.IsRanked)
+        // A player who never submitted a game action (cut, bid, card play) quit
+        // by reflex, not to dodge a loss — void the match instead of forfeiting.
+        var isNoFault = !session.PlayersActed.ContainsKey(abandonerPosition);
+        if (isNoFault)
+        {
+            _logger.LogInformation(
+                "Game {GameId} abandoned by {Position} before any action — no forfeit recorded",
+                gameId, abandonerPosition);
+        }
+
+        // Persist the abandoned match (skip for unranked games and no-fault quits)
+        if (session.IsRanked && !isNoFault)
         {
             try
             {

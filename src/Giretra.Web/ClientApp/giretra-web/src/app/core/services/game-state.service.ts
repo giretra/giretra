@@ -265,6 +265,9 @@ export class GameStateService {
     return pos ? getTeam(pos) : null;
   });
 
+  /** Has the local player submitted any deliberate action (cut, bid, card) this match? */
+  readonly hasActed = computed(() => this._playerState()?.hasActed ?? false);
+
   /** Is it my turn? */
   readonly isMyTurn = computed(() => {
     const playerState = this._playerState();
