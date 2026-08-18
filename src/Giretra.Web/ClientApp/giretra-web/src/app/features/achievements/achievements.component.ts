@@ -76,7 +76,11 @@ type SortMode = 'rarity' | 'name' | 'recent';
             </section>
 
             <!-- Info text -->
-            <p class="ach-info-text">{{ t('achievements.page.info') }}</p>
+            @if (qualifyingBotsLabel(); as bots) {
+              <p class="ach-info-text">{{ t('achievements.page.infoBots', { bots }) }}</p>
+            } @else {
+              <p class="ach-info-text">{{ t('achievements.page.info') }}</p>
+            }
 
             <!-- Sort toolbar -->
             <div class="toolbar">
@@ -302,6 +306,11 @@ export class AchievementsComponent implements OnInit {
     const s = this.showcase();
     if (!s || s.totalCount === 0) return 0;
     return Math.round((s.earnedCount / s.totalCount) * 100);
+  });
+
+  readonly qualifyingBotsLabel = computed(() => {
+    const bots = this.showcase()?.qualifyingBots;
+    return bots && bots.length > 0 ? bots.join(' & ') : null;
   });
 
   readonly latestUnlock = computed(() => {

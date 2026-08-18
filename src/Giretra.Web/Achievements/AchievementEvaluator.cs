@@ -18,6 +18,9 @@ namespace Giretra.Web.Achievements;
 /// </summary>
 public sealed class AchievementEvaluator
 {
+    /// <summary>Minimum bot rating for a game to award achievements.</summary>
+    public const int MinOpponentRating = 1400;
+
     private readonly IEnumerable<IAchievementRule> _rules;
     private readonly AiPlayerRegistry _aiRegistry;
     private readonly ILogger<AchievementEvaluator> _logger;
@@ -222,7 +225,7 @@ public sealed class AchievementEvaluator
                 return false;
 
             var rating = _aiRegistry.GetRating(oppInfo.AiAgentType);
-            if (rating == null || rating < 1400)
+            if (rating == null || rating < MinOpponentRating)
                 return false;
         }
 
