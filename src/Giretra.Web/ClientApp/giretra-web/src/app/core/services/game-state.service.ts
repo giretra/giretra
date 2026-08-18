@@ -174,6 +174,9 @@ export class GameStateService {
   private readonly _turnTimeoutAt = signal<Date | null>(null);
   readonly turnTimeoutAt = this._turnTimeoutAt.asReadonly();
 
+  // Monotonic counter used to discard out-of-order refreshState responses
+  private _refreshSeq = 0;
+
   // ─────────────────────────────────────────────────────────────────────────
   // Idle Timeout State
   // ─────────────────────────────────────────────────────────────────────────
@@ -531,10 +534,21 @@ export class GameStateService {
       return;
     }
 
+    const seq = ++this._refreshSeq;
+    // Discard responses that lost the race: a newer refresh has started, or the
+    // game changed while this request was in flight (rematch). Without this, a
+    // slow response for the finished match can overwrite the new game's state
+    // and lock the UI on the match-end overlay.
+    const isStale = () => seq !== this._refreshSeq || this._gameId() !== gameId;
+
     try {
       if (isWatcher) {
         const watcherState = await this.api.getWatcherState(gameId).toPromise();
         console.log('[GameState] Watcher state received', watcherState);
+        if (isStale()) {
+          console.log('[GameState] Discarding stale watcher state for game', gameId);
+          return;
+        }
         if (watcherState) {
           this._gameState.set(watcherState.gameState);
           this._playerCardCounts.set(watcherState.playerCardCounts);
@@ -547,6 +561,10 @@ export class GameStateService {
       } else if (clientId) {
         const playerState = await this.api.getPlayerState(gameId, clientId).toPromise();
         console.log('[GameState] Player state received', playerState);
+        if (isStale()) {
+          console.log('[GameState] Discarding stale player state for game', gameId);
+          return;
+        }
         if (playerState) {
           this._playerState.set(playerState);
           this._gameState.set(playerState.gameState);
@@ -562,7 +580,7 @@ export class GameStateService {
 
       // If player state fetch failed (e.g. 404 — clientId not recognized after disconnect),
       // attempt to rejoin the room and retry
-      if (!isWatcher && clientId) {
+      if (!isWatcher && clientId && !isStale()) {
         await this.attemptRejoin();
       }
     }
@@ -633,6 +651,38 @@ export class GameStateService {
    */
   setGameId(gameId: string): void {
     this._gameId.set(gameId);
+  }
+
+  /**
+   * Switch to a new game: reset per-match state and refresh the room.
+   */
+  private adoptNewGame(gameId: string): void {
+    this._gameId.set(gameId);
+    this._idleDeadline.set(null);
+    this._matchDealHistory.set([]);
+    this._currentDealDealer = null;
+    this._currentDealNumber = 0;
+    const room = this._currentRoom();
+    if (room) {
+      this.api.getRoom(room.roomId).subscribe((r) => {
+        console.log('[GameState] Refreshed room after new game:', r);
+        this._currentRoom.set(r);
+      });
+    }
+  }
+
+  /**
+   * Game-scoped events (DealStarted, YourTurn, PlayerTurn) can outrace the
+   * GameStarted broadcast when a rematch starts. If such an event references a
+   * game we don't know yet while the current one is finished, adopt the new
+   * game so the UI leaves the match-end overlay even without GameStarted.
+   */
+  private adoptNewGameIfChanged(gameId: string | undefined): void {
+    if (!gameId || gameId === this._gameId()) return;
+    const gameState = this._gameState();
+    if (gameState && !gameState.isComplete) return;
+    console.log('[GameState] Event for unknown game — adopting new gameId', gameId);
+    this.adoptNewGame(gameId);
   }
 
   /**
@@ -722,25 +772,14 @@ export class GameStateService {
     // Game started
     this.hub.gameStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: gameStarted', event);
-      this._gameId.set(event.gameId);
-      this._idleDeadline.set(null);
-      this._matchDealHistory.set([]);
-      this._currentDealDealer = null;
-      this._currentDealNumber = 0;
-      // Also refresh the room to get updated status
-      const room = this._currentRoom();
-      if (room) {
-        this.api.getRoom(room.roomId).subscribe((r) => {
-          console.log('[GameState] Refreshed room after gameStarted:', r);
-          this._currentRoom.set(r);
-        });
-      }
+      this.adoptNewGame(event.gameId);
       this.refreshState();
     });
 
     // Deal started
     this.hub.dealStarted$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: dealStarted', event);
+      this.adoptNewGameIfChanged(event.gameId);
       this._turnTimeoutAt.set(null);
       this._dealTrickHistory.set([]);
       this._currentDealDealer = event.dealer;
@@ -752,6 +791,7 @@ export class GameStateService {
     // Your turn
     this.hub.yourTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: yourTurn', event);
+      this.adoptNewGameIfChanged(event.gameId);
       this._turnTimeoutAt.set(new Date(event.timeoutAt));
       this.refreshState();
     });
@@ -759,6 +799,7 @@ export class GameStateService {
     // Player turn (broadcast)
     this.hub.playerTurn$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: playerTurn', event);
+      this.adoptNewGameIfChanged(event.gameId);
       this._turnTimeoutAt.set(new Date(event.timeoutAt));
       this.refreshState();
     });
