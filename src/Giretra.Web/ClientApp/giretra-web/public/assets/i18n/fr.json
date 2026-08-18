@@ -73,7 +73,8 @@
 
   "table.reconnecting": "Reconnexion...",
   "table.connectionLost": "Connexion perdue",
-  "table.leaveConfirm": "Quitter pendant une partie peut affecter votre classement. Êtes-vous sûr ?",
+  "table.leaveConfirm": "Quitter maintenant abandonne la partie et votre équipe déclare forfait. Êtes-vous sûr ?",
+  "table.matchAbandoned": "Un joueur a abandonné la partie.",
 
   "waiting.title": "En attente de joueurs",
   "waiting.startGame": "Lancer la Partie",
@@ -226,6 +227,7 @@
   "scoreBar.yourTurn": "À vous",
   "scoreBar.dealNumber": "Donne {{number}}",
   "scoreBar.leaveTable": "Quitter la Table",
+  "scoreBar.abandonGame": "Abandonner la Partie",
   "scoreBar.menu": "Menu",
   "scoreBar.sound": "Son",
   "scoreBar.soundOn": "Activé",
