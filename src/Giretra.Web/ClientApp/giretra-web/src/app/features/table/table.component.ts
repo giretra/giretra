@@ -1363,9 +1363,13 @@ export class TableComponent implements OnInit, OnDestroy {
   async onLeaveTable(): Promise<void> {
     // The canDeactivate guard handles the confirmation dialog and session cleanup.
     // For the explicit "Leave Table" button, also call the leave API before navigating.
-    // Leaving an active match abandons it (the server forfeits the game).
-    if (this.gameInProgress() && !confirm(this.transloco.translate('table.leaveConfirm'))) {
-      return;
+    // Leaving an active match abandons it; the server only records a forfeit
+    // if the player has already acted this match.
+    if (this.gameInProgress()) {
+      const confirmKey = this.gameState.hasActed() ? 'table.leaveConfirm' : 'table.leaveConfirmNoAction';
+      if (!confirm(this.transloco.translate(confirmKey))) {
+        return;
+      }
     }
 
     const roomId = this.gameState.currentRoom()?.roomId;

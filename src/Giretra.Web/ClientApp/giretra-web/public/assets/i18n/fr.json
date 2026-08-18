@@ -74,6 +74,7 @@
   "table.reconnecting": "Reconnexion...",
   "table.connectionLost": "Connexion perdue",
   "table.leaveConfirm": "Quitter maintenant abandonne la partie et votre équipe déclare forfait. Êtes-vous sûr ?",
+  "table.leaveConfirmNoAction": "Quitter la partie ? Vous n'avez pas encore joué, aucune pénalité ne sera appliquée.",
   "table.matchAbandoned": "Un joueur a abandonné la partie.",
 
   "waiting.title": "En attente de joueurs",
