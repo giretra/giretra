@@ -60,6 +60,13 @@ public sealed class GameSession
     public ConcurrentDictionary<PlayerPosition, bool> ContinueMatchConfirmed { get; } = new();
 
     /// <summary>
+    /// Tracks which human players submitted at least one deliberate game action
+    /// (cut, bid, or card play) in this match. A player who quits without ever
+    /// acting (e.g. a reflex click on "Play Again") is not penalized for abandoning.
+    /// </summary>
+    public ConcurrentDictionary<PlayerPosition, bool> PlayersActed { get; } = new();
+
+    /// <summary>
     /// Gets the first pending action, if any (backward compat for game state responses).
     /// </summary>
     public PendingAction? PendingAction => PendingActions.Values.FirstOrDefault();

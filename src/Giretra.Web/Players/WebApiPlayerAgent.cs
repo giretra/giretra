@@ -55,6 +55,26 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         _continueMatchTimeout = continueMatchTimeout ?? DefaultContinueMatchTimeout;
     }
 
+    /// <summary>
+    /// Timeout source linked to the session's cancellation token, so an
+    /// abandoned/terminated game interrupts the wait instead of running it out.
+    /// </summary>
+    private CancellationTokenSource CreateTimeoutSource(TimeSpan timeout)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(_session.CancellationTokenSource.Token);
+        cts.CancelAfter(timeout);
+        return cts;
+    }
+
+    /// <summary>
+    /// Rethrows when the game itself was cancelled (abandon/terminate), so the
+    /// game loop stops instead of playing out the deal with timeout defaults.
+    /// </summary>
+    private void ThrowIfGameCancelled()
+    {
+        _session.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+    }
+
     public async Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
     {
         var tcs = new TaskCompletionSource<(int position, bool fromTop)>();
@@ -72,13 +92,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut, pending.TimeoutAt);
 
         // Wait for the action with timeout
-        using var cts = new CancellationTokenSource(_timeout);
+        using var cts = CreateTimeoutSource(_timeout);
         try
         {
             return await tcs.Task.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
+            ThrowIfGameCancelled();
+
             // Timeout - use default cut (middle of deck)
             tcs.TrySetResult((16, true));
             return (16, true);
@@ -111,13 +133,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate, pending.TimeoutAt);
 
         // Wait for the action with timeout
-        using var cts = new CancellationTokenSource(_timeout);
+        using var cts = CreateTimeoutSource(_timeout);
         try
         {
             return await tcs.Task.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
+            ThrowIfGameCancelled();
+
             // Timeout - pick first valid action (usually Accept)
             var defaultAction = validActions.FirstOrDefault(a => a is AcceptAction) ?? validActions[0];
             tcs.TrySetResult(defaultAction);
@@ -151,13 +175,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard, pending.TimeoutAt);
 
         // Wait for the action with timeout
-        using var cts = new CancellationTokenSource(_timeout);
+        using var cts = CreateTimeoutSource(_timeout);
         try
         {
             return await tcs.Task.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
+            ThrowIfGameCancelled();
+
             // Timeout - play first valid card
             var defaultCard = validPlays[0];
             tcs.TrySetResult(defaultCard);
@@ -216,13 +242,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal, pending.TimeoutAt);
 
         // Wait for the confirmation with timeout
-        using var cts = new CancellationTokenSource(_timeout);
+        using var cts = CreateTimeoutSource(_timeout);
         try
         {
             await tcs.Task.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
+            ThrowIfGameCancelled();
+
             // Timeout - auto-continue
             tcs.TrySetResult(true);
         }
@@ -249,13 +277,15 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, pending.TimeoutAt);
 
         // Wait for the confirmation with timeout
-        using var cts = new CancellationTokenSource(_continueMatchTimeout);
+        using var cts = CreateTimeoutSource(_continueMatchTimeout);
         try
         {
             await tcs.Task.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
+            ThrowIfGameCancelled();
+
             // Timeout - auto-continue
             tcs.TrySetResult(false);
         }

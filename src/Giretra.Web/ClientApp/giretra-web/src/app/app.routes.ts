@@ -53,7 +53,9 @@ export const confirmLeaveGameGuard = async () => {
   const gameInProgress = gameState.gameId() && phase !== 'waiting' && phase !== 'matchEnd';
 
   if (gameInProgress && !session.isWatcher()) {
-    if (!confirm(transloco.translate('table.leaveConfirm'))) {
+    // The server only records a forfeit if the player has already acted this match
+    const confirmKey = gameState.hasActed() ? 'table.leaveConfirm' : 'table.leaveConfirmNoAction';
+    if (!confirm(transloco.translate(confirmKey))) {
       return false;
     }
 
