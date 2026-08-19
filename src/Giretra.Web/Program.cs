@@ -3,6 +3,8 @@ using Giretra.Web.Achievements;
 using Giretra.Web.Auth;
 using Giretra.Web.Hubs;
 using Giretra.Web.Middleware;
+using Giretra.Web.Models;
+using Giretra.Web.Models.Responses;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
 using Giretra.Web.Services.Elo;
@@ -10,6 +12,7 @@ using Giretra.Web.Services.Offline;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace Giretra.Web;
@@ -114,6 +117,10 @@ public class Program
             builder.Services.AddSingleton<IChatService, ChatService>();
             builder.Services.AddSingleton<IRoomService, RoomService>();
 
+            // Mobile client version gate settings
+            builder.Services.Configure<MobileClientOptions>(
+                builder.Configuration.GetSection(MobileClientOptions.SectionName));
+
             if (offline)
             {
                 // Offline auth: simple username-based scheme
@@ -193,6 +200,11 @@ public class Program
             app.MapGet("/api/auth/config", () => offline
                 ? Results.Ok(new { mode = "offline" })
                 : Results.Ok(new { mode = "keycloak" }))
+                .AllowAnonymous();
+
+            // Client config endpoint (mobile version gate)
+            app.MapGet("/api/client-config", (IOptions<MobileClientOptions> options) =>
+                Results.Ok(ClientConfigResponse.FromOptions(options.Value)))
                 .AllowAnonymous();
 
             var aiRegistry = app.Services.GetRequiredService<AiPlayerRegistry>();
