@@ -1,4 +1,4 @@
-using Giretra.Model.Enums;
+using Giretra.Core.GameModes;
 
 namespace Giretra.Web.Models.Responses;
 
@@ -30,7 +30,7 @@ public sealed class HighlightsResponse
                 BestWinStreak = 0,
                 RecentForm = [],
             },
-            ModeStats = Enum.GetValues<GameMode>().Select(HighlightsModeStats.Empty).ToList(),
+            ModeStats = ((GameMode[])Enum.GetValues(typeof(GameMode))).Select(HighlightsModeStats.Empty).ToList(),
             EloTrend = [],
             Bidding = new HighlightsBidding
             {
@@ -170,6 +170,6 @@ public sealed class HighlightsCallout
 
 public sealed class HighlightsActivityDay
 {
-    public required DateOnly Date { get; init; }
+    public required string Date { get; init; }
     public required int Count { get; init; }
 }

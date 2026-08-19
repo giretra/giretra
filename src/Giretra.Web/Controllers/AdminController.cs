@@ -63,6 +63,9 @@ public class AdminController : ControllerBase
         if (userId == GetAuthenticatedUser().Id)
             return BadRequest(new { error = "You cannot ban yourself." });
 
+        if (request.Reason is { Length: > 500 })
+            return BadRequest(new { error = "Reason must be 500 characters or fewer." });
+
         var (success, error) = await _adminUserService.BanAsync(userId, request.Reason);
         if (!success)
             return BadRequest(new { error });

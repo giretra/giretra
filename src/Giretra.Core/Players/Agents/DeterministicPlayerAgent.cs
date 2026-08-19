@@ -402,7 +402,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
                                              && !_partnerDislikedSuits.Any() 
                                              && !_partnerPreferredSuits.Any())
             {
-                var allSuits = Enum.GetValues<CardSuit>();
+                var allSuits = Compat.EnumCompat.GetValues<CardSuit>();
                 var partnerPlayedSuits = cannotFollowCards.Select(s => s.Suit).Distinct().ToList();
                 var playedTricks = _playedCards.Select(c => c.Suit).ToHashSet();
 
@@ -425,7 +425,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     /// </summary>
     private void InferPrioritySuitsFromOpponentVoids(GameMode mode)
     {
-        foreach (var suit in Enum.GetValues<CardSuit>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
         {
             if (suit == mode.GetTrumpSuit()) continue;
 
@@ -509,7 +509,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var isStarter = negotiationState.Dealer.Next() == Position;
 
         var modeEvals = new Dictionary<GameMode, HandEvaluation>();
-        foreach (var mode in Enum.GetValues<GameMode>())
+        foreach (var mode in Compat.EnumCompat.GetValues<GameMode>())
             modeEvals[mode] = HandEvaluator.Evaluate(hand, mode, isStarter);
 
         var opponentTeam = _myTeam == Team.Team1 ? Team.Team2 : Team.Team1;
@@ -854,7 +854,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var opponents = new[] { Position.Next(), Position.Previous() };
 
         foreach (var opponent in opponents)
-        foreach (var suit in Enum.GetValues<CardSuit>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
         {
             if (IsPlayerVoidIn(opponent, suit))
                 opponentVoidSuits.Add(suit);

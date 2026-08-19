@@ -1,3 +1,4 @@
+using CorePlayers = Giretra.Core.Players;
 using Giretra.Model;
 using Giretra.Model.Enums;
 using Giretra.Web.Models.Responses;
@@ -65,8 +66,8 @@ public sealed class MatchHistoryService : IMatchHistoryService
                     return new MatchHistoryPlayerResponse
                     {
                         DisplayName = displayName,
-                        Position = p.Position,
-                        Team = p.Team,
+                        Position = (CorePlayers.PlayerPosition)(int)p.Position,
+                        Team = (CorePlayers.Team)(int)p.Team,
                         IsWinner = p.IsWinner
                     };
                 })
@@ -78,8 +79,8 @@ public sealed class MatchHistoryService : IMatchHistoryService
                 RoomName = match.RoomName,
                 Team1FinalScore = match.Team1FinalScore,
                 Team2FinalScore = match.Team2FinalScore,
-                Team = mp.Team,
-                Position = mp.Position,
+                Team = (CorePlayers.Team)(int)mp.Team,
+                Position = (CorePlayers.PlayerPosition)(int)mp.Position,
                 IsWinner = mp.IsWinner,
                 EloChange = mp.EloChange,
                 TotalDeals = match.TotalDeals,

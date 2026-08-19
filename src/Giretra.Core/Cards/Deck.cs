@@ -32,9 +32,9 @@ public sealed class Deck
     {
         var cards = ImmutableList.CreateBuilder<Card>();
 
-        foreach (var suit in Enum.GetValues<CardSuit>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
         {
-            foreach (var rank in Enum.GetValues<CardRank>())
+            foreach (var rank in Compat.EnumCompat.GetValues<CardRank>())
             {
                 cards.Add(new Card(rank, suit));
             }
@@ -47,7 +47,7 @@ public sealed class Deck
     /// Creates a new shuffled 32-card deck using Fisher-Yates shuffle.
     /// Uses <see cref="Random.Shared"/> for randomness.
     /// </summary>
-    public static Deck CreateShuffled() => CreateShuffled(Random.Shared);
+    public static Deck CreateShuffled() => CreateShuffled(Compat.RandomCompat.Shared);
 
     /// <summary>
     /// Creates a new shuffled 32-card deck using Fisher-Yates shuffle
