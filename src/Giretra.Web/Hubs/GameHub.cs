@@ -1,5 +1,6 @@
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Events;
+using Giretra.Web.Models.Responses;
 using Giretra.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -10,7 +11,7 @@ namespace Giretra.Web.Hubs;
 /// SignalR hub for real-time game communication.
 /// </summary>
 [Authorize]
-public sealed class GameHub : Hub
+public sealed class GameHub : Hub<IGameClient>
 {
     private readonly IRoomService _roomService;
     private readonly IUserSyncService _userSyncService;
@@ -84,17 +85,19 @@ public sealed class GameHub : Hub
             throw new HubException("Unable to send message");
 
         var ev = MapToEvent(message);
-        await Clients.Group($"room_{roomId}").SendAsync("ChatMessageReceived", ev);
+        await Clients.Group($"room_{roomId}").ChatMessageReceived(ev);
     }
 
     /// <summary>
     /// Gets chat history and current status for a room.
     /// </summary>
-    public object GetChatHistory(string roomId)
+    public ChatHistoryResponse GetChatHistory(string roomId)
     {
-        var messages = _chatService.GetHistory(roomId).Select(MapToEvent).ToList();
-
-        return new { messages, isChatEnabled = _chatService.IsChatEnabled(roomId) };
+        return new ChatHistoryResponse
+        {
+            Messages = _chatService.GetHistory(roomId).Select(MapToEvent).ToList(),
+            IsChatEnabled = _chatService.IsChatEnabled(roomId)
+        };
     }
 
     private static ChatMessageEvent MapToEvent(ChatMessage m) => new()
