@@ -1,4 +1,4 @@
-using Giretra.Model.Enums;
+using Giretra.Core.Players;
 
 namespace Giretra.Web.Models.Responses;
 

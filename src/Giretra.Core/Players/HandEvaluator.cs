@@ -75,7 +75,7 @@ public static class HandEvaluator
         }
 
         // Void side suit with >= 2 trumps = ruffing opportunity
-        foreach (var suit in Enum.GetValues<CardSuit>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
         {
             if (suit == trumpSuit) continue;
             if (!hand.Any(c => c.Suit == suit) && trumpCards.Count >= 2)

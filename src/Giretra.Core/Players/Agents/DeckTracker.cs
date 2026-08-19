@@ -41,7 +41,7 @@ public sealed class DeckTracker
     /// </summary>
     public void OnDealStarted(MatchState matchState)
     {
-        ArgumentNullException.ThrowIfNull(matchState);
+        if (matchState is null) throw new ArgumentNullException(nameof(matchState));
         _dealer = matchState.CurrentDeal?.Dealer ?? matchState.CurrentDealer;
     }
 
@@ -50,7 +50,7 @@ public sealed class DeckTracker
     /// </summary>
     public void OnDealEnded(HandState handState)
     {
-        ArgumentNullException.ThrowIfNull(handState);
+        if (handState is null) throw new ArgumentNullException(nameof(handState));
 
         if (_dealer is null || !handState.IsComplete)
         {
