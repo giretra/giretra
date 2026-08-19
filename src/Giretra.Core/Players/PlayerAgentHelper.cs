@@ -19,8 +19,8 @@ public static class PlayerAgentHelper
     {
         var cards = new Card[32];
         int i = 0;
-        foreach (var suit in Enum.GetValues<CardSuit>())
-        foreach (var rank in Enum.GetValues<CardRank>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
+        foreach (var rank in Compat.EnumCompat.GetValues<CardRank>())
             cards[i++] = new Card(rank, suit);
         return cards;
     }

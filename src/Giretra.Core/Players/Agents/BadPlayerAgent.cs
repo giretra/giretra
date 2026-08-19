@@ -56,7 +56,7 @@ public class BadPlayerAgent : IPlayerAgent
     {
         // Calculate hand strength for each game mode
         var modeScores = new Dictionary<GameMode, double>();
-        foreach (GameMode mode in Enum.GetValues<GameMode>())
+        foreach (GameMode mode in Compat.EnumCompat.GetValues<GameMode>())
         {
             modeScores[mode] = CalculateHandStrengthPercentage(hand, mode);
         }
@@ -261,7 +261,7 @@ public class BadPlayerAgent : IPlayerAgent
     {
         int masterCount = 0;
 
-        foreach (var suit in Enum.GetValues<CardSuit>())
+        foreach (var suit in Compat.EnumCompat.GetValues<CardSuit>())
         {
             var cardsInSuit = hand.Where(c => c.Suit == suit).ToList();
             if (cardsInSuit.Count == 0) continue;
@@ -270,7 +270,7 @@ public class BadPlayerAgent : IPlayerAgent
             int ourStrength = strongestOwned.GetStrength(mode);
 
             bool isMaster = true;
-            foreach (CardRank rank in Enum.GetValues<CardRank>())
+            foreach (CardRank rank in Compat.EnumCompat.GetValues<CardRank>())
             {
                 var potentialCard = new Card(rank, suit);
                 if (hand.Contains(potentialCard)) continue;
@@ -296,7 +296,7 @@ public class BadPlayerAgent : IPlayerAgent
     {
         int cardStrength = card.GetStrength(mode);
 
-        foreach (CardRank rank in Enum.GetValues<CardRank>())
+        foreach (CardRank rank in Compat.EnumCompat.GetValues<CardRank>())
         {
             var potentialCard = new Card(rank, card.Suit);
             if (potentialCard.Equals(card)) continue;

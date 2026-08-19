@@ -102,8 +102,8 @@ public sealed class CuttingPlayerAgent : IPlayerAgent
     /// <param name="matchState">The current match state, which shapes how much risk is worth taking.</param>
     public IReadOnlyList<(int Position, double Score)> RankCuts(Deck deck, PlayerPosition dealer, MatchState matchState)
     {
-        ArgumentNullException.ThrowIfNull(deck);
-        ArgumentNullException.ThrowIfNull(matchState);
+        if (deck is null) throw new ArgumentNullException(nameof(deck));
+        if (matchState is null) throw new ArgumentNullException(nameof(matchState));
 
         var opponentTeam = _myTeam == Team.Team1 ? Team.Team2 : Team.Team1;
         var aggressiveness = PlayerAgentHelper.ComputeAggressiveness(
@@ -170,7 +170,7 @@ public sealed class CuttingPlayerAgent : IPlayerAgent
 
         var best = new CutTeamValue(double.NegativeInfinity, GameMode.ColourClubs, 0);
 
-        foreach (var mode in Enum.GetValues<GameMode>())
+        foreach (var mode in Compat.EnumCompat.GetValues<GameMode>())
         {
             var firstFull = HandEvaluator.Evaluate(firstHand, mode, firstStarts);
             var secondFull = HandEvaluator.Evaluate(secondHand, mode, secondStarts);

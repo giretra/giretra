@@ -54,7 +54,7 @@ public static class CutPlanner
         PlayerPosition player,
         int cutPosition)
     {
-        ArgumentNullException.ThrowIfNull(deck);
+        if (deck is null) throw new ArgumentNullException(nameof(deck));
 
         if (deck.Count != DeckSize)
         {
