@@ -63,7 +63,7 @@ public sealed class GameManager
             throw new ArgumentException("Exactly 4 players are required.", nameof(players));
         }
 
-        foreach (PlayerPosition position in Enum.GetValues<PlayerPosition>())
+        foreach (PlayerPosition position in Compat.EnumCompat.GetValues<PlayerPosition>())
         {
             if (!players.ContainsKey(position))
             {
