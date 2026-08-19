@@ -204,7 +204,7 @@ public class Program
 
             // Client config endpoint (mobile version gate)
             app.MapGet("/api/client-config", (IOptions<MobileClientOptions> options) =>
-                Results.Ok(ClientConfigResponse.FromOptions(options.Value)))
+                Results.Ok(options.Value.ToResponse()))
                 .AllowAnonymous();
 
             var aiRegistry = app.Services.GetRequiredService<AiPlayerRegistry>();

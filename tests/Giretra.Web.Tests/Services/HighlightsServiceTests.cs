@@ -1,3 +1,4 @@
+using CoreGameMode = Giretra.Core.GameModes.GameMode;
 using Giretra.Model;
 using Giretra.Model.Entities;
 using Giretra.Model.Enums;
@@ -79,18 +80,18 @@ public sealed class HighlightsServiceTests : IDisposable
         var result = await _service.GetHighlightsAsync(userId);
 
         Assert.Equal(6, result.ModeStats.Count);
-        var hearts = result.ModeStats.Single(m => m.Mode == GameMode.ColourHearts);
+        var hearts = result.ModeStats.Single(m => m.Mode == CoreGameMode.ColourHearts);
         Assert.Equal(2, hearts.DealsPlayed);
         Assert.Equal(1, hearts.DealsWon);
         Assert.Equal(50, hearts.DealWinRate);
         Assert.Equal(65, hearts.AvgCardPoints); // (90 + 40) / 2 as Team1
 
-        var allTrumps = result.ModeStats.Single(m => m.Mode == GameMode.AllTrumps);
+        var allTrumps = result.ModeStats.Single(m => m.Mode == CoreGameMode.AllTrumps);
         Assert.Equal(1, allTrumps.DealsPlayed);
         Assert.Equal(1, allTrumps.DealsWon);
         Assert.Equal(200, allTrumps.AvgCardPoints); // Team2 side
 
-        Assert.Equal(0, result.ModeStats.Single(m => m.Mode == GameMode.NoTrumps).DealsPlayed);
+        Assert.Equal(0, result.ModeStats.Single(m => m.Mode == CoreGameMode.NoTrumps).DealsPlayed);
         Assert.Equal(3, result.Bidding.DealsPlayed);
     }
 
@@ -116,11 +117,11 @@ public sealed class HighlightsServiceTests : IDisposable
 
         Assert.Equal(1, result.Bidding.DealsAnnounced);
         Assert.Equal(1, result.Bidding.AnnounceWins);
-        var hearts = result.ModeStats.Single(s => s.Mode == GameMode.ColourHearts);
+        var hearts = result.ModeStats.Single(s => s.Mode == CoreGameMode.ColourHearts);
         Assert.Equal(1, hearts.TimesAnnounced);
         Assert.Equal(1, hearts.AnnounceWins);
         // The opponent's NoTrumps announce must not be attributed to anyone here.
-        Assert.Equal(0, result.ModeStats.Single(s => s.Mode == GameMode.NoTrumps).TimesAnnounced);
+        Assert.Equal(0, result.ModeStats.Single(s => s.Mode == CoreGameMode.NoTrumps).TimesAnnounced);
     }
 
     [Fact]
@@ -137,7 +138,7 @@ public sealed class HighlightsServiceTests : IDisposable
         var result = await _service.GetHighlightsAsync(userId);
 
         Assert.Equal(0, result.Bidding.DealsAnnounced);
-        Assert.Equal(0, result.ModeStats.Single(s => s.Mode == GameMode.ColourSpades).TimesAnnounced);
+        Assert.Equal(0, result.ModeStats.Single(s => s.Mode == CoreGameMode.ColourSpades).TimesAnnounced);
     }
 
     [Fact]
@@ -277,9 +278,9 @@ public sealed class HighlightsServiceTests : IDisposable
         var result = await _service.GetHighlightsAsync(userId);
 
         Assert.Equal(2, result.Activity.Count);
-        Assert.Equal(new DateOnly(2026, 8, 10), result.Activity[0].Date);
+        Assert.Equal("2026-08-10", result.Activity[0].Date);
         Assert.Equal(2, result.Activity[0].Count);
-        Assert.Equal(new DateOnly(2026, 8, 11), result.Activity[1].Date);
+        Assert.Equal("2026-08-11", result.Activity[1].Date);
         Assert.Equal(1, result.Activity[1].Count);
     }
 
@@ -295,7 +296,7 @@ public sealed class HighlightsServiceTests : IDisposable
         var result = await _service.GetHighlightsAsync(userId);
 
         Assert.Single(result.Hero.RecentForm);
-        Assert.Equal(1, result.ModeStats.Single(s => s.Mode == GameMode.ColourDiamonds).DealsPlayed);
+        Assert.Equal(1, result.ModeStats.Single(s => s.Mode == CoreGameMode.ColourDiamonds).DealsPlayed);
     }
 
     #endregion
@@ -428,10 +429,10 @@ public sealed class HighlightsServiceTests : IDisposable
         var result = await _service.GetHighlightsAsync(userId);
 
         var best = Assert.Single(result.Callouts, c => c.Code == "bestMode");
-        Assert.Equal(GameMode.ColourHearts, best.Mode);
+        Assert.Equal(CoreGameMode.ColourHearts, best.Mode);
         Assert.Equal(80, best.Value);
         var worst = Assert.Single(result.Callouts, c => c.Code == "worstMode");
-        Assert.Equal(GameMode.NoTrumps, worst.Mode);
+        Assert.Equal(CoreGameMode.NoTrumps, worst.Mode);
     }
 
     #endregion

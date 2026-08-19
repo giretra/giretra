@@ -42,7 +42,7 @@ public class ClientConfigTests
     }
 
     [Fact]
-    public void FromOptions_MapsAllFields()
+    public void ToResponse_MapsAllFields()
     {
         var options = new MobileClientOptions
         {
@@ -51,7 +51,7 @@ public class ClientConfigTests
             StoreUrls = new MobileStoreUrls { Android = "https://example/android", Ios = null }
         };
 
-        var response = ClientConfigResponse.FromOptions(options);
+        var response = options.ToResponse();
 
         Assert.Equal("1.0.0", response.MinSupportedMobileVersion);
         Assert.Equal("2.0.0", response.LatestMobileVersion);

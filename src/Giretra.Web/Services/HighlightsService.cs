@@ -1,3 +1,4 @@
+using CoreGameModes = Giretra.Core.GameModes;
 using Giretra.Core.Play;
 using Giretra.Model;
 using Giretra.Model.Entities;
@@ -181,7 +182,7 @@ public sealed class HighlightsService : IHighlightsService
 
             modeStats.Add(new HighlightsModeStats
             {
-                Mode = mode,
+                Mode = (CoreGameModes.GameMode)(int)mode,
                 DealsPlayed = modeDeals.Count,
                 DealsWon = wins,
                 DealWinRate = Percent(wins, modeDeals.Count),
@@ -296,7 +297,7 @@ public sealed class HighlightsService : IHighlightsService
             .Where(x => x.CompletedAt >= activityCutoff)
             .GroupBy(x => DateOnly.FromDateTime(x.CompletedAt.UtcDateTime))
             .OrderBy(g => g.Key)
-            .Select(g => new HighlightsActivityDay { Date = g.Key, Count = g.Count() })
+            .Select(g => new HighlightsActivityDay { Date = g.Key.ToString("yyyy-MM-dd"), Count = g.Count() })
             .ToList();
 
         var callouts = BuildCallouts(hero, modeStats, bidding, sweeps, tricks);

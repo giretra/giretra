@@ -1,3 +1,5 @@
+using Giretra.Web.Models.Responses;
+
 namespace Giretra.Web.Models;
 
 /// <summary>
@@ -30,4 +32,21 @@ public sealed class MobileStoreUrls
 {
     public string? Android { get; set; }
     public string? Ios { get; set; }
+}
+
+public static class MobileClientOptionsExtensions
+{
+    public static ClientConfigResponse ToResponse(this MobileClientOptions options)
+    {
+        return new ClientConfigResponse
+        {
+            MinSupportedMobileVersion = options.MinSupportedVersion,
+            LatestMobileVersion = options.LatestVersion,
+            StoreUrls = new StoreUrlsResponse
+            {
+                Android = options.StoreUrls.Android,
+                Ios = options.StoreUrls.Ios
+            }
+        };
+    }
 }
