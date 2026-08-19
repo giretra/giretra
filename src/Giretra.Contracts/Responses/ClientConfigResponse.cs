@@ -1,5 +1,3 @@
-using Giretra.Web.Models;
-
 namespace Giretra.Web.Models.Responses;
 
 /// <summary>
@@ -21,20 +19,6 @@ public sealed class ClientConfigResponse
     /// Store page URLs, null until the app is published.
     /// </summary>
     public required StoreUrlsResponse StoreUrls { get; init; }
-
-    public static ClientConfigResponse FromOptions(MobileClientOptions options)
-    {
-        return new ClientConfigResponse
-        {
-            MinSupportedMobileVersion = options.MinSupportedVersion,
-            LatestMobileVersion = options.LatestVersion,
-            StoreUrls = new StoreUrlsResponse
-            {
-                Android = options.StoreUrls.Android,
-                Ios = options.StoreUrls.Ios
-            }
-        };
-    }
 }
 
 /// <summary>

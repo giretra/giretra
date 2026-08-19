@@ -1,3 +1,4 @@
+using Giretra.Web.Models.Responses;
 using Giretra.Core.Players;
 using Giretra.Core.Players.Discovery;
 using Giretra.Core.Players.Factories;
@@ -234,11 +235,3 @@ public sealed class AiPlayerRegistry : IDisposable
         IPlayerAgentFactory Factory);
 }
 
-public record AiTypeInfo(
-    string Name,
-    string DisplayName,
-    short Difficulty,
-    int Rating,
-    string? Pun,
-    string? Description,
-    string? Author);
