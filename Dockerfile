@@ -10,10 +10,12 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 COPY src/Giretra.Core/Giretra.Core.csproj src/Giretra.Core/
+COPY src/Giretra.Contracts/Giretra.Contracts.csproj src/Giretra.Contracts/
 COPY src/Giretra.Model/Giretra.Model.csproj src/Giretra.Model/
 COPY src/Giretra.Web/Giretra.Web.csproj src/Giretra.Web/
 RUN dotnet restore src/Giretra.Web/Giretra.Web.csproj
 COPY src/Giretra.Core/ src/Giretra.Core/
+COPY src/Giretra.Contracts/ src/Giretra.Contracts/
 COPY src/Giretra.Model/ src/Giretra.Model/
 COPY src/Giretra.Web/ src/Giretra.Web/
 
