@@ -204,6 +204,7 @@
   "achievements.desc.namoronako_ny_tsy_nananako": "Couper le paquet, puis laisser votre partenaire remporter 6+ plis à lui seul pendant que votre équipe gagne la donne.",
   "achievements.desc.asio_siramamy": "Gagner un match dans lequel vous avez personnellement contré ou surcontré sur 3 donnes ou plus.",
   "achievements.desc.tanalahy_ny_foko": "Annoncer une Couleur, voir la donne finir en Tout Atout ou Sans Atout, et remporter soi-même 5+ plis avec des cartes d'une même couleur différente de celle annoncée.",
+  "achievements.desc.tsy_mba_nanisa_fa_niandry_ny_anjarany": "Éviter le capot adverse en remportant soi-même le tout dernier pli, seul pli de votre équipe dans la donne.",
   "achievements.page.title": "Succès",
   "achievements.page.subtitle": "{{earned}} / {{total}} débloqués",
   "achievements.page.earned": "Obtenu",
