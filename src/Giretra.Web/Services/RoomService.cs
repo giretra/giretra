@@ -15,7 +15,11 @@ public sealed class RoomService : IRoomService
 {
     private static readonly TimeSpan RoomCleanupDelay = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan RoomIdleTimeout = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan AbandonedRoomTimeout = TimeSpan.FromSeconds(30);
+    // Generous on purpose: this is the backstop that destroys a running game when
+    // no human is connected anymore. Mobile players routinely disappear for a
+    // minute or two (network handoff, backgrounded tab); a paused in-memory room
+    // costs next to nothing, so give them ample time to come back.
+    private static readonly TimeSpan AbandonedRoomTimeout = TimeSpan.FromMinutes(3);
 
     private readonly IRoomRepository _roomRepository;
     private readonly IGameService _gameService;
@@ -836,7 +840,8 @@ public sealed class RoomService : IRoomService
                 if (room.Status == RoomStatus.Playing && room.GameSessionId != null)
                 {
                     // Game is active — do NOT abandon or remove the player.
-                    // Their WebApiPlayerAgent handles turns via timeout (auto-plays defaults).
+                    // Their WebApiPlayerAgent pauses the game while they are the only
+                    // human (or auto-plays defaults when other humans are waiting).
                     // The player can rejoin later via the rejoin endpoint.
                     _logger.LogInformation(
                         "Player {ClientId} disconnected during active game {GameId}, keeping seat for rejoin",

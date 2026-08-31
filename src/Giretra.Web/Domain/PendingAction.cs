@@ -20,9 +20,16 @@ public sealed class PendingAction
     public required PlayerPosition Player { get; init; }
 
     /// <summary>
-    /// When the pending action was created.
+    /// When the pending action was created (or last restarted after a pause).
     /// </summary>
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Restarts the timeout window from now. Used when the game paused for a
+    /// disconnected player and they reconnected: they get a fresh turn timer
+    /// instead of an already-expired deadline.
+    /// </summary>
+    public void RestartTimeout() => CreatedAt = DateTime.UtcNow;
 
     /// <summary>
     /// TaskCompletionSource for cut action (position, fromTop).

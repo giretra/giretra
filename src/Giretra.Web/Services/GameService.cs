@@ -105,7 +105,8 @@ public sealed class GameService : IGameService
                     session,
                     _notifications,
                     TimeSpan.FromSeconds(room.TurnTimerSeconds),
-                    continueMatchWindow);
+                    continueMatchWindow,
+                    clientId => ShouldPauseOnTimeout(room.RoomId, clientId));
             }
             else
             {
@@ -636,6 +637,25 @@ public sealed class GameService : IGameService
 
         // Same suit: compare strength
         return challenger.Card.GetStrength(gameMode) > current.Card.GetStrength(gameMode);
+    }
+
+    /// <summary>
+    /// Decides whether a timed-out turn should pause the game instead of playing
+    /// a default move. True when the player is disconnected (their seat is kept
+    /// for rejoin) and no other seated human is connected and kept waiting —
+    /// e.g. a solo human at a bots table losing connectivity on mobile. A player
+    /// who explicitly left the room does not pause the game, and the room's
+    /// abandoned-table cleanup still terminates games nobody returns to.
+    /// </summary>
+    private bool ShouldPauseOnTimeout(string roomId, string clientId)
+    {
+        var room = _roomRepository.GetById(roomId);
+        var player = room?.GetPlayer(clientId);
+        if (player == null || player.ConnectionId != null)
+            return false;
+
+        return !room!.PlayerSlots.Values.Any(p =>
+            p != null && p.ClientId != clientId && p.ConnectionId != null);
     }
 
     public bool RejoinPlayer(string gameId, string oldClientId, string newClientId, TimeSpan turnTimeout)
