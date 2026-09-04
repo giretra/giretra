@@ -508,5 +508,19 @@
   "createForm.openSeat": "Open seat",
   "roomCard.statusWaiting": "Open",
   "roomCard.statusPlaying": "Playing",
-  "roomCard.statusCompleted": "Finished"
+  "roomCard.statusCompleted": "Finished",
+  "settings.stats.title": "Statistics",
+  "settings.preferences.title": "Preferences",
+  "settings.profile.soundHint": "Play sound effects during games",
+  "settings.profile.photo": "Profile photo",
+  "settings.profile.photoHint": "Shown on your seat and in the leaderboard",
+  "settings.profile.displayNameHint": "The name other players see at the table",
+  "settings.profile.username": "Username",
+  "settings.profile.usernameHint": "Your login identifier, it cannot be changed",
+  "settings.stats.hint": "Your rated performance so far",
+  "settings.preferences.hint": "How the game behaves for you",
+  "settings.friends.hint": "Friends can be invited to your tables",
+  "settings.blocked.hint": "Blocked players cannot join your tables",
+  "settings.history.hint": "Your latest matches, newest first",
+  "settings.menu": "Menu"
 }

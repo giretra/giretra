@@ -428,3 +428,149 @@
 .p-dialog .p-dialog-footer {
     gap: 0.5rem;
 }
+
+// User list rows shared by the settings sections (friends, blocked, search results).
+.g-list-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-color-secondary);
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
+.g-user-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.g-user-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.5rem;
+    border-radius: 0.75rem;
+    transition: background-color var(--transition-duration);
+
+    &:hover {
+        background: var(--surface-hover);
+    }
+
+    .p-avatar {
+        flex-shrink: 0;
+        font-weight: 700;
+    }
+}
+
+.g-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.g-user-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.g-user-sub {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.g-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+// Freya "create user" settings layout: side menu + panel of label/description/control rows.
+.g-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 1rem;
+
+    @media screen and (min-width: 1200px) {
+        padding: 1.5rem 2rem 1rem;
+    }
+
+    .g-panel-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+}
+
+.g-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+
+    @media screen and (min-width: 1200px) {
+        padding: 2rem;
+    }
+}
+
+.g-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    @media screen and (min-width: 768px) {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 2rem;
+    }
+}
+
+.g-form-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+
+    @media screen and (min-width: 768px) {
+        width: 17.5rem;
+        flex-shrink: 0;
+    }
+}
+
+.g-form-label {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.g-form-desc {
+    font-size: 0.9375rem;
+    color: var(--text-color-secondary);
+    line-height: 1.5;
+}
+
+.g-form-control {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
