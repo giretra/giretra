@@ -496,5 +496,17 @@
   "layout.logout": "Hivoaka",
   "layout.language": "Fiteny",
   "layout.footer.website": "Tranonkala",
-  "layout.footer.source": "Kaody loharano"
+  "layout.footer.source": "Kaody loharano",
+  "home.playWithFriends": "Milalao amin'ny namana",
+  "home.playWithFriendsHint": "Manokafa latabatra na manasa ny namanao",
+  "home.openTablesHint": "Midira amin'ny latabatra na mijery lalao mandeha",
+  "home.achievementsRow": "Zava-bita",
+  "home.achievementsHint": "{{earned}} amin'ny {{total}} azo",
+  "quickGame.createRoomInstead": "Mamorona latabatra manokana",
+  "createForm.seats": "Toerana",
+  "createForm.bot": "Bot",
+  "createForm.openSeat": "Toerana malalaka",
+  "roomCard.statusWaiting": "Misokatra",
+  "roomCard.statusPlaying": "Mandeha",
+  "roomCard.statusCompleted": "Vita"
 }

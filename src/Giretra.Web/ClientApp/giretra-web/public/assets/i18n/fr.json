@@ -496,5 +496,17 @@
   "layout.logout": "Déconnexion",
   "layout.language": "Langue",
   "layout.footer.website": "Site web",
-  "layout.footer.source": "Code source"
+  "layout.footer.source": "Code source",
+  "home.playWithFriends": "Jouer entre amis",
+  "home.playWithFriendsHint": "Ouvrez une table ou invitez vos amis",
+  "home.openTablesHint": "Rejoignez une table ou regardez une partie en cours",
+  "home.achievementsRow": "Succès",
+  "home.achievementsHint": "{{earned}} sur {{total}} débloqués",
+  "quickGame.createRoomInstead": "Créer une table personnalisée",
+  "createForm.seats": "Places",
+  "createForm.bot": "Bot",
+  "createForm.openSeat": "Place libre",
+  "roomCard.statusWaiting": "Ouverte",
+  "roomCard.statusPlaying": "En cours",
+  "roomCard.statusCompleted": "Terminée"
 }
