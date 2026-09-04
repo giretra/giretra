@@ -7,187 +7,183 @@ import {
   PlayerProfileResponse,
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, Trophy, Bot, Users, Award } from 'lucide-angular';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { AvatarModule } from 'primeng/avatar';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
 @Component({
   selector: 'app-leaderboard',
   standalone: true,
-  imports: [LucideAngularModule, TranslocoDirective, PlayerProfilePopupComponent],
+  imports: [TranslocoDirective, PlayerProfilePopupComponent, TableModule, TagModule, AvatarModule, SkeletonModule],
   template: `
-    <div class="lb-inner" *transloco="let t">
-      <div class="page-head">
-          <h1 class="header-title">
-            <i-lucide [img]="TrophyIcon" [size]="18"></i-lucide>
-            {{ t('leaderboard.title') }}
-          </h1>
-          <div class="header-badges">
-            @if (playerCount() > 0) {
-              <span class="count-badge">{{ t('leaderboard.playerCount', { count: playerCount() }) }}</span>
-            }
-            @if (botCount() > 0) {
-              <span class="count-badge count-badge-bot">{{ t('leaderboard.botCount', { count: botCount() }) }}</span>
-            }
-          </div>
-      </div>
-
+    <div class="lb" *transloco="let t">
       @if (loading()) {
-        <div class="loading-state">{{ t('common.loading') }}</div>
+        <div class="grid grid-cols-12 gap-6">
+          @for (i of [0, 1, 2]; track i) {
+            <div class="col-span-12 md:col-span-4"><p-skeleton height="6.5rem" borderRadius="24px" /></div>
+          }
+          @for (i of [0, 1, 2]; track i) {
+            <div class="col-span-12 xl:col-span-4"><p-skeleton height="22rem" borderRadius="24px" /></div>
+          }
+        </div>
       } @else {
-        @if (currentUserEntry(); as me) {
-          <div class="my-rank-banner">
-            <span class="my-rank-label">{{ t('leaderboard.yourRanking') }}</span>
-            <span class="my-rank-value">#{{ me.rank }}</span>
-            <span class="my-rank-divider"></span>
-            <span class="my-rank-stat">
-              <span class="my-rank-rating">{{ me.rating }}</span>
-              <span class="my-rank-rating-label">{{ t('leaderboard.columns.rating') }}</span>
-            </span>
+        <div class="grid grid-cols-12 gap-6">
+          <!-- KPI tiles -->
+          <div class="col-span-12 md:col-span-4">
+            <section class="g-card tile tile-me">
+              <div class="tile-text">
+                <span class="tile-label">{{ t('leaderboard.yourRanking') }}</span>
+                @if (currentUserEntry(); as me) {
+                  <span class="tile-value">#{{ me.rank }}</span>
+                  <span class="tile-sub">{{ me.rating }} {{ t('leaderboard.columns.rating') }} · {{ me.winRate }}% {{ t('leaderboard.columns.winRate') }}</span>
+                } @else {
+                  <span class="tile-value muted">—</span>
+                  <span class="tile-sub">{{ t('leaderboard.unrankedNotice') }}</span>
+                }
+              </div>
+              <i class="pi pi-trophy tile-icon"></i>
+            </section>
           </div>
-        } @else if (auth.user()) {
-          <div class="my-rank-banner my-rank-banner-unranked">
-            <span class="my-rank-unranked-text">{{ t('leaderboard.unrankedNotice') }}</span>
+          <div class="col-span-6 md:col-span-4">
+            <section class="g-card tile">
+              <div class="tile-text">
+                <span class="tile-label">{{ t('leaderboard.players') }}</span>
+                <span class="tile-value">{{ playerCount() }}</span>
+              </div>
+              <i class="pi pi-users tile-icon"></i>
+            </section>
           </div>
-        }
-        <div class="columns">
-
-          <!-- Players Column -->
-          <section class="column">
-            <div class="column-head">
-              <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
-              <span class="column-label">{{ t('leaderboard.topPlayers') }}</span>
-              <span class="column-count">{{ playerCount() }}</span>
-            </div>
-
-            @if (players().length === 0) {
-              <div class="empty-col">{{ t('leaderboard.noPlayers') }}</div>
-            } @else {
-              <div class="row row-header">
-                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
-                <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
+          <div class="col-span-6 md:col-span-4">
+            <section class="g-card tile">
+              <div class="tile-text">
+                <span class="tile-label">{{ t('leaderboard.bots') }}</span>
+                <span class="tile-value">{{ botCount() }}</span>
               </div>
+              <i class="pi pi-microchip tile-icon"></i>
+            </section>
+          </div>
 
-              @for (p of players(); track p.rank) {
-                <div class="row row-clickable" [class.row-top3]="p.rank <= 3" (click)="openProfile(p.playerId)">
-                  <div class="col-rank">
-                    @if (p.rank === 1) {
-                      <span class="medal medal-gold">1</span>
-                    } @else if (p.rank === 2) {
-                      <span class="medal medal-silver">2</span>
-                    } @else if (p.rank === 3) {
-                      <span class="medal medal-bronze">3</span>
-                    } @else {
-                      <span class="rank-num">{{ p.rank }}</span>
-                    }
-                  </div>
-                  <div class="col-name">
-                    @if (p.avatarUrl) {
-                      <img class="avatar" [src]="p.avatarUrl" [alt]="p.displayName" />
-                    } @else {
-                      <span class="avatar avatar-placeholder">{{ p.displayName.charAt(0).toUpperCase() }}</span>
-                    }
-                    <span class="entry-name">{{ p.displayName }}</span>
-                  </div>
-                  <div class="col-rating">{{ p.rating }}</div>
-                  <div class="col-winrate">{{ p.winRate }}%</div>
-                </div>
-              }
-            }
-          </section>
-
-          <!-- Achievers Column -->
-          <section class="column">
-            <div class="column-head column-head-ach">
-              <i-lucide [img]="AwardIcon" [size]="14"></i-lucide>
-              <span class="column-label">{{ t('leaderboard.topAchievers') }}</span>
-              <span class="column-count">{{ achievers().length }}</span>
-            </div>
-
-            @if (achievers().length === 0) {
-              <div class="empty-col">{{ t('leaderboard.noAchievers') }}</div>
-            } @else {
-              <div class="row row-header">
-                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
-                <div class="col-rating">{{ t('leaderboard.columns.points') }}</div>
-                <div class="col-games">{{ t('leaderboard.columns.count') }}</div>
+          <!-- Players -->
+          <div class="col-span-12 xl:col-span-4">
+            <section class="g-card board">
+              <div class="g-card-header">
+                <div class="g-card-title"><i class="pi pi-users"></i>{{ t('leaderboard.topPlayers') }}</div>
+                <p-tag [value]="players().length.toString()" severity="secondary" [rounded]="true" />
               </div>
-
-              @for (a of achievers(); track a.rank) {
-                <div class="row row-clickable" [class.row-top3]="a.rank <= 3" (click)="openProfile(a.playerId)">
-                  <div class="col-rank">
-                    @if (a.rank === 1) {
-                      <span class="medal medal-gold">1</span>
-                    } @else if (a.rank === 2) {
-                      <span class="medal medal-silver">2</span>
-                    } @else if (a.rank === 3) {
-                      <span class="medal medal-bronze">3</span>
-                    } @else {
-                      <span class="rank-num">{{ a.rank }}</span>
-                    }
-                  </div>
-                  <div class="col-name">
-                    @if (a.avatarUrl) {
-                      <img class="avatar" [src]="a.avatarUrl" [alt]="a.displayName" />
-                    } @else {
-                      <span class="avatar avatar-placeholder">{{ a.displayName.charAt(0).toUpperCase() }}</span>
-                    }
-                    <span class="entry-name">{{ a.displayName }}</span>
-                  </div>
-                  <div class="col-rating col-points">{{ a.achievementPoints }}</div>
-                  <div class="col-games">{{ a.achievementCount }}</div>
-                </div>
+              @if (players().length === 0) {
+                <div class="g-empty compact"><span class="g-empty-hint">{{ t('leaderboard.noPlayers') }}</span></div>
+              } @else {
+                <p-table [value]="players()" size="small" styleClass="lb-table" [tableStyle]="{ 'table-layout': 'fixed', width: '100%' }">
+                  <ng-template #header>
+                    <tr>
+                      <th class="col-rank">{{ t('leaderboard.columns.rank') }}</th>
+                      <th>{{ t('leaderboard.columns.player') }}</th>
+                      <th class="num">{{ t('leaderboard.columns.rating') }}</th>
+                      <th class="num hide-xs">{{ t('leaderboard.columns.winRate') }}</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-p>
+                    <tr class="clickable" [class.top3]="p.rank <= 3" (click)="openProfile(p.playerId)">
+                      <td class="col-rank"><span class="rank" [class]="rankClass(p.rank)">{{ p.rank }}</span></td>
+                      <td>
+                        <div class="who">
+                          @if (p.avatarUrl) {
+                            <p-avatar [image]="p.avatarUrl" shape="circle" />
+                          } @else {
+                            <p-avatar [label]="p.displayName.charAt(0).toUpperCase()" shape="circle" />
+                          }
+                          <span class="who-name">{{ p.displayName }}</span>
+                        </div>
+                      </td>
+                      <td class="num strong">{{ p.rating }}</td>
+                      <td class="num hide-xs">{{ p.winRate }}%</td>
+                    </tr>
+                  </ng-template>
+                </p-table>
               }
-            }
-          </section>
+            </section>
+          </div>
 
-          <!-- Bots Column -->
-          <section class="column column-bots">
-            <div class="column-head column-head-bot">
-              <i-lucide [img]="BotIcon" [size]="14"></i-lucide>
-              <span class="column-label">{{ t('leaderboard.bots') }}</span>
-              <span class="column-count">{{ botCount() }}</span>
-            </div>
-
-            @if (bots().length === 0) {
-              <div class="empty-col">{{ t('leaderboard.noBots') }}</div>
-            } @else {
-              <div class="row row-header">
-                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                <div class="col-name">{{ t('leaderboard.columns.bot') }}</div>
-                <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                <div class="col-author">{{ t('leaderboard.columns.author') }}</div>
+          <!-- Achievers -->
+          <div class="col-span-12 xl:col-span-4">
+            <section class="g-card board">
+              <div class="g-card-header">
+                <div class="g-card-title gold"><i class="pi pi-star-fill"></i>{{ t('leaderboard.topAchievers') }}</div>
+                <p-tag [value]="achievers().length.toString()" severity="secondary" [rounded]="true" />
               </div>
-
-              @for (b of bots(); track b.rank) {
-                <div class="row row-clickable" [class.row-top3]="b.rank <= 3" (click)="openProfile(b.playerId)">
-                  <div class="col-rank">
-                    @if (b.rank === 1) {
-                      <span class="medal medal-gold">1</span>
-                    } @else if (b.rank === 2) {
-                      <span class="medal medal-silver">2</span>
-                    } @else if (b.rank === 3) {
-                      <span class="medal medal-bronze">3</span>
-                    } @else {
-                      <span class="rank-num">{{ b.rank }}</span>
-                    }
-                  </div>
-                  <div class="col-name">
-                    <span class="avatar avatar-placeholder avatar-bot">
-                      <i-lucide [img]="BotIcon" [size]="12" [strokeWidth]="2"></i-lucide>
-                    </span>
-                    <span class="entry-name">{{ b.displayName }}</span>
-                  </div>
-                  <div class="col-rating">{{ b.rating }}</div>
-                  <div class="col-author">{{ b.author || t('leaderboard.builtIn') }}</div>
-                </div>
+              @if (achievers().length === 0) {
+                <div class="g-empty compact"><span class="g-empty-hint">{{ t('leaderboard.noAchievers') }}</span></div>
+              } @else {
+                <p-table [value]="achievers()" size="small" styleClass="lb-table" [tableStyle]="{ 'table-layout': 'fixed', width: '100%' }">
+                  <ng-template #header>
+                    <tr>
+                      <th class="col-rank">{{ t('leaderboard.columns.rank') }}</th>
+                      <th>{{ t('leaderboard.columns.player') }}</th>
+                      <th class="num">{{ t('leaderboard.columns.points') }}</th>
+                      <th class="num hide-xs">{{ t('leaderboard.columns.count') }}</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-a>
+                    <tr class="clickable" [class.top3]="a.rank <= 3" (click)="openProfile(a.playerId)">
+                      <td class="col-rank"><span class="rank" [class]="rankClass(a.rank)">{{ a.rank }}</span></td>
+                      <td>
+                        <div class="who">
+                          @if (a.avatarUrl) {
+                            <p-avatar [image]="a.avatarUrl" shape="circle" />
+                          } @else {
+                            <p-avatar [label]="a.displayName.charAt(0).toUpperCase()" shape="circle" />
+                          }
+                          <span class="who-name">{{ a.displayName }}</span>
+                        </div>
+                      </td>
+                      <td class="num strong gold">{{ a.achievementPoints }}</td>
+                      <td class="num hide-xs">{{ a.achievementCount }}</td>
+                    </tr>
+                  </ng-template>
+                </p-table>
               }
-            }
-          </section>
+            </section>
+          </div>
 
+          <!-- Bots -->
+          <div class="col-span-12 xl:col-span-4">
+            <section class="g-card board">
+              <div class="g-card-header">
+                <div class="g-card-title"><i class="pi pi-microchip"></i>{{ t('leaderboard.bots') }}</div>
+                <p-tag [value]="bots().length.toString()" severity="secondary" [rounded]="true" />
+              </div>
+              @if (bots().length === 0) {
+                <div class="g-empty compact"><span class="g-empty-hint">{{ t('leaderboard.noBots') }}</span></div>
+              } @else {
+                <p-table [value]="bots()" size="small" styleClass="lb-table" [tableStyle]="{ 'table-layout': 'fixed', width: '100%' }">
+                  <ng-template #header>
+                    <tr>
+                      <th class="col-rank">{{ t('leaderboard.columns.rank') }}</th>
+                      <th>{{ t('leaderboard.columns.bot') }}</th>
+                      <th class="num">{{ t('leaderboard.columns.rating') }}</th>
+                      <th class="hide-xs author">{{ t('leaderboard.columns.author') }}</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-b>
+                    <tr class="clickable" [class.top3]="b.rank <= 3" (click)="openProfile(b.playerId)">
+                      <td class="col-rank"><span class="rank" [class]="rankClass(b.rank)">{{ b.rank }}</span></td>
+                      <td>
+                        <div class="who">
+                          <p-avatar icon="pi pi-microchip" shape="circle" styleClass="bot-avatar" />
+                          <span class="who-name">{{ b.displayName }}</span>
+                        </div>
+                      </td>
+                      <td class="num strong">{{ b.rating }}</td>
+                      <td class="hide-xs muted-cell">{{ b.author || t('leaderboard.builtIn') }}</td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              }
+            </section>
+          </div>
         </div>
       }
     </div>
@@ -200,101 +196,50 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     }
   `,
   styles: [`
+    .tile { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; height:100%; padding:1.25rem 1.5rem; }
+    .tile-text { display:flex; flex-direction:column; gap:0.25rem; min-width:0; }
+    .tile-label { font-size:0.8125rem; font-weight:600; color:var(--text-color-secondary); }
+    .tile-value { font-size:2rem; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums; }
+    .tile-value.muted { color:var(--text-color-secondary); }
+    .tile-sub { font-size:0.8125rem; color:var(--text-color-secondary); }
+    .tile-icon { font-size:1.5rem; color:var(--text-color-secondary); opacity:0.7; }
+    .tile-me { background:linear-gradient(135deg, color-mix(in srgb, var(--p-yellow-400) 16%, var(--surface-card)), var(--surface-card)); border-color:color-mix(in srgb, var(--p-yellow-400) 35%, transparent); }
+    .tile-me .tile-value { color:var(--p-yellow-400); }
+    .tile-me .tile-icon { color:var(--p-yellow-400); opacity:0.9; }
 
-    /* Header */
-    .header-title { margin:0; font-size:1.125rem; font-weight:700; color:hsl(var(--foreground)); display:flex; align-items:center; gap:0.5rem; }
-    .header-badges { margin-left:auto; display:flex; gap:0.375rem; }
-    .count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.625rem; border-radius:9999px; }
-    .count-badge-bot { color:hsl(var(--gold)); background:hsl(var(--gold)/0.12); }
+    .board { display:flex; flex-direction:column; padding-bottom:0.75rem; }
+    .board .g-card-header { padding-bottom:0.5rem; }
+    .g-card-title i { color:var(--text-color-secondary); font-size:0.9375rem; }
+    .g-card-title.gold, .g-card-title.gold i { color:var(--p-yellow-400); }
+    .g-empty.compact { padding:1.5rem 0.5rem; }
 
-    /* Main */
-    .lb-inner { }
-    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+    :host ::ng-deep .lb-table .p-datatable-thead > tr > th { background:transparent; font-size:0.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-color-secondary); padding:0.5rem 0.5rem; }
+    :host ::ng-deep .lb-table .p-datatable-tbody > tr { background:transparent; }
+    :host ::ng-deep .lb-table .p-datatable-tbody > tr > td { padding:0.5rem 0.5rem; border-color:color-mix(in srgb, var(--surface-border) 60%, transparent); }
+    :host ::ng-deep .lb-table .p-datatable-tbody > tr.clickable { cursor:pointer; transition:background-color var(--transition-duration); }
+    :host ::ng-deep .lb-table .p-datatable-tbody > tr.clickable:hover { background:var(--surface-hover); }
+    :host ::ng-deep .lb-table .p-datatable-tbody > tr:last-child > td { border-bottom:none; }
+    :host ::ng-deep .lb-table .p-avatar { width:1.75rem; height:1.75rem; font-size:0.75rem; font-weight:700; flex-shrink:0; }
+    :host ::ng-deep .lb-table .bot-avatar { background:color-mix(in srgb, var(--p-yellow-400) 18%, transparent); color:var(--p-yellow-400); }
 
-    .loading-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
-
-    /* My rank banner */
-    .my-rank-banner { display:flex; align-items:center; gap:0.75rem; background:hsl(var(--card)); border:1px solid hsl(var(--gold)/0.3); border-radius:0.75rem; padding:0.625rem 1rem; margin-bottom:1rem; }
-    .my-rank-label { font-size:0.75rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
-    .my-rank-stat { display:flex; align-items:baseline; gap:0.25rem; }
-    .my-rank-value { font-size:1.125rem; font-weight:800; color:hsl(var(--gold)); font-variant-numeric:tabular-nums; }
-    .my-rank-sep { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
-    .my-rank-total { font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
-    .my-rank-divider { width:1px; height:1.25rem; background:hsl(var(--border)); }
-    .my-rank-rating { font-size:1.125rem; font-weight:800; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
-    .my-rank-rating-label { font-size:0.6875rem; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
-    .my-rank-banner-unranked { border-color:hsl(var(--border)); }
-    .my-rank-unranked-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
-
-    /* Columns */
-    .columns { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1rem; align-items:start; }
-
-    .column { background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; padding:1rem; display:flex; flex-direction:column; }
-
-    /* Column header */
-    .column-head { display:flex; align-items:center; gap:0.375rem; margin-bottom:0.75rem; padding-bottom:0.625rem; border-bottom:1px solid hsl(var(--border)); color:hsl(var(--muted-foreground)); }
-    .column-head-bot { color:hsl(var(--gold)); }
-    .column-head-ach { color:hsl(var(--gold)); }
-    .column-label { font-size:0.8125rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; }
-    .column-count { margin-left:auto; font-size:0.625rem; font-weight:600; background:hsl(var(--foreground)/0.06); padding:0.0625rem 0.4375rem; border-radius:9999px; }
-
-    .empty-col { text-align:center; padding:2rem 0.5rem; color:hsl(var(--muted-foreground)); font-size:0.8125rem; }
-
-    /* Row layout */
-    .row { display:flex; align-items:center; padding:0.5rem 0.5rem; border-radius:0.375rem; gap:0.5rem; }
-    .row-header { font-size:0.625rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:hsl(var(--muted-foreground)); border-radius:0; margin-bottom:0.125rem; padding-bottom:0.375rem; }
-    .row-header > div { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    .row:not(.row-header):hover { background:hsl(var(--foreground)/0.03); }
-    .row-top3 { background:hsl(var(--foreground)/0.02); }
-    .row-clickable { cursor:pointer; }
-
-    /* Columns */
-    .col-rank { width:2rem; flex-shrink:0; text-align:center; }
-    .col-name { flex:1; min-width:0; display:flex; align-items:center; gap:0.375rem; }
-    .col-rating { width:4rem; flex-shrink:0; text-align:right; font-weight:700; font-size:0.8125rem; color:hsl(var(--foreground)); font-variant-numeric:tabular-nums; }
-    .col-games { width:3.5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
-    .col-winrate { width:3rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
-    .col-author { width:5rem; flex-shrink:0; text-align:right; font-size:0.75rem; color:hsl(var(--muted-foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .col-points { color:hsl(var(--gold)); }
-
-    /* Medal */
-    .medal { display:inline-flex; align-items:center; justify-content:center; width:1.375rem; height:1.375rem; border-radius:50%; font-size:0.625rem; font-weight:800; }
-    .medal-gold { background:hsl(45 80% 50% / 0.2); color:hsl(45 90% 55%); border:1.5px solid hsl(45 80% 50% / 0.4); }
-    .medal-silver { background:hsl(220 10% 60% / 0.2); color:hsl(220 10% 72%); border:1.5px solid hsl(220 10% 60% / 0.4); }
-    .medal-bronze { background:hsl(25 60% 45% / 0.2); color:hsl(25 65% 55%); border:1.5px solid hsl(25 60% 45% / 0.4); }
-    .rank-num { font-size:0.75rem; color:hsl(var(--muted-foreground)); font-variant-numeric:tabular-nums; }
-
-    /* Avatar */
-    .avatar { width:1.5rem; height:1.5rem; border-radius:50%; flex-shrink:0; object-fit:cover; }
-    .avatar-placeholder { display:inline-flex; align-items:center; justify-content:center; background:hsl(var(--muted)); color:hsl(var(--muted-foreground)); font-size:0.6875rem; font-weight:700; }
-    .avatar-bot { background:hsl(var(--gold) / 0.15); color:hsl(var(--gold)); }
-
-    /* Name */
-    .entry-name { font-size:0.8125rem; font-weight:500; color:hsl(var(--foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .name-group { display:flex; flex-direction:column; gap:0; min-width:0; }
-    .bot-author { font-size:0.625rem; color:hsl(var(--muted-foreground)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; }
-
-    /* Responsive: 2 columns on medium screens, stack on narrow */
-    @media (max-width:1024px) {
-      .columns { grid-template-columns:repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width:640px) {
-      .columns { grid-template-columns:minmax(0, 1fr); }
-    }
-
-    /* Responsive: hide less important columns on small screens */
-    @media (max-width:480px) {
-      .col-games, .col-winrate, .col-author { display:none; }
-      .row { gap:0.375rem; padding:0.375rem 0.375rem; }
-      .my-rank-banner { flex-wrap:wrap; gap:0.5rem; }
-    }
+    .col-rank { width:2.75rem; }
+    th.num { width:4.5rem; }
+    th.hide-xs { width:4.5rem; }
+    th.author { width:5.5rem; }
+    .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .strong { font-weight:700; }
+    .gold { color:var(--p-yellow-400); }
+    .muted-cell { color:var(--text-color-secondary); font-size:0.8125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .who { display:flex; align-items:center; gap:0.5rem; min-width:0; }
+    .who-name { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank { display:inline-flex; align-items:center; justify-content:center; min-width:1.5rem; height:1.5rem; padding:0 0.25rem; border-radius:50%; font-size:0.75rem; font-weight:700; color:var(--text-color-secondary); font-variant-numeric:tabular-nums; }
+    .rank.gold { background:color-mix(in srgb, var(--p-yellow-400) 22%, transparent); color:var(--p-yellow-400); }
+    .rank.silver { background:color-mix(in srgb, var(--p-surface-300) 22%, transparent); color:var(--p-surface-200); }
+    .rank.bronze { background:color-mix(in srgb, var(--p-orange-400) 22%, transparent); color:var(--p-orange-400); }
+    @media (max-width:479px) { .hide-xs { display:none; } }
   `],
 })
 export class LeaderboardComponent implements OnInit {
-  readonly TrophyIcon = Trophy;
-  readonly BotIcon = Bot;
-  readonly UsersIcon = Users;
-  readonly AwardIcon = Award;
 
   private readonly api = inject(ApiService);
   readonly auth = inject(AuthService);
@@ -327,6 +272,10 @@ export class LeaderboardComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  rankClass(rank: number): string {
+    return rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
   }
 
   openProfile(playerId: string): void {
