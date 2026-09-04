@@ -9,11 +9,12 @@ import { GameStateService } from '../../core/services/game-state.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { RoomListComponent } from './components/room-list/room-list.component';
 import { CreateRoomFormComponent } from './components/create-room-form/create-room-form.component';
-import { LucideAngularModule, Plus, LogOut, Settings, Trophy, Github, Share2, Zap, Bot, Award, ChevronRight, Shield, ChartSpline } from 'lucide-angular';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { MessageModule } from 'primeng/message';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { TranslocoService } from '@jsverse/transloco';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
-import { LanguageSwitcherComponent } from '../../shared/components/language-switcher/language-switcher.component';
 import { QuickGameDialogComponent } from './components/quick-game-dialog/quick-game-dialog.component';
 import { WelcomeDialogComponent } from '../../shared/components/welcome-dialog/welcome-dialog.component';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
@@ -25,151 +26,118 @@ import { environment } from '../../../environments/environment';
   imports: [
     RoomListComponent,
     CreateRoomFormComponent,
-    LucideAngularModule,
     TranslocoDirective,
-    LanguageSwitcherComponent,
     QuickGameDialogComponent,
     WelcomeDialogComponent,
+    ButtonModule,
+    TagModule,
+    MessageModule,
   ],
   template: `
     <ng-container *transloco="let t">
-    <div class="home-shell">
-      <!-- Error Banner -->
-      @if (errorBanner.message()) {
-        <div class="error-banner">
-          {{ errorBanner.message() }}
-        </div>
-      }
-
-      <!-- Hero header with felt texture -->
-      <header class="hero">
-        <div class="hero-felt"></div>
-        <div class="hero-content">
-          <div class="brand">
-            <img src="icon-192x192.png" alt="Giretra" class="hero-icon" width="28" height="28" />
-            <h1 class="logo">giretra</h1>
-          </div>
-
-          <!-- User greeting / name area -->
-          <div class="user-area">
-            @if (auth.user(); as user) {
-              <div class="user-pill">
-                <span class="user-avatar" (click)="goToSettings()">{{ user.displayName.charAt(0).toUpperCase() }}</span>
-                <span class="user-name" (click)="goToSettings()">{{ user.displayName }}</span>
-                <app-language-switcher />
-                <button class="pill-btn" (click)="goToLeaderboard()" title="Leaderboard">
-                  <i-lucide [img]="TrophyIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                </button>
-                <button class="pill-btn" (click)="goToHighlights()" title="My Stats">
-                  <i-lucide [img]="ChartSplineIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                </button>
-                @if (auth.isModerator()) {
-                  <button class="pill-btn" (click)="goToAdmin()" title="Administration">
-                    <i-lucide [img]="ShieldIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  </button>
-                }
-                <button class="pill-btn settings-btn" (click)="goToSettings()" title="Settings">
-                  <i-lucide [img]="SettingsIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  @if (pendingFriendCount() > 0) {
-                    <span class="badge-dot"></span>
-                  }
-                </button>
-                <button class="pill-btn" (click)="logout()" title="Logout">
-                  <i-lucide [img]="LogOutIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      </header>
-
+    <div class="home">
       <!-- Resume game banner -->
       @if (activeGameRoomId()) {
-        <div class="resume-banner" (click)="resumeGame()">
-          <span class="resume-text">{{ t('home.resumeBanner') }}</span>
-          <button class="resume-btn">{{ t('home.resume') }}</button>
-        </div>
+        <p-message severity="success" icon="pi pi-play-circle" styleClass="resume-message">
+          <div class="resume-row">
+            <span class="resume-text">{{ t('home.resumeBanner') }}</span>
+            <p-button [label]="t('home.resume')" icon="pi pi-arrow-right" iconPos="right" size="small" (onClick)="resumeGame()" />
+          </div>
+        </p-message>
       }
 
-      <!-- Main body -->
-      <main class="main">
-        <div class="main-inner">
-          <!-- Achievement banner -->
-          @if (auth.user() && achievementShowcase()) {
-            <a class="ach-banner" (click)="goToAchievements()">
-              <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2" class="ach-banner-icon"></i-lucide>
-              <span class="ach-banner-text">{{ t('home.achievementBanner', { earned: achievementShowcase()!.earnedCount, total: achievementShowcase()!.totalCount }) }}</span>
-              <i-lucide [img]="ChevronRightIcon" [size]="14" [strokeWidth]="2" class="ach-banner-arrow"></i-lucide>
-            </a>
-          }
-
-          <!-- Quick Game -->
-          <section class="panel">
-            <button class="quick-game-btn" (click)="showQuickGame.set(true)">
-              <span class="quick-game-icon">
-                <i-lucide [img]="ZapIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
-              </span>
-              <span class="quick-game-text">
-                <span class="quick-game-label">{{ t('quickGame.title') }}</span>
-                <span class="quick-game-hint">{{ t('quickGame.subtitle') }}</span>
-              </span>
-              <span class="quick-game-arrow">
-                <i-lucide [img]="BotIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-              </span>
-            </button>
-          </section>
-
-          <!-- Quick Game Dialog -->
-          <app-quick-game-dialog
-            [open]="showQuickGame()"
-            [aiTypes]="aiTypes()"
-            (play)="quickGame($event)"
-            (closed)="showQuickGame.set(false)"
-            (createRoom)="showQuickGame.set(false); showCreateForm.set(true)"
-          />
-
-          <!-- Create room panel -->
-          <section class="panel create-panel">
-            @if (showCreateForm()) {
-              <app-create-room-form
-                (roomCreated)="onRoomCreated($event)"
-                (cancelled)="showCreateForm.set(false)"
-              />
-            } @else {
-              <div class="create-actions">
-                <button
-                  class="create-btn"
-                  (click)="showCreateForm.set(true)"
-                >
-                  <span class="create-btn-icon">
-                    <i-lucide [img]="PlusIcon" [size]="22" [strokeWidth]="2.5"></i-lucide>
-                  </span>
-                  <span class="create-btn-text">
-                    <span class="create-btn-label">{{ t('home.createRoom') }}</span>
-                    <span class="create-btn-hint">{{ t('home.createRoomHint') }}</span>
-                  </span>
-                </button>
-                <button
-                  class="invite-btn"
-                  (click)="inviteFriends()"
-                >
-                  <span class="invite-btn-icon">
-                    <i-lucide [img]="Share2Icon" [size]="18" [strokeWidth]="2"></i-lucide>
-                  </span>
-                  <span class="invite-btn-text">
-                    <span class="invite-btn-label">{{ t('home.inviteFriends') }}</span>
-                    <span class="invite-btn-hint">{{ t('home.inviteFriendsHint') }}</span>
-                  </span>
-                </button>
+      <div class="grid grid-cols-12 gap-6">
+        <!-- Quick game hero -->
+        <div class="col-span-12 xl:col-span-8">
+          <section class="g-card hero">
+            <div class="hero-content">
+              <span class="hero-badge"><i class="pi pi-bolt"></i></span>
+              <h2 class="hero-title">{{ t('quickGame.title') }}</h2>
+              <p class="hero-subtitle">{{ t('quickGame.subtitle') }}</p>
+              <div class="hero-actions">
+                <p-button
+                  [label]="t('quickGame.play')"
+                  icon="pi pi-play"
+                  size="large"
+                  styleClass="hero-btn"
+                  (onClick)="showQuickGame.set(true)"
+                />
+                <span class="hero-meta"><i class="pi pi-clock"></i>{{ t('quickGame.turnTimer') }}</span>
               </div>
-            }
+            </div>
+            <div class="hero-art" aria-hidden="true">
+              <span class="hero-card c1">♠</span>
+              <span class="hero-card c2">♥</span>
+              <span class="hero-card c3">♣</span>
+            </div>
           </section>
+        </div>
 
-          <!-- Room list section -->
-          <section class="panel rooms-panel">
-            <div class="panel-header">
-              <h2 class="panel-title">{{ t('home.openTables') }}</h2>
-              <span class="room-count-badge">{{ rooms().length }}</span>
+        <!-- Play with friends -->
+        <div class="col-span-12 xl:col-span-4">
+          <section class="g-card h-full">
+            <div class="g-card-header">
+              <div>
+                <div class="g-card-title">{{ t('home.playWithFriends') }}</div>
+                <p class="g-card-subtitle">{{ t('home.playWithFriendsHint') }}</p>
+              </div>
+            </div>
+            <ul class="action-list">
+              <li>
+                <button type="button" class="action-row" (click)="showCreateForm.set(true)">
+                  <span class="action-icon primary"><i class="pi pi-plus"></i></span>
+                  <span class="action-text">
+                    <span class="action-label">{{ t('home.createRoom') }}</span>
+                    <span class="action-hint">{{ t('home.createRoomHint') }}</span>
+                  </span>
+                  <i class="pi pi-chevron-right action-chevron"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="action-row" (click)="inviteFriends()">
+                  <span class="action-icon"><i class="pi pi-share-alt"></i></span>
+                  <span class="action-text">
+                    <span class="action-label">{{ t('home.inviteFriends') }}</span>
+                    <span class="action-hint">{{ t('home.inviteFriendsHint') }}</span>
+                  </span>
+                  <i class="pi pi-chevron-right action-chevron"></i>
+                </button>
+              </li>
+              @if (auth.user() && achievementShowcase(); as showcase) {
+                <li>
+                  <button type="button" class="action-row" (click)="goToAchievements()">
+                    <span class="action-icon gold"><i class="pi pi-star"></i></span>
+                    <span class="action-text">
+                      <span class="action-label">{{ t('home.achievementsRow') }}</span>
+                      <span class="action-hint">{{ t('home.achievementsHint', { earned: showcase.earnedCount, total: showcase.totalCount }) }}</span>
+                    </span>
+                    <i class="pi pi-chevron-right action-chevron"></i>
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        </div>
+
+        <!-- Open tables -->
+        <div class="col-span-12">
+          <section class="g-card">
+            <div class="g-card-header">
+              <div>
+                <div class="g-card-title">
+                  {{ t('home.openTables') }}
+                  <p-tag [value]="rooms().length.toString()" severity="secondary" [rounded]="true" />
+                </div>
+                <p class="g-card-subtitle">{{ t('home.openTablesHint') }}</p>
+              </div>
+              <p-button
+                icon="pi pi-plus"
+                severity="secondary"
+                [text]="true"
+                [rounded]="true"
+                [attr.aria-label]="t('home.createRoom')"
+                (onClick)="showCreateForm.set(true)"
+              />
             </div>
             <app-room-list
               [rooms]="rooms()"
@@ -180,26 +148,22 @@ import { environment } from '../../../environments/environment';
             />
           </section>
         </div>
-      </main>
-
-      <!-- Footer -->
-      <footer class="footer">
-        <div class="footer-inner">
-          <div class="footer-links">
-            <a href="https://www.giretra.com" target="_blank" rel="noopener noreferrer" class="footer-link">Website</a>
-            <span class="footer-dot"></span>
-            <a href="https://github.com/giretra" target="_blank" rel="noopener noreferrer" class="footer-link footer-link-icon"><i-lucide [img]="GithubIcon" [size]="12" [strokeWidth]="2"></i-lucide> Source Code</a>
-            <span class="footer-dot"></span>
-            <a class="best-player-link" (click)="goToLeaderboard()">
-              <i-lucide [img]="TrophyIcon" [size]="12" [strokeWidth]="2"></i-lucide>
-              {{ t('home.bestPlayers') }}
-            </a>
-          </div>
-          <span class="footer-copy">&copy; {{ currentYear }} Giretra</span>
-        </div>
-      </footer>
-
+      </div>
     </div>
+
+    <app-quick-game-dialog
+      [open]="showQuickGame()"
+      [aiTypes]="aiTypes()"
+      (play)="quickGame($event)"
+      (closed)="showQuickGame.set(false)"
+      (createRoom)="showQuickGame.set(false); showCreateForm.set(true)"
+    />
+
+    <app-create-room-form
+      [open]="showCreateForm()"
+      (roomCreated)="onRoomCreated($event)"
+      (cancelled)="showCreateForm.set(false)"
+    />
 
     @if (showWelcome()) {
       <app-welcome-dialog (dismissed)="showWelcome.set(false)" />
@@ -207,96 +171,41 @@ import { environment } from '../../../environments/environment';
     </ng-container>
   `,
   styles: [`
-    .home-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
-    .error-banner { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.375rem 1rem; font-size:0.75rem; font-weight:500; z-index:100; background:hsl(0 72% 51%/0.15); color:hsl(0 72% 65%); border-bottom:1px solid hsl(0 72% 51%/0.3); }
-    .hero { position:relative; overflow:hidden; padding:0 1rem; height:48px; display:flex; align-items:center; flex-shrink:0; }
-    .hero-felt { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 100%,hsl(var(--table-felt-light)),hsl(var(--table-felt)) 70%); }
-    .hero-content { position:relative; z-index:1; max-width:1200px; width:100%; margin:0 auto; display:flex; justify-content:space-between; align-items:center; height:100%; }
-    .brand { display:flex; align-items:center; gap:0.5rem; }
-    .hero-icon { width:1.5rem; height:1.5rem; flex-shrink:0; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3)); }
-    .logo { font-family:'Urbanist',sans-serif; font-size:1.125rem; font-weight:800; letter-spacing:0.05em; color:hsl(var(--foreground)); margin:0; line-height:1; text-shadow:0 1px 4px rgba(0,0,0,0.3); }
-    .user-area { display:flex; align-items:center; }
-    .user-pill { display:flex; align-items:center; gap:0.375rem; background:hsl(var(--background)/0.4); backdrop-filter:blur(8px); border:1px solid hsl(var(--foreground)/0.1); border-radius:9999px; padding:0.2rem 0.4rem 0.2rem 0.2rem; }
-    .user-avatar { width:1.5rem; height:1.5rem; border-radius:50%; background:hsl(var(--primary)/0.25); border:2px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; font-size:0.6875rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; cursor:pointer; }
-    .user-name { font-size:0.8125rem; font-weight:600; color:hsl(var(--foreground)); cursor:pointer; }
-    .pill-btn { position:relative; display:flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .pill-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
-    .badge-dot { position:absolute; top:0; right:0; width:0.5rem; height:0.5rem; border-radius:50%; background:hsl(var(--destructive)); border:1.5px solid hsl(var(--background)/0.6); }
-    .main { flex:1; padding:1.5rem 1rem; }
-    .main-inner { max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:1.5rem; }
-    .panel { width:100%; }
-    .ach-banner { display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.75rem; background:hsl(var(--secondary)); border:1px solid hsl(var(--border)); border-radius:0.625rem; cursor:pointer; transition:all 0.15s ease; text-decoration:none; color:inherit; margin-bottom:-0.25rem; }
-    .ach-banner:hover { background:hsl(var(--muted)); border-color:hsl(var(--muted-foreground)/0.3); }
-    .ach-banner-icon { color:hsl(var(--muted-foreground)); flex-shrink:0; }
-    .ach-banner-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); flex:1; }
-    .ach-banner-arrow { color:hsl(var(--muted-foreground)); flex-shrink:0; }
+    .home { display:flex; flex-direction:column; gap:1.5rem; }
+    .resume-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex:1; }
+    .resume-text { font-weight:500; }
 
-    .quick-game-btn { width:100%; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--gold)/0.08); border:2px solid hsl(var(--gold)/0.35); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
-    .quick-game-btn:hover { border-color:hsl(var(--gold)/0.7); background:hsl(var(--gold)/0.12); transform:translateY(-1px); box-shadow:0 4px 20px hsl(var(--gold)/0.15); }
-    .quick-game-btn:active { transform:translateY(0); }
-    .quick-game-icon { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:0.625rem; background:hsl(var(--gold)/0.2); color:hsl(var(--gold)); flex-shrink:0; }
-    .quick-game-text { display:flex; flex-direction:column; gap:0.125rem; flex:1; }
-    .quick-game-label { font-size:1.0625rem; font-weight:700; color:hsl(var(--gold)); }
-    .quick-game-hint { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
-    .quick-game-arrow { color:hsl(var(--gold)/0.5); flex-shrink:0; }
-    .create-actions { display:flex; flex-direction:column; gap:0.625rem; }
-    @media (min-width:540px) { .create-actions { flex-direction:row; } }
-    .create-btn { flex:1; display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px dashed hsl(var(--primary)/0.4); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
-    .create-btn:hover { border-color:hsl(var(--primary)); border-style:solid; background:hsl(var(--primary)/0.06); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
-    .create-btn:active { transform:translateY(0); }
-    .create-btn-icon { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:0.625rem; background:hsl(var(--primary)/0.15); color:hsl(var(--primary)); flex-shrink:0; }
-    .create-btn-text { display:flex; flex-direction:column; gap:0.125rem; }
-    .create-btn-label { font-size:1rem; font-weight:600; color:hsl(var(--foreground)); }
-    .create-btn-hint { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
-    .invite-btn { flex:1; display:flex; align-items:center; gap:0.75rem; padding:0.875rem 1.125rem; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; cursor:pointer; transition:all 0.15s ease; text-align:left; color:inherit; }
-    .invite-btn:hover { border-color:hsl(var(--foreground)/0.25); background:hsl(var(--foreground)/0.04); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
-    .invite-btn:active { transform:translateY(0); }
-    .invite-btn-icon { display:flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:0.5rem; background:hsl(var(--muted)/0.5); color:hsl(var(--muted-foreground)); flex-shrink:0; }
-    .invite-btn-text { display:flex; flex-direction:column; gap:0.125rem; }
-    .invite-btn-label { font-size:0.875rem; font-weight:600; color:hsl(var(--foreground)); }
-    .invite-btn-hint { font-size:0.6875rem; color:hsl(var(--muted-foreground)); }
-    .panel-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
-    .panel-title { font-size:0.8125rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.08em; margin:0; }
-    .room-count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.5rem; border-radius:9999px; min-width:1.25rem; text-align:center; }
-    @media (min-width:640px) {
-      .hero { padding:0 2rem; }
-      .main { padding:2rem; }
-    }
-    .resume-banner { display:flex; align-items:center; justify-content:center; gap:0.75rem; padding:0.625rem 1rem; background:hsl(var(--primary)/0.1); border-bottom:1px solid hsl(var(--primary)/0.25); cursor:pointer; transition:background 0.15s ease; }
-    .resume-banner:hover { background:hsl(var(--primary)/0.15); }
-    .resume-text { font-size:0.8125rem; font-weight:500; color:hsl(var(--primary)); }
-    .resume-btn { padding:0.25rem 0.75rem; font-size:0.75rem; font-weight:600; background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); border:none; border-radius:9999px; cursor:pointer; transition:opacity 0.15s ease; }
-    .resume-btn:hover { opacity:0.85; }
-    @media (max-width:480px) {
-      .hero { padding:0 0.5rem; }
-      .user-name { display:none; }
-    }
-    .footer { flex-shrink:0; padding:0.5rem 1rem; border-top:1px solid hsl(var(--border)); }
-    .footer-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:0.75rem; }
-    .footer-links { display:flex; align-items:center; gap:0.625rem; }
-    .footer-link { font-size:0.75rem; color:hsl(var(--muted-foreground)); text-decoration:none; transition:color 0.15s ease; }
-    .footer-link:hover { color:hsl(var(--foreground)); }
-    .footer-link-icon { display:inline-flex; align-items:center; gap:0.25rem; }
-    .footer-dot { width:3px; height:3px; border-radius:50%; background:hsl(var(--muted-foreground)/0.4); }
-    .best-player-link { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; font-weight:600; color:hsl(var(--gold)); cursor:pointer; text-decoration:none; transition:opacity 0.15s ease; }
-    .best-player-link:hover { opacity:0.8; }
-    .footer-copy { font-size:0.6875rem; color:hsl(var(--muted-foreground)/0.6); margin-left:auto; }
+    .hero { position:relative; overflow:hidden; min-height:100%; display:flex; align-items:center; padding:2rem; border:none;
+      background:linear-gradient(135deg, var(--p-primary-800) 0%, var(--p-primary-600) 55%, var(--p-primary-500) 100%); color:var(--p-primary-contrast-color); }
+    .hero-content { position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-start; max-width:32rem; }
+    .hero-badge { display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:0.875rem; background:rgba(255,255,255,0.16); margin-bottom:1rem; }
+    .hero-badge i { font-size:1.25rem; }
+    .hero-title { margin:0 0 0.375rem; font-size:1.75rem; font-weight:700; line-height:1.15; }
+    .hero-subtitle { margin:0 0 1.5rem; font-size:1rem; opacity:0.85; }
+    .hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:1rem; }
+    :host ::ng-deep .hero-btn { background:#fff; border-color:#fff; color:var(--p-primary-700); font-weight:600; }
+    :host ::ng-deep .hero-btn:not(:disabled):hover { background:var(--p-primary-50); border-color:var(--p-primary-50); color:var(--p-primary-800); }
+    .hero-meta { display:inline-flex; align-items:center; gap:0.375rem; font-size:0.8125rem; opacity:0.8; }
+    .hero-art { position:absolute; right:1.5rem; top:50%; transform:translateY(-50%); display:flex; pointer-events:none; }
+    .hero-card { display:flex; align-items:center; justify-content:center; width:4.5rem; height:6.25rem; border-radius:0.625rem; background:#fff; color:#1f2937; font-size:2rem; box-shadow:0 12px 30px rgba(0,0,0,0.25); }
+    .hero-card.c1 { transform:rotate(-14deg) translate(1.75rem, 0.5rem); }
+    .hero-card.c2 { color:#dc2626; transform:rotate(-2deg) translateY(-0.5rem); z-index:1; }
+    .hero-card.c3 { transform:rotate(12deg) translate(-1.75rem, 0.5rem); }
+    @media (max-width:639px) { .hero-art { display:none; } .hero { padding:1.5rem; } .hero-title { font-size:1.5rem; } }
+
+    .action-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.25rem; }
+    .action-row { width:100%; display:flex; align-items:center; gap:0.875rem; padding:0.625rem 0.5rem; border:none; border-radius:0.875rem; background:transparent; color:inherit; text-align:left; cursor:pointer; transition:background-color var(--transition-duration); }
+    .action-row:hover { background:var(--surface-hover); }
+    .action-icon { display:inline-flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:0.75rem; background:var(--p-surface-800); color:var(--text-color); flex-shrink:0; }
+    .action-icon.primary { background:color-mix(in srgb, var(--p-primary-color) 22%, transparent); color:var(--p-primary-400); }
+    .action-icon.gold { background:color-mix(in srgb, var(--p-yellow-400) 18%, transparent); color:var(--p-yellow-400); }
+    .action-text { display:flex; flex-direction:column; gap:0.125rem; flex:1; min-width:0; }
+    .action-label { font-weight:500; }
+    .action-hint { font-size:0.8125rem; color:var(--text-color-secondary); }
+    .action-chevron { color:var(--text-color-secondary); font-size:0.75rem; }
   `],
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  readonly PlusIcon = Plus;
-  readonly LogOutIcon = LogOut;
-  readonly SettingsIcon = Settings;
-  readonly TrophyIcon = Trophy;
-  readonly ChartSplineIcon = ChartSpline;
-  readonly GithubIcon = Github;
-  readonly Share2Icon = Share2;
-  readonly ZapIcon = Zap;
-  readonly BotIcon = Bot;
-  readonly AwardIcon = Award;
-  readonly ChevronRightIcon = ChevronRight;
-  readonly ShieldIcon = Shield;
-  readonly currentYear = new Date().getFullYear();
 
   private readonly api = inject(ApiService);
   readonly session = inject(ClientSessionService);
@@ -305,18 +214,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly hub = inject(GameHubService);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
-  readonly errorBanner = inject(ErrorBannerService);
+  private readonly errorBanner = inject(ErrorBannerService);
 
   private roomsChangedSubscription: Subscription | null = null;
   private reconnectedSubscription: Subscription | null = null;
-  private friendCountSubscription: Subscription | null = null;
 
   readonly rooms = signal<RoomResponse[]>([]);
   readonly loading = signal<boolean>(true);
   readonly showCreateForm = signal<boolean>(false);
   readonly showQuickGame = signal<boolean>(false);
   readonly aiTypes = signal<AiTypeInfo[]>([]);
-  readonly pendingFriendCount = signal<number>(0);
   readonly activeGameRoomId = signal<string | null>(null);
   readonly showWelcome = signal(WelcomeDialogComponent.shouldShow());
   private readonly joining = signal(false);
@@ -324,7 +231,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadRooms();
-    this.loadPendingFriendCount();
     this.loadAiTypes();
     this.loadAchievements();
     this.checkActiveSession();
@@ -335,7 +241,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.roomsChangedSubscription?.unsubscribe();
     this.reconnectedSubscription?.unsubscribe();
-    this.friendCountSubscription?.unsubscribe();
     this.hub.leaveLobby().catch(() => {});
   }
 
@@ -354,11 +259,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.reconnectedSubscription = this.hub.reconnected$.subscribe(() => {
       this.hub.joinLobby().catch(() => {});
       this.loadRooms();
-      this.loadPendingFriendCount();
-    });
-
-    this.friendCountSubscription = this.hub.pendingFriendCountChanged$.subscribe((event) => {
-      this.pendingFriendCount.set(event.count);
     });
   }
 
@@ -385,11 +285,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadPendingFriendCount(): void {
-    this.api.getPendingFriendCount().subscribe({
-      next: (res) => this.pendingFriendCount.set(res.count),
-    });
-  }
 
   private loadAiTypes(): void {
     this.api.getAiTypes().subscribe({
@@ -432,25 +327,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  goToLeaderboard(): void {
-    this.router.navigate(['/leaderboard']);
-  }
 
-  goToHighlights(): void {
-    this.router.navigate(['/highlights']);
-  }
 
-  goToSettings(): void {
-    this.router.navigate(['/settings']);
-  }
 
-  goToAdmin(): void {
-    this.router.navigate(['/admin']);
-  }
 
-  logout(): void {
-    this.auth.logout();
-  }
 
   onRoomCreated(room: RoomResponse): void {
     this.showCreateForm.set(false);

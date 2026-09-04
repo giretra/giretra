@@ -1,678 +1,161 @@
 import { Component, input, output, computed, signal, effect, inject } from '@angular/core';
-import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
-import { PlayerPosition } from '../../../../api/generated/signalr-types.generated';
-import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
-import { HlmButton } from '@spartan-ng/helm/button';
-import { SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
-import { LucideAngularModule, LogIn, Eye, Bot, X, Lock, RotateCcw } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { RoomResponse, PlayerSlot } from '../../../../core/services/api.service';
+import { PlayerPosition, SeatAccessMode } from '../../../../api/generated/signalr-types.generated';
+import { getPositionTranslationKey } from '../../../../core/utils/position-utils';
+
+interface SeatView {
+  area: string;
+  position: PlayerPosition;
+  team: 1 | 2;
+  labelKey: string;
+  slot: PlayerSlot;
+}
 
 @Component({
   selector: 'app-room-card',
   standalone: true,
-  imports: [HlmButton, LucideAngularModule, TranslocoDirective],
+  imports: [TranslocoDirective, ButtonModule, TagModule],
   template: `
     <ng-container *transloco="let t">
-    <div class="room-card" [class.completed]="room().status === 'Completed'">
-      <!-- Status strip -->
-      <div class="status-strip" [class]="statusClass()"></div>
-
-      <div class="card-body">
-        <!-- Top row: name + status -->
-        <div class="card-top">
-          <span class="room-name">{{ room().name }}</span>
-          <span class="status-badge" [class]="statusClass()">
-            {{ room().status }}
+    <article class="room" [class.completed]="room().status === 'Completed'" [class.selecting]="selecting()">
+      <header class="room-head">
+        <div class="room-title">
+          <span class="room-name" [title]="room().name">{{ room().name }}</span>
+          <span class="room-meta">
+            <span><i class="pi pi-clock"></i>{{ room().turnTimerSeconds }}s</span>
+            @if (room().isRanked) {
+              <span><i class="pi pi-trophy"></i>{{ t('createForm.rated') }}</span>
+            }
+            @if (room().watcherCount > 0) {
+              <span><i class="pi pi-eye"></i>{{ room().watcherCount }}</span>
+            }
           </span>
         </div>
+        <p-tag [value]="t(statusKey())" [severity]="statusSeverity()" [rounded]="true" />
+      </header>
 
-        <!-- Middle: compass seat preview -->
-        <div class="card-middle">
-          @if (selecting()) {
-            <!-- Seat picker mode -->
-            <div class="seat-picker">
-              <div class="picker-header">
-                <span class="picker-title">{{ t('roomCard.chooseYourSeat') }}</span>
-                <button class="picker-cancel" (click)="cancelSelection()">
-                  <i-lucide [img]="XIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                </button>
-              </div>
-              <div class="picker-compass">
-                <!-- Top seat (North) -->
-                <div class="picker-row">
-                  <button
-                    class="picker-seat"
-                    [class.occupied]="getNorth().isOccupied"
-                    [class.ai]="getNorth().isAi"
-                    [class.invite-only]="!getNorth().isOccupied && isInviteOnly(getNorth())"
-                    [class.team1]="!getNorth().isOccupied && !isInviteOnly(getNorth())"
-                    [disabled]="getNorth().isOccupied || isInviteOnly(getNorth())"
-                    (click)="selectSeat(PositionTop)"
-                  >
-                    @if (getNorth().isOccupied) {
-                      @if (getNorth().isAi) {
-                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">{{ getNorth().aiDisplayName ?? 'AI' }}</span>
-                      } @else {
-                        <span class="picker-initial">{{ getInitial(getNorth()) }}</span>
-                        <span class="picker-label">{{ getNorth().playerName }}</span>
-                      }
-                    } @else if (isInviteOnly(getNorth())) {
-                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
-                    } @else {
-                      <span class="picker-pos">{{ t('positions.top') }}</span>
-                      <span class="picker-team team1">{{ t('teams.yourTeam') }}</span>
-                    }
-                  </button>
-                </div>
-                <!-- Middle row: West + center + East -->
-                <div class="picker-row middle">
-                  <button
-                    class="picker-seat"
-                    [class.occupied]="getWest().isOccupied"
-                    [class.ai]="getWest().isAi"
-                    [class.invite-only]="!getWest().isOccupied && isInviteOnly(getWest())"
-                    [class.team2]="!getWest().isOccupied && !isInviteOnly(getWest())"
-                    [disabled]="getWest().isOccupied || isInviteOnly(getWest())"
-                    (click)="selectSeat(PositionLeft)"
-                  >
-                    @if (getWest().isOccupied) {
-                      @if (getWest().isAi) {
-                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">{{ getWest().aiDisplayName ?? 'AI' }}</span>
-                      } @else {
-                        <span class="picker-initial">{{ getInitial(getWest()) }}</span>
-                        <span class="picker-label">{{ getWest().playerName }}</span>
-                      }
-                    } @else if (isInviteOnly(getWest())) {
-                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
-                    } @else {
-                      <span class="picker-pos">{{ t('positions.left') }}</span>
-                      <span class="picker-team team2">{{ t('teams.opponents') }}</span>
-                    }
-                  </button>
-                  <div class="picker-center">
-                    <span class="picker-you">{{ t('common.you') }}</span>
-                  </div>
-                  <button
-                    class="picker-seat"
-                    [class.occupied]="getEast().isOccupied"
-                    [class.ai]="getEast().isAi"
-                    [class.invite-only]="!getEast().isOccupied && isInviteOnly(getEast())"
-                    [class.team2]="!getEast().isOccupied && !isInviteOnly(getEast())"
-                    [disabled]="getEast().isOccupied || isInviteOnly(getEast())"
-                    (click)="selectSeat(PositionRight)"
-                  >
-                    @if (getEast().isOccupied) {
-                      @if (getEast().isAi) {
-                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">{{ getEast().aiDisplayName ?? 'AI' }}</span>
-                      } @else {
-                        <span class="picker-initial">{{ getInitial(getEast()) }}</span>
-                        <span class="picker-label">{{ getEast().playerName }}</span>
-                      }
-                    } @else if (isInviteOnly(getEast())) {
-                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
-                    } @else {
-                      <span class="picker-pos">{{ t('positions.right') }}</span>
-                      <span class="picker-team team2">{{ t('teams.opponents') }}</span>
-                    }
-                  </button>
-                </div>
-                <!-- Bottom seat (South) -->
-                <div class="picker-row">
-                  <button
-                    class="picker-seat"
-                    [class.occupied]="getSouth().isOccupied"
-                    [class.ai]="getSouth().isAi"
-                    [class.invite-only]="!getSouth().isOccupied && isInviteOnly(getSouth())"
-                    [class.team1]="!getSouth().isOccupied && !isInviteOnly(getSouth())"
-                    [disabled]="getSouth().isOccupied || isInviteOnly(getSouth())"
-                    (click)="selectSeat(PositionBottom)"
-                  >
-                    @if (getSouth().isOccupied) {
-                      @if (getSouth().isAi) {
-                        <i-lucide [img]="BotIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                        <span class="picker-label">{{ getSouth().aiDisplayName ?? 'AI' }}</span>
-                      } @else {
-                        <span class="picker-initial">{{ getInitial(getSouth()) }}</span>
-                        <span class="picker-label">{{ getSouth().playerName }}</span>
-                      }
-                    } @else if (isInviteOnly(getSouth())) {
-                      <i-lucide [img]="LockIcon" [size]="14" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                      <span class="picker-label">{{ t('roomCard.inviteOnly') }}</span>
-                    } @else {
-                      <span class="picker-pos">{{ t('positions.bottom') }}</span>
-                      <span class="picker-team team1">{{ t('teams.yourTeam') }}</span>
-                    }
-                  </button>
-                </div>
-              </div>
-            </div>
-          } @else {
-            <!-- Normal compass preview -->
-            <div class="compass">
-              <!-- Top seat (North) -->
-              <div class="compass-seat north" [class.occupied]="getNorth().isOccupied" [class.ai]="getNorth().isAi" [class.invite-only]="!getNorth().isOccupied && isInviteOnly(getNorth())">
-                @if (getNorth().isOccupied) {
-                  @if (getNorth().isAi) {
-                    <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                  } @else {
-                    <span class="seat-letter">{{ getInitial(getNorth()) }}</span>
-                  }
-                } @else if (isInviteOnly(getNorth())) {
-                  <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                }
-              </div>
-              <!-- Middle row: West, center, East -->
-              <div class="compass-row">
-                <div class="compass-seat west" [class.occupied]="getWest().isOccupied" [class.ai]="getWest().isAi" [class.invite-only]="!getWest().isOccupied && isInviteOnly(getWest())">
-                  @if (getWest().isOccupied) {
-                    @if (getWest().isAi) {
-                      <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                    } @else {
-                      <span class="seat-letter">{{ getInitial(getWest()) }}</span>
-                    }
-                  } @else if (isInviteOnly(getWest())) {
-                    <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                  }
-                </div>
-                <div class="compass-center">
-                  <span class="player-count">{{ room().playerCount }}/4</span>
-                </div>
-                <div class="compass-seat east" [class.occupied]="getEast().isOccupied" [class.ai]="getEast().isAi" [class.invite-only]="!getEast().isOccupied && isInviteOnly(getEast())">
-                  @if (getEast().isOccupied) {
-                    @if (getEast().isAi) {
-                      <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                    } @else {
-                      <span class="seat-letter">{{ getInitial(getEast()) }}</span>
-                    }
-                  } @else if (isInviteOnly(getEast())) {
-                    <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                  }
-                </div>
-              </div>
-              <!-- Bottom seat (South) -->
-              <div class="compass-seat south" [class.occupied]="getSouth().isOccupied" [class.ai]="getSouth().isAi" [class.invite-only]="!getSouth().isOccupied && isInviteOnly(getSouth())">
-                @if (getSouth().isOccupied) {
-                  @if (getSouth().isAi) {
-                    <i-lucide [img]="BotIcon" [size]="10" [strokeWidth]="2"></i-lucide>
-                  } @else {
-                    <span class="seat-letter">{{ getInitial(getSouth()) }}</span>
-                  }
-                } @else if (isInviteOnly(getSouth())) {
-                  <i-lucide [img]="LockIcon" [size]="8" [strokeWidth]="2" class="lock-icon"></i-lucide>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <!-- Bottom: action -->
-        <div class="card-bottom">
-          @if (!selecting()) {
-            @if (room().status !== 'Completed') {
-              @if (canRejoin()) {
-                <button
-                  hlmBtn
-                  variant="default"
-                  size="sm"
-                  class="action-btn rejoin-btn"
-                  (click)="rejoinClicked.emit()"
-                >
-                  <i-lucide [img]="RotateCcwIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                  {{ t('roomCard.rejoin') }}
-                </button>
-              } @else if (isSeated()) {
-                @if (room().status === 'Playing') {
-                  <button
-                    hlmBtn
-                    variant="default"
-                    size="sm"
-                    class="action-btn return-btn"
-                    (click)="rejoinClicked.emit()"
-                  >
-                    <i-lucide [img]="RotateCcwIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    {{ t('roomCard.return') }}
-                  </button>
+      <div class="compass">
+        @for (seat of seats(); track seat.area) {
+          <button
+            type="button"
+            class="seat"
+            [style.grid-area]="seat.area"
+            [class.occupied]="seat.slot.isOccupied"
+            [class.ai]="seat.slot.isAi"
+            [class.me]="seat.slot.isCurrentUser"
+            [class.locked]="!seat.slot.isOccupied && isInviteOnly(seat.slot)"
+            [class.team1]="seat.team === 1"
+            [class.team2]="seat.team === 2"
+            [class.pickable]="selecting() && canPick(seat.slot)"
+            [disabled]="!selecting() || !canPick(seat.slot)"
+            [title]="getSlotTitle(seat.slot)"
+            (click)="selectSeat(seat.position)"
+          >
+            <span class="seat-avatar">
+              @if (seat.slot.isOccupied) {
+                @if (seat.slot.isAi) {
+                  <i class="pi pi-microchip"></i>
                 } @else {
-                  <span class="seated-label">{{ t('roomCard.seated') }}</span>
+                  {{ getInitial(seat.slot) }}
                 }
-              } @else {
-                <button
-                  hlmBtn
-                  [variant]="canJoin() ? 'default' : 'secondary'"
-                  size="sm"
-                  class="action-btn"
-                  (click)="handleAction()"
-                >
-                  @if (canJoin()) {
-                    <i-lucide [img]="LogInIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    {{ t('roomCard.join') }}
-                  } @else {
-                    <i-lucide [img]="EyeIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    {{ t('roomCard.watch') }}
-                  }
-                </button>
+              } @else if (isInviteOnly(seat.slot)) {
+                <i class="pi pi-lock"></i>
+              } @else if (selecting()) {
+                <i class="pi pi-plus"></i>
               }
-            } @else {
-              <span class="finished-label">{{ t('roomCard.finished') }}</span>
+            </span>
+            @if (selecting()) {
+              <span class="seat-label">
+                @if (seat.slot.isOccupied) {
+                  {{ seat.slot.isAi ? (seat.slot.aiDisplayName ?? 'AI') : seat.slot.playerName }}
+                } @else if (isInviteOnly(seat.slot)) {
+                  {{ t('roomCard.inviteOnly') }}
+                } @else {
+                  {{ t(seat.labelKey) }}
+                }
+              </span>
+              <span class="seat-team">{{ t(seat.team === 1 ? 'teams.yourTeam' : 'teams.opponents') }}</span>
             }
+          </button>
+        }
+        <div class="compass-center">
+          @if (selecting()) {
+            <i class="pi pi-arrows-alt"></i>
+          } @else {
+            <span class="count">{{ room().playerCount }}<small>/4</small></span>
           }
         </div>
       </div>
-    </div>
+
+      <footer class="room-foot">
+        @if (selecting()) {
+          <span class="foot-hint">{{ t('roomCard.chooseYourSeat') }}</span>
+          <p-button [label]="t('common.cancel')" severity="secondary" [text]="true" size="small" (onClick)="cancelSelection()" />
+        } @else if (room().status === 'Completed') {
+          <span class="foot-hint">{{ t('roomCard.finished') }}</span>
+        } @else if (canRejoin()) {
+          <p-button [label]="t('roomCard.rejoin')" icon="pi pi-refresh" severity="warn" size="small" (onClick)="rejoinClicked.emit()" />
+        } @else if (isSeated()) {
+          @if (room().status === 'Playing') {
+            <p-button [label]="t('roomCard.return')" icon="pi pi-refresh" size="small" (onClick)="rejoinClicked.emit()" />
+          } @else {
+            <p-tag [value]="t('roomCard.seated')" severity="success" icon="pi pi-check" [rounded]="true" />
+          }
+        } @else if (canJoin()) {
+          <p-button [label]="t('roomCard.join')" icon="pi pi-sign-in" size="small" (onClick)="handleAction()" />
+        } @else {
+          <p-button [label]="t('roomCard.watch')" icon="pi pi-eye" severity="secondary" [outlined]="true" size="small" (onClick)="handleAction()" />
+        }
+      </footer>
+    </article>
     </ng-container>
   `,
   styles: [`
-    .room-card {
-      position: relative;
-      background: hsl(var(--card));
-      border: 1px solid hsl(var(--border));
-      border-radius: 0.75rem;
-      overflow: hidden;
-      transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-    }
+    :host { display:block; }
+    .room { display:flex; flex-direction:column; gap:0.75rem; height:100%; padding:1rem 1.25rem; border:1px solid var(--surface-border); border-radius:1rem; background:var(--p-surface-900); transition:border-color var(--transition-duration), box-shadow var(--transition-duration); }
+    .room:hover { border-color:var(--p-surface-600); box-shadow:0 6px 24px rgba(0,0,0,0.18); }
+    .room.completed { opacity:0.7; }
+    .room-head { display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; }
+    .room-title { display:flex; flex-direction:column; gap:0.25rem; min-width:0; }
+    .room-name { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .room-meta { display:flex; flex-wrap:wrap; gap:0.625rem; font-size:0.75rem; color:var(--text-color-secondary); }
+    .room-meta i { font-size:0.6875rem; margin-right:0.25rem; }
 
-    .room-card:hover {
-      border-color: hsl(var(--primary) / 0.5);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
+    .compass { display:grid; grid-template-columns:1fr auto 1fr; grid-template-areas:". n ." "w c e" ". s ."; align-items:center; justify-items:center; gap:0.25rem 0.5rem; padding:0.25rem 0; flex:1; }
+    .compass-center { grid-area:c; display:flex; align-items:center; justify-content:center; min-width:3rem; color:var(--text-color-secondary); }
+    .count { font-size:1.125rem; font-weight:700; color:var(--text-color); }
+    .count small { font-size:0.75rem; font-weight:500; color:var(--text-color-secondary); }
 
-    .room-card.completed {
-      opacity: 0.45;
-      pointer-events: none;
-    }
+    .seat { display:flex; flex-direction:column; align-items:center; gap:0.125rem; padding:0.25rem; border:none; background:transparent; color:inherit; border-radius:0.75rem; cursor:default; }
+    .seat:disabled { cursor:default; }
+    .seat-avatar { display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:50%; border:2px dashed var(--p-surface-600); color:var(--text-color-secondary); font-size:0.8125rem; font-weight:700; background:transparent; transition:transform var(--transition-duration), border-color var(--transition-duration); }
+    .seat-avatar i { font-size:0.8125rem; }
+    .occupied .seat-avatar { border-style:solid; }
+    .team1.occupied .seat-avatar { border-color:hsl(var(--team1)); background:hsl(var(--team1) / 0.18); color:hsl(var(--team1)); }
+    .team2.occupied .seat-avatar { border-color:hsl(var(--team2)); background:hsl(var(--team2) / 0.18); color:hsl(var(--team2)); }
+    .ai .seat-avatar { color:var(--text-color); }
+    .me .seat-avatar { box-shadow:0 0 0 2px var(--p-surface-900), 0 0 0 4px var(--p-primary-color); }
+    .locked .seat-avatar { border-style:solid; border-color:var(--p-surface-700); background:var(--p-surface-800); }
+    .pickable { cursor:pointer; }
+    .pickable .seat-avatar { border-color:var(--p-primary-400); color:var(--p-primary-400); }
+    .pickable:hover .seat-avatar { transform:scale(1.08); background:color-mix(in srgb, var(--p-primary-color) 18%, transparent); }
+    .pickable:focus-visible { outline:2px solid var(--p-primary-color); outline-offset:2px; }
+    .seat-label { font-size:0.6875rem; font-weight:500; max-width:6rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .seat-team { font-size:0.625rem; color:var(--text-color-secondary); }
+    .selecting .compass { gap:0.375rem 0.5rem; }
 
-    /* Status strip at top */
-    .status-strip {
-      height: 3px;
-    }
-
-    .status-strip.waiting {
-      background: hsl(var(--primary));
-    }
-
-    .status-strip.playing {
-      background: hsl(var(--gold));
-    }
-
-    .status-strip.completed {
-      background: hsl(var(--muted));
-    }
-
-    .card-body {
-      padding: 0.875rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    /* Top row */
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .room-name {
-      font-weight: 600;
-      font-size: 0.9375rem;
-      color: hsl(var(--foreground));
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      min-width: 0;
-    }
-
-    .status-badge {
-      font-size: 0.625rem;
-      font-weight: 600;
-      padding: 0.125rem 0.5rem;
-      border-radius: 9999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      flex-shrink: 0;
-    }
-
-    .status-badge.waiting {
-      background: hsl(var(--primary) / 0.15);
-      color: hsl(var(--primary));
-    }
-
-    .status-badge.playing {
-      background: hsl(var(--gold) / 0.15);
-      color: hsl(var(--gold));
-    }
-
-    .status-badge.completed {
-      background: hsl(var(--muted) / 0.3);
-      color: hsl(var(--muted-foreground));
-    }
-
-    /* Compass layout */
-    .card-middle {
-      display: flex;
-      justify-content: center;
-    }
-
-    .compass {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .compass-row {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .compass-seat {
-      width: 1.5rem;
-      height: 1.5rem;
-      border-radius: 50%;
-      border: 1.5px dashed hsl(var(--border));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      transition: all 0.15s ease;
-    }
-
-    .compass-seat.occupied {
-      border-style: solid;
-      border-color: hsl(var(--primary));
-      background: hsl(var(--primary) / 0.15);
-    }
-
-    .compass-seat.ai {
-      border-color: hsl(var(--gold));
-      background: hsl(var(--gold) / 0.15);
-    }
-
-    .compass-seat.ai i-lucide {
-      color: hsl(var(--gold));
-    }
-
-    .compass-seat.invite-only {
-      border-color: hsl(var(--gold) / 0.5);
-      background: hsl(var(--gold) / 0.08);
-    }
-
-    .lock-icon {
-      color: hsl(var(--gold) / 0.6);
-    }
-
-    .seat-letter {
-      font-size: 0.5625rem;
-      font-weight: 700;
-      color: hsl(var(--primary));
-      text-transform: uppercase;
-      line-height: 1;
-    }
-
-    .compass-center {
-      width: 2.5rem;
-      height: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .player-count {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: hsl(var(--muted-foreground));
-    }
-
-    /* Bottom row */
-    .card-bottom {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      min-height: 2rem;
-    }
-
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      font-size: 0.8125rem;
-    }
-
-    .finished-label {
-      font-size: 0.75rem;
-      color: hsl(var(--muted-foreground));
-      font-style: italic;
-    }
-
-    .seated-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: hsl(var(--primary));
-    }
-
-    .rejoin-btn,
-    .return-btn {
-      background: hsl(var(--gold) / 0.15);
-      color: hsl(var(--gold));
-      border: 1px solid hsl(var(--gold) / 0.3);
-    }
-
-    .rejoin-btn:hover,
-    .return-btn:hover {
-      background: hsl(var(--gold) / 0.25);
-    }
-
-    /* ─── Seat Picker ─── */
-    .seat-picker {
-      width: 100%;
-      animation: slideDown 0.2s ease;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .picker-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .picker-title {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: hsl(var(--muted-foreground));
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .picker-cancel {
-      width: 1.5rem;
-      height: 1.5rem;
-      border-radius: 0.375rem;
-      border: none;
-      background: transparent;
-      color: hsl(var(--muted-foreground));
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s ease;
-    }
-
-    .picker-cancel:hover {
-      background: hsl(var(--muted) / 0.5);
-      color: hsl(var(--foreground));
-    }
-
-    .picker-compass {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.375rem;
-    }
-
-    .picker-row {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-
-    .picker-row.middle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .picker-seat {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.125rem;
-      padding: 0.375rem 0.5rem;
-      min-width: 4rem;
-      min-height: 2.75rem;
-      background: hsl(var(--muted) / 0.15);
-      border: 1.5px dashed hsl(var(--border));
-      border-radius: 0.5rem;
-      color: hsl(var(--muted-foreground));
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .picker-seat:not(:disabled):hover {
-      transform: translateY(-1px);
-    }
-
-    .picker-seat.team1:not(:disabled):hover {
-      border-color: hsl(var(--team1));
-      border-style: solid;
-      background: hsl(var(--team1) / 0.1);
-      box-shadow: 0 0 12px hsl(var(--team1) / 0.2);
-    }
-
-    .picker-seat.team2:not(:disabled):hover {
-      border-color: hsl(var(--team2));
-      border-style: solid;
-      background: hsl(var(--team2) / 0.1);
-      box-shadow: 0 0 12px hsl(var(--team2) / 0.2);
-    }
-
-    .picker-seat.occupied {
-      border-style: solid;
-      border-color: hsl(var(--primary));
-      background: hsl(var(--primary) / 0.1);
-      cursor: default;
-      opacity: 0.7;
-    }
-
-    .picker-seat.ai {
-      border-color: hsl(var(--gold));
-      background: hsl(var(--gold) / 0.1);
-    }
-
-    .picker-seat.invite-only {
-      border-color: hsl(var(--gold) / 0.4);
-      background: hsl(var(--gold) / 0.05);
-      cursor: default;
-      opacity: 0.7;
-    }
-
-    .picker-seat.ai i-lucide {
-      color: hsl(var(--gold));
-    }
-
-    .picker-seat:disabled {
-      cursor: default;
-    }
-
-    .picker-pos {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    .picker-team {
-      font-size: 0.5625rem;
-      font-weight: 500;
-    }
-
-    .picker-team.team1 {
-      color: hsl(var(--team1));
-    }
-
-    .picker-team.team2 {
-      color: hsl(var(--team2));
-    }
-
-    .picker-initial {
-      font-size: 0.6875rem;
-      font-weight: 700;
-      color: hsl(var(--primary));
-      text-transform: uppercase;
-      line-height: 1;
-    }
-
-    .picker-label {
-      font-size: 0.5625rem;
-      font-weight: 500;
-      color: hsl(var(--muted-foreground));
-      max-width: 3.5rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .picker-center {
-      width: 2.5rem;
-      height: 2.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .picker-you {
-      font-size: 0.625rem;
-      font-weight: 700;
-      color: hsl(var(--muted-foreground));
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
+    .room-foot { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding-top:0.5rem; border-top:1px solid var(--surface-border); min-height:2.75rem; }
+    .room-foot > :only-child { margin-left:auto; }
+    .foot-hint { font-size:0.8125rem; color:var(--text-color-secondary); }
   `],
 })
 export class RoomCardComponent {
   private readonly transloco = inject(TranslocoService);
 
-  readonly LogInIcon = LogIn;
-  readonly EyeIcon = Eye;
-  readonly BotIcon = Bot;
-  readonly XIcon = X;
-  readonly LockIcon = Lock;
-  readonly RotateCcwIcon = RotateCcw;
 
-  readonly PositionBottom = PlayerPosition.Bottom;
-  readonly PositionLeft = PlayerPosition.Left;
-  readonly PositionTop = PlayerPosition.Top;
-  readonly PositionRight = PlayerPosition.Right;
 
   readonly room = input.required<RoomResponse>();
 
@@ -699,9 +182,23 @@ export class RoomCardComponent {
     return r.status === 'Playing' && !!r.isDisconnectedPlayer;
   });
 
-  readonly statusClass = computed(() => {
-    return this.room().status.toLowerCase();
+  readonly statusKey = computed(() => `roomCard.status${this.room().status}`);
+
+  readonly statusSeverity = computed<'success' | 'warn' | 'secondary'>(() => {
+    switch (this.room().status) {
+      case 'Waiting': return 'success';
+      case 'Playing': return 'warn';
+      default: return 'secondary';
+    }
   });
+
+  // Slots are ordered Bottom, Left, Top, Right; Bottom + Top form the viewer's team.
+  readonly seats = computed<SeatView[]>(() => [
+    { area: 'n', position: PlayerPosition.Top, team: 1, labelKey: 'positions.top', slot: this.getNorth() },
+    { area: 'w', position: PlayerPosition.Left, team: 2, labelKey: 'positions.left', slot: this.getWest() },
+    { area: 'e', position: PlayerPosition.Right, team: 2, labelKey: 'positions.right', slot: this.getEast() },
+    { area: 's', position: PlayerPosition.Bottom, team: 1, labelKey: 'positions.bottom', slot: this.getSouth() },
+  ]);
 
   private readonly availableSeats = computed(() => {
     return this.room().playerSlots.filter(s => !s.isOccupied && s.accessMode === SeatAccessMode.Public);
@@ -732,6 +229,10 @@ export class RoomCardComponent {
 
   isInviteOnly(slot: PlayerSlot): boolean {
     return slot.accessMode === SeatAccessMode.InviteOnly;
+  }
+
+  canPick(slot: PlayerSlot): boolean {
+    return !slot.isOccupied && !this.isInviteOnly(slot);
   }
 
   getSlotTitle(slot: PlayerSlot): string {

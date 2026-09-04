@@ -58,7 +58,9 @@
             ],
             "styles": [
               "node_modules/@ngxpert/hot-toast/src/styles/styles.css",
-              "src/styles.css"
+              "node_modules/primeicons/primeicons.css",
+              "src/styles.css",
+              "src/assets/layout/layout.scss"
             ]
           },
           "configurations": {
@@ -66,8 +68,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1MB",
+                  "maximumError": "2MB"
                 },
                 {
                   "type": "anyComponentStyle",
