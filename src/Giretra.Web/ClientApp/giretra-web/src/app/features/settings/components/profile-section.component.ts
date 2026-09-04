@@ -1,8 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Pencil, Upload, Trash2, EyeOff, Eye, Volume2, VolumeOff, Award } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { ButtonModule } from 'primeng/button';
+import { AvatarModule } from 'primeng/avatar';
+import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { SkeletonModule } from 'primeng/skeleton';
 import { ApiService, ProfileResponse } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SoundService } from '../../../core/services/sound.service';
@@ -10,210 +14,177 @@ import { SoundService } from '../../../core/services/sound.service';
 @Component({
   selector: 'app-profile-section',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, TranslocoDirective],
+  imports: [FormsModule, TranslocoDirective, ButtonModule, AvatarModule, InputTextModule, ToggleSwitchModule, SkeletonModule],
   template: `
     <ng-container *transloco="let t">
+      <div class="g-panel-head">
+        <span class="g-panel-title">{{ t('settings.tabs.profile') }}</span>
+      </div>
+      <div class="g-divider mx"></div>
+
       @if (profile(); as p) {
-        <div class="profile">
-          <!-- Avatar -->
-          <div class="avatar-section">
-            <div class="avatar-preview">
-              @if (p.avatarUrl) {
-                <img [src]="p.avatarUrl" [alt]="t('settings.profile.avatar')" class="avatar-img" />
-              } @else {
-                <span class="avatar-initial">{{ p.displayName.charAt(0).toUpperCase() }}</span>
-              }
+        <div class="g-panel-body">
+          <!-- Photo -->
+          <div class="g-form-row">
+            <div class="g-form-text">
+              <span class="g-form-label">{{ t('settings.profile.photo') }}</span>
+              <span class="g-form-desc">{{ t('settings.profile.photoHint') }}</span>
             </div>
-            <div class="avatar-actions">
-              <label class="btn btn-sm">
-                <i-lucide [img]="UploadIcon" [size]="14"></i-lucide>
-                {{ t('settings.profile.upload') }}
-                <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
-              </label>
+            <div class="g-form-control photo">
               @if (p.avatarUrl) {
-                <button class="btn btn-sm btn-destructive" (click)="deleteAvatar()">
-                  <i-lucide [img]="Trash2Icon" [size]="14"></i-lucide>
-                  {{ t('settings.profile.remove') }}
-                </button>
+                <p-avatar [image]="p.avatarUrl" shape="circle" size="large" styleClass="photo-avatar" />
+              } @else {
+                <p-avatar [label]="p.displayName.charAt(0).toUpperCase()" shape="circle" size="large" styleClass="photo-avatar" />
               }
+              <input #fileInput type="file" accept="image/*" hidden (change)="onAvatarSelected($event)" />
+              <div class="photo-actions">
+                <p-button icon="pi pi-upload" [label]="t('settings.profile.upload')" severity="secondary" [outlined]="true" size="small" (onClick)="fileInput.click()" />
+                @if (p.avatarUrl) {
+                  <p-button icon="pi pi-trash" [label]="t('settings.profile.remove')" severity="danger" [text]="true" size="small" (onClick)="deleteAvatar()" />
+                }
+              </div>
             </div>
           </div>
 
+          <div class="g-divider"></div>
+
           <!-- Display name -->
-          <div class="field">
-            <label class="field-label">{{ t('settings.profile.displayName') }}</label>
-            @if (editingName()) {
-              <div class="name-edit">
+          <div class="g-form-row">
+            <div class="g-form-text">
+              <span class="g-form-label">{{ t('settings.profile.displayName') }}</span>
+              <span class="g-form-desc">{{ t('settings.profile.displayNameHint') }}</span>
+            </div>
+            <div class="g-form-control name">
+              <div class="name-line">
                 <input
+                  pInputText
+                  fluid
                   type="text"
-                  class="name-input"
-                  [(ngModel)]="nameValue"
+                  name="displayName"
+                  [ngModel]="nameValue"
+                  (ngModelChange)="onNameInput($event)"
+                  [invalid]="!!nameError()"
                   (keydown.enter)="saveName()"
                   (keydown.escape)="cancelNameEdit()"
                   maxlength="100"
                 />
-                <div class="name-edit-actions">
-                  @if (nameError()) {
-                    <span class="field-error">{{ nameError() }}</span>
-                  }
-                  <button class="btn btn-sm btn-primary" (click)="saveName()" [disabled]="!!nameError() || savingName()">{{ t('common.save') }}</button>
-                  <button class="btn btn-sm" (click)="cancelNameEdit()">{{ t('common.cancel') }}</button>
-                </div>
-              </div>
-            } @else {
-              <div class="name-display">
-                <span class="name-value">{{ p.displayName }}</span>
-                <button class="btn-icon" (click)="startNameEdit()" [title]="t('settings.profile.editDisplayName')">
-                  <i-lucide [img]="PencilIcon" [size]="14"></i-lucide>
-                </button>
-              </div>
-            }
-            <span class="field-hint">&#64;{{ p.username }}</span>
-          </div>
-
-          <!-- Sound toggle -->
-          <div class="field">
-            <label class="field-label">{{ t('settings.profile.sound') }}</label>
-            <div class="toggle-row">
-              <button
-                class="toggle"
-                [class.toggle-on]="!soundService.muted()"
-                (click)="soundService.toggleMute()"
-                [attr.aria-pressed]="!soundService.muted()"
-              >
-                <span class="toggle-knob"></span>
-              </button>
-              <span class="toggle-label">
-                @if (!soundService.muted()) {
-                  <i-lucide [img]="Volume2Icon" [size]="14"></i-lucide>
-                  {{ t('settings.profile.soundOn') }}
-                } @else {
-                  <i-lucide [img]="VolumeOffIcon" [size]="14"></i-lucide>
-                  {{ t('settings.profile.soundOff') }}
+                @if (nameDirty()) {
+                  <p-button icon="pi pi-times" severity="secondary" [text]="true" [attr.aria-label]="t('common.cancel')" (onClick)="cancelNameEdit()" />
+                  <p-button icon="pi pi-check" [label]="t('common.save')" [disabled]="!!nameError()" [loading]="savingName()" (onClick)="saveName()" />
                 }
-              </span>
+              </div>
+              @if (nameError()) {
+                <small class="field-error">{{ nameError() }}</small>
+              }
             </div>
           </div>
 
-          <!-- ELO visibility -->
-          <div class="field">
-            <label class="field-label">{{ t('settings.profile.eloVisibility') }}</label>
-            <div class="toggle-row">
-              <button
-                class="toggle"
-                [class.toggle-on]="eloPublic()"
-                (click)="toggleEloVisibility()"
-                [attr.aria-pressed]="eloPublic()"
-              >
-                <span class="toggle-knob"></span>
+          <div class="g-divider"></div>
+
+          <!-- Username / member since -->
+          <div class="g-form-row">
+            <div class="g-form-text">
+              <span class="g-form-label">{{ t('settings.profile.username') }}</span>
+              <span class="g-form-desc">{{ t('settings.profile.usernameHint') }}</span>
+            </div>
+            <div class="g-form-control readonly">
+              <span class="readonly-value">&#64;{{ p.username }}</span>
+              <span class="readonly-meta"><i class="pi pi-calendar"></i>{{ t('settings.profile.memberSince') }} {{ memberSince() }}</span>
+            </div>
+          </div>
+
+          <div class="g-divider"></div>
+
+          <!-- Statistics -->
+          <div class="g-form-row">
+            <div class="g-form-text">
+              <span class="g-form-label">{{ t('settings.stats.title') }}</span>
+              <span class="g-form-desc">{{ t('settings.stats.hint') }}</span>
+            </div>
+            <div class="g-form-control stats-grid">
+              <div class="stat"><span class="stat-value">{{ p.eloRating }}</span><span class="stat-label">{{ t('settings.profile.eloRating') }}</span></div>
+              <div class="stat"><span class="stat-value">{{ p.gamesPlayed }}</span><span class="stat-label">{{ t('settings.profile.gamesPlayed') }}</span></div>
+              <div class="stat"><span class="stat-value">{{ winRate() }}%</span><span class="stat-label">{{ t('settings.profile.winRate') }}</span></div>
+              <div class="stat"><span class="stat-value">{{ p.winStreak }}</span><span class="stat-label">{{ t('settings.profile.winStreak') }}</span></div>
+              <div class="stat"><span class="stat-value">{{ p.bestWinStreak }}</span><span class="stat-label">{{ t('settings.profile.bestStreak') }}</span></div>
+              <button type="button" class="stat gold" (click)="goToAchievements()">
+                <span class="stat-value"><i class="pi pi-star-fill"></i>{{ achievementCount() }}</span>
+                <span class="stat-label">{{ t('achievements.page.title') }} <i class="pi pi-arrow-right"></i></span>
               </button>
-              <span class="toggle-label">
-                @if (eloPublic()) {
-                  <i-lucide [img]="EyeIcon" [size]="14"></i-lucide>
-                  {{ t('settings.profile.eloPublic') }}
-                } @else {
-                  <i-lucide [img]="EyeOffIcon" [size]="14"></i-lucide>
-                  {{ t('settings.profile.eloHidden') }}
-                }
-              </span>
             </div>
           </div>
 
-          <!-- Stats grid -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="stat-value">{{ p.eloRating }}</span>
-              <span class="stat-label">{{ t('settings.profile.eloRating') }}</span>
+          <div class="g-divider"></div>
+
+          <!-- Preferences -->
+          <div class="g-form-row">
+            <div class="g-form-text">
+              <span class="g-form-label">{{ t('settings.preferences.title') }}</span>
+              <span class="g-form-desc">{{ t('settings.preferences.hint') }}</span>
             </div>
-            <div class="stat-card">
-              <span class="stat-value">{{ p.gamesPlayed }}</span>
-              <span class="stat-label">{{ t('settings.profile.gamesPlayed') }}</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-value">{{ winRate() }}%</span>
-              <span class="stat-label">{{ t('settings.profile.winRate') }}</span>
-            </div>
-            <div class="stat-card stat-card-clickable" (click)="goToAchievements()">
-              <span class="stat-value ach-stat-value">
-                <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                {{ achievementCount() }}
-              </span>
-              <span class="stat-label">{{ t('achievements.page.title') }}</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-value">{{ p.winStreak }}</span>
-              <span class="stat-label">{{ t('settings.profile.winStreak') }}</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-value">{{ p.bestWinStreak }}</span>
-              <span class="stat-label">{{ t('settings.profile.bestStreak') }}</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-value">{{ memberSince() }}</span>
-              <span class="stat-label">{{ t('settings.profile.memberSince') }}</span>
+            <div class="g-form-control prefs">
+              <label class="pref">
+                <span class="pref-text">
+                  <span class="pref-label"><i class="pi" [class.pi-volume-up]="!soundService.muted()" [class.pi-volume-off]="soundService.muted()"></i>{{ t('settings.profile.sound') }}</span>
+                  <span class="pref-hint">{{ t('settings.profile.soundHint') }}</span>
+                </span>
+                <p-toggleswitch [ngModel]="!soundService.muted()" (ngModelChange)="soundService.toggleMute()" [ariaLabel]="t('settings.profile.sound')" />
+              </label>
+              <label class="pref">
+                <span class="pref-text">
+                  <span class="pref-label"><i class="pi" [class.pi-eye]="eloPublic()" [class.pi-eye-slash]="!eloPublic()"></i>{{ t('settings.profile.publicElo') }}</span>
+                  <span class="pref-hint">{{ t('settings.profile.publicEloHint') }}</span>
+                </span>
+                <p-toggleswitch [ngModel]="eloPublic()" (ngModelChange)="toggleEloVisibility()" [ariaLabel]="t('settings.profile.eloVisibility')" />
+              </label>
             </div>
           </div>
         </div>
       } @else {
-        <div class="loading">{{ t('settings.profile.loadingProfile') }}</div>
+        <div class="g-panel-body">
+          <p-skeleton height="3rem" borderRadius="12px" />
+          <p-skeleton height="3rem" borderRadius="12px" />
+          <p-skeleton height="8rem" borderRadius="12px" />
+        </div>
       }
     </ng-container>
   `,
   styles: [`
-    .profile { display:flex; flex-direction:column; gap:1.5rem; }
-    .avatar-section { display:flex; align-items:center; gap:1rem; }
-    .avatar-preview { width:4.5rem; height:4.5rem; border-radius:50%; background:hsl(var(--primary)/0.2); border:3px solid hsl(var(--primary)); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
-    .avatar-img { width:100%; height:100%; object-fit:cover; }
-    .avatar-initial { font-size:1.75rem; font-weight:700; color:hsl(var(--primary)); text-transform:uppercase; }
-    .avatar-actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
-    .btn { display:inline-flex; align-items:center; gap:0.375rem; padding:0.375rem 0.75rem; border-radius:var(--radius); border:1px solid hsl(var(--border)); background:hsl(var(--secondary)); color:hsl(var(--foreground)); font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; }
-    .btn:hover { background:hsl(var(--muted)); }
-    .btn-sm { padding:0.25rem 0.625rem; font-size:0.6875rem; }
-    .btn-primary { background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); border-color:hsl(var(--primary)); }
-    .btn-primary:hover { opacity:0.9; }
-    .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
-    .btn-destructive { background:transparent; color:hsl(var(--destructive)); border-color:hsl(var(--destructive)/0.3); }
-    .btn-destructive:hover { background:hsl(var(--destructive)/0.1); }
-    .field { display:flex; flex-direction:column; gap:0.375rem; }
-    .field-label { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.06em; }
-    .field-hint { font-size:0.75rem; color:hsl(var(--muted-foreground)); }
-    .field-error { font-size:0.6875rem; color:hsl(var(--destructive)); }
-    .name-display { display:flex; align-items:center; gap:0.5rem; }
-    .name-value { font-size:1rem; font-weight:600; color:hsl(var(--foreground)); }
-    .btn-icon { display:flex; align-items:center; justify-content:center; width:1.75rem; height:1.75rem; border-radius:var(--radius); border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .btn-icon:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.08); }
-    .name-edit { display:flex; flex-direction:column; gap:0.375rem; }
-    .name-input { padding:0.5rem 0.75rem; border-radius:var(--radius); border:1px solid hsl(var(--border)); background:hsl(var(--input)); color:hsl(var(--foreground)); font-size:0.875rem; outline:none; transition:all 0.15s ease; }
-    .name-input:focus { border-color:hsl(var(--ring)); box-shadow:0 0 0 2px hsl(var(--ring)/0.2); }
-    .name-edit-actions { display:flex; align-items:center; gap:0.5rem; }
-    .toggle-row { display:flex; align-items:center; gap:0.625rem; }
-    .toggle { position:relative; width:2.5rem; height:1.375rem; border-radius:9999px; border:none; background:hsl(var(--muted)); cursor:pointer; transition:all 0.15s ease; padding:0; }
-    .toggle-on { background:hsl(var(--primary)); }
-    .toggle-knob { position:absolute; top:0.1875rem; left:0.1875rem; width:1rem; height:1rem; border-radius:50%; background:hsl(var(--foreground)); transition:all 0.15s ease; }
-    .toggle-on .toggle-knob { left:calc(100% - 1.1875rem); }
-    .toggle-label { display:flex; align-items:center; gap:0.375rem; font-size:0.8125rem; color:hsl(var(--muted-foreground)); }
-    .stats-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:0.75rem; }
-    .stat-card { display:flex; flex-direction:column; align-items:center; gap:0.25rem; padding:1rem 0.5rem; background:hsl(var(--secondary)); border:1px solid hsl(var(--border)); border-radius:var(--radius); }
-    .stat-value { font-size:1.25rem; font-weight:700; color:hsl(var(--foreground)); }
-    .stat-label { font-size:0.625rem; font-weight:500; color:hsl(var(--muted-foreground)); text-transform:uppercase; letter-spacing:0.04em; }
-    .stat-card-clickable { cursor:pointer; transition:all 0.15s ease; }
-    .stat-card-clickable:hover { background:hsl(var(--gold)/0.1); border-color:hsl(var(--gold)/0.3); }
-    .ach-stat-value { color:hsl(var(--gold)); display:flex; align-items:center; gap:0.25rem; }
-    .loading { padding:2rem; text-align:center; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
-    @media (max-width:480px) {
-      .stats-grid { grid-template-columns:repeat(2, 1fr); }
-    }
+    :host { display:flex; flex-direction:column; flex:1; }
+    .g-divider.mx { margin:0 1.5rem; }
+    @media (min-width:1200px) { .g-divider.mx { margin:0 2rem; } }
+
+    .photo { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    :host ::ng-deep .photo-avatar { width:3.5rem; height:3.5rem; font-size:1.25rem; font-weight:700; background:color-mix(in srgb, var(--p-primary-color) 22%, transparent); color:var(--p-primary-300); border:2px solid var(--surface-border); }
+    .photo-actions { display:flex; align-items:center; gap:0.25rem; }
+
+    .name { display:flex; flex-direction:column; gap:0.375rem; }
+    .name-line { display:flex; align-items:center; gap:0.5rem; }
+    .field-error { color:var(--p-red-400); font-size:0.8125rem; }
+
+    .readonly { display:flex; flex-direction:column; gap:0.375rem; }
+    .readonly-value { font-size:1rem; }
+    .readonly-meta { display:inline-flex; align-items:center; gap:0.375rem; font-size:0.8125rem; color:var(--text-color-secondary); }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(7.5rem, 1fr)); gap:0.625rem; }
+    .stat { display:flex; flex-direction:column; gap:0.125rem; padding:0.75rem 0.875rem; border-radius:0.875rem; background:var(--p-surface-800); border:1px solid transparent; color:inherit; text-align:left; }
+    .stat-value { font-size:1.375rem; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:0.375rem; }
+    .stat-value i { font-size:0.875rem; }
+    .stat-label { font-size:0.75rem; color:var(--text-color-secondary); }
+    .stat-label i { font-size:0.625rem; margin-left:0.125rem; }
+    .stat.gold { cursor:pointer; transition:border-color var(--transition-duration), background-color var(--transition-duration); }
+    .stat.gold .stat-value { color:var(--p-yellow-400); }
+    .stat.gold:hover { border-color:color-mix(in srgb, var(--p-yellow-400) 45%, transparent); background:color-mix(in srgb, var(--p-yellow-400) 8%, var(--p-surface-800)); }
+
+    .prefs { display:flex; flex-direction:column; gap:0.5rem; }
+    .pref { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.75rem 1rem; border-radius:0.875rem; background:var(--p-surface-800); cursor:pointer; }
+    .pref-text { display:flex; flex-direction:column; gap:0.125rem; }
+    .pref-label { display:inline-flex; align-items:center; gap:0.5rem; font-weight:500; }
+    .pref-label i { color:var(--text-color-secondary); font-size:0.875rem; }
+    .pref-hint { font-size:0.8125rem; color:var(--text-color-secondary); }
   `],
 })
 export class ProfileSectionComponent implements OnInit {
-  readonly PencilIcon = Pencil;
-  readonly UploadIcon = Upload;
-  readonly Trash2Icon = Trash2;
-  readonly EyeOffIcon = EyeOff;
-  readonly EyeIcon = Eye;
-  readonly Volume2Icon = Volume2;
-  readonly VolumeOffIcon = VolumeOff;
-  readonly AwardIcon = Award;
 
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
@@ -223,9 +194,9 @@ export class ProfileSectionComponent implements OnInit {
 
   readonly profile = signal<ProfileResponse | null>(null);
   readonly achievementCount = signal(0);
-  readonly editingName = signal(false);
   readonly savingName = signal(false);
   readonly nameError = signal<string | null>(null);
+  readonly nameDirty = signal(false);
   readonly eloPublic = signal(false);
 
   nameValue = '';
@@ -239,6 +210,8 @@ export class ProfileSectionComponent implements OnInit {
       next: (p) => {
         this.profile.set(p);
         this.eloPublic.set(p.eloIsPublic);
+        this.nameValue = p.displayName;
+        this.nameDirty.set(false);
       },
     });
     this.api.getMyAchievementShowcase().subscribe({
@@ -258,14 +231,16 @@ export class ProfileSectionComponent implements OnInit {
     return new Date(p.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
   }
 
-  startNameEdit(): void {
-    this.nameValue = this.profile()?.displayName ?? '';
-    this.nameError.set(null);
-    this.editingName.set(true);
+  onNameInput(value: string): void {
+    this.nameValue = value;
+    const current = this.profile()?.displayName ?? '';
+    this.nameDirty.set(value.trim() !== current);
+    this.nameError.set(this.nameDirty() ? this.validateName(value) : null);
   }
 
   cancelNameEdit(): void {
-    this.editingName.set(false);
+    this.nameValue = this.profile()?.displayName ?? '';
+    this.nameDirty.set(false);
     this.nameError.set(null);
   }
 
@@ -280,6 +255,7 @@ export class ProfileSectionComponent implements OnInit {
   }
 
   saveName(): void {
+    if (!this.nameDirty() || this.savingName()) return;
     const trimmed = this.nameValue.trim();
     const error = this.validateName(trimmed);
     if (error) {
@@ -292,7 +268,8 @@ export class ProfileSectionComponent implements OnInit {
         const p = this.profile();
         if (p) this.profile.set({ ...p, displayName: trimmed });
         this.auth.updateLocalDisplayName(trimmed);
-        this.editingName.set(false);
+        this.nameValue = trimmed;
+        this.nameDirty.set(false);
         this.savingName.set(false);
       },
       error: () => {

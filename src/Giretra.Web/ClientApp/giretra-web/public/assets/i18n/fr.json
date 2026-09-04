@@ -508,5 +508,19 @@
   "createForm.openSeat": "Place libre",
   "roomCard.statusWaiting": "Ouverte",
   "roomCard.statusPlaying": "En cours",
-  "roomCard.statusCompleted": "Terminée"
+  "roomCard.statusCompleted": "Terminée",
+  "settings.stats.title": "Statistiques",
+  "settings.preferences.title": "Préférences",
+  "settings.profile.soundHint": "Jouer les effets sonores pendant les parties",
+  "settings.profile.photo": "Photo de profil",
+  "settings.profile.photoHint": "Affichée à votre place et dans le classement",
+  "settings.profile.displayNameHint": "Le nom que les autres joueurs voient à la table",
+  "settings.profile.username": "Identifiant",
+  "settings.profile.usernameHint": "Votre identifiant de connexion, non modifiable",
+  "settings.stats.hint": "Vos performances classées jusqu'ici",
+  "settings.preferences.hint": "Le comportement du jeu pour vous",
+  "settings.friends.hint": "Vos amis peuvent être invités à vos tables",
+  "settings.blocked.hint": "Les joueurs bloqués ne peuvent pas rejoindre vos tables",
+  "settings.history.hint": "Vos dernières parties, les plus récentes d'abord",
+  "settings.menu": "Menu"
 }
