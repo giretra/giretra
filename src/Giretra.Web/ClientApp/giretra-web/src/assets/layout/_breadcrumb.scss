@@ -1,0 +1,32 @@
+.layout-breadcrumb {
+    ol {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        gap: 1rem;
+        flex-wrap: wrap;
+        color: var(--text-color-secondary);
+
+        li {
+            font-weight: 500;
+        }
+    }
+}
+
+// Breadcrumb rendered inside the page body (mobile only, see _responsive.scss).
+.content-breadcrumb {
+    padding: 0 2rem 1rem;
+}
+
+// Breadcrumb rendered in the topbar next to the menu button (desktop only, see _responsive.scss).
+.topbar-breadcrumb {
+    min-width: 0;
+    overflow: hidden;
+
+    ol {
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+}

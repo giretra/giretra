@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService, AdminGameEntry, AdminGamePlayerEntry, AdminDealEntry } from '../../../core/services/api.service';
 import { PlayerPosition } from '../../../api/generated/signalr-types.generated';
-import { LucideAngularModule, ChevronLeft, Dices, X, Trophy, Check, Zap } from 'lucide-angular';
+import { LucideAngularModule, Dices, X, Trophy, Check, Zap } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { GameModeBadgeComponent } from '../../../shared/components/game-mode-badge/game-mode-badge.component';
 import { MultiplierBadgeComponent } from '../../../shared/components/multiplier-badge/multiplier-badge.component';
@@ -13,12 +13,8 @@ import { MultiplierBadgeComponent } from '../../../shared/components/multiplier-
   standalone: true,
   imports: [LucideAngularModule, TranslocoDirective, DatePipe, GameModeBadgeComponent, MultiplierBadgeComponent],
   template: `
-    <div class="ag-shell" *transloco="let t">
-      <header class="ag-header">
-        <div class="header-inner">
-          <button class="back-btn" (click)="goBack()" title="Back to admin">
-            <i-lucide [img]="ChevronLeftIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          </button>
+    <div class="ag-inner" *transloco="let t">
+      <div class="page-head">
           <h1 class="header-title">
             <i-lucide [img]="DicesIcon" [size]="18"></i-lucide>
             {{ t('adminGames.title') }}
@@ -26,109 +22,71 @@ import { MultiplierBadgeComponent } from '../../../shared/components/multiplier-
           @if (totalCount() > 0) {
             <span class="count-badge">{{ t('adminGames.gameCount', { count: totalCount() }) }}</span>
           }
+      </div>
+
+      @if (filterUserId()) {
+        <div class="filter-banner">
+          <span class="filter-text">{{ t('adminGames.filteredBy', { name: filterUserName() || filterUserId() }) }}</span>
+          <button class="filter-clear" (click)="clearFilter()" [title]="t('adminGames.clearFilter')">
+            <i-lucide [img]="XIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+          </button>
         </div>
-      </header>
+      }
 
-      <main class="ag-main">
-        <div class="ag-inner">
-          @if (filterUserId()) {
-            <div class="filter-banner">
-              <span class="filter-text">{{ t('adminGames.filteredBy', { name: filterUserName() || filterUserId() }) }}</span>
-              <button class="filter-clear" (click)="clearFilter()" [title]="t('adminGames.clearFilter')">
-                <i-lucide [img]="XIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-              </button>
-            </div>
-          }
+      @if (loading()) {
+        <div class="loading-state">{{ t('common.loading') }}</div>
+      } @else if (games().length === 0) {
+        <div class="empty-state">{{ t('adminGames.noGames') }}</div>
+      } @else {
+        <div class="table-panel">
+          <div class="row row-header">
+            <div class="col-room">{{ t('adminGames.columns.room') }}</div>
+            <div class="col-team">{{ t('teams.team1') }}</div>
+            <div class="col-score">{{ t('adminGames.columns.score') }}</div>
+            <div class="col-team">{{ t('teams.team2') }}</div>
+            <div class="col-deals">{{ t('adminGames.columns.deals') }}</div>
+            <div class="col-flags"></div>
+            <div class="col-date">{{ t('adminGames.columns.date') }}</div>
+          </div>
 
-          @if (loading()) {
-            <div class="loading-state">{{ t('common.loading') }}</div>
-          } @else if (games().length === 0) {
-            <div class="empty-state">{{ t('adminGames.noGames') }}</div>
-          } @else {
-            <div class="table-panel">
-              <div class="row row-header">
-                <div class="col-room">{{ t('adminGames.columns.room') }}</div>
-                <div class="col-team">{{ t('teams.team1') }}</div>
-                <div class="col-score">{{ t('adminGames.columns.score') }}</div>
-                <div class="col-team">{{ t('teams.team2') }}</div>
-                <div class="col-deals">{{ t('adminGames.columns.deals') }}</div>
-                <div class="col-flags"></div>
-                <div class="col-date">{{ t('adminGames.columns.date') }}</div>
+          @for (g of games(); track g.id) {
+            <div class="row row-clickable" (click)="openDetail(g)">
+              <div class="col-room">{{ g.roomName }}</div>
+              <div class="col-team" [class.team-winner]="g.winnerTeam === 'Team1'">
+                @if (g.winnerTeam === 'Team1') {
+                  <i-lucide [img]="TrophyIcon" [size]="11" class="win-icon"></i-lucide>
+                }
+                <span class="team-names">
+                  @for (p of teamPlayers(g, 'Team1'); track p.position; let last = $last) {
+                    <span
+                      class="player-name"
+                      [class.player-link]="!p.isBot && p.userId"
+                      (click)="filterByPlayer(p, $event)"
+                    >{{ p.displayName }}</span>{{ last ? '' : ' & ' }}
+                  }
+                </span>
               </div>
-
-              @for (g of games(); track g.id) {
-                <div class="row row-clickable" (click)="openDetail(g)">
-                  <div class="col-room">{{ g.roomName }}</div>
-                  <div class="col-team" [class.team-winner]="g.winnerTeam === 'Team1'">
-                    @if (g.winnerTeam === 'Team1') {
-                      <i-lucide [img]="TrophyIcon" [size]="11" class="win-icon"></i-lucide>
-                    }
-                    <span class="team-names">
-                      @for (p of teamPlayers(g, 'Team1'); track p.position; let last = $last) {
-                        <span
-                          class="player-name"
-                          [class.player-link]="!p.isBot && p.userId"
-                          (click)="filterByPlayer(p, $event)"
-                        >{{ p.displayName }}</span>{{ last ? '' : ' & ' }}
-                      }
-                    </span>
-                  </div>
-                  <div class="col-score">
-                    <span [class.score-win]="g.winnerTeam === 'Team1'">{{ g.team1FinalScore }}</span>
-                    <span class="score-sep">–</span>
-                    <span [class.score-win]="g.winnerTeam === 'Team2'">{{ g.team2FinalScore }}</span>
-                  </div>
-                  <div class="col-team" [class.team-winner]="g.winnerTeam === 'Team2'">
-                    @if (g.winnerTeam === 'Team2') {
-                      <i-lucide [img]="TrophyIcon" [size]="11" class="win-icon"></i-lucide>
-                    }
-                    <span class="team-names">
-                      @for (p of teamPlayers(g, 'Team2'); track p.position; let last = $last) {
-                        <span
-                          class="player-name"
-                          [class.player-link]="!p.isBot && p.userId"
-                          (click)="filterByPlayer(p, $event)"
-                        >{{ p.displayName }}</span>{{ last ? '' : ' & ' }}
-                      }
-                    </span>
-                  </div>
-                  <div class="col-deals">{{ g.totalDeals }}</div>
-                  <div class="col-flags">
-                    @if (g.isRanked) {
-                      <span class="flag flag-ranked">{{ t('adminGames.ranked') }}</span>
-                    }
-                    @if (g.wasAbandoned) {
-                      <span class="flag flag-abandoned">{{ t('adminGames.abandoned') }}</span>
-                    } @else if (!g.completedAt) {
-                      <span class="flag flag-live">{{ t('adminGames.inProgress') }}</span>
-                    }
-                  </div>
-                  <div class="col-date" [title]="g.startedAt">{{ g.startedAt | date: 'MMM d, y HH:mm' }}</div>
-                </div>
-              }
-            </div>
-
-            @if (totalPages() > 1) {
-              <div class="pagination">
-                <button class="page-btn" [disabled]="page() <= 1" (click)="setPage(page() - 1)">{{ t('adminUsers.prev') }}</button>
-                <span class="page-info">{{ t('adminUsers.pageInfo', { page: page(), totalPages: totalPages() }) }}</span>
-                <button class="page-btn" [disabled]="page() >= totalPages()" (click)="setPage(page() + 1)">{{ t('adminUsers.next') }}</button>
+              <div class="col-score">
+                <span [class.score-win]="g.winnerTeam === 'Team1'">{{ g.team1FinalScore }}</span>
+                <span class="score-sep">–</span>
+                <span [class.score-win]="g.winnerTeam === 'Team2'">{{ g.team2FinalScore }}</span>
               </div>
-            }
-          }
-        </div>
-      </main>
-
-      <!-- Game detail panel -->
-      @if (selectedGame(); as g) {
-        <div class="detail-backdrop" (click)="closeDetail()">
-          <div class="detail-panel" (click)="$event.stopPropagation()">
-            <div class="detail-head">
-              <div class="detail-title-group">
-                <h2 class="detail-title">{{ g.roomName }}</h2>
-                <span class="detail-date">{{ g.startedAt | date: 'MMM d, y HH:mm' }}</span>
+              <div class="col-team" [class.team-winner]="g.winnerTeam === 'Team2'">
+                @if (g.winnerTeam === 'Team2') {
+                  <i-lucide [img]="TrophyIcon" [size]="11" class="win-icon"></i-lucide>
+                }
+                <span class="team-names">
+                  @for (p of teamPlayers(g, 'Team2'); track p.position; let last = $last) {
+                    <span
+                      class="player-name"
+                      [class.player-link]="!p.isBot && p.userId"
+                      (click)="filterByPlayer(p, $event)"
+                    >{{ p.displayName }}</span>{{ last ? '' : ' & ' }}
+                  }
+                </span>
               </div>
-              <div class="detail-flags">
+              <div class="col-deals">{{ g.totalDeals }}</div>
+              <div class="col-flags">
                 @if (g.isRanked) {
                   <span class="flag flag-ranked">{{ t('adminGames.ranked') }}</span>
                 }
@@ -138,119 +96,147 @@ import { MultiplierBadgeComponent } from '../../../shared/components/multiplier-
                   <span class="flag flag-live">{{ t('adminGames.inProgress') }}</span>
                 }
               </div>
-              <button class="detail-close" (click)="closeDetail()">
-                <i-lucide [img]="XIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-              </button>
+              <div class="col-date" [title]="g.startedAt">{{ g.startedAt | date: 'MMM d, y HH:mm' }}</div>
             </div>
+          }
+        </div>
 
-            <div class="detail-scoreline">
-              <span class="scoreline-team" [class.scoreline-winner]="g.winnerTeam === 'Team1'">
-                {{ teamLabel(g, 'Team1') }}
-              </span>
-              <span class="scoreline-score">
-                <span [class.score-win]="g.winnerTeam === 'Team1'">{{ g.team1FinalScore }}</span>
-                <span class="score-sep">–</span>
-                <span [class.score-win]="g.winnerTeam === 'Team2'">{{ g.team2FinalScore }}</span>
-              </span>
-              <span class="scoreline-team scoreline-right" [class.scoreline-winner]="g.winnerTeam === 'Team2'">
-                {{ teamLabel(g, 'Team2') }}
-              </span>
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="page() <= 1" (click)="setPage(page() - 1)">{{ t('adminUsers.prev') }}</button>
+            <span class="page-info">{{ t('adminUsers.pageInfo', { page: page(), totalPages: totalPages() }) }}</span>
+            <button class="page-btn" [disabled]="page() >= totalPages()" (click)="setPage(page() + 1)">{{ t('adminUsers.next') }}</button>
+          </div>
+        }
+      }
+
+      <!-- Game detail panel -->
+      @if (selectedGame(); as g) {
+        <div class="detail-backdrop" (click)="closeDetail()">
+      <div class="detail-panel" (click)="$event.stopPropagation()">
+        <div class="detail-head">
+          <div class="detail-title-group">
+            <h2 class="detail-title">{{ g.roomName }}</h2>
+            <span class="detail-date">{{ g.startedAt | date: 'MMM d, y HH:mm' }}</span>
+          </div>
+          <div class="detail-flags">
+            @if (g.isRanked) {
+              <span class="flag flag-ranked">{{ t('adminGames.ranked') }}</span>
+            }
+            @if (g.wasAbandoned) {
+              <span class="flag flag-abandoned">{{ t('adminGames.abandoned') }}</span>
+            } @else if (!g.completedAt) {
+              <span class="flag flag-live">{{ t('adminGames.inProgress') }}</span>
+            }
+          </div>
+          <button class="detail-close" (click)="closeDetail()">
+            <i-lucide [img]="XIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+          </button>
+        </div>
+
+        <div class="detail-scoreline">
+          <span class="scoreline-team" [class.scoreline-winner]="g.winnerTeam === 'Team1'">
+            {{ teamLabel(g, 'Team1') }}
+          </span>
+          <span class="scoreline-score">
+            <span [class.score-win]="g.winnerTeam === 'Team1'">{{ g.team1FinalScore }}</span>
+            <span class="score-sep">–</span>
+            <span [class.score-win]="g.winnerTeam === 'Team2'">{{ g.team2FinalScore }}</span>
+          </span>
+          <span class="scoreline-team scoreline-right" [class.scoreline-winner]="g.winnerTeam === 'Team2'">
+            {{ teamLabel(g, 'Team2') }}
+          </span>
+        </div>
+
+        @if (dealsLoading()) {
+          <div class="detail-loading">{{ t('common.loading') }}</div>
+        } @else if (deals().length === 0) {
+          <div class="detail-loading">{{ t('adminGames.detail.noDeals') }}</div>
+        } @else {
+          <div class="deals-table">
+            <div class="deal-row deal-row-header">
+              <div class="dcol-num">#</div>
+              <div class="dcol-mode">{{ t('adminGames.detail.mode') }}</div>
+              <div class="dcol-announcer">{{ t('adminGames.detail.announcer') }}</div>
+              <div class="dcol-dealer">{{ t('adminGames.detail.dealer') }}</div>
+              <div class="dcol-pts">{{ t('adminGames.detail.cardPoints') }}</div>
+              <div class="dcol-pts">{{ t('adminGames.detail.matchPoints') }}</div>
+              <div class="dcol-notes"></div>
             </div>
-
-            @if (dealsLoading()) {
-              <div class="detail-loading">{{ t('common.loading') }}</div>
-            } @else if (deals().length === 0) {
-              <div class="detail-loading">{{ t('adminGames.detail.noDeals') }}</div>
-            } @else {
-              <div class="deals-table">
-                <div class="deal-row deal-row-header">
-                  <div class="dcol-num">#</div>
-                  <div class="dcol-mode">{{ t('adminGames.detail.mode') }}</div>
-                  <div class="dcol-announcer">{{ t('adminGames.detail.announcer') }}</div>
-                  <div class="dcol-dealer">{{ t('adminGames.detail.dealer') }}</div>
-                  <div class="dcol-pts">{{ t('adminGames.detail.cardPoints') }}</div>
-                  <div class="dcol-pts">{{ t('adminGames.detail.matchPoints') }}</div>
-                  <div class="dcol-notes"></div>
+            @for (d of deals(); track d.dealNumber) {
+              <div class="deal-row">
+                <div class="dcol-num">{{ d.dealNumber }}</div>
+                <div class="dcol-mode">
+                  @if (d.gameMode) {
+                    <app-game-mode-badge [mode]="d.gameMode" size="0.875rem" [compact]="isColourMode(d.gameMode)" />
+                  } @else {
+                    <span class="dcol-empty">–</span>
+                  }
+                  <app-multiplier-badge [multiplier]="d.multiplier" />
                 </div>
-                @for (d of deals(); track d.dealNumber) {
-                  <div class="deal-row">
-                    <div class="dcol-num">{{ d.dealNumber }}</div>
-                    <div class="dcol-mode">
-                      @if (d.gameMode) {
-                        <app-game-mode-badge [mode]="d.gameMode" size="0.875rem" [compact]="isColourMode(d.gameMode)" />
-                      } @else {
-                        <span class="dcol-empty">–</span>
-                      }
-                      <app-multiplier-badge [multiplier]="d.multiplier" />
-                    </div>
-                    <div class="dcol-announcer">
-                      @if (d.announcerTeam) {
-                        <span
-                          class="announcer-chip"
-                          [class.announcer-won]="d.announcerWon === true"
-                          [class.announcer-lost]="d.announcerWon === false"
-                          [title]="announcerNames(g, d)"
-                        >{{ d.announcerTeam === 'Team1' ? t('teams.team1') : t('teams.team2') }}</span>
-                      } @else {
-                        <span class="dcol-empty">–</span>
-                      }
-                    </div>
-                    <div class="dcol-dealer">{{ playerAt(g, d.dealerPosition) }}</div>
-                    <div class="dcol-pts">
-                      @if (d.team1CardPoints !== null || d.team2CardPoints !== null) {
-                        <span [class.pts-lead]="(d.team1CardPoints ?? 0) > (d.team2CardPoints ?? 0)">{{ d.team1CardPoints ?? 0 }}</span>
-                        <span class="score-sep">–</span>
-                        <span [class.pts-lead]="(d.team2CardPoints ?? 0) > (d.team1CardPoints ?? 0)">{{ d.team2CardPoints ?? 0 }}</span>
-                      } @else {
-                        <span class="dcol-empty">–</span>
-                      }
-                    </div>
-                    <div class="dcol-pts">
-                      @if (d.team1MatchPoints !== null || d.team2MatchPoints !== null) {
-                        <span [class.pts-lead]="(d.team1MatchPoints ?? 0) > (d.team2MatchPoints ?? 0)">{{ d.team1MatchPoints ?? 0 }}</span>
-                        <span class="score-sep">–</span>
-                        <span [class.pts-lead]="(d.team2MatchPoints ?? 0) > (d.team1MatchPoints ?? 0)">{{ d.team2MatchPoints ?? 0 }}</span>
-                      } @else {
-                        <span class="dcol-empty">–</span>
-                      }
-                    </div>
-                    <div class="dcol-notes">
-                      @if (d.wasSweep) {
-                        <span class="flag flag-sweep" [title]="d.sweepingTeam === 'Team1' ? t('teams.team1') : t('teams.team2')">
-                          <i-lucide [img]="CheckIcon" [size]="10" [strokeWidth]="3"></i-lucide>
-                          {{ t('adminGames.detail.sweep') }}
-                        </span>
-                      }
-                      @if (d.isInstantWin) {
-                        <span class="flag flag-instant">
-                          <i-lucide [img]="ZapIcon" [size]="10" [strokeWidth]="2.5"></i-lucide>
-                          {{ t('adminGames.detail.instantWin') }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                }
+                <div class="dcol-announcer">
+                  @if (d.announcerTeam) {
+                    <span
+                      class="announcer-chip"
+                      [class.announcer-won]="d.announcerWon === true"
+                      [class.announcer-lost]="d.announcerWon === false"
+                      [title]="announcerNames(g, d)"
+                    >{{ d.announcerTeam === 'Team1' ? t('teams.team1') : t('teams.team2') }}</span>
+                  } @else {
+                    <span class="dcol-empty">–</span>
+                  }
+                </div>
+                <div class="dcol-dealer">{{ playerAt(g, d.dealerPosition) }}</div>
+                <div class="dcol-pts">
+                  @if (d.team1CardPoints !== null || d.team2CardPoints !== null) {
+                    <span [class.pts-lead]="(d.team1CardPoints ?? 0) > (d.team2CardPoints ?? 0)">{{ d.team1CardPoints ?? 0 }}</span>
+                    <span class="score-sep">–</span>
+                    <span [class.pts-lead]="(d.team2CardPoints ?? 0) > (d.team1CardPoints ?? 0)">{{ d.team2CardPoints ?? 0 }}</span>
+                  } @else {
+                    <span class="dcol-empty">–</span>
+                  }
+                </div>
+                <div class="dcol-pts">
+                  @if (d.team1MatchPoints !== null || d.team2MatchPoints !== null) {
+                    <span [class.pts-lead]="(d.team1MatchPoints ?? 0) > (d.team2MatchPoints ?? 0)">{{ d.team1MatchPoints ?? 0 }}</span>
+                    <span class="score-sep">–</span>
+                    <span [class.pts-lead]="(d.team2MatchPoints ?? 0) > (d.team1MatchPoints ?? 0)">{{ d.team2MatchPoints ?? 0 }}</span>
+                  } @else {
+                    <span class="dcol-empty">–</span>
+                  }
+                </div>
+                <div class="dcol-notes">
+                  @if (d.wasSweep) {
+                    <span class="flag flag-sweep" [title]="d.sweepingTeam === 'Team1' ? t('teams.team1') : t('teams.team2')">
+                      <i-lucide [img]="CheckIcon" [size]="10" [strokeWidth]="3"></i-lucide>
+                      {{ t('adminGames.detail.sweep') }}
+                    </span>
+                  }
+                  @if (d.isInstantWin) {
+                    <span class="flag flag-instant">
+                      <i-lucide [img]="ZapIcon" [size]="10" [strokeWidth]="2.5"></i-lucide>
+                      {{ t('adminGames.detail.instantWin') }}
+                    </span>
+                  }
+                </div>
               </div>
             }
           </div>
+        }
+      </div>
         </div>
       }
     </div>
   `,
   styles: [`
-    .ag-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
 
     /* Header */
-    .ag-header { background:hsl(var(--card)); border-bottom:1px solid hsl(var(--border)); padding:1rem; flex-shrink:0; }
-    .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
-    .back-btn { display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .back-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .header-title { margin:0; font-size:1.125rem; font-weight:700; color:hsl(var(--foreground)); display:flex; align-items:center; gap:0.5rem; }
     .count-badge { margin-left:auto; font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.625rem; border-radius:9999px; }
 
     /* Main */
-    .ag-main { flex:1; padding:1rem; }
-    .ag-inner { max-width:1200px; margin:0 auto; }
+    .ag-inner { }
+    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
 
     .loading-state, .empty-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
 
@@ -340,7 +326,6 @@ import { MultiplierBadgeComponent } from '../../../shared/components/multiplier-
   `],
 })
 export class AdminGamesComponent implements OnInit {
-  readonly ChevronLeftIcon = ChevronLeft;
   readonly DicesIcon = Dices;
   readonly XIcon = X;
   readonly TrophyIcon = Trophy;
@@ -374,9 +359,6 @@ export class AdminGamesComponent implements OnInit {
     });
   }
 
-  goBack(): void {
-    this.router.navigate(['/admin']);
-  }
 
   teamPlayers(game: AdminGameEntry, team: string): AdminGamePlayerEntry[] {
     return game.players.filter((p) => p.team === team);

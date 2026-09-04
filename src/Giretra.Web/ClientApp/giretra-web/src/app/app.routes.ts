@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AppLayout } from './layout/components/app.layout';
 import { inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ClientSessionService } from './core/services/client-session.service';
@@ -80,11 +81,7 @@ export const confirmLeaveGameGuard = async () => {
 
 export const routes: Routes = [
   {
-    path: '',
-    loadComponent: () =>
-      import('./features/home/home.component').then((m) => m.HomeComponent),
-  },
-  {
+    // The game table is a full-bleed HUD and deliberately sits outside the layout shell.
     path: 'table/:roomId',
     loadComponent: () =>
       import('./features/table/table.component').then((m) => m.TableComponent),
@@ -92,52 +89,86 @@ export const routes: Routes = [
     canDeactivate: [confirmLeaveGameGuard],
   },
   {
-    path: 'settings',
-    loadComponent: () =>
-      import('./features/settings/settings.component').then((m) => m.SettingsComponent),
-  },
-  {
-    path: 'achievements',
-    loadComponent: () =>
-      import('./features/achievements/achievements.component').then((m) => m.AchievementsComponent),
-  },
-  {
-    path: 'achievements/:playerId',
-    loadComponent: () =>
-      import('./features/achievements/achievements.component').then((m) => m.AchievementsComponent),
-  },
-  {
-    path: 'highlights',
-    loadComponent: () =>
-      import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
-  },
-  {
-    path: 'highlights/:playerId',
-    loadComponent: () =>
-      import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
-  },
-  {
-    path: 'leaderboard',
-    loadComponent: () =>
-      import('./features/leaderboard/leaderboard.component').then((m) => m.LeaderboardComponent),
-  },
-  {
-    path: 'admin',
-    loadComponent: () =>
-      import('./features/admin/admin.component').then((m) => m.AdminComponent),
-    canActivate: [moderatorGuard],
-  },
-  {
-    path: 'admin/users',
-    loadComponent: () =>
-      import('./features/admin/users/admin-users.component').then((m) => m.AdminUsersComponent),
-    canActivate: [moderatorGuard],
-  },
-  {
-    path: 'admin/games',
-    loadComponent: () =>
-      import('./features/admin/games/admin-games.component').then((m) => m.AdminGamesComponent),
-    canActivate: [moderatorGuard],
+    path: '',
+    component: AppLayout,
+    children: [
+      {
+        path: '',
+        data: { breadcrumb: 'breadcrumb.home' },
+        loadComponent: () =>
+          import('./features/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: 'settings',
+        data: { breadcrumb: 'breadcrumb.settings' },
+        loadComponent: () =>
+          import('./features/settings/settings.component').then((m) => m.SettingsComponent),
+      },
+      {
+        path: 'achievements',
+        data: { breadcrumb: 'breadcrumb.achievements' },
+        loadComponent: () =>
+          import('./features/achievements/achievements.component').then(
+            (m) => m.AchievementsComponent,
+          ),
+      },
+      {
+        path: 'achievements/:playerId',
+        data: { breadcrumb: 'breadcrumb.playerAchievements' },
+        loadComponent: () =>
+          import('./features/achievements/achievements.component').then(
+            (m) => m.AchievementsComponent,
+          ),
+      },
+      {
+        path: 'highlights',
+        data: { breadcrumb: 'breadcrumb.highlights' },
+        loadComponent: () =>
+          import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
+      },
+      {
+        path: 'highlights/:playerId',
+        data: { breadcrumb: 'breadcrumb.playerHighlights' },
+        loadComponent: () =>
+          import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
+      },
+      {
+        path: 'leaderboard',
+        data: { breadcrumb: 'breadcrumb.leaderboard' },
+        loadComponent: () =>
+          import('./features/leaderboard/leaderboard.component').then(
+            (m) => m.LeaderboardComponent,
+          ),
+      },
+      {
+        path: 'admin',
+        canActivate: [moderatorGuard],
+        data: { breadcrumb: 'breadcrumb.admin' },
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'users',
+            data: { breadcrumb: 'breadcrumb.adminUsers' },
+            loadComponent: () =>
+              import('./features/admin/users/admin-users.component').then(
+                (m) => m.AdminUsersComponent,
+              ),
+          },
+          {
+            path: 'games',
+            data: { breadcrumb: 'breadcrumb.adminGames' },
+            loadComponent: () =>
+              import('./features/admin/games/admin-games.component').then(
+                (m) => m.AdminGamesComponent,
+              ),
+          },
+        ],
+      },
+    ],
   },
   {
     path: '**',
