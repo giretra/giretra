@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import {
   ApiService,
@@ -6,7 +7,12 @@ import {
   AchievementShowcaseItem,
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, Award, Star, Lock, ArrowDownWideNarrow } from 'lucide-angular';
+import { FormsModule } from '@angular/forms';
+import { TagModule } from 'primeng/tag';
+import { AvatarModule } from 'primeng/avatar';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 type SortMode = 'rarity' | 'name' | 'recent';
@@ -14,250 +20,225 @@ type SortMode = 'rarity' | 'name' | 'recent';
 @Component({
   selector: 'app-achievements',
   standalone: true,
-  imports: [LucideAngularModule, TranslocoDirective],
+  imports: [
+    FormsModule,
+    TranslocoDirective,
+    TagModule,
+    AvatarModule,
+    SelectButtonModule,
+    ProgressBarModule,
+    SkeletonModule,
+  ],
   template: `
-    <div class="ach-inner" *transloco="let t">
-      <div class="page-head">
-          <h1 class="header-title">
-            <i-lucide [img]="AwardIcon" [size]="20"></i-lucide>
-            {{ t('achievements.page.title') }}
-          </h1>
-          @if (showcase()) {
-            <span class="header-subtitle">{{ t('achievements.page.subtitle', { earned: showcase()!.earnedCount, total: showcase()!.totalCount }) }}</span>
-          }
-      </div>
-
+    <div class="ach" *transloco="let t">
       @if (loading()) {
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
+        <div class="grid grid-cols-12 gap-6">
+          <div class="col-span-12 xl:col-span-8"><p-skeleton height="11rem" borderRadius="24px" /></div>
+          <div class="col-span-12 xl:col-span-4"><p-skeleton height="11rem" borderRadius="24px" /></div>
+          <div class="col-span-12"><p-skeleton height="20rem" borderRadius="24px" /></div>
         </div>
-      } @else if (showcase()) {
-        <!-- Player name banner (when viewing another player) -->
-        @if (isOtherPlayer()) {
-          <div class="player-banner">
-            <div class="player-avatar">{{ playerInitial() }}</div>
-            <span class="player-name">{{ showcase()!.playerName }}</span>
-          </div>
-        }
-
-        <!-- Progress hero -->
-        <section class="hero-card">
-          <div class="hero-progress">
-            <span class="hero-percent">{{ progressPercent() }}<span class="hero-percent-sign">%</span></span>
-            <div class="hero-progress-body">
-              <div class="progress-bar-track">
-                <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
-              </div>
-              <div class="progress-stats">
-                <span class="progress-earned">{{ showcase()!.earnedCount }} {{ t('achievements.page.earned') }}</span>
-                <span class="progress-locked">{{ showcase()!.totalCount - showcase()!.earnedCount }} {{ t('achievements.page.locked') }}</span>
-              </div>
-            </div>
-          </div>
-          @if (latestUnlock(); as latest) {
-            <div class="hero-latest">
-              <div class="hero-latest-icon">
-                <i-lucide [img]="AwardIcon" [size]="18" [strokeWidth]="1.5"></i-lucide>
-              </div>
-              <div class="hero-latest-info">
-                <span class="hero-latest-label">{{ t('achievements.page.latestUnlock') }}</span>
-                <span class="hero-latest-name">{{ latest.name }}</span>
-                <span class="hero-latest-date">{{ formatDate(latest.earnedAt!) }}</span>
-              </div>
-            </div>
-          }
-        </section>
-
-        <!-- Info text -->
-        @if (qualifyingBotsLabel(); as bots) {
-          <p class="ach-info-text">{{ t('achievements.page.infoBots', { bots }) }}</p>
-        } @else {
-          <p class="ach-info-text">{{ t('achievements.page.info') }}</p>
-        }
-
-        <!-- Sort toolbar -->
-        <div class="toolbar">
-          <div class="sort-group" role="group" [attr.aria-label]="t('achievements.page.sortBy')">
-            <i-lucide [img]="SortIcon" [size]="14" [strokeWidth]="2" class="sort-icon"></i-lucide>
-            @for (s of sortOptions; track s) {
-              <button
-                class="sort-btn"
-                [class.active]="sortBy() === s"
-                [attr.aria-pressed]="sortBy() === s"
-                (click)="sortBy.set(s)"
-              >{{ t('achievements.page.sort.' + s) }}</button>
-            }
-          </div>
-        </div>
-
-        <!-- Earned achievements -->
-        @if (earnedAchievements().length > 0) {
-          <div class="section-header earned-section-header">
-            <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-            <span>{{ t('achievements.page.earned') }}</span>
-            <span class="section-count">{{ earnedAchievements().length }}</span>
-          </div>
-          <div class="tier-grid">
-            @for (ach of earnedAchievements(); track ach.code) {
-                <div
-                  class="ach-card earned"
-                  [class.tier-high]="ach.tier >= 4"
-                >
-                  <div class="ach-card-top">
-                    <div class="ach-card-icon earned">
-                      <i-lucide [img]="AwardIcon" [size]="20" [strokeWidth]="1.5"></i-lucide>
+      } @else if (showcase(); as s) {
+        <div class="grid grid-cols-12 gap-6">
+          <!-- Progress hero -->
+          <div class="col-span-12 xl:col-span-8">
+            <section class="g-card hero">
+              <div class="g-card-header">
+                <div class="hero-who">
+                  @if (isOtherPlayer()) {
+                    <p-avatar [label]="playerInitial()" shape="circle" size="large" styleClass="hero-avatar" />
+                  } @else {
+                    <span class="hero-badge"><i class="pi pi-star-fill"></i></span>
+                  }
+                  <div>
+                    <div class="g-card-title">
+                      @if (isOtherPlayer()) { {{ s.playerName }} } @else { {{ t('achievements.page.title') }} }
                     </div>
-                    <div class="ach-card-info">
-                      <span class="ach-card-name">{{ ach.name }}</span>
-                      <span class="ach-card-stars">
-                        @for (_ of starArray(ach.tier); track $index) {
-                          <span class="star filled">&#9733;</span>
-                        }
-                        @for (_ of starArray(5 - ach.tier); track $index) {
-                          <span class="star empty">&#9733;</span>
-                        }
-                      </span>
-                    </div>
-                    <span class="earned-badge">{{ t('achievements.page.earned') }}</span>
+                    <p class="g-card-subtitle">{{ t('achievements.page.subtitle', { earned: s.earnedCount, total: s.totalCount }) }}</p>
                   </div>
+                </div>
+                <span class="hero-percent">{{ progressPercent() }}<small>%</small></span>
+              </div>
+              <p-progressbar [value]="progressPercent()" [showValue]="false" color="var(--p-yellow-400)" styleClass="hero-bar" />
+              <div class="hero-stats">
+                <span class="stat earned"><i class="pi pi-check-circle"></i>{{ s.earnedCount }} {{ t('achievements.page.earned') }}</span>
+                <span class="stat"><i class="pi pi-lock"></i>{{ s.totalCount - s.earnedCount }} {{ t('achievements.page.locked') }}</span>
+              </div>
+            </section>
+          </div>
 
-                  <div class="ach-card-details">
-                    <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
-                    <div class="ach-card-meta">
-                      <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
-                      @if (ach.earnedAt) {
-                        <span class="ach-card-date">{{ t('achievements.page.earnedOn', { date: formatDate(ach.earnedAt) }) }}</span>
-                      }
+          <!-- Latest unlock / how to earn -->
+          <div class="col-span-12 xl:col-span-4">
+            <section class="g-card side">
+              @if (latestUnlock(); as latest) {
+                <div class="latest">
+                  <span class="latest-label">{{ t('achievements.page.latestUnlock') }}</span>
+                  <div class="latest-row">
+                    <span class="ach-icon earned"><i class="pi pi-star-fill"></i></span>
+                    <div class="latest-info">
+                      <span class="latest-name">{{ latest.name }}</span>
+                      <span class="latest-date">{{ formatDate(latest.earnedAt!) }}</span>
                     </div>
                   </div>
+                </div>
+                <div class="g-divider"></div>
+              }
+              <div class="info">
+                <i class="pi pi-info-circle"></i>
+                <p>
+                  @if (qualifyingBotsLabel(); as bots) {
+                    {{ t('achievements.page.infoBots', { bots }) }}
+                  } @else {
+                    {{ t('achievements.page.info') }}
+                  }
+                </p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Achievement list -->
+          <div class="col-span-12">
+            <section class="g-card">
+              <div class="g-card-header list-head">
+                <div>
+                  <div class="g-card-title">
+                    {{ t('achievements.page.title') }}
+                    <p-tag [value]="s.totalCount.toString()" severity="secondary" [rounded]="true" />
+                  </div>
+                </div>
+                <p-selectbutton
+                  [options]="sortChoices()"
+                  optionLabel="label"
+                  optionValue="value"
+                  [ngModel]="sortBy()"
+                  (ngModelChange)="sortBy.set($event)"
+                  [allowEmpty]="false"
+                  size="small"
+                  [attr.aria-label]="t('achievements.page.sortBy')"
+                />
+              </div>
+
+              @if (s.achievements.length === 0) {
+                <div class="g-empty">
+                  <span class="g-empty-icon"><i class="pi pi-star"></i></span>
+                  <span class="g-empty-title">{{ t('achievements.page.noAchievements') }}</span>
                 </div>
               }
-            </div>
-          }
 
-        <!-- Locked achievements -->
-        @if (lockedAchievements().length > 0) {
-          <div class="section-header locked-section-header">
-            <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-            <span>{{ t('achievements.page.locked') }}</span>
-            <span class="section-count">{{ lockedAchievements().length }}</span>
-          </div>
-          <div class="tier-grid">
-            @for (ach of lockedAchievements(); track ach.code) {
-                <div
-                  class="ach-card locked"
-                  [class.hidden-ach]="ach.isHidden"
-                  [class.tier-high]="ach.tier >= 4"
-                >
-                  <div class="ach-card-top">
-                    <div class="ach-card-icon">
-                      <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                    </div>
-                    <div class="ach-card-info">
-                      @if (ach.isHidden) {
-                        <span class="ach-card-name hidden-text">???</span>
-                      } @else {
-                        <span class="ach-card-name">{{ ach.name }}</span>
-                      }
-                      <span class="ach-card-stars">
-                        @for (_ of starArray(ach.tier); track $index) {
-                          <span class="star filled">&#9733;</span>
-                        }
-                        @for (_ of starArray(5 - ach.tier); track $index) {
-                          <span class="star empty">&#9733;</span>
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  <div class="ach-card-details">
-                    @if (ach.isHidden) {
-                      <p class="ach-card-desc hidden-text">{{ t('achievements.page.hiddenDesc') }}</p>
-                    } @else {
-                      <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
-                    }
-                    <div class="ach-card-meta">
-                      <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
-                    </div>
-                  </div>
+              @if (earnedAchievements().length > 0) {
+                <div class="section-head earned">
+                  <i class="pi pi-check-circle"></i>
+                  <span>{{ t('achievements.page.earned') }}</span>
+                  <span class="section-count">{{ earnedAchievements().length }}</span>
                 </div>
-            }
-          </div>
-        }
+                <div class="tier-grid">
+                  @for (ach of earnedAchievements(); track ach.code) {
+                    <article class="ach-card earned" [class.tier-high]="ach.tier >= 4">
+                      <div class="ach-top">
+                        <span class="ach-icon earned"><i class="pi pi-star-fill"></i></span>
+                        <div class="ach-info">
+                          <span class="ach-name">{{ ach.name }}</span>
+                          <span class="ach-stars">
+                            @for (_ of starArray(ach.tier); track $index) { <i class="pi pi-star-fill"></i> }
+                            @for (_ of starArray(5 - ach.tier); track $index) { <i class="pi pi-star"></i> }
+                          </span>
+                        </div>
+                        <p-tag [value]="t('achievements.page.earned')" severity="warn" icon="pi pi-check" [rounded]="true" />
+                      </div>
+                      <p class="ach-desc">{{ t('achievements.desc.' + ach.code) }}</p>
+                      <div class="ach-meta">
+                        <p-tag [value]="t('achievements.page.category.' + ach.category)" severity="secondary" />
+                        @if (ach.earnedAt) {
+                          <span class="ach-date">{{ t('achievements.page.earnedOn', { date: formatDate(ach.earnedAt) }) }}</span>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
 
-        @if (showcase()!.achievements.length === 0) {
-          <div class="empty-state">
-            <i-lucide [img]="AwardIcon" [size]="48" [strokeWidth]="1"></i-lucide>
-            <p>{{ t('achievements.page.noAchievements') }}</p>
+              @if (lockedAchievements().length > 0) {
+                <div class="section-head">
+                  <i class="pi pi-lock"></i>
+                  <span>{{ t('achievements.page.locked') }}</span>
+                  <span class="section-count">{{ lockedAchievements().length }}</span>
+                </div>
+                <div class="tier-grid">
+                  @for (ach of lockedAchievements(); track ach.code) {
+                    <article class="ach-card locked" [class.hidden-ach]="ach.isHidden">
+                      <div class="ach-top">
+                        <span class="ach-icon"><i class="pi pi-lock"></i></span>
+                        <div class="ach-info">
+                          <span class="ach-name" [class.hidden-text]="ach.isHidden">{{ ach.isHidden ? '???' : ach.name }}</span>
+                          <span class="ach-stars">
+                            @for (_ of starArray(ach.tier); track $index) { <i class="pi pi-star-fill"></i> }
+                            @for (_ of starArray(5 - ach.tier); track $index) { <i class="pi pi-star"></i> }
+                          </span>
+                        </div>
+                      </div>
+                      <p class="ach-desc" [class.hidden-text]="ach.isHidden">
+                        {{ ach.isHidden ? t('achievements.page.hiddenDesc') : t('achievements.desc.' + ach.code) }}
+                      </p>
+                      <div class="ach-meta">
+                        <p-tag [value]="t('achievements.page.category.' + ach.category)" severity="secondary" />
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+            </section>
           </div>
-        }
+        </div>
       }
     </div>
   `,
   styles: [`
-    .header-title { font-size:1.125rem; font-weight:700; margin:0; display:flex; align-items:center; gap:0.5rem; color:hsl(var(--gold)); }
-    .header-subtitle { font-size:0.75rem; color:hsl(var(--muted-foreground)); margin-left:auto; font-variant-numeric:tabular-nums; }
-    .ach-inner { display:flex; flex-direction:column; gap:1.25rem; }
-    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
-    .loading-state { display:flex; justify-content:center; padding:3rem; }
-    .loading-spinner { width:2rem; height:2rem; border:2px solid hsl(var(--muted)); border-top-color:hsl(var(--gold)); border-radius:50%; animation:spin 0.8s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .player-banner { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; }
-    .player-avatar { width:2.5rem; height:2.5rem; border-radius:50%; background:hsl(var(--muted)); border:2px solid hsl(var(--gold)/0.4); display:grid; place-items:center; font-size:1rem; font-weight:700; text-transform:uppercase; }
-    .player-name { font-weight:600; }
-    .hero-card { display:flex; flex-direction:column; gap:1rem; padding:1rem 1.25rem; background:hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:0.75rem; }
-    .hero-progress { display:flex; align-items:center; gap:1rem; flex:1; min-width:0; }
-    .hero-percent { font-size:2rem; font-weight:800; line-height:1; color:hsl(var(--gold)); font-variant-numeric:tabular-nums; flex-shrink:0; }
-    .hero-percent-sign { font-size:1rem; font-weight:700; color:hsl(var(--gold)/0.7); }
-    .hero-progress-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.5rem; }
-    .progress-bar-track { height:0.5rem; background:hsl(var(--muted)); border-radius:9999px; overflow:hidden; }
-    .progress-bar-fill { height:100%; background:linear-gradient(90deg,hsl(var(--gold)),hsl(45 95% 65%)); border-radius:9999px; transition:width 0.6s cubic-bezier(0.2,0,0,1); }
-    .progress-stats { display:flex; justify-content:space-between; font-size:0.6875rem; font-weight:500; text-transform:uppercase; letter-spacing:0.04em; }
-    .progress-earned { color:hsl(var(--gold)); }
-    .progress-locked { color:hsl(var(--muted-foreground)); }
-    .hero-latest { display:flex; align-items:center; gap:0.75rem; padding:0.625rem 0.875rem; background:hsl(var(--gold)/0.06); border:1px solid hsl(var(--gold)/0.25); border-radius:0.625rem; }
-    .hero-latest-info { display:flex; flex-direction:column; min-width:0; }
-    .hero-latest-label { font-size:0.625rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:hsl(var(--gold)/0.8); }
-    .hero-latest-name { font-size:0.875rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .hero-latest-date { font-size:0.6875rem; color:hsl(var(--muted-foreground)); }
-    @media (min-width:720px) {
-      .hero-card { flex-direction:row; align-items:center; }
-      .hero-latest { max-width:40%; }
-    }
-    .ach-info-text { font-size:0.8125rem; color:hsl(var(--muted-foreground)); line-height:1.5; margin:0; padding:0.625rem 0.75rem; background:hsl(var(--secondary)/0.5); border:1px solid hsl(var(--border)/0.5); border-radius:0.625rem; }
-    .toolbar { display:flex; justify-content:flex-end; }
-    .sort-group { display:flex; align-items:center; gap:0.25rem; }
-    .sort-icon { color:hsl(var(--muted-foreground)); margin-right:0.25rem; }
-    .sort-btn { cursor:pointer; white-space:nowrap; font-weight:600; transition:all 0.15s ease; padding:0.3125rem 0.625rem; border-radius:0.5rem; border:1px solid transparent; background:transparent; color:hsl(var(--muted-foreground)); font-size:0.75rem; }
-    .sort-btn:hover { color:hsl(var(--foreground)); }
-    .sort-btn.active { background:hsl(var(--secondary)); border-color:hsl(var(--border)); color:hsl(var(--foreground)); }
-    .section-header { display:flex; align-items:center; gap:0.5rem; font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:hsl(var(--muted-foreground)); }
-    .earned-section-header { color:hsl(var(--gold)); }
-    .section-count { margin-left:auto; font-size:0.75rem; font-variant-numeric:tabular-nums; }
-    .tier-grid { display:grid; grid-template-columns:1fr; gap:0.625rem; }
-    @media (min-width:720px) { .tier-grid { grid-template-columns:repeat(2,1fr); } }
-    @media (min-width:1024px) { .tier-grid { grid-template-columns:repeat(3,1fr); } }
-    .ach-card { display:flex; flex-direction:column; padding:0.75rem; border-radius:0.75rem; border:1px solid hsl(var(--border)/0.6); background:hsl(var(--card)); }
-    .ach-card.earned { border-color:hsl(var(--gold)/0.3); background:hsl(var(--gold)/0.04); }
-    .ach-card.earned.tier-high { border-color:hsl(var(--gold)/0.5); background:hsl(var(--gold)/0.08); }
-    .ach-card.locked { opacity:0.65; }
+    .hero .g-card-header { align-items:center; padding-bottom:1.25rem; }
+    .hero-who { display:flex; align-items:center; gap:0.875rem; min-width:0; }
+    .hero-badge { display:inline-flex; align-items:center; justify-content:center; width:3rem; height:3rem; border-radius:0.875rem; background:color-mix(in srgb, var(--p-yellow-400) 18%, transparent); color:var(--p-yellow-400); flex-shrink:0; }
+    .hero-badge i { font-size:1.25rem; }
+    :host ::ng-deep .hero-avatar { background:color-mix(in srgb, var(--p-yellow-400) 18%, transparent); color:var(--p-yellow-400); font-weight:700; }
+    .hero-percent { font-size:2.25rem; font-weight:800; line-height:1; color:var(--p-yellow-400); font-variant-numeric:tabular-nums; }
+    .hero-percent small { font-size:1rem; font-weight:700; opacity:0.7; margin-left:0.125rem; }
+    :host ::ng-deep .hero-bar { height:0.625rem; border-radius:9999px; background:var(--p-surface-800); }
+    :host ::ng-deep .hero-bar .p-progressbar-value { border-radius:9999px; }
+    .hero-stats { display:flex; justify-content:space-between; gap:1rem; margin-top:0.875rem; font-size:0.8125rem; color:var(--text-color-secondary); }
+    .stat { display:inline-flex; align-items:center; gap:0.375rem; }
+    .stat.earned { color:var(--p-yellow-400); font-weight:500; }
+
+    .side { display:flex; flex-direction:column; gap:1rem; height:100%; }
+    .latest { display:flex; flex-direction:column; gap:0.625rem; }
+    .latest-label { font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-color-secondary); }
+    .latest-row { display:flex; align-items:center; gap:0.75rem; }
+    .latest-info { display:flex; flex-direction:column; min-width:0; }
+    .latest-name { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .latest-date { font-size:0.75rem; color:var(--text-color-secondary); }
+    .info { display:flex; gap:0.625rem; font-size:0.8125rem; color:var(--text-color-secondary); line-height:1.5; }
+    .info i { margin-top:0.125rem; flex-shrink:0; }
+    .info p { margin:0; }
+
+    .list-head { align-items:center; flex-wrap:wrap; }
+    .section-head { display:flex; align-items:center; gap:0.5rem; margin:0.5rem 0 0.75rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-color-secondary); }
+    .section-head.earned { color:var(--p-yellow-400); }
+    .section-count { margin-left:auto; font-variant-numeric:tabular-nums; }
+    .tier-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(17rem, 1fr)); gap:0.75rem; margin-bottom:1rem; }
+    .tier-grid:last-child { margin-bottom:0; }
+
+    .ach-card { display:flex; flex-direction:column; gap:0.625rem; padding:1rem; border-radius:1rem; border:1px solid var(--surface-border); background:var(--p-surface-900); }
+    .ach-card.earned { border-color:color-mix(in srgb, var(--p-yellow-400) 30%, transparent); background:color-mix(in srgb, var(--p-yellow-400) 5%, var(--p-surface-900)); }
+    .ach-card.earned.tier-high { border-color:color-mix(in srgb, var(--p-yellow-400) 55%, transparent); }
+    .ach-card.locked { opacity:0.7; }
     .ach-card.hidden-ach { border-style:dashed; }
-    .ach-card-top { display:flex; align-items:center; gap:0.625rem; }
-    .ach-card-icon, .hero-latest-icon { width:2.25rem; height:2.25rem; border-radius:0.625rem; display:grid; place-items:center; flex-shrink:0; background:hsl(var(--muted)); color:hsl(var(--muted-foreground)); }
-    .ach-card-icon.earned, .hero-latest-icon { background:hsl(var(--gold)/0.15); color:hsl(var(--gold)); }
-    .ach-card-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.125rem; }
-    .ach-card-name { font-size:0.9375rem; font-weight:600; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .hidden-text { color:hsl(var(--muted-foreground)); font-style:italic; }
-    .ach-card-stars { display:flex; gap:1px; font-size:0.75rem; line-height:1; }
-    .star.filled { color:hsl(var(--gold)); }
-    .star.empty { color:hsl(var(--muted)/0.5); }
-    .earned-badge { font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.125rem 0.5rem; border-radius:9999px; background:hsl(var(--gold)/0.15); color:hsl(var(--gold)); white-space:nowrap; flex-shrink:0; }
-    .ach-card-details { margin-top:0.625rem; padding-top:0.5rem; border-top:1px solid hsl(var(--border)/0.4); flex:1; display:flex; flex-direction:column; }
-    .ach-card-desc { font-size:0.875rem; color:hsl(var(--muted-foreground)); line-height:1.5; margin:0; }
-    .ach-card-meta { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-top:auto; padding-top:0.5rem; }
-    .ach-card-category { font-size:0.625rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:hsl(var(--muted-foreground)/0.7); background:hsl(var(--muted)/0.4); padding:0.125rem 0.4375rem; border-radius:9999px; }
-    .ach-card-date { font-size:0.75rem; color:hsl(var(--gold)/0.8); }
-    .empty-state { display:flex; flex-direction:column; align-items:center; gap:1rem; padding:3rem 1rem; color:hsl(var(--muted-foreground)); text-align:center; }
-    .empty-state p { font-size:0.875rem; margin:0; }
+    .ach-top { display:flex; align-items:center; gap:0.75rem; }
+    .ach-icon { display:inline-flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:0.75rem; background:var(--p-surface-800); color:var(--text-color-secondary); flex-shrink:0; }
+    .ach-icon.earned { background:color-mix(in srgb, var(--p-yellow-400) 18%, transparent); color:var(--p-yellow-400); }
+    .ach-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.25rem; }
+    .ach-name { font-weight:600; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .ach-stars { display:flex; gap:0.125rem; font-size:0.625rem; color:var(--p-yellow-400); }
+    .ach-stars .pi-star { color:var(--p-surface-600); }
+    .hidden-text { color:var(--text-color-secondary); font-style:italic; }
+    .ach-desc { margin:0; font-size:0.875rem; line-height:1.5; color:var(--text-color-secondary); flex:1; }
+    .ach-meta { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding-top:0.625rem; border-top:1px solid var(--surface-border); }
+    .ach-date { font-size:0.75rem; color:var(--p-yellow-400); }
   `],
 })
 export class AchievementsComponent implements OnInit {
@@ -266,12 +247,18 @@ export class AchievementsComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly transloco = inject(TranslocoService);
 
-  readonly AwardIcon = Award;
-  readonly StarIcon = Star;
-  readonly LockIcon = Lock;
-  readonly SortIcon = ArrowDownWideNarrow;
 
   readonly sortOptions: SortMode[] = ['rarity', 'name', 'recent'];
+
+  private readonly lang = toSignal(this.transloco.langChanges$);
+
+  readonly sortChoices = computed(() => {
+    this.lang();
+    return this.sortOptions.map((value) => ({
+      value,
+      label: this.transloco.translate('achievements.page.sort.' + value),
+    }));
+  });
 
   readonly loading = signal(true);
   readonly showcase = signal<AchievementShowcaseResponse | null>(null);

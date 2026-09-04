@@ -247,7 +247,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.375rem 0.75rem;
     }
 
     .footer-links {
@@ -260,6 +261,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
+        white-space: nowrap;
         font-size: 0.75rem;
         color: var(--text-color-secondary);
         transition: color 0.15s ease;
@@ -293,6 +295,13 @@
         font-size: 0.6875rem;
         color: color-mix(in srgb, var(--text-color-secondary) 60%, transparent);
         margin-left: auto;
+        white-space: nowrap;
+
+        @media screen and (max-width: 479px) {
+            margin-left: 0;
+            flex-basis: 100%;
+            text-align: center;
+        }
     }
 }
 
