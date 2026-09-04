@@ -496,5 +496,17 @@
   "layout.logout": "Logout",
   "layout.language": "Language",
   "layout.footer.website": "Website",
-  "layout.footer.source": "Source Code"
+  "layout.footer.source": "Source Code",
+  "home.playWithFriends": "Play with friends",
+  "home.playWithFriendsHint": "Open a table or bring your friends in",
+  "home.openTablesHint": "Join a table or watch a game in progress",
+  "home.achievementsRow": "Achievements",
+  "home.achievementsHint": "{{earned}} of {{total}} unlocked",
+  "quickGame.createRoomInstead": "Create a custom table",
+  "createForm.seats": "Seats",
+  "createForm.bot": "Bot",
+  "createForm.openSeat": "Open seat",
+  "roomCard.statusWaiting": "Open",
+  "roomCard.statusPlaying": "Playing",
+  "roomCard.statusCompleted": "Finished"
 }
