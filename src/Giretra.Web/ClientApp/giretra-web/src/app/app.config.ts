@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { providePrimeNG } from 'primeng/config';
 
 
 import { routes } from './app.routes';
@@ -13,6 +14,7 @@ import { environment } from '../environments/environment';
 import { AuthService } from './core/services/auth.service';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { provideAppTransloco } from './core/i18n';
+import { GiretraPreset } from './core/theme/giretra-preset';
 import {
   LUCIDE_ICONS,
   LucideIconProvider,
@@ -153,5 +155,9 @@ export const appConfig: ApplicationConfig = {
     { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(usedIcons) },
     provideAppTransloco(),
+    providePrimeNG({
+      ripple: false,
+      theme: { preset: GiretraPreset, options: { darkModeSelector: '.app-dark' } },
+    }),
   ],
 };

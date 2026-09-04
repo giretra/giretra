@@ -1,12 +1,12 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   ApiService,
   AchievementShowcaseResponse,
   AchievementShowcaseItem,
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, ChevronLeft, Award, Star, Lock, ArrowDownWideNarrow } from 'lucide-angular';
+import { LucideAngularModule, Award, Star, Lock, ArrowDownWideNarrow } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 type SortMode = 'rarity' | 'name' | 'recent';
@@ -16,12 +16,8 @@ type SortMode = 'rarity' | 'name' | 'recent';
   standalone: true,
   imports: [LucideAngularModule, TranslocoDirective],
   template: `
-    <div class="ach-shell" *transloco="let t">
-      <header class="ach-header">
-        <div class="header-inner">
-          <button class="back-btn" (click)="goBack()">
-            <i-lucide [img]="ChevronLeftIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          </button>
+    <div class="ach-inner" *transloco="let t">
+      <div class="page-head">
           <h1 class="header-title">
             <i-lucide [img]="AwardIcon" [size]="20"></i-lucide>
             {{ t('achievements.page.title') }}
@@ -29,190 +25,179 @@ type SortMode = 'rarity' | 'name' | 'recent';
           @if (showcase()) {
             <span class="header-subtitle">{{ t('achievements.page.subtitle', { earned: showcase()!.earnedCount, total: showcase()!.totalCount }) }}</span>
           }
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
         </div>
-      </header>
+      } @else if (showcase()) {
+        <!-- Player name banner (when viewing another player) -->
+        @if (isOtherPlayer()) {
+          <div class="player-banner">
+            <div class="player-avatar">{{ playerInitial() }}</div>
+            <span class="player-name">{{ showcase()!.playerName }}</span>
+          </div>
+        }
 
-      <main class="ach-main">
-        <div class="ach-inner">
-          @if (loading()) {
-            <div class="loading-state">
-              <div class="loading-spinner"></div>
-            </div>
-          } @else if (showcase()) {
-            <!-- Player name banner (when viewing another player) -->
-            @if (isOtherPlayer()) {
-              <div class="player-banner">
-                <div class="player-avatar">{{ playerInitial() }}</div>
-                <span class="player-name">{{ showcase()!.playerName }}</span>
+        <!-- Progress hero -->
+        <section class="hero-card">
+          <div class="hero-progress">
+            <span class="hero-percent">{{ progressPercent() }}<span class="hero-percent-sign">%</span></span>
+            <div class="hero-progress-body">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
               </div>
-            }
-
-            <!-- Progress hero -->
-            <section class="hero-card">
-              <div class="hero-progress">
-                <span class="hero-percent">{{ progressPercent() }}<span class="hero-percent-sign">%</span></span>
-                <div class="hero-progress-body">
-                  <div class="progress-bar-track">
-                    <div class="progress-bar-fill" [style.width.%]="progressPercent()"></div>
-                  </div>
-                  <div class="progress-stats">
-                    <span class="progress-earned">{{ showcase()!.earnedCount }} {{ t('achievements.page.earned') }}</span>
-                    <span class="progress-locked">{{ showcase()!.totalCount - showcase()!.earnedCount }} {{ t('achievements.page.locked') }}</span>
-                  </div>
-                </div>
-              </div>
-              @if (latestUnlock(); as latest) {
-                <div class="hero-latest">
-                  <div class="hero-latest-icon">
-                    <i-lucide [img]="AwardIcon" [size]="18" [strokeWidth]="1.5"></i-lucide>
-                  </div>
-                  <div class="hero-latest-info">
-                    <span class="hero-latest-label">{{ t('achievements.page.latestUnlock') }}</span>
-                    <span class="hero-latest-name">{{ latest.name }}</span>
-                    <span class="hero-latest-date">{{ formatDate(latest.earnedAt!) }}</span>
-                  </div>
-                </div>
-              }
-            </section>
-
-            <!-- Info text -->
-            @if (qualifyingBotsLabel(); as bots) {
-              <p class="ach-info-text">{{ t('achievements.page.infoBots', { bots }) }}</p>
-            } @else {
-              <p class="ach-info-text">{{ t('achievements.page.info') }}</p>
-            }
-
-            <!-- Sort toolbar -->
-            <div class="toolbar">
-              <div class="sort-group" role="group" [attr.aria-label]="t('achievements.page.sortBy')">
-                <i-lucide [img]="SortIcon" [size]="14" [strokeWidth]="2" class="sort-icon"></i-lucide>
-                @for (s of sortOptions; track s) {
-                  <button
-                    class="sort-btn"
-                    [class.active]="sortBy() === s"
-                    [attr.aria-pressed]="sortBy() === s"
-                    (click)="sortBy.set(s)"
-                  >{{ t('achievements.page.sort.' + s) }}</button>
-                }
+              <div class="progress-stats">
+                <span class="progress-earned">{{ showcase()!.earnedCount }} {{ t('achievements.page.earned') }}</span>
+                <span class="progress-locked">{{ showcase()!.totalCount - showcase()!.earnedCount }} {{ t('achievements.page.locked') }}</span>
               </div>
             </div>
-
-            <!-- Earned achievements -->
-            @if (earnedAchievements().length > 0) {
-              <div class="section-header earned-section-header">
-                <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                <span>{{ t('achievements.page.earned') }}</span>
-                <span class="section-count">{{ earnedAchievements().length }}</span>
+          </div>
+          @if (latestUnlock(); as latest) {
+            <div class="hero-latest">
+              <div class="hero-latest-icon">
+                <i-lucide [img]="AwardIcon" [size]="18" [strokeWidth]="1.5"></i-lucide>
               </div>
-              <div class="tier-grid">
-                @for (ach of earnedAchievements(); track ach.code) {
-                    <div
-                      class="ach-card earned"
-                      [class.tier-high]="ach.tier >= 4"
-                    >
-                      <div class="ach-card-top">
-                        <div class="ach-card-icon earned">
-                          <i-lucide [img]="AwardIcon" [size]="20" [strokeWidth]="1.5"></i-lucide>
-                        </div>
-                        <div class="ach-card-info">
-                          <span class="ach-card-name">{{ ach.name }}</span>
-                          <span class="ach-card-stars">
-                            @for (_ of starArray(ach.tier); track $index) {
-                              <span class="star filled">&#9733;</span>
-                            }
-                            @for (_ of starArray(5 - ach.tier); track $index) {
-                              <span class="star empty">&#9733;</span>
-                            }
-                          </span>
-                        </div>
-                        <span class="earned-badge">{{ t('achievements.page.earned') }}</span>
-                      </div>
-
-                      <div class="ach-card-details">
-                        <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
-                        <div class="ach-card-meta">
-                          <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
-                          @if (ach.earnedAt) {
-                            <span class="ach-card-date">{{ t('achievements.page.earnedOn', { date: formatDate(ach.earnedAt) }) }}</span>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-
-            <!-- Locked achievements -->
-            @if (lockedAchievements().length > 0) {
-              <div class="section-header locked-section-header">
-                <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                <span>{{ t('achievements.page.locked') }}</span>
-                <span class="section-count">{{ lockedAchievements().length }}</span>
+              <div class="hero-latest-info">
+                <span class="hero-latest-label">{{ t('achievements.page.latestUnlock') }}</span>
+                <span class="hero-latest-name">{{ latest.name }}</span>
+                <span class="hero-latest-date">{{ formatDate(latest.earnedAt!) }}</span>
               </div>
-              <div class="tier-grid">
-                @for (ach of lockedAchievements(); track ach.code) {
-                    <div
-                      class="ach-card locked"
-                      [class.hidden-ach]="ach.isHidden"
-                      [class.tier-high]="ach.tier >= 4"
-                    >
-                      <div class="ach-card-top">
-                        <div class="ach-card-icon">
-                          <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
-                        </div>
-                        <div class="ach-card-info">
-                          @if (ach.isHidden) {
-                            <span class="ach-card-name hidden-text">???</span>
-                          } @else {
-                            <span class="ach-card-name">{{ ach.name }}</span>
-                          }
-                          <span class="ach-card-stars">
-                            @for (_ of starArray(ach.tier); track $index) {
-                              <span class="star filled">&#9733;</span>
-                            }
-                            @for (_ of starArray(5 - ach.tier); track $index) {
-                              <span class="star empty">&#9733;</span>
-                            }
-                          </span>
-                        </div>
-                      </div>
-                      <div class="ach-card-details">
-                        @if (ach.isHidden) {
-                          <p class="ach-card-desc hidden-text">{{ t('achievements.page.hiddenDesc') }}</p>
-                        } @else {
-                          <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
-                        }
-                        <div class="ach-card-meta">
-                          <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
-                        </div>
-                      </div>
-                    </div>
-                }
-              </div>
-            }
-
-            @if (showcase()!.achievements.length === 0) {
-              <div class="empty-state">
-                <i-lucide [img]="AwardIcon" [size]="48" [strokeWidth]="1"></i-lucide>
-                <p>{{ t('achievements.page.noAchievements') }}</p>
-              </div>
-            }
+            </div>
           }
+        </section>
+
+        <!-- Info text -->
+        @if (qualifyingBotsLabel(); as bots) {
+          <p class="ach-info-text">{{ t('achievements.page.infoBots', { bots }) }}</p>
+        } @else {
+          <p class="ach-info-text">{{ t('achievements.page.info') }}</p>
+        }
+
+        <!-- Sort toolbar -->
+        <div class="toolbar">
+          <div class="sort-group" role="group" [attr.aria-label]="t('achievements.page.sortBy')">
+            <i-lucide [img]="SortIcon" [size]="14" [strokeWidth]="2" class="sort-icon"></i-lucide>
+            @for (s of sortOptions; track s) {
+              <button
+                class="sort-btn"
+                [class.active]="sortBy() === s"
+                [attr.aria-pressed]="sortBy() === s"
+                (click)="sortBy.set(s)"
+              >{{ t('achievements.page.sort.' + s) }}</button>
+            }
+          </div>
         </div>
-      </main>
+
+        <!-- Earned achievements -->
+        @if (earnedAchievements().length > 0) {
+          <div class="section-header earned-section-header">
+            <i-lucide [img]="AwardIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+            <span>{{ t('achievements.page.earned') }}</span>
+            <span class="section-count">{{ earnedAchievements().length }}</span>
+          </div>
+          <div class="tier-grid">
+            @for (ach of earnedAchievements(); track ach.code) {
+                <div
+                  class="ach-card earned"
+                  [class.tier-high]="ach.tier >= 4"
+                >
+                  <div class="ach-card-top">
+                    <div class="ach-card-icon earned">
+                      <i-lucide [img]="AwardIcon" [size]="20" [strokeWidth]="1.5"></i-lucide>
+                    </div>
+                    <div class="ach-card-info">
+                      <span class="ach-card-name">{{ ach.name }}</span>
+                      <span class="ach-card-stars">
+                        @for (_ of starArray(ach.tier); track $index) {
+                          <span class="star filled">&#9733;</span>
+                        }
+                        @for (_ of starArray(5 - ach.tier); track $index) {
+                          <span class="star empty">&#9733;</span>
+                        }
+                      </span>
+                    </div>
+                    <span class="earned-badge">{{ t('achievements.page.earned') }}</span>
+                  </div>
+
+                  <div class="ach-card-details">
+                    <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
+                    <div class="ach-card-meta">
+                      <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
+                      @if (ach.earnedAt) {
+                        <span class="ach-card-date">{{ t('achievements.page.earnedOn', { date: formatDate(ach.earnedAt) }) }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+        <!-- Locked achievements -->
+        @if (lockedAchievements().length > 0) {
+          <div class="section-header locked-section-header">
+            <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+            <span>{{ t('achievements.page.locked') }}</span>
+            <span class="section-count">{{ lockedAchievements().length }}</span>
+          </div>
+          <div class="tier-grid">
+            @for (ach of lockedAchievements(); track ach.code) {
+                <div
+                  class="ach-card locked"
+                  [class.hidden-ach]="ach.isHidden"
+                  [class.tier-high]="ach.tier >= 4"
+                >
+                  <div class="ach-card-top">
+                    <div class="ach-card-icon">
+                      <i-lucide [img]="LockIcon" [size]="16" [strokeWidth]="2"></i-lucide>
+                    </div>
+                    <div class="ach-card-info">
+                      @if (ach.isHidden) {
+                        <span class="ach-card-name hidden-text">???</span>
+                      } @else {
+                        <span class="ach-card-name">{{ ach.name }}</span>
+                      }
+                      <span class="ach-card-stars">
+                        @for (_ of starArray(ach.tier); track $index) {
+                          <span class="star filled">&#9733;</span>
+                        }
+                        @for (_ of starArray(5 - ach.tier); track $index) {
+                          <span class="star empty">&#9733;</span>
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  <div class="ach-card-details">
+                    @if (ach.isHidden) {
+                      <p class="ach-card-desc hidden-text">{{ t('achievements.page.hiddenDesc') }}</p>
+                    } @else {
+                      <p class="ach-card-desc">{{ t('achievements.desc.' + ach.code) }}</p>
+                    }
+                    <div class="ach-card-meta">
+                      <span class="ach-card-category">{{ t('achievements.page.category.' + ach.category) }}</span>
+                    </div>
+                  </div>
+                </div>
+            }
+          </div>
+        }
+
+        @if (showcase()!.achievements.length === 0) {
+          <div class="empty-state">
+            <i-lucide [img]="AwardIcon" [size]="48" [strokeWidth]="1"></i-lucide>
+            <p>{{ t('achievements.page.noAchievements') }}</p>
+          </div>
+        }
+      }
     </div>
   `,
   styles: [`
-    :host { display:block; height:100%; }
-    .ach-shell { display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; background:hsl(var(--background)); color:hsl(var(--foreground)); }
-    .ach-header { background:hsl(var(--card)); border-bottom:1px solid hsl(var(--border)); padding:0.75rem 1rem; position:sticky; top:0; z-index:10; }
-    .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
-    .back-btn { background:none; border:none; color:hsl(var(--muted-foreground)); cursor:pointer; padding:0.375rem; border-radius:0.5rem; display:grid; place-items:center; }
-    .back-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--muted)/0.5); }
     .header-title { font-size:1.125rem; font-weight:700; margin:0; display:flex; align-items:center; gap:0.5rem; color:hsl(var(--gold)); }
     .header-subtitle { font-size:0.75rem; color:hsl(var(--muted-foreground)); margin-left:auto; font-variant-numeric:tabular-nums; }
-    .ach-main { flex:1; overflow-y:auto; padding:1.5rem 1rem; }
-    .ach-inner { max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:1.25rem; }
+    .ach-inner { display:flex; flex-direction:column; gap:1.25rem; }
+    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
     .loading-state { display:flex; justify-content:center; padding:3rem; }
     .loading-spinner { width:2rem; height:2rem; border:2px solid hsl(var(--muted)); border-top-color:hsl(var(--gold)); border-radius:50%; animation:spin 0.8s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
@@ -277,12 +262,10 @@ type SortMode = 'rarity' | 'name' | 'recent';
 })
 export class AchievementsComponent implements OnInit {
   private readonly api = inject(ApiService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly transloco = inject(TranslocoService);
 
-  readonly ChevronLeftIcon = ChevronLeft;
   readonly AwardIcon = Award;
   readonly StarIcon = Star;
   readonly LockIcon = Lock;
@@ -378,7 +361,4 @@ export class AchievementsComponent implements OnInit {
     });
   }
 
-  goBack(): void {
-    this.router.navigate(['/']);
-  }
 }
