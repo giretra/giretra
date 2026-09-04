@@ -1,0 +1,151 @@
+.layout-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--topbar-bg-color);
+    box-shadow: var(--topbar-box-shadow);
+    min-height: 4.4rem;
+    padding: 1rem 0;
+    width: 100%;
+
+    .topbar-start {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        padding: 0 1.15rem;
+        padding-left: 17.15rem;
+
+        .topbar-menubutton {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 2rem;
+
+            @media screen and (max-width: 991px) {
+                margin-right: 0.5rem;
+            }
+            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            flex-shrink: 0;
+            background-color: transparent;
+            border-color: transparent;
+            transition: background-color var(--transition-duration);
+
+            i {
+                font-size: 1.25rem;
+                color: var(--topbar-item-text-color);
+                transition: color var(--transition-duration);
+            }
+
+            &:hover {
+                background-color: var(--primary-color);
+
+                i {
+                    color: var(--primary-color-text);
+                }
+            }
+        }
+    }
+
+    .topbar-menu {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin: 0;
+        padding: 0 1.15rem 0 0.85rem;
+        list-style: none;
+        flex-grow: 1;
+        min-width: 0;
+        color: var(--topbar-item-text-color);
+
+        // Direct children only, so PrimeNG list items rendered inside a
+        // dropdown (select options, etc.) don't inherit the bar spacing.
+        > li {
+            margin-left: 1.5rem;
+
+            @media screen and (max-width: 991px) {
+                margin-left: 0.5rem;
+            }
+
+            &.topbar-item {
+                margin-left: 1.5rem;
+
+                @media screen and (max-width: 991px) {
+                    margin-left: 0.5rem;
+                }
+
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+
+                img {
+                    width: 2rem;
+                    height: 2rem;
+                }
+
+                button {
+                    border-radius: 50%;
+                    width: 2rem;
+                    height: 2rem;
+                    transition: box-shadow var(--layout-section-transition-duration);
+
+                    &:focus {
+                        box-shadow: var(--focus-ring-shadow);
+                    }
+                }
+
+                // Direct child only: the dropdown panel itself. A bare `ul` would also
+                // hit lists nested inside the panel (e.g. a p-select's option list).
+                > ul {
+                    position: absolute;
+                    top: calc(100% + 2px);
+                    right: 0;
+                    border-radius: 24px;
+                    display: none;
+                    color: var(--topbar-item-text-color);
+                    background-color: var(--topbar-popup-item-bg-color);
+                    box-shadow: var(--topbar-popup-item-shadow);
+
+                    &.active-topbar-menu {
+                        display: block;
+                    }
+                }
+            }
+
+            .p-button.p-button-secondary {
+                &:hover {
+                    background-color: var(--topbar-popup-item-bg-color);
+                }
+
+                span {
+                    color: var(--topbar-item-text-color);
+                }
+            }
+
+            &.topbar-search {
+                .p-input-icon-left {
+                    i {
+                        color: var(--topbar-item-text-color-secondary);
+                    }
+
+                    input {
+                        &::placeholder {
+                            color: var(--topbar-item-text-color-secondary);
+                        }
+                    }
+                }
+
+                .p-inputtext {
+                    padding-top: 0.5rem;
+                    padding-bottom: 0.5rem;
+                    border-radius: 2rem;
+                    color: var(--topbar-item-text-color);
+                    border-color: var(--topbar-border-color);
+                    background-color: var(--topbar-input-bg-color);
+                }
+            }
+        }
+    }
+}

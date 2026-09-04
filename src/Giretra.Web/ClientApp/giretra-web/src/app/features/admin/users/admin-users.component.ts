@@ -6,7 +6,6 @@ import { ApiService, AdminUserEntry } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   LucideAngularModule,
-  ChevronLeft,
   Users,
   Search,
   Ban,
@@ -23,12 +22,8 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
   standalone: true,
   imports: [LucideAngularModule, TranslocoDirective, DatePipe],
   template: `
-    <div class="au-shell" *transloco="let t">
-      <header class="au-header">
-        <div class="header-inner">
-          <button class="back-btn" (click)="goBack()" title="Back to admin">
-            <i-lucide [img]="ChevronLeftIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          </button>
+    <div class="au-inner" *transloco="let t">
+      <div class="page-head">
           <h1 class="header-title">
             <i-lucide [img]="UsersIcon" [size]="18"></i-lucide>
             {{ t('adminUsers.title') }}
@@ -36,151 +31,141 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
           @if (totalCount() > 0) {
             <span class="count-badge">{{ t('adminUsers.userCount', { count: totalCount() }) }}</span>
           }
-        </div>
-      </header>
+      </div>
 
-      <main class="au-main">
-        <div class="au-inner">
-          <div class="search-bar">
-            <i-lucide [img]="SearchIcon" [size]="14" class="search-icon"></i-lucide>
-            <input
-              class="search-input"
-              type="text"
-              [placeholder]="t('adminUsers.searchPlaceholder')"
-              [value]="search()"
-              (input)="onSearchInput($event)"
-            />
+      <div class="search-bar">
+        <i-lucide [img]="SearchIcon" [size]="14" class="search-icon"></i-lucide>
+        <input
+          class="search-input"
+          type="text"
+          [placeholder]="t('adminUsers.searchPlaceholder')"
+          [value]="search()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">{{ t('common.loading') }}</div>
+      } @else if (users().length === 0) {
+        <div class="empty-state">{{ t('adminUsers.noUsers') }}</div>
+      } @else {
+        <div class="table-panel">
+          <div class="row row-header">
+            <div class="col-user">{{ t('adminUsers.columns.user') }}</div>
+            <div class="col-email">{{ t('adminUsers.columns.email') }}</div>
+            <div class="col-role">{{ t('adminUsers.columns.role') }}</div>
+            <div class="col-num">{{ t('adminUsers.columns.elo') }}</div>
+            <div class="col-num">{{ t('adminUsers.columns.games') }}</div>
+            <div class="col-num" [title]="t('adminUsers.blockedByHint')">{{ t('adminUsers.columns.blockedBy') }}</div>
+            <div class="col-date">{{ t('adminUsers.columns.lastLogin') }}</div>
+            <div class="col-actions"></div>
           </div>
 
-          @if (loading()) {
-            <div class="loading-state">{{ t('common.loading') }}</div>
-          } @else if (users().length === 0) {
-            <div class="empty-state">{{ t('adminUsers.noUsers') }}</div>
-          } @else {
-            <div class="table-panel">
-              <div class="row row-header">
-                <div class="col-user">{{ t('adminUsers.columns.user') }}</div>
-                <div class="col-email">{{ t('adminUsers.columns.email') }}</div>
-                <div class="col-role">{{ t('adminUsers.columns.role') }}</div>
-                <div class="col-num">{{ t('adminUsers.columns.elo') }}</div>
-                <div class="col-num">{{ t('adminUsers.columns.games') }}</div>
-                <div class="col-num" [title]="t('adminUsers.blockedByHint')">{{ t('adminUsers.columns.blockedBy') }}</div>
-                <div class="col-date">{{ t('adminUsers.columns.lastLogin') }}</div>
-                <div class="col-actions"></div>
-              </div>
-
-              @for (u of users(); track u.id) {
-                <div class="row" [class.row-banned]="u.isBanned">
-                  <div
-                    class="col-user"
-                    [class.col-user-link]="!!u.playerId"
-                    (click)="goToHighlights(u)"
-                    [title]="u.playerId ? t('adminUsers.viewStats') : ''"
-                  >
-                    @if (u.avatarUrl) {
-                      <img class="avatar" [src]="u.avatarUrl" [alt]="u.displayName" />
-                    } @else {
-                      <span class="avatar avatar-placeholder">{{ u.displayName.charAt(0).toUpperCase() }}</span>
-                    }
-                    <span class="name-group">
-                      <span class="entry-name">
-                        {{ u.displayName }}
-                        @if (u.isBanned) {
-                          <span class="banned-badge" [title]="u.banReason || ''">{{ t('adminUsers.banned') }}</span>
-                        }
-                      </span>
-                      <span class="entry-username">{{ u.username }}</span>
-                    </span>
-                  </div>
-                  <div class="col-email">{{ u.email || '–' }}</div>
-                  <div class="col-role">
-                    @if (u.role !== 'Normal') {
-                      <span class="role-badge" [class.role-admin]="u.role === 'Admin'">{{ t('adminUsers.roles.' + u.role.toLowerCase()) }}</span>
-                    }
-                  </div>
-                  <div class="col-num">{{ u.eloRating ?? '–' }}</div>
-                  <div class="col-num">{{ u.gamesPlayed ?? '–' }}</div>
-                  <div class="col-num" [class.col-warn]="u.blockedByCount >= 3">{{ u.blockedByCount }}</div>
-                  <div class="col-date">{{ u.lastLoginAt ? (u.lastLoginAt | date: 'MMM d, y') : '–' }}</div>
-                  <div class="col-actions">
-                    <button class="action-btn" (click)="goToGames(u)" [title]="t('adminUsers.viewGames')">
-                      <i-lucide [img]="LayersIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                    </button>
-                    @if (u.customDisplayName) {
-                      <button class="action-btn" (click)="clearDisplayName(u)" [title]="t('adminUsers.actions.clearName')">
-                        <i-lucide [img]="EraserIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                      </button>
-                    }
-                    @if (u.avatarUrl) {
-                      <button class="action-btn" (click)="removeAvatar(u)" [title]="t('adminUsers.actions.removeAvatar')">
-                        <i-lucide [img]="ImageOffIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                      </button>
-                    }
+          @for (u of users(); track u.id) {
+            <div class="row" [class.row-banned]="u.isBanned">
+              <div
+                class="col-user"
+                [class.col-user-link]="!!u.playerId"
+                (click)="goToHighlights(u)"
+                [title]="u.playerId ? t('adminUsers.viewStats') : ''"
+              >
+                @if (u.avatarUrl) {
+                  <img class="avatar" [src]="u.avatarUrl" [alt]="u.displayName" />
+                } @else {
+                  <span class="avatar avatar-placeholder">{{ u.displayName.charAt(0).toUpperCase() }}</span>
+                }
+                <span class="name-group">
+                  <span class="entry-name">
+                    {{ u.displayName }}
                     @if (u.isBanned) {
-                      <button class="action-btn action-unban" (click)="unban(u)" [title]="t('adminUsers.actions.unban')">
-                        <i-lucide [img]="Undo2Icon" [size]="14" [strokeWidth]="2"></i-lucide>
-                      </button>
-                    } @else if (u.role === 'Normal' && u.id !== currentUserId()) {
-                      <button class="action-btn action-ban" (click)="openBanDialog(u)" [title]="t('adminUsers.actions.ban')">
-                        <i-lucide [img]="BanIcon" [size]="14" [strokeWidth]="2"></i-lucide>
-                      </button>
+                      <span class="banned-badge" [title]="u.banReason || ''">{{ t('adminUsers.banned') }}</span>
                     }
-                  </div>
-                </div>
-              }
-            </div>
-
-            @if (totalPages() > 1) {
-              <div class="pagination">
-                <button class="page-btn" [disabled]="page() <= 1" (click)="setPage(page() - 1)">{{ t('adminUsers.prev') }}</button>
-                <span class="page-info">{{ t('adminUsers.pageInfo', { page: page(), totalPages: totalPages() }) }}</span>
-                <button class="page-btn" [disabled]="page() >= totalPages()" (click)="setPage(page() + 1)">{{ t('adminUsers.next') }}</button>
+                  </span>
+                  <span class="entry-username">{{ u.username }}</span>
+                </span>
               </div>
-            }
+              <div class="col-email">{{ u.email || '–' }}</div>
+              <div class="col-role">
+                @if (u.role !== 'Normal') {
+                  <span class="role-badge" [class.role-admin]="u.role === 'Admin'">{{ t('adminUsers.roles.' + u.role.toLowerCase()) }}</span>
+                }
+              </div>
+              <div class="col-num">{{ u.eloRating ?? '–' }}</div>
+              <div class="col-num">{{ u.gamesPlayed ?? '–' }}</div>
+              <div class="col-num" [class.col-warn]="u.blockedByCount >= 3">{{ u.blockedByCount }}</div>
+              <div class="col-date">{{ u.lastLoginAt ? (u.lastLoginAt | date: 'MMM d, y') : '–' }}</div>
+              <div class="col-actions">
+                <button class="action-btn" (click)="goToGames(u)" [title]="t('adminUsers.viewGames')">
+                  <i-lucide [img]="LayersIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                </button>
+                @if (u.customDisplayName) {
+                  <button class="action-btn" (click)="clearDisplayName(u)" [title]="t('adminUsers.actions.clearName')">
+                    <i-lucide [img]="EraserIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  </button>
+                }
+                @if (u.avatarUrl) {
+                  <button class="action-btn" (click)="removeAvatar(u)" [title]="t('adminUsers.actions.removeAvatar')">
+                    <i-lucide [img]="ImageOffIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  </button>
+                }
+                @if (u.isBanned) {
+                  <button class="action-btn action-unban" (click)="unban(u)" [title]="t('adminUsers.actions.unban')">
+                    <i-lucide [img]="Undo2Icon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  </button>
+                } @else if (u.role === 'Normal' && u.id !== currentUserId()) {
+                  <button class="action-btn action-ban" (click)="openBanDialog(u)" [title]="t('adminUsers.actions.ban')">
+                    <i-lucide [img]="BanIcon" [size]="14" [strokeWidth]="2"></i-lucide>
+                  </button>
+                }
+              </div>
+            </div>
           }
         </div>
-      </main>
+
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="page() <= 1" (click)="setPage(page() - 1)">{{ t('adminUsers.prev') }}</button>
+            <span class="page-info">{{ t('adminUsers.pageInfo', { page: page(), totalPages: totalPages() }) }}</span>
+            <button class="page-btn" [disabled]="page() >= totalPages()" (click)="setPage(page() + 1)">{{ t('adminUsers.next') }}</button>
+          </div>
+        }
+      }
 
       <!-- Ban dialog -->
       @if (banTarget(); as target) {
         <div class="dialog-backdrop" (click)="closeBanDialog()">
-          <div class="dialog" (click)="$event.stopPropagation()">
-            <h2 class="dialog-title">
-              <i-lucide [img]="ShieldAlertIcon" [size]="16"></i-lucide>
-              {{ t('adminUsers.banDialog.title', { name: target.displayName }) }}
-            </h2>
-            <textarea
-              class="dialog-reason"
-              rows="3"
-              [placeholder]="t('adminUsers.banDialog.reasonPlaceholder')"
-              [value]="banReason()"
-              (input)="onReasonInput($event)"
-            ></textarea>
-            <div class="dialog-actions">
-              <button class="dialog-btn" (click)="closeBanDialog()">{{ t('common.cancel') }}</button>
-              <button class="dialog-btn dialog-btn-danger" [disabled]="acting()" (click)="confirmBan()">
-                {{ t('adminUsers.banDialog.confirm') }}
-              </button>
-            </div>
-          </div>
+      <div class="dialog" (click)="$event.stopPropagation()">
+        <h2 class="dialog-title">
+          <i-lucide [img]="ShieldAlertIcon" [size]="16"></i-lucide>
+          {{ t('adminUsers.banDialog.title', { name: target.displayName }) }}
+        </h2>
+        <textarea
+          class="dialog-reason"
+          rows="3"
+          [placeholder]="t('adminUsers.banDialog.reasonPlaceholder')"
+          [value]="banReason()"
+          (input)="onReasonInput($event)"
+        ></textarea>
+        <div class="dialog-actions">
+          <button class="dialog-btn" (click)="closeBanDialog()">{{ t('common.cancel') }}</button>
+          <button class="dialog-btn dialog-btn-danger" [disabled]="acting()" (click)="confirmBan()">
+            {{ t('adminUsers.banDialog.confirm') }}
+          </button>
+        </div>
+      </div>
         </div>
       }
     </div>
   `,
   styles: [`
-    .au-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
 
     /* Header */
-    .au-header { background:hsl(var(--card)); border-bottom:1px solid hsl(var(--border)); padding:1rem; flex-shrink:0; }
-    .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
-    .back-btn { display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .back-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .header-title { margin:0; font-size:1.125rem; font-weight:700; color:hsl(var(--foreground)); display:flex; align-items:center; gap:0.5rem; }
     .count-badge { margin-left:auto; font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.625rem; border-radius:9999px; }
 
     /* Main */
-    .au-main { flex:1; padding:1rem; }
-    .au-inner { max-width:1200px; margin:0 auto; }
+    .au-inner { }
+    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
 
     .loading-state, .empty-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
 
@@ -246,7 +231,6 @@ import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
   `],
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
-  readonly ChevronLeftIcon = ChevronLeft;
   readonly UsersIcon = Users;
   readonly SearchIcon = Search;
   readonly BanIcon = Ban;
@@ -299,9 +283,6 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     this.queryParamsSub?.unsubscribe();
   }
 
-  goBack(): void {
-    this.router.navigate(['/admin']);
-  }
 
   goToGames(user: AdminUserEntry): void {
     this.router.navigate(['/admin/games'], { queryParams: { userId: user.id, name: user.displayName } });

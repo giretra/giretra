@@ -1,0 +1,22 @@
+* {
+    box-sizing: border-box;
+}
+
+a {
+    text-decoration: none;
+}
+
+// html/body sizing, font and background are owned by src/styles.css (Giretra keeps a
+// 16px root; the table page relies on html/body height: 100%). Only the wrapper lives here.
+.layout-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    // clip, not hidden: hidden makes this a scroll container, which silently disables
+    // position: sticky for everything inside.
+    overflow-x: clip;
+}
+
+.layout-content-wrapper {
+    flex: 1;
+}

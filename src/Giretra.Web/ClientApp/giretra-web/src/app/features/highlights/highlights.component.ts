@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { LucideAngularModule, ChevronLeft, ChartSpline, Flame } from 'lucide-angular';
+import { LucideAngularModule, ChartSpline, Flame } from 'lucide-angular';
 import { ApiService, HighlightsResponse } from '../../core/services/api.service';
 import {
   HlActivityComponent,
@@ -32,12 +32,8 @@ import {
     HlTricksComponent,
   ],
   template: `
-    <div class="hl-shell" *transloco="let t">
-      <header class="hl-header">
-        <div class="header-inner">
-          <button class="back-btn" (click)="goBack()" title="Back to home">
-            <i-lucide [img]="ChevronLeftIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          </button>
+    <div class="hl-inner" *transloco="let t">
+      <div class="page-head">
           <h1 class="header-title">
             <i-lucide [img]="ChartSplineIcon" [size]="18"></i-lucide>
             @if (viewedPlayerId && data()?.playerName; as name) {
@@ -46,100 +42,90 @@ import {
               {{ t('highlights.title') }}
             }
           </h1>
-        </div>
-      </header>
+      </div>
 
-      <main class="hl-main">
-        <div class="hl-inner">
-          @if (loading()) {
-            <div class="loading-state">{{ t('common.loading') }}</div>
-          } @else if (data(); as d) {
-            @if (d.hero.gamesPlayed === 0) {
-              <div class="empty-card">
-                <i-lucide [img]="ChartSplineIcon" [size]="36"></i-lucide>
-                <h2>{{ t('highlights.empty.title') }}</h2>
-                <p>{{ t('highlights.empty.body') }}</p>
-                <button class="cta-btn" (click)="goBack()">{{ t('highlights.empty.cta') }}</button>
+      @if (loading()) {
+        <div class="loading-state">{{ t('common.loading') }}</div>
+      } @else if (data(); as d) {
+        @if (d.hero.gamesPlayed === 0) {
+          <div class="empty-card">
+            <i-lucide [img]="ChartSplineIcon" [size]="36"></i-lucide>
+            <h2>{{ t('highlights.empty.title') }}</h2>
+            <p>{{ t('highlights.empty.body') }}</p>
+            <button class="cta-btn" (click)="goBack()">{{ t('highlights.empty.cta') }}</button>
+          </div>
+        } @else {
+          <div class="hero">
+            @if (d.hero.eloRating !== null) {
+              <div class="tile">
+                <span class="tile-label">{{ t('highlights.hero.elo') }}</span>
+                <span class="tile-value">{{ d.hero.eloRating }}</span>
               </div>
-            } @else {
-              <div class="hero">
-                @if (d.hero.eloRating !== null) {
-                  <div class="tile">
-                    <span class="tile-label">{{ t('highlights.hero.elo') }}</span>
-                    <span class="tile-value">{{ d.hero.eloRating }}</span>
-                  </div>
-                }
-                <div class="tile">
-                  <span class="tile-label">{{ t('highlights.hero.winRate') }}</span>
-                  <span class="tile-value">{{ d.hero.winRate }}%</span>
-                </div>
-                <div class="tile">
-                  <span class="tile-label">{{ t('highlights.hero.games') }}</span>
-                  <span class="tile-value">{{ d.hero.gamesPlayed }}</span>
-                  <span class="tile-sub">{{ t('highlights.hero.wins') }}: {{ d.hero.gamesWon }}</span>
-                </div>
-                <div class="tile">
-                  <span class="tile-label">{{ t('highlights.hero.streak') }}</span>
-                  <span class="tile-value streak">
-                    {{ d.hero.winStreak }}
-                    @if (d.hero.winStreak >= 3) {
-                      <i-lucide [img]="FlameIcon" [size]="18"></i-lucide>
-                    }
-                  </span>
-                  <span class="tile-sub">{{ t('highlights.hero.bestStreak') }}: {{ d.hero.bestWinStreak }}</span>
-                </div>
-                <div class="tile">
-                  <span class="tile-label">{{ t('highlights.hero.form') }}</span>
-                  <span class="form-dots">
-                    @for (win of d.hero.recentForm; track $index) {
-                      <span
-                        class="dot"
-                        [class.dot-win]="win"
-                        [class.dot-loss]="!win"
-                        [title]="win ? t('highlights.hero.win') : t('highlights.hero.loss')"
-                      ></span>
-                    }
-                  </span>
-                </div>
-              </div>
-
-              @if (d.eloTrend.length > 0) {
-                <div class="grid2">
-                  <hl-radar [modeStats]="d.modeStats" />
-                  <hl-trend [points]="d.eloTrend" />
-                </div>
-              } @else {
-                <hl-radar [modeStats]="d.modeStats" />
-              }
-
-              <div class="grid4">
-                <hl-bidding [bidding]="d.bidding" />
-                <hl-tricks [tricks]="d.tricks" />
-                <hl-sweeps [sweeps]="d.sweeps" />
-                <hl-partners [bestPartner]="d.bestPartner" [nemesis]="d.nemesis" />
-              </div>
-
-              <hl-callouts [callouts]="d.callouts" />
-              <hl-activity [days]="d.activity" />
             }
+            <div class="tile">
+              <span class="tile-label">{{ t('highlights.hero.winRate') }}</span>
+              <span class="tile-value">{{ d.hero.winRate }}%</span>
+            </div>
+            <div class="tile">
+              <span class="tile-label">{{ t('highlights.hero.games') }}</span>
+              <span class="tile-value">{{ d.hero.gamesPlayed }}</span>
+              <span class="tile-sub">{{ t('highlights.hero.wins') }}: {{ d.hero.gamesWon }}</span>
+            </div>
+            <div class="tile">
+              <span class="tile-label">{{ t('highlights.hero.streak') }}</span>
+              <span class="tile-value streak">
+                {{ d.hero.winStreak }}
+                @if (d.hero.winStreak >= 3) {
+                  <i-lucide [img]="FlameIcon" [size]="18"></i-lucide>
+                }
+              </span>
+              <span class="tile-sub">{{ t('highlights.hero.bestStreak') }}: {{ d.hero.bestWinStreak }}</span>
+            </div>
+            <div class="tile">
+              <span class="tile-label">{{ t('highlights.hero.form') }}</span>
+              <span class="form-dots">
+                @for (win of d.hero.recentForm; track $index) {
+                  <span
+                    class="dot"
+                    [class.dot-win]="win"
+                    [class.dot-loss]="!win"
+                    [title]="win ? t('highlights.hero.win') : t('highlights.hero.loss')"
+                  ></span>
+                }
+              </span>
+            </div>
+          </div>
+
+          @if (d.eloTrend.length > 0) {
+            <div class="grid2">
+              <hl-radar [modeStats]="d.modeStats" />
+              <hl-trend [points]="d.eloTrend" />
+            </div>
           } @else {
-            <div class="loading-state">{{ t('highlights.notFound') }}</div>
+            <hl-radar [modeStats]="d.modeStats" />
           }
-        </div>
-      </main>
+
+          <div class="grid4">
+            <hl-bidding [bidding]="d.bidding" />
+            <hl-tricks [tricks]="d.tricks" />
+            <hl-sweeps [sweeps]="d.sweeps" />
+            <hl-partners [bestPartner]="d.bestPartner" [nemesis]="d.nemesis" />
+          </div>
+
+          <hl-callouts [callouts]="d.callouts" />
+          <hl-activity [days]="d.activity" />
+        }
+      } @else {
+        <div class="loading-state">{{ t('highlights.notFound') }}</div>
+      }
     </div>
   `,
   styles: [
     `
-    .hl-shell { min-height: 100vh; display: flex; flex-direction: column; background: hsl(var(--background)); }
-    .hl-header { border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--card) / 0.5); }
-    .header-inner { max-width: 1200px; margin: 0 auto; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem; }
-    .back-btn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; border: none; background: transparent; color: hsl(var(--muted-foreground)); cursor: pointer; transition: all 0.15s ease; }
-    .back-btn:hover { color: hsl(var(--foreground)); background: hsl(var(--foreground) / 0.1); }
     .header-title { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: hsl(var(--foreground)); margin: 0; }
     .header-title i-lucide { color: hsl(var(--gold)); }
-    .hl-main { flex: 1; }
-    .hl-inner { max-width: 1200px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .hl-inner { display: flex; flex-direction: column; gap: 1rem; }
+    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
     .loading-state { text-align: center; padding: 3rem 0; color: hsl(var(--muted-foreground)); }
 
     .empty-card { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; padding: 3rem 1rem; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--muted-foreground)); }
@@ -182,7 +168,6 @@ export class HighlightsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly ChevronLeftIcon = ChevronLeft;
   readonly ChartSplineIcon = ChartSpline;
   readonly FlameIcon = Flame;
 

@@ -1,5 +1,4 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import {
   ApiService,
   LeaderboardPlayerEntry,
@@ -8,7 +7,7 @@ import {
   PlayerProfileResponse,
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, ChevronLeft, Trophy, Bot, Users, Award } from 'lucide-angular';
+import { LucideAngularModule, Trophy, Bot, Users, Award } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { PlayerProfilePopupComponent } from '../../shared/components/player-profile-popup/player-profile-popup.component';
 
@@ -17,12 +16,8 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
   standalone: true,
   imports: [LucideAngularModule, TranslocoDirective, PlayerProfilePopupComponent],
   template: `
-    <div class="lb-shell" *transloco="let t">
-      <header class="lb-header">
-        <div class="header-inner">
-          <button class="back-btn" (click)="goBack()" title="Back to home">
-            <i-lucide [img]="ChevronLeftIcon" [size]="18" [strokeWidth]="2"></i-lucide>
-          </button>
+    <div class="lb-inner" *transloco="let t">
+      <div class="page-head">
           <h1 class="header-title">
             <i-lucide [img]="TrophyIcon" [size]="18"></i-lucide>
             {{ t('leaderboard.title') }}
@@ -35,171 +30,166 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
               <span class="count-badge count-badge-bot">{{ t('leaderboard.botCount', { count: botCount() }) }}</span>
             }
           </div>
-        </div>
-      </header>
+      </div>
 
-      <main class="lb-main">
-        <div class="lb-inner">
-          @if (loading()) {
-            <div class="loading-state">{{ t('common.loading') }}</div>
-          } @else {
-            @if (currentUserEntry(); as me) {
-              <div class="my-rank-banner">
-                <span class="my-rank-label">{{ t('leaderboard.yourRanking') }}</span>
-                <span class="my-rank-value">#{{ me.rank }}</span>
-                <span class="my-rank-divider"></span>
-                <span class="my-rank-stat">
-                  <span class="my-rank-rating">{{ me.rating }}</span>
-                  <span class="my-rank-rating-label">{{ t('leaderboard.columns.rating') }}</span>
-                </span>
-              </div>
-            } @else if (auth.user()) {
-              <div class="my-rank-banner my-rank-banner-unranked">
-                <span class="my-rank-unranked-text">{{ t('leaderboard.unrankedNotice') }}</span>
-              </div>
-            }
-            <div class="columns">
+      @if (loading()) {
+        <div class="loading-state">{{ t('common.loading') }}</div>
+      } @else {
+        @if (currentUserEntry(); as me) {
+          <div class="my-rank-banner">
+            <span class="my-rank-label">{{ t('leaderboard.yourRanking') }}</span>
+            <span class="my-rank-value">#{{ me.rank }}</span>
+            <span class="my-rank-divider"></span>
+            <span class="my-rank-stat">
+              <span class="my-rank-rating">{{ me.rating }}</span>
+              <span class="my-rank-rating-label">{{ t('leaderboard.columns.rating') }}</span>
+            </span>
+          </div>
+        } @else if (auth.user()) {
+          <div class="my-rank-banner my-rank-banner-unranked">
+            <span class="my-rank-unranked-text">{{ t('leaderboard.unrankedNotice') }}</span>
+          </div>
+        }
+        <div class="columns">
 
-              <!-- Players Column -->
-              <section class="column">
-                <div class="column-head">
-                  <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
-                  <span class="column-label">{{ t('leaderboard.topPlayers') }}</span>
-                  <span class="column-count">{{ playerCount() }}</span>
-                </div>
-
-                @if (players().length === 0) {
-                  <div class="empty-col">{{ t('leaderboard.noPlayers') }}</div>
-                } @else {
-                  <div class="row row-header">
-                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                    <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
-                    <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                    <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
-                  </div>
-
-                  @for (p of players(); track p.rank) {
-                    <div class="row row-clickable" [class.row-top3]="p.rank <= 3" (click)="openProfile(p.playerId)">
-                      <div class="col-rank">
-                        @if (p.rank === 1) {
-                          <span class="medal medal-gold">1</span>
-                        } @else if (p.rank === 2) {
-                          <span class="medal medal-silver">2</span>
-                        } @else if (p.rank === 3) {
-                          <span class="medal medal-bronze">3</span>
-                        } @else {
-                          <span class="rank-num">{{ p.rank }}</span>
-                        }
-                      </div>
-                      <div class="col-name">
-                        @if (p.avatarUrl) {
-                          <img class="avatar" [src]="p.avatarUrl" [alt]="p.displayName" />
-                        } @else {
-                          <span class="avatar avatar-placeholder">{{ p.displayName.charAt(0).toUpperCase() }}</span>
-                        }
-                        <span class="entry-name">{{ p.displayName }}</span>
-                      </div>
-                      <div class="col-rating">{{ p.rating }}</div>
-                      <div class="col-winrate">{{ p.winRate }}%</div>
-                    </div>
-                  }
-                }
-              </section>
-
-              <!-- Achievers Column -->
-              <section class="column">
-                <div class="column-head column-head-ach">
-                  <i-lucide [img]="AwardIcon" [size]="14"></i-lucide>
-                  <span class="column-label">{{ t('leaderboard.topAchievers') }}</span>
-                  <span class="column-count">{{ achievers().length }}</span>
-                </div>
-
-                @if (achievers().length === 0) {
-                  <div class="empty-col">{{ t('leaderboard.noAchievers') }}</div>
-                } @else {
-                  <div class="row row-header">
-                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                    <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
-                    <div class="col-rating">{{ t('leaderboard.columns.points') }}</div>
-                    <div class="col-games">{{ t('leaderboard.columns.count') }}</div>
-                  </div>
-
-                  @for (a of achievers(); track a.rank) {
-                    <div class="row row-clickable" [class.row-top3]="a.rank <= 3" (click)="openProfile(a.playerId)">
-                      <div class="col-rank">
-                        @if (a.rank === 1) {
-                          <span class="medal medal-gold">1</span>
-                        } @else if (a.rank === 2) {
-                          <span class="medal medal-silver">2</span>
-                        } @else if (a.rank === 3) {
-                          <span class="medal medal-bronze">3</span>
-                        } @else {
-                          <span class="rank-num">{{ a.rank }}</span>
-                        }
-                      </div>
-                      <div class="col-name">
-                        @if (a.avatarUrl) {
-                          <img class="avatar" [src]="a.avatarUrl" [alt]="a.displayName" />
-                        } @else {
-                          <span class="avatar avatar-placeholder">{{ a.displayName.charAt(0).toUpperCase() }}</span>
-                        }
-                        <span class="entry-name">{{ a.displayName }}</span>
-                      </div>
-                      <div class="col-rating col-points">{{ a.achievementPoints }}</div>
-                      <div class="col-games">{{ a.achievementCount }}</div>
-                    </div>
-                  }
-                }
-              </section>
-
-              <!-- Bots Column -->
-              <section class="column column-bots">
-                <div class="column-head column-head-bot">
-                  <i-lucide [img]="BotIcon" [size]="14"></i-lucide>
-                  <span class="column-label">{{ t('leaderboard.bots') }}</span>
-                  <span class="column-count">{{ botCount() }}</span>
-                </div>
-
-                @if (bots().length === 0) {
-                  <div class="empty-col">{{ t('leaderboard.noBots') }}</div>
-                } @else {
-                  <div class="row row-header">
-                    <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
-                    <div class="col-name">{{ t('leaderboard.columns.bot') }}</div>
-                    <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
-                    <div class="col-author">{{ t('leaderboard.columns.author') }}</div>
-                  </div>
-
-                  @for (b of bots(); track b.rank) {
-                    <div class="row row-clickable" [class.row-top3]="b.rank <= 3" (click)="openProfile(b.playerId)">
-                      <div class="col-rank">
-                        @if (b.rank === 1) {
-                          <span class="medal medal-gold">1</span>
-                        } @else if (b.rank === 2) {
-                          <span class="medal medal-silver">2</span>
-                        } @else if (b.rank === 3) {
-                          <span class="medal medal-bronze">3</span>
-                        } @else {
-                          <span class="rank-num">{{ b.rank }}</span>
-                        }
-                      </div>
-                      <div class="col-name">
-                        <span class="avatar avatar-placeholder avatar-bot">
-                          <i-lucide [img]="BotIcon" [size]="12" [strokeWidth]="2"></i-lucide>
-                        </span>
-                        <span class="entry-name">{{ b.displayName }}</span>
-                      </div>
-                      <div class="col-rating">{{ b.rating }}</div>
-                      <div class="col-author">{{ b.author || t('leaderboard.builtIn') }}</div>
-                    </div>
-                  }
-                }
-              </section>
-
+          <!-- Players Column -->
+          <section class="column">
+            <div class="column-head">
+              <i-lucide [img]="UsersIcon" [size]="14"></i-lucide>
+              <span class="column-label">{{ t('leaderboard.topPlayers') }}</span>
+              <span class="column-count">{{ playerCount() }}</span>
             </div>
-          }
+
+            @if (players().length === 0) {
+              <div class="empty-col">{{ t('leaderboard.noPlayers') }}</div>
+            } @else {
+              <div class="row row-header">
+                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
+                <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
+                <div class="col-winrate">{{ t('leaderboard.columns.winRate') }}</div>
+              </div>
+
+              @for (p of players(); track p.rank) {
+                <div class="row row-clickable" [class.row-top3]="p.rank <= 3" (click)="openProfile(p.playerId)">
+                  <div class="col-rank">
+                    @if (p.rank === 1) {
+                      <span class="medal medal-gold">1</span>
+                    } @else if (p.rank === 2) {
+                      <span class="medal medal-silver">2</span>
+                    } @else if (p.rank === 3) {
+                      <span class="medal medal-bronze">3</span>
+                    } @else {
+                      <span class="rank-num">{{ p.rank }}</span>
+                    }
+                  </div>
+                  <div class="col-name">
+                    @if (p.avatarUrl) {
+                      <img class="avatar" [src]="p.avatarUrl" [alt]="p.displayName" />
+                    } @else {
+                      <span class="avatar avatar-placeholder">{{ p.displayName.charAt(0).toUpperCase() }}</span>
+                    }
+                    <span class="entry-name">{{ p.displayName }}</span>
+                  </div>
+                  <div class="col-rating">{{ p.rating }}</div>
+                  <div class="col-winrate">{{ p.winRate }}%</div>
+                </div>
+              }
+            }
+          </section>
+
+          <!-- Achievers Column -->
+          <section class="column">
+            <div class="column-head column-head-ach">
+              <i-lucide [img]="AwardIcon" [size]="14"></i-lucide>
+              <span class="column-label">{{ t('leaderboard.topAchievers') }}</span>
+              <span class="column-count">{{ achievers().length }}</span>
+            </div>
+
+            @if (achievers().length === 0) {
+              <div class="empty-col">{{ t('leaderboard.noAchievers') }}</div>
+            } @else {
+              <div class="row row-header">
+                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                <div class="col-name">{{ t('leaderboard.columns.player') }}</div>
+                <div class="col-rating">{{ t('leaderboard.columns.points') }}</div>
+                <div class="col-games">{{ t('leaderboard.columns.count') }}</div>
+              </div>
+
+              @for (a of achievers(); track a.rank) {
+                <div class="row row-clickable" [class.row-top3]="a.rank <= 3" (click)="openProfile(a.playerId)">
+                  <div class="col-rank">
+                    @if (a.rank === 1) {
+                      <span class="medal medal-gold">1</span>
+                    } @else if (a.rank === 2) {
+                      <span class="medal medal-silver">2</span>
+                    } @else if (a.rank === 3) {
+                      <span class="medal medal-bronze">3</span>
+                    } @else {
+                      <span class="rank-num">{{ a.rank }}</span>
+                    }
+                  </div>
+                  <div class="col-name">
+                    @if (a.avatarUrl) {
+                      <img class="avatar" [src]="a.avatarUrl" [alt]="a.displayName" />
+                    } @else {
+                      <span class="avatar avatar-placeholder">{{ a.displayName.charAt(0).toUpperCase() }}</span>
+                    }
+                    <span class="entry-name">{{ a.displayName }}</span>
+                  </div>
+                  <div class="col-rating col-points">{{ a.achievementPoints }}</div>
+                  <div class="col-games">{{ a.achievementCount }}</div>
+                </div>
+              }
+            }
+          </section>
+
+          <!-- Bots Column -->
+          <section class="column column-bots">
+            <div class="column-head column-head-bot">
+              <i-lucide [img]="BotIcon" [size]="14"></i-lucide>
+              <span class="column-label">{{ t('leaderboard.bots') }}</span>
+              <span class="column-count">{{ botCount() }}</span>
+            </div>
+
+            @if (bots().length === 0) {
+              <div class="empty-col">{{ t('leaderboard.noBots') }}</div>
+            } @else {
+              <div class="row row-header">
+                <div class="col-rank">{{ t('leaderboard.columns.rank') }}</div>
+                <div class="col-name">{{ t('leaderboard.columns.bot') }}</div>
+                <div class="col-rating">{{ t('leaderboard.columns.rating') }}</div>
+                <div class="col-author">{{ t('leaderboard.columns.author') }}</div>
+              </div>
+
+              @for (b of bots(); track b.rank) {
+                <div class="row row-clickable" [class.row-top3]="b.rank <= 3" (click)="openProfile(b.playerId)">
+                  <div class="col-rank">
+                    @if (b.rank === 1) {
+                      <span class="medal medal-gold">1</span>
+                    } @else if (b.rank === 2) {
+                      <span class="medal medal-silver">2</span>
+                    } @else if (b.rank === 3) {
+                      <span class="medal medal-bronze">3</span>
+                    } @else {
+                      <span class="rank-num">{{ b.rank }}</span>
+                    }
+                  </div>
+                  <div class="col-name">
+                    <span class="avatar avatar-placeholder avatar-bot">
+                      <i-lucide [img]="BotIcon" [size]="12" [strokeWidth]="2"></i-lucide>
+                    </span>
+                    <span class="entry-name">{{ b.displayName }}</span>
+                  </div>
+                  <div class="col-rating">{{ b.rating }}</div>
+                  <div class="col-author">{{ b.author || t('leaderboard.builtIn') }}</div>
+                </div>
+              }
+            }
+          </section>
+
         </div>
-      </main>
+      }
     </div>
 
     @if (profileData()) {
@@ -210,21 +200,16 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
     }
   `,
   styles: [`
-    .lb-shell { min-height:100vh; display:flex; flex-direction:column; background:hsl(var(--background)); }
 
     /* Header */
-    .lb-header { background:hsl(var(--card)); border-bottom:1px solid hsl(var(--border)); padding:1rem; flex-shrink:0; }
-    .header-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:0.75rem; }
-    .back-btn { display:flex; align-items:center; justify-content:center; width:2rem; height:2rem; border-radius:0.5rem; border:none; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; transition:all 0.15s ease; }
-    .back-btn:hover { color:hsl(var(--foreground)); background:hsl(var(--foreground)/0.1); }
     .header-title { margin:0; font-size:1.125rem; font-weight:700; color:hsl(var(--foreground)); display:flex; align-items:center; gap:0.5rem; }
     .header-badges { margin-left:auto; display:flex; gap:0.375rem; }
     .count-badge { font-size:0.6875rem; font-weight:600; color:hsl(var(--muted-foreground)); background:hsl(var(--muted)/0.5); padding:0.125rem 0.625rem; border-radius:9999px; }
     .count-badge-bot { color:hsl(var(--gold)); background:hsl(var(--gold)/0.12); }
 
     /* Main */
-    .lb-main { flex:1; padding:1rem; }
-    .lb-inner { max-width:1200px; margin:0 auto; }
+    .lb-inner { }
+    .page-head { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
 
     .loading-state { text-align:center; padding:3rem 1rem; color:hsl(var(--muted-foreground)); font-size:0.875rem; }
 
@@ -306,7 +291,6 @@ import { PlayerProfilePopupComponent } from '../../shared/components/player-prof
   `],
 })
 export class LeaderboardComponent implements OnInit {
-  readonly ChevronLeftIcon = ChevronLeft;
   readonly TrophyIcon = Trophy;
   readonly BotIcon = Bot;
   readonly UsersIcon = Users;
@@ -314,7 +298,6 @@ export class LeaderboardComponent implements OnInit {
 
   private readonly api = inject(ApiService);
   readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly players = signal<LeaderboardPlayerEntry[]>([]);
   readonly achievers = signal<LeaderboardAchieverEntry[]>([]);
@@ -356,7 +339,4 @@ export class LeaderboardComponent implements OnInit {
     this.profileData.set(null);
   }
 
-  goBack(): void {
-    this.router.navigate(['/']);
-  }
 }

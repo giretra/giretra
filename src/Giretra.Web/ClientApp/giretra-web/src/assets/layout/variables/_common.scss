@@ -1,0 +1,23 @@
+:root {
+    --primary-color: var(--p-primary-color);
+    --primary-color-text: var(--p-primary-contrast-color);
+    --text-color: var(--p-text-color);
+    --text-color-secondary: var(--p-text-muted-color);
+    --surface-border: var(--p-content-border-color);
+    --surface-card: var(--p-content-background);
+    --surface-hover: var(--p-content-hover-background);
+    --surface-overlay: var(--p-overlay-popover-background);
+    --transition-duration: var(--p-transition-duration);
+    --maskbg: var(--p-mask-background);
+    --border-radius: var(--p-content-border-radius);
+    --layout-section-transition-duration: 0.2s;
+    --focus-ring-shadow: var(--p-focus-ring-shadow);
+    --topbar-bg-color: transparent;
+    --topbar-border-color: var(--surface-border);
+    --topbar-box-shadow: none;
+    --topbar-item-text-color: var(--text-color);
+    --topbar-item-text-color-secondary: var(--text-color-secondary);
+    --topbar-input-bg-color: var(--surface-border);
+    --topbar-popup-item-bg-color: var(--surface-card);
+    --topbar-popup-item-shadow: 0 5px 12px 6px #00000017;
+}
