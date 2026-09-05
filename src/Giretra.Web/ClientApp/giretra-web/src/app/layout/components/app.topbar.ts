@@ -102,6 +102,13 @@ import { AppSidebar } from './app.sidebar';
                 </li>
               }
               <li role="menuitem">
+                <a class="topbar-menu-item" href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer" (click)="closeMenu()">
+                  <i class="pi pi-lightbulb"></i>
+                  <span>{{ 'layout.feedback' | transloco }}</span>
+                  <i class="pi pi-external-link topbar-menu-ext"></i>
+                </a>
+              </li>
+              <li role="menuitem">
                 <a class="topbar-menu-item" (click)="logout()">
                   <i class="pi pi-sign-out"></i>
                   <span>{{ 'layout.logout' | transloco }}</span>
