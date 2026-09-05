@@ -1,5 +1,5 @@
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ButtonModule } from 'primeng/button';
@@ -102,10 +102,9 @@ import { AppSidebar } from './app.sidebar';
                 </li>
               }
               <li role="menuitem">
-                <a class="topbar-menu-item" href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer" (click)="closeMenu()">
+                <a class="topbar-menu-item" [routerLink]="['/feedback']" [queryParams]="{ from: router.url }" (click)="closeMenu()">
                   <i class="pi pi-lightbulb"></i>
                   <span>{{ 'layout.feedback' | transloco }}</span>
-                  <i class="pi pi-external-link topbar-menu-ext"></i>
                 </a>
               </li>
               <li role="menuitem">
@@ -126,6 +125,8 @@ import { AppSidebar } from './app.sidebar';
 })
 export class AppTopbar {
   layoutService = inject(LayoutService);
+
+  router = inject(Router);
 
   auth = inject(AuthService);
 
