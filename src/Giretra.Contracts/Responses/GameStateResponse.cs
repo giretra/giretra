@@ -22,6 +22,13 @@ public sealed class GameStateResponse
     public required string RoomId { get; init; }
 
     /// <summary>
+    /// Monotonic version of the game's client-visible state. Strictly increases on
+    /// every change; clients must ignore a snapshot whose version is not greater
+    /// than the last one they applied for the same game.
+    /// </summary>
+    public required long StateVersion { get; init; }
+
+    /// <summary>
     /// Target score to win the match.
     /// </summary>
     public required int TargetScore { get; init; }
