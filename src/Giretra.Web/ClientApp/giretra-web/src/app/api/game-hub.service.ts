@@ -3,12 +3,33 @@ import {
   HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
+  IRetryPolicy,
   LogLevel,
+  RetryContext,
 } from '@microsoft/signalr';
 import { Subject } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+
+/**
+ * Reconnect schedule that never gives up. SignalR's default policy stops after
+ * four attempts (about 45 s), which on a phone means any screen lock or cell
+ * handover ends with a dead table and a manual Retry button. Quick attempts
+ * first, then a steady cadence; the visibility handler below forces an
+ * immediate attempt when the page comes back to the foreground, since browsers
+ * throttle timers in background tabs.
+ */
+const RECONNECT_DELAYS_MS = [0, 1000, 2000, 5000];
+const RECONNECT_STEADY_DELAY_MS = 10_000;
+/** Delay before retrying when a fresh connection attempt itself fails. */
+const RESUME_RETRY_DELAY_MS = 5000;
+
+class EndlessRetryPolicy implements IRetryPolicy {
+  nextRetryDelayInMilliseconds(context: RetryContext): number | null {
+    return RECONNECT_DELAYS_MS[context.previousRetryCount] ?? RECONNECT_STEADY_DELAY_MS;
+  }
+}
 import {
   AchievementsEarnedEvent,
   CardPlayedEvent,
@@ -40,11 +61,31 @@ export class GameHubService implements OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly auth = inject(AuthService);
   private hubConnection: HubConnection | null = null;
+  private hubUrl: string | null = null;
+  /** Set by disconnect(); suppresses every automatic resume until the next connect(). */
+  private manuallyDisconnected = false;
+  private resumeInFlight: Promise<void> | null = null;
+  private resumeRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Connection status
   private readonly _connectionStatus = signal<ConnectionStatus>('disconnected');
   readonly connectionStatus = this._connectionStatus.asReadonly();
+  /** Emitted after the connection was re-established (automatically or by resume()). */
   readonly reconnected$ = new Subject<void>();
+  /**
+   * Emitted when the page returns to the foreground while the connection looks
+   * healthy. A socket that sat in a background tab may be half-dead, or events
+   * may have been dropped, so listeners should re-sync their state cheaply.
+   */
+  readonly resumed$ = new Subject<void>();
+
+  constructor() {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+      window.addEventListener('online', this.onOnline);
+      window.addEventListener('pageshow', this.onPageShow);
+    }
+  }
 
   // Event subjects
   readonly playerJoined$ = new Subject<PlayerJoinedEvent>();
@@ -69,33 +110,136 @@ export class GameHubService implements OnDestroy {
   readonly chatStatusChanged$ = new Subject<ChatStatusChangedEvent>();
 
   async connect(hubUrl: string): Promise<void> {
+    this.hubUrl = hubUrl;
+    this.manuallyDisconnected = false;
+    this.clearResumeRetry();
+
     if (this.hubConnection?.state === HubConnectionState.Connected) {
       console.log('[Hub] Already connected');
       return;
     }
 
-    console.log('[Hub] Connecting to', hubUrl);
-    this.hubConnection = new HubConnectionBuilder()
-      .withUrl(hubUrl, { accessTokenFactory: () => this.auth.getToken() })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
-      .build();
-
-    this.registerEventHandlers();
-    this.registerConnectionHandlers();
-
-    await this.hubConnection.start();
+    await this.startNewConnection(hubUrl);
     this.ngZone.run(() => this._connectionStatus.set('connected'));
     console.log('[Hub] Connected successfully');
   }
 
   async disconnect(): Promise<void> {
+    this.manuallyDisconnected = true;
+    this.clearResumeRetry();
     if (this.hubConnection) {
-      await this.hubConnection.stop();
+      const connection = this.hubConnection;
       this.hubConnection = null;
+      await connection.stop().catch(() => {});
     }
     this._connectionStatus.set('disconnected');
   }
+
+  /**
+   * Builds and starts a fresh connection, tearing down any previous one first.
+   * Used both by the initial connect() and by resume(), which needs to abort a
+   * reconnect loop whose timers were throttled while the page was hidden.
+   */
+  private async startNewConnection(hubUrl: string): Promise<void> {
+    const previous = this.hubConnection;
+    this.hubConnection = null;
+    if (previous && previous.state !== HubConnectionState.Disconnected) {
+      await previous.stop().catch(() => {});
+    }
+
+    console.log('[Hub] Connecting to', hubUrl);
+    const connection = new HubConnectionBuilder()
+      .withUrl(hubUrl, { accessTokenFactory: () => this.auth.getToken() })
+      .withAutomaticReconnect(new EndlessRetryPolicy())
+      .configureLogging(LogLevel.Information)
+      .build();
+    this.hubConnection = connection;
+
+    this.registerEventHandlers();
+    this.registerConnectionHandlers();
+
+    try {
+      await connection.start();
+    } catch (e) {
+      if (this.hubConnection === connection) this.hubConnection = null;
+      throw e;
+    }
+  }
+
+  /**
+   * Bring the connection back after the page was hidden, the network came back,
+   * or the connection closed for good. Idempotent: concurrent callers share one
+   * attempt. Does nothing after an explicit disconnect().
+   */
+  private resume(reason: string): Promise<void> {
+    if (this.manuallyDisconnected || !this.hubUrl) return Promise.resolve();
+    if (this.resumeInFlight) return this.resumeInFlight;
+
+    const hubUrl = this.hubUrl;
+    this.resumeInFlight = (async () => {
+      this.clearResumeRetry();
+      const state = this.hubConnection?.state;
+      if (state === HubConnectionState.Connected) {
+        console.log('[Hub] Page resumed while connected, asking listeners to re-sync');
+        this.ngZone.run(() => this.resumed$.next());
+        return;
+      }
+      if (state === HubConnectionState.Connecting) {
+        // An initial connect() is still in progress; let it finish.
+        return;
+      }
+
+      console.log('[Hub] Resuming connection', { reason, state });
+      this.ngZone.run(() => this._connectionStatus.set('reconnecting'));
+      try {
+        await this.startNewConnection(hubUrl);
+        this.ngZone.run(() => {
+          this._connectionStatus.set('connected');
+          this.reconnected$.next();
+        });
+        console.log('[Hub] Resumed successfully');
+      } catch (e) {
+        console.warn('[Hub] Resume failed, retrying shortly', e);
+        this.scheduleResumeRetry();
+      }
+    })().finally(() => {
+      this.resumeInFlight = null;
+    });
+    return this.resumeInFlight;
+  }
+
+  private scheduleResumeRetry(): void {
+    this.clearResumeRetry();
+    if (this.manuallyDisconnected) return;
+    // Keep the "reconnecting" banner: an attempt is still coming.
+    this.ngZone.run(() => this._connectionStatus.set('reconnecting'));
+    this.resumeRetryTimer = setTimeout(() => {
+      this.resumeRetryTimer = null;
+      this.resume('retry');
+    }, RESUME_RETRY_DELAY_MS);
+  }
+
+  private clearResumeRetry(): void {
+    if (this.resumeRetryTimer) {
+      clearTimeout(this.resumeRetryTimer);
+      this.resumeRetryTimer = null;
+    }
+  }
+
+  private readonly onVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible') {
+      this.resume('visible');
+    }
+  };
+
+  private readonly onOnline = (): void => {
+    this.resume('online');
+  };
+
+  private readonly onPageShow = (event: PageTransitionEvent): void => {
+    // Restored from the back/forward cache: the socket did not survive.
+    if (event.persisted) this.resume('pageshow');
+  };
 
   async joinRoom(roomId: string, clientId: string): Promise<void> {
     if (!this.hubConnection) {
@@ -144,8 +288,14 @@ export class GameHubService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      window.removeEventListener('online', this.onOnline);
+      window.removeEventListener('pageshow', this.onPageShow);
+    }
     this.disconnect();
     this.reconnected$.complete();
+    this.resumed$.complete();
     this.playerJoined$.complete();
     this.playerLeft$.complete();
     this.gameStarted$.complete();
@@ -184,9 +334,16 @@ export class GameHubService implements OnDestroy {
       });
     });
 
-    this.hubConnection.onclose((error) => {
+    const connection = this.hubConnection;
+    connection.onclose((error) => {
       console.error('[Hub] Connection closed', error);
+      // A stale connection being replaced by startNewConnection() must not
+      // touch the status or trigger another resume.
+      if (this.hubConnection !== connection) return;
       this.ngZone.run(() => this._connectionStatus.set('disconnected'));
+      // With an endless retry policy this only happens for non-recoverable
+      // closes; still try again from scratch rather than leaving a dead table.
+      if (!this.manuallyDisconnected) this.scheduleResumeRetry();
     });
   }
 

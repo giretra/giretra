@@ -1085,5 +1085,14 @@ export class GameStateService {
 
       await this.refreshState();
     });
+
+    // Page came back to the foreground with the socket apparently intact. The
+    // server may have moved on while the tab was throttled, so re-fetch; the
+    // stateVersion guard makes a redundant fetch harmless.
+    this.hub.resumed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (!this._gameId()) return;
+      console.log('[GameState] Page resumed, refreshing state');
+      this.refreshState();
+    });
   }
 }
