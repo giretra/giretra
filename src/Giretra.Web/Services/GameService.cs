@@ -91,7 +91,12 @@ public sealed class GameService : IGameService
         if (int.TryParse(_configuration["Game:ContinueMatchWindowSeconds"], out var windowSeconds) && windowSeconds > 0)
             continueMatchWindow = TimeSpan.FromSeconds(windowSeconds);
 
-        // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI)
+        // Create player agents (WebApiPlayerAgent for humans, AI agent from registry for AI).
+        // Room-wide events (card played, trick completed, ...) are raised on every
+        // agent by the engine; only one human agent relays them to the room group,
+        // otherwise each client would receive them once per human at the table.
+        var roomBroadcaster = Enum.GetValues<PlayerPosition>()
+            .FirstOrDefault(p => room.PlayerSlots[p] != null);
         var agents = new Dictionary<PlayerPosition, IPlayerAgent>();
         foreach (var position in Enum.GetValues<PlayerPosition>())
         {
@@ -106,7 +111,8 @@ public sealed class GameService : IGameService
                     _notifications,
                     TimeSpan.FromSeconds(room.TurnTimerSeconds),
                     continueMatchWindow,
-                    clientId => ShouldPauseOnTimeout(room.RoomId, clientId));
+                    clientId => ShouldPauseOnTimeout(room.RoomId, clientId),
+                    broadcastsRoomEvents: position == roomBroadcaster);
             }
             else
             {
@@ -490,6 +496,10 @@ public sealed class GameService : IGameService
 
     private GameStateResponse MapToGameStateResponse(GameSession session)
     {
+        // Read the version before the state: a snapshot may then under-report its
+        // version (harmless, the next bump re-syncs) but never over-report it,
+        // which would let a stale snapshot shadow a newer one on the client.
+        var stateVersion = session.StateVersion;
         var matchState = session.MatchState!;
         var deal = matchState.CurrentDeal;
 
@@ -522,6 +532,7 @@ public sealed class GameService : IGameService
         {
             GameId = session.GameId,
             RoomId = session.RoomId,
+            StateVersion = stateVersion,
             TargetScore = matchState.TargetScore,
             Team1MatchPoints = matchState.Team1MatchPoints,
             Team2MatchPoints = matchState.Team2MatchPoints,
@@ -755,6 +766,7 @@ public sealed class GameService : IGameService
             pending.ContinueMatchTcs?.TrySetCanceled();
         }
         session.PendingActions.Clear();
+        session.BumpStateVersion();
 
         // Wait briefly for the game loop to exit
         if (session.GameLoopTask != null)
@@ -830,6 +842,7 @@ public sealed class GameService : IGameService
             pending.ContinueMatchTcs?.TrySetCanceled();
         }
         session.PendingActions.Clear();
+        session.BumpStateVersion();
 
         // Wait briefly for the game loop to exit
         if (session.GameLoopTask != null)
@@ -883,6 +896,7 @@ public sealed class GameService : IGameService
                 new EarnedAchievementInfo(humanPosition, "tapakazo_no_mba_basy", "Tapakazo no mba basy", "style", 3, null, false, lastDeal),
                 new EarnedAchievementInfo(humanPosition, "laoka_na_vary_tena_tsara_sy_lafo", "Laoka na vary, tena tsara sy lafo", "style", 3, null, false, (short)(lastDeal - 1 > 0 ? lastDeal - 1 : lastDeal)),
             ]);
+            session.BumpStateVersion();
 
             _logger.LogInformation(
                 "Debug: injected {Count} achievements for position {Position} in game {GameId}",
