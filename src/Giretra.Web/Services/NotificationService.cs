@@ -380,6 +380,7 @@ public sealed class NotificationService : INotificationService
                 var eloService = scope.ServiceProvider.GetRequiredService<IEloService>();
                 var preview = await eloService.PreviewMatchEloAsync(session);
                 session.EloResults = preview;
+                session.BumpStateVersion();
             }
             catch (Exception ex)
             {

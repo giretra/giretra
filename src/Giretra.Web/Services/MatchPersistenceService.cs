@@ -159,6 +159,7 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
             var earned = await _achievementEvaluator.EvaluateMatchAsync(
                 _dbContext, matchId, session, matchState);
             session.EarnedAchievements.AddRange(earned);
+            session.BumpStateVersion();
         }
         catch (Exception ex)
         {

@@ -34,8 +34,17 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     private readonly TimeSpan _timeout;
     private readonly TimeSpan _continueMatchTimeout;
     private readonly Func<string, bool> _shouldPauseOnTimeout;
+    private readonly bool _broadcastsRoomEvents;
 
     public PlayerPosition Position { get; }
+
+    /// <summary>
+    /// Whether this agent relays room-wide engine callbacks (deal started, card
+    /// played, trick completed, ...) to the room's SignalR group. The engine raises
+    /// those callbacks on every agent, so exactly one human agent per game should
+    /// broadcast them; the others only handle their own turn notifications.
+    /// </summary>
+    public bool BroadcastsRoomEvents => _broadcastsRoomEvents;
     public string ClientId => _clientId;
 
     /// <summary>
@@ -53,7 +62,8 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         INotificationService notifications,
         TimeSpan? timeout = null,
         TimeSpan? continueMatchTimeout = null,
-        Func<string, bool>? shouldPauseOnTimeout = null)
+        Func<string, bool>? shouldPauseOnTimeout = null,
+        bool broadcastsRoomEvents = true)
     {
         Position = position;
         _clientId = clientId;
@@ -62,6 +72,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         _timeout = timeout ?? TimeSpan.FromMinutes(2);
         _continueMatchTimeout = continueMatchTimeout ?? DefaultContinueMatchTimeout;
         _shouldPauseOnTimeout = shouldPauseOnTimeout ?? (_ => false);
+        _broadcastsRoomEvents = broadcastsRoomEvents;
     }
 
     /// <summary>
@@ -117,6 +128,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
                 if (!tcs.Task.IsCompleted)
                 {
                     pending.RestartTimeout();
+                    _session.BumpStateVersion();
                     await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, pending.ActionType, pending.TimeoutAt);
                 }
             }
@@ -135,6 +147,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             TimeoutDuration = _timeout
         };
         _session.PendingActions[Position] = pending;
+        _session.BumpStateVersion();
 
         // Notify the player it's their turn
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Cut, pending.TimeoutAt);
@@ -147,6 +160,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         finally
         {
             _session.PendingActions.TryRemove(Position, out _);
+            _session.BumpStateVersion();
         }
     }
 
@@ -167,6 +181,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             TimeoutDuration = _timeout
         };
         _session.PendingActions[Position] = pending;
+        _session.BumpStateVersion();
 
         // Notify the player it's their turn
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.Negotiate, pending.TimeoutAt);
@@ -180,6 +195,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         finally
         {
             _session.PendingActions.TryRemove(Position, out _);
+            _session.BumpStateVersion();
         }
     }
 
@@ -200,6 +216,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             TimeoutDuration = _timeout
         };
         _session.PendingActions[Position] = pending;
+        _session.BumpStateVersion();
 
         // Notify the player it's their turn
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.PlayCard, pending.TimeoutAt);
@@ -212,36 +229,53 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         finally
         {
             _session.PendingActions.TryRemove(Position, out _);
+            _session.BumpStateVersion();
         }
     }
 
+    // Engine callbacks below fire after the engine has applied the change, so the
+    // version bump happens before the room is notified: a refresh triggered by the
+    // event always observes a version at least as new as the state it describes.
+
     public async Task OnDealStartedAsync(MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyDealStartedAsync(_session.GameId, matchState);
     }
 
     public async Task OnNegotiationCompletedAsync(NegotiationState negotiationState, MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyNegotiationCompletedAsync(_session.GameId, negotiationState, matchState);
     }
 
     public async Task OnDealEndedAsync(DealResult result, HandState handState, MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyDealEndedAsync(_session.GameId, result, handState, matchState);
     }
 
     public async Task OnCardPlayedAsync(PlayerPosition player, Card card, HandState handState, MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyCardPlayedAsync(_session.GameId, player, card, handState, matchState);
     }
 
     public async Task OnTrickCompletedAsync(TrickState completedTrick, PlayerPosition winner, HandState handState, MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyTrickCompletedAsync(_session.GameId, completedTrick, winner, handState, matchState);
     }
 
     public async Task OnMatchEndedAsync(MatchState matchState)
     {
+        _session.BumpStateVersion();
+        if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyMatchEndedAsync(_session.GameId, matchState);
     }
 
@@ -257,6 +291,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             TimeoutDuration = _timeout
         };
         _session.PendingActions[Position] = pending;
+        _session.BumpStateVersion();
 
         // Notify the player to confirm continuation
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueDeal, pending.TimeoutAt);
@@ -269,6 +304,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         finally
         {
             _session.PendingActions.TryRemove(Position, out _);
+            _session.BumpStateVersion();
         }
     }
 
@@ -284,6 +320,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
             TimeoutDuration = _continueMatchTimeout
         };
         _session.PendingActions[Position] = pending;
+        _session.BumpStateVersion();
 
         // Notify the player to confirm continuation
         await _notifications.NotifyYourTurnAsync(_session.GameId, _clientId, Position, PendingActionType.ContinueMatch, pending.TimeoutAt);
@@ -306,6 +343,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         finally
         {
             _session.PendingActions.TryRemove(Position, out _);
+            _session.BumpStateVersion();
         }
     }
 }
