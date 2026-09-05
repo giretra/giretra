@@ -522,5 +522,6 @@
   "settings.friends.hint": "Azo asaina amin'ny latabatrao ny namana",
   "settings.blocked.hint": "Tsy afaka miditra amin'ny latabatrao ny mpilalao voasakana",
   "settings.history.hint": "Ny lalaonao farany, ny vaovao indrindra aloha",
-  "settings.menu": "Menu"
+  "settings.menu": "Menu",
+  "layout.feedback": "Hevitra na olana?"
 }

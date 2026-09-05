@@ -17,6 +17,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <i class="pi pi-github"></i> {{ 'layout.footer.source' | transloco }}
         </a>
         <span class="footer-dot"></span>
+        <a href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer" class="footer-link">
+          <i class="pi pi-lightbulb"></i> {{ 'layout.feedback' | transloco }}
+        </a>
+        <span class="footer-dot"></span>
         <a routerLink="/leaderboard" class="footer-link footer-link-gold">
           <i class="pi pi-trophy"></i> {{ 'home.bestPlayers' | transloco }}
         </a>
