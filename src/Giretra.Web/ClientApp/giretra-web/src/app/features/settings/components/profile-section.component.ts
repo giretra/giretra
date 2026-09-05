@@ -102,11 +102,14 @@ import { SoundService } from '../../../core/services/sound.service';
               <span class="g-form-desc">{{ t('settings.stats.hint') }}</span>
             </div>
             <div class="g-form-control stats-grid">
-              <div class="stat"><span class="stat-value">{{ p.eloRating }}</span><span class="stat-label">{{ t('settings.profile.eloRating') }}</span></div>
               <div class="stat"><span class="stat-value">{{ p.gamesPlayed }}</span><span class="stat-label">{{ t('settings.profile.gamesPlayed') }}</span></div>
               <div class="stat"><span class="stat-value">{{ winRate() }}%</span><span class="stat-label">{{ t('settings.profile.winRate') }}</span></div>
               <div class="stat"><span class="stat-value">{{ p.winStreak }}</span><span class="stat-label">{{ t('settings.profile.winStreak') }}</span></div>
               <div class="stat"><span class="stat-value">{{ p.bestWinStreak }}</span><span class="stat-label">{{ t('settings.profile.bestStreak') }}</span></div>
+              <button type="button" class="stat link" (click)="goToHighlights()">
+                <span class="stat-value"><i class="pi pi-chart-line"></i>{{ p.eloRating }}</span>
+                <span class="stat-label">{{ t('highlights.title') }} <i class="pi pi-arrow-right"></i></span>
+              </button>
               <button type="button" class="stat gold" (click)="goToAchievements()">
                 <span class="stat-value"><i class="pi pi-star-fill"></i>{{ achievementCount() }}</span>
                 <span class="stat-label">{{ t('achievements.page.title') }} <i class="pi pi-arrow-right"></i></span>
@@ -172,7 +175,9 @@ import { SoundService } from '../../../core/services/sound.service';
     .stat-value i { font-size:0.875rem; }
     .stat-label { font-size:0.75rem; color:var(--text-color-secondary); }
     .stat-label i { font-size:0.625rem; margin-left:0.125rem; }
-    .stat.gold { cursor:pointer; transition:border-color var(--transition-duration), background-color var(--transition-duration); }
+    .stat.gold, .stat.link { cursor:pointer; transition:border-color var(--transition-duration), background-color var(--transition-duration); }
+    .stat.link .stat-value { color:var(--p-primary-400); }
+    .stat.link:hover { border-color:color-mix(in srgb, var(--p-primary-color) 45%, transparent); background:color-mix(in srgb, var(--p-primary-color) 8%, var(--p-surface-800)); }
     .stat.gold .stat-value { color:var(--p-yellow-400); }
     .stat.gold:hover { border-color:color-mix(in srgb, var(--p-yellow-400) 45%, transparent); background:color-mix(in srgb, var(--p-yellow-400) 8%, var(--p-surface-800)); }
 
@@ -297,6 +302,10 @@ export class ProfileSectionComponent implements OnInit {
         if (p) this.profile.set({ ...p, avatarUrl: null });
       },
     });
+  }
+
+  goToHighlights(): void {
+    this.router.navigate(['/highlights']);
   }
 
   goToAchievements(): void {

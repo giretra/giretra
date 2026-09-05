@@ -79,6 +79,12 @@ import { AppSidebar } from './app.sidebar';
                 <app-language-switcher />
               </li>
               <li role="menuitem">
+                <a class="topbar-menu-item" routerLink="/highlights" (click)="closeMenu()">
+                  <i class="pi pi-chart-line"></i>
+                  <span>{{ 'menu.highlights' | transloco }}</span>
+                </a>
+              </li>
+              <li role="menuitem">
                 <a class="topbar-menu-item" routerLink="/settings" (click)="closeMenu()">
                   <i class="pi pi-cog"></i>
                   <span>{{ 'layout.settings' | transloco }}</span>
