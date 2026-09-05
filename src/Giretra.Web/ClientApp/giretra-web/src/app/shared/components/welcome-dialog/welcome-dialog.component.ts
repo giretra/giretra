@@ -1,5 +1,6 @@
 import { Component, inject, output, signal } from '@angular/core';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { RouterModule } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 
@@ -8,7 +9,7 @@ const WELCOME_STORAGE_KEY = 'giretra-welcome-done';
 @Component({
   selector: 'app-welcome-dialog',
   standalone: true,
-  imports: [TranslocoDirective, DialogModule, ButtonModule],
+  imports: [TranslocoDirective, RouterModule, DialogModule, ButtonModule],
   template: `
     <ng-container *transloco="let t">
       <p-dialog
@@ -33,8 +34,8 @@ const WELCOME_STORAGE_KEY = 'giretra-welcome-done';
             <span class="oss-icon"><i class="pi pi-github"></i></span>
             <div class="oss-text">
               <p>{{ t('welcome.openSourceText') }}</p>
-              <a href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer">
-                {{ t('welcome.feedbackLink') }} <i class="pi pi-external-link"></i>
+              <a [routerLink]="['/feedback']" (click)="confirm()">
+                {{ t('welcome.feedbackLink') }} <i class="pi pi-arrow-right"></i>
               </a>
             </div>
           </div>

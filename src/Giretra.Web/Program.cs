@@ -8,6 +8,7 @@ using Giretra.Web.Models.Responses;
 using Giretra.Web.Repositories;
 using Giretra.Web.Services;
 using Giretra.Web.Services.Elo;
+using Giretra.Web.Services.Email;
 using Giretra.Web.Services.Offline;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -121,6 +122,13 @@ public class Program
             builder.Services.Configure<MobileClientOptions>(
                 builder.Configuration.GetSection(MobileClientOptions.SectionName));
 
+            // Contact form: appsettings "Feedback" section, then Giretra_Smtp_* / Giretra_Feedback_* env vars (.env)
+            builder.Services.Configure<FeedbackOptions>(
+                builder.Configuration.GetSection(FeedbackOptions.SectionName));
+            builder.Services.PostConfigure<FeedbackOptions>(o => o.ApplyEnvironmentOverrides(Environment.GetEnvironmentVariable));
+            builder.Services.AddSingleton<FeedbackThrottle>();
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+
             if (offline)
             {
                 // Offline auth: simple username-based scheme
@@ -131,6 +139,10 @@ public class Program
 
                 // Offline service stubs (no DB needed)
                 builder.Services.AddOfflineServices();
+
+                // Contact form messages are written to the log instead of being mailed
+                builder.Services.AddSingleton<IEmailSender>(sp =>
+                    new LoggingEmailSender(sp.GetRequiredService<ILogger<LoggingEmailSender>>(), isEnabled: true));
             }
             else
             {
@@ -192,6 +204,19 @@ public class Program
                 builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
                 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
                 builder.Services.AddScoped<IHighlightsService, HighlightsService>();
+
+                // Contact form: mail moderators (+ extra recipients) over SMTP when configured,
+                // otherwise the form is reported as unavailable and only the GitHub route is offered
+                builder.Services.AddScoped<IModeratorDirectory, DbModeratorDirectory>();
+                builder.Services.AddSingleton<IEmailSender>(sp =>
+                {
+                    var options = sp.GetRequiredService<IOptions<FeedbackOptions>>();
+                    if (options.Value.Smtp.IsConfigured)
+                        return new SmtpEmailSender(options, sp.GetRequiredService<ILogger<SmtpEmailSender>>());
+
+                    Log.Warning("No SMTP server configured (Giretra_Smtp_Host): the in-app contact form is disabled");
+                    return new LoggingEmailSender(sp.GetRequiredService<ILogger<LoggingEmailSender>>(), isEnabled: false);
+                });
             }
 
             var app = builder.Build();

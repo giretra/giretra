@@ -62,6 +62,29 @@ public sealed class OfflineUserSyncService : IUserSyncService
 }
 
 /// <summary>
+/// Contact-form recipients in offline mode: every synced user counts as staff (the offline
+/// auth handler grants the moderator claim), so the logged e-mail has a realistic "To" line.
+/// </summary>
+public sealed class OfflineModeratorDirectory : IModeratorDirectory
+{
+    private readonly OfflineUserSyncService _userSync;
+
+    public OfflineModeratorDirectory(OfflineUserSyncService userSync)
+    {
+        _userSync = userSync;
+    }
+
+    public Task<IReadOnlyList<string>> GetModeratorEmailsAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<string> emails = _userSync.AllUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Email))
+            .Select(u => u.Email!)
+            .ToList();
+        return Task.FromResult(emails);
+    }
+}
+
+/// <summary>
 /// Read-only admin user service over the in-memory synced users.
 /// Moderation actions are unavailable offline.
 /// </summary>
@@ -493,6 +516,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHighlightsService, OfflineHighlightsService>();
         services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
         services.AddSingleton<IAdminGameService, OfflineAdminGameService>();
+        services.AddSingleton<IModeratorDirectory>(sp => new OfflineModeratorDirectory(sp.GetRequiredService<OfflineUserSyncService>()));
 
         return services;
     }
