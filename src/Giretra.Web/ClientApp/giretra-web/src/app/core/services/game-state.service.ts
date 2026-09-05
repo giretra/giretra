@@ -177,6 +177,13 @@ export class GameStateService {
   // Monotonic counter used to discard out-of-order refreshState responses
   private _refreshSeq = 0;
 
+  // Highest server stateVersion applied so far, keyed by game. Requests can be
+  // served by the server in a different order than they were issued (HTTP/2
+  // multiplexing, retransmits on mobile links), so the request counter above is
+  // not enough: a later-issued request may carry an older snapshot.
+  private _appliedVersionGameId: string | null = null;
+  private _appliedStateVersion = -1;
+
   // ─────────────────────────────────────────────────────────────────────────
   // Idle Timeout State
   // ─────────────────────────────────────────────────────────────────────────
@@ -552,7 +559,7 @@ export class GameStateService {
           console.log('[GameState] Discarding stale watcher state for game', gameId);
           return;
         }
-        if (watcherState) {
+        if (watcherState && this.acceptSnapshot(watcherState.gameState)) {
           this._gameState.set(watcherState.gameState);
           this._playerCardCounts.set(watcherState.playerCardCounts);
           this._turnTimeoutAt.set(
@@ -568,7 +575,7 @@ export class GameStateService {
           console.log('[GameState] Discarding stale player state for game', gameId);
           return;
         }
-        if (playerState) {
+        if (playerState && this.acceptSnapshot(playerState.gameState)) {
           this._playerState.set(playerState);
           this._gameState.set(playerState.gameState);
           this._turnTimeoutAt.set(
@@ -587,6 +594,31 @@ export class GameStateService {
         await this.attemptRejoin();
       }
     }
+  }
+
+  /**
+   * Decide whether a state snapshot from the server may be applied. Returns false
+   * (and logs) when a newer version of the same game has already been applied.
+   * A snapshot without a version (older backend) is always accepted.
+   */
+  private acceptSnapshot(gameState: GameStateResponse): boolean {
+    const version = gameState.stateVersion;
+    if (typeof version !== 'number') return true;
+
+    if (this._appliedVersionGameId !== gameState.gameId) {
+      this._appliedVersionGameId = gameState.gameId;
+      this._appliedStateVersion = version;
+      return true;
+    }
+    if (version <= this._appliedStateVersion) {
+      console.log('[GameState] Discarding out-of-order snapshot', {
+        received: version,
+        applied: this._appliedStateVersion,
+      });
+      return false;
+    }
+    this._appliedStateVersion = version;
+    return true;
   }
 
   /**
@@ -627,7 +659,7 @@ export class GameStateService {
       const newGameId = response.room.gameId;
       if (newGameId && response.clientId) {
         const playerState = await this.api.getPlayerState(newGameId, response.clientId).toPromise();
-        if (playerState) {
+        if (playerState && this.acceptSnapshot(playerState.gameState)) {
           this._playerState.set(playerState);
           this._gameState.set(playerState.gameState);
           this._turnTimeoutAt.set(
@@ -661,6 +693,8 @@ export class GameStateService {
    */
   private adoptNewGame(gameId: string): void {
     this._gameId.set(gameId);
+    this._appliedVersionGameId = null;
+    this._appliedStateVersion = -1;
     this._idleDeadline.set(null);
     this._matchDealHistory.set([]);
     this._currentDealDealer = null;

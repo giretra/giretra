@@ -66,6 +66,21 @@ public sealed class GameSession
     /// </summary>
     public ConcurrentDictionary<PlayerPosition, bool> PlayersActed { get; } = new();
 
+    private long _stateVersion;
+
+    /// <summary>
+    /// Monotonic counter bumped every time the client-visible state of this game
+    /// changes (engine callbacks, pending actions, Elo/achievement results).
+    /// Exposed in state responses so clients can discard snapshots that arrive
+    /// out of order on slow or lossy networks.
+    /// </summary>
+    public long StateVersion => Interlocked.Read(ref _stateVersion);
+
+    /// <summary>
+    /// Marks the client-visible state as changed. Call after the mutation, never before.
+    /// </summary>
+    public long BumpStateVersion() => Interlocked.Increment(ref _stateVersion);
+
     /// <summary>
     /// Gets the first pending action, if any (backward compat for game state responses).
     /// </summary>

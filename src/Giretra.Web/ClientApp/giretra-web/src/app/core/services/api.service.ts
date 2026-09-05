@@ -119,6 +119,8 @@ export interface EloChangeResponse {
 export interface GameStateResponse {
   gameId: string;
   roomId: string;
+  /** Monotonic server-side version; a snapshot with a lower or equal version than the last applied one is stale. */
+  stateVersion: number;
   targetScore: number;
   team1MatchPoints: number;
   team2MatchPoints: number;
