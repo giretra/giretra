@@ -79,6 +79,12 @@ import { AppSidebar } from './app.sidebar';
                 <app-language-switcher />
               </li>
               <li role="menuitem">
+                <a class="topbar-menu-item" routerLink="/highlights" (click)="closeMenu()">
+                  <i class="pi pi-chart-line"></i>
+                  <span>{{ 'menu.highlights' | transloco }}</span>
+                </a>
+              </li>
+              <li role="menuitem">
                 <a class="topbar-menu-item" routerLink="/settings" (click)="closeMenu()">
                   <i class="pi pi-cog"></i>
                   <span>{{ 'layout.settings' | transloco }}</span>
@@ -95,6 +101,13 @@ import { AppSidebar } from './app.sidebar';
                   </a>
                 </li>
               }
+              <li role="menuitem">
+                <a class="topbar-menu-item" href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer" (click)="closeMenu()">
+                  <i class="pi pi-lightbulb"></i>
+                  <span>{{ 'layout.feedback' | transloco }}</span>
+                  <i class="pi pi-external-link topbar-menu-ext"></i>
+                </a>
+              </li>
               <li role="menuitem">
                 <a class="topbar-menu-item" (click)="logout()">
                   <i class="pi pi-sign-out"></i>
