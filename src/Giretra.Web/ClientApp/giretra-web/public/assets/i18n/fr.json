@@ -522,5 +522,6 @@
   "settings.friends.hint": "Vos amis peuvent être invités à vos tables",
   "settings.blocked.hint": "Les joueurs bloqués ne peuvent pas rejoindre vos tables",
   "settings.history.hint": "Vos dernières parties, les plus récentes d'abord",
-  "settings.menu": "Menu"
+  "settings.menu": "Menu",
+  "layout.feedback": "Une idée ou un bug ?"
 }
