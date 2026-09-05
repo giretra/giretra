@@ -130,7 +130,7 @@ import { ErrorBannerService } from '../../../../core/services/error-banner.servi
             <app-language-switcher />
           </div>
 
-          <a class="menu-row" href="https://github.com/giretra/giretra/issues/new" target="_blank" rel="noopener noreferrer" (click)="menuOpen.set(false)">
+          <a class="menu-row" [href]="feedbackUrl" target="_blank" rel="noopener noreferrer" (click)="menuOpen.set(false)">
             <i-lucide [img]="BugIcon" [size]="15" [strokeWidth]="1.5"></i-lucide>
             <span class="menu-label">{{ t('scoreBar.reportBug') }}</span>
           </a>
@@ -592,6 +592,9 @@ export class ScoreBarComponent {
   readonly GlobeIcon = Globe;
   readonly MessageCircleIcon = MessageCircle;
   readonly BugIcon = Bug;
+
+  // Opened in a new tab: navigating away from the table would forfeit the seat.
+  readonly feedbackUrl = `/feedback?from=${encodeURIComponent(window.location.pathname)}`;
 
   readonly room = input<RoomResponse | null>(null);
   readonly team1MatchPoints = input<number>(0);

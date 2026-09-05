@@ -64,6 +64,24 @@ npm run start
 
 The web app will be served at http://localhost:4200.
 
+### Contact form e-mails
+
+The "Idea or bug?" page lets players message the moderators without a GitHub account.
+Messages are e-mailed to every moderator/admin account that has an e-mail address, plus
+any extra recipients you configure. Set these in the root `.env` (or as environment
+variables); without `Giretra_Smtp_Host` the page only offers the GitHub route.
+
+```bash
+Giretra_Smtp_Host=smtp.example.com
+Giretra_Smtp_Port=587                      # 465 switches to implicit TLS
+Giretra_Smtp_User=mailer@example.com
+Giretra_Smtp_Password=...
+Giretra_Smtp_From=noreply@giretra.com      # defaults to Giretra_Smtp_User
+Giretra_Feedback_ExtraRecipients=owner@example.com,team@example.com
+```
+
+In `--offline` mode nothing is sent: the composed e-mail is written to the console log.
+
 ## Testing with giretra-manage
 
 `giretra-manage` is a CLI tool for validating and benchmarking bots. Run it with `--help` to see available commands:

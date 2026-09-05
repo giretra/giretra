@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
@@ -17,7 +17,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <i class="pi pi-github"></i> {{ 'layout.footer.source' | transloco }}
         </a>
         <span class="footer-dot"></span>
-        <a href="https://github.com/giretra/giretra/issues/new/choose" target="_blank" rel="noopener noreferrer" class="footer-link">
+        <a [routerLink]="['/feedback']" [queryParams]="{ from: router.url }" class="footer-link">
           <i class="pi pi-lightbulb"></i> {{ 'layout.feedback' | transloco }}
         </a>
         <span class="footer-dot"></span>
@@ -33,5 +33,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
   },
 })
 export class AppFooter {
+  readonly router = inject(Router);
+
   readonly currentYear = new Date().getFullYear();
 }

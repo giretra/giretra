@@ -141,6 +141,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'feedback',
+        data: { breadcrumb: 'breadcrumb.feedback' },
+        loadComponent: () =>
+          import('./features/feedback/feedback.component').then((m) => m.FeedbackComponent),
+      },
+      {
         path: 'admin',
         canActivate: [moderatorGuard],
         data: { breadcrumb: 'breadcrumb.admin' },

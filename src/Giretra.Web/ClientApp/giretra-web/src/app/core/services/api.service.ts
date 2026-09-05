@@ -517,6 +517,25 @@ export interface HighlightsResponse {
 }
 
 // ============================================================================
+// Feedback (in-app contact form)
+// ============================================================================
+
+export type FeedbackCategory = 'Bug' | 'Idea' | 'Question' | 'Other';
+
+export interface FeedbackConfigResponse {
+  contactEnabled: boolean;
+  gitHubIssuesUrl: string;
+}
+
+export interface SendFeedbackRequest {
+  category: FeedbackCategory;
+  subject: string;
+  message: string;
+  pageUrl?: string | null;
+  language?: string | null;
+}
+
+// ============================================================================
 // API Service
 // ============================================================================
 
@@ -926,6 +945,21 @@ export class ApiService {
     return this.http
       .get<AdminGameDealsResponse>(`${this.baseUrl}/api/admin/games/${matchId}/deals`)
       .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Feedback
+  // ─────────────────────────────────────────────────────────────────────────
+
+  getFeedbackConfig(): Observable<FeedbackConfigResponse> {
+    return this.http
+      .get<FeedbackConfigResponse>(`${this.baseUrl}/api/feedback/config`)
+      .pipe(catchError(() => of({ contactEnabled: true, gitHubIssuesUrl: 'https://github.com/giretra/giretra/issues/new/choose' })));
+  }
+
+  // Errors are surfaced inline by the feedback page (with a GitHub fallback), not via the banner.
+  sendFeedback(request: SendFeedbackRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/api/feedback`, request);
   }
 
   // ─────────────────────────────────────────────────────────────────────────

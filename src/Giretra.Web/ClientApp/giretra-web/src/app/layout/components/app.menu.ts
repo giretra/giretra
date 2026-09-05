@@ -47,6 +47,10 @@ export class AppMenu {
       items: [{ label: 'menu.settings', icon: 'pi pi-fw pi-cog', routerLink: ['/settings'] }],
     },
     {
+      label: 'menu.sections.help',
+      items: [{ label: 'menu.feedback', icon: 'pi pi-fw pi-lightbulb', routerLink: ['/feedback'] }],
+    },
+    {
       label: 'menu.sections.admin',
       visible: this.auth.isModerator(),
       items: [
