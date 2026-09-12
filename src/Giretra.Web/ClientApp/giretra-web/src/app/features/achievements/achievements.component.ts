@@ -13,6 +13,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 type SortMode = 'rarity' | 'name' | 'recent';
@@ -28,6 +29,7 @@ type SortMode = 'rarity' | 'name' | 'recent';
     SelectButtonModule,
     ProgressBarModule,
     SkeletonModule,
+    TooltipModule,
   ],
   template: `
     <div class="ach" *transloco="let t">
@@ -75,7 +77,7 @@ type SortMode = 'rarity' | 'name' | 'recent';
                   <div class="latest-row">
                     <span class="ach-icon earned"><i class="pi pi-star-fill"></i></span>
                     <div class="latest-info">
-                      <span class="latest-name">{{ latest.name }}</span>
+                      <span class="latest-name" [pTooltip]="latest.name" tooltipPosition="top" [showDelay]="300">{{ latest.name }}</span>
                       <span class="latest-date">{{ formatDate(latest.earnedAt!) }}</span>
                     </div>
                   </div>
@@ -136,7 +138,7 @@ type SortMode = 'rarity' | 'name' | 'recent';
                       <div class="ach-top">
                         <span class="ach-icon earned"><i class="pi pi-star-fill"></i></span>
                         <div class="ach-info">
-                          <span class="ach-name">{{ ach.name }}</span>
+                          <span class="ach-name" [pTooltip]="ach.name" tooltipPosition="top" [showDelay]="300">{{ ach.name }}</span>
                           <span class="ach-stars">
                             @for (_ of starArray(ach.tier); track $index) { <i class="pi pi-star-fill"></i> }
                             @for (_ of starArray(5 - ach.tier); track $index) { <i class="pi pi-star"></i> }
@@ -168,7 +170,7 @@ type SortMode = 'rarity' | 'name' | 'recent';
                       <div class="ach-top">
                         <span class="ach-icon"><i class="pi pi-lock"></i></span>
                         <div class="ach-info">
-                          <span class="ach-name" [class.hidden-text]="ach.isHidden">{{ ach.isHidden ? '???' : ach.name }}</span>
+                          <span class="ach-name" [class.hidden-text]="ach.isHidden" [pTooltip]="ach.isHidden ? undefined : ach.name" tooltipPosition="top" [showDelay]="300">{{ ach.isHidden ? '???' : ach.name }}</span>
                           <span class="ach-stars">
                             @for (_ of starArray(ach.tier); track $index) { <i class="pi pi-star-fill"></i> }
                             @for (_ of starArray(5 - ach.tier); track $index) { <i class="pi pi-star"></i> }
@@ -220,10 +222,10 @@ type SortMode = 'rarity' | 'name' | 'recent';
     .section-head { display:flex; align-items:center; gap:0.5rem; margin:0.5rem 0 0.75rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-color-secondary); }
     .section-head.earned { color:var(--p-yellow-400); }
     .section-count { margin-left:auto; font-variant-numeric:tabular-nums; }
-    .tier-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(17rem, 1fr)); gap:0.75rem; margin-bottom:1rem; }
+    .tier-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(22rem, 100%), 1fr)); gap:1rem; margin-bottom:1rem; }
     .tier-grid:last-child { margin-bottom:0; }
 
-    .ach-card { display:flex; flex-direction:column; gap:0.625rem; padding:1rem; border-radius:1rem; border:1px solid var(--surface-border); background:var(--p-surface-900); }
+    .ach-card { display:flex; flex-direction:column; gap:0.75rem; padding:1.25rem; border-radius:1rem; border:1px solid var(--surface-border); background:var(--p-surface-900); }
     .ach-card.earned { border-color:color-mix(in srgb, var(--p-yellow-400) 30%, transparent); background:color-mix(in srgb, var(--p-yellow-400) 5%, var(--p-surface-900)); }
     .ach-card.earned.tier-high { border-color:color-mix(in srgb, var(--p-yellow-400) 55%, transparent); }
     .ach-card.locked { opacity:0.7; }
