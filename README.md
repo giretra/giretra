@@ -99,6 +99,9 @@ sh giretra-manage.sh benchmark MyBot CalculatingPlayer -n 500
 # Run a Swiss tournament
 sh giretra-manage.sh swiss BotA BotB BotC --seed 42
 
+# Review every card two agents play against the perfect-information solver
+sh giretra-manage.sh analyze MyBot CalculatingPlayer -n 50 --seed 42
+
 # Validate that a bot plays by the rules
 sh giretra-manage.sh validate MyBot -d -v --timeout 200
 ```
