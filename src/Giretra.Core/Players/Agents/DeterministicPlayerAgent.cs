@@ -841,7 +841,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private Card ChooseDefaultLead(IReadOnlyList<Card> validPlays, GameMode mode, CardSuit? trumpSuit)
     {
         var nonDislikedPlays = validPlays
-            .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
+            .Where(c => !_partnerDislikedSuits.Contains(c.Suit) && !IsPlayerVoidIn(_partner, c.Suit))
             .ToList();
 
         var playsToConsider = nonDislikedPlays.Count > 0 ? nonDislikedPlays : validPlays.ToList();
@@ -853,7 +853,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (nonTrumpPlays.Count > 0)
         {
             var longestGroup = nonTrumpPlays.GroupBy(c => c.Suit)
-                .OrderByDescending(g => g.Count())
+                .OrderByDescending(c => _partnerDislikedSuits.Contains(c.Key) || IsPlayerVoidIn(_partner, c.Key))
+                .ThenByDescending(g => g.Count())
                 .ThenByDescending(g => g.Max(c => c.GetStrength(mode)))
                 .First();
 
