@@ -976,7 +976,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     }
 
     /// <summary>
-    /// 3rd seat: complex logic — 4th player may be opponent or teammate.
+    /// 3rd seat: complex logic — Teammate is leading
     /// </summary>
     private Card ChooseThirdSeat(
         IReadOnlyList<Card> hand,
@@ -989,6 +989,15 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var leadSuit = trick.LeadSuit!.Value;
         var fourthPlayer = Position.Next();
 
+        if (!mode.IsColourMode())
+        {
+            var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
+                .Intersect(validPlays).ToList();
+            
+            if (masterCards.Any())
+                return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
+        }
+
         if (teammateWinning && winningCard.HasValue)
         {
             // Safe to load points when the trick cannot be taken from us: either the
@@ -997,9 +1006,21 @@ public class DeterministicPlayerAgent : IPlayerAgent
                                || (IsPlayerVoidIn(fourthPlayer, leadSuit)
                                    && (!mode.IsColourMode() || IsOpponentOutOfTrump(fourthPlayer)));
 
-            return trickIsSafe
-                ? ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit)
-                : ChooseLeastValuableCard(validPlays, mode, hand);
+            if (trickIsSafe)
+                return ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit);
+            else
+            {
+                if (mode.IsColourMode() && (!IsPlayerVoidIn(fourthPlayer,leadSuit) || IsOpponentOutOfTrump(fourthPlayer)))
+                {
+                    var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
+                        .Intersect(validPlays).ToList();
+            
+                    if (masterCards.Any())
+                        return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
+                }
+                
+                return ChooseLeastValuableCard(validPlays, mode, hand);
+            }
         }
 
         // Opponent winning — try to win with master or cheap card
