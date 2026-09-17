@@ -668,7 +668,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (priorityFallback.HasValue)
             return priorityFallback.Value;
 
-        if (!trumpSuit.HasValue && trickNumber < 2)
+        if (!trumpSuit.HasValue && trickNumber < 3)
         {
             var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
 
