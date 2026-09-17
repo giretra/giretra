@@ -993,7 +993,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         {
             var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
                 .Intersect(validPlays).ToList();
-            
+
             if (masterCards.Any())
                 return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
         }
@@ -1010,15 +1010,15 @@ public class DeterministicPlayerAgent : IPlayerAgent
                 return ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit);
             else
             {
-                if (mode.IsColourMode() && (!IsPlayerVoidIn(fourthPlayer,leadSuit) || IsOpponentOutOfTrump(fourthPlayer)))
+                if (mode.IsColourMode() && (!IsPlayerVoidIn(fourthPlayer, leadSuit) || IsOpponentOutOfTrump(fourthPlayer)))
                 {
                     var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
                         .Intersect(validPlays).ToList();
-            
+
                     if (masterCards.Any())
                         return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
                 }
-                
+
                 return ChooseLeastValuableCard(validPlays, mode, hand);
             }
         }
