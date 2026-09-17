@@ -668,7 +668,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (priorityFallback.HasValue)
             return priorityFallback.Value;
 
-        if (!trumpSuit.HasValue && trickNumber < 2)
+        if (!trumpSuit.HasValue && trickNumber < 3)
         {
             var kickableSuits = PlayerAgentHelper.GetKickableSuits(hand, mode, _playedCards);
 
@@ -841,7 +841,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     private Card ChooseDefaultLead(IReadOnlyList<Card> validPlays, GameMode mode, CardSuit? trumpSuit)
     {
         var nonDislikedPlays = validPlays
-            .Where(c => !_partnerDislikedSuits.Contains(c.Suit))
+            .Where(c => !_partnerDislikedSuits.Contains(c.Suit) && !IsPlayerVoidIn(_partner, c.Suit))
             .ToList();
 
         var playsToConsider = nonDislikedPlays.Count > 0 ? nonDislikedPlays : validPlays.ToList();
@@ -853,7 +853,8 @@ public class DeterministicPlayerAgent : IPlayerAgent
         if (nonTrumpPlays.Count > 0)
         {
             var longestGroup = nonTrumpPlays.GroupBy(c => c.Suit)
-                .OrderByDescending(g => g.Count())
+                .OrderByDescending(c => _partnerDislikedSuits.Contains(c.Key) || IsPlayerVoidIn(_partner, c.Key))
+                .ThenByDescending(g => g.Count())
                 .ThenByDescending(g => g.Max(c => c.GetStrength(mode)))
                 .First();
 
@@ -976,7 +977,7 @@ public class DeterministicPlayerAgent : IPlayerAgent
     }
 
     /// <summary>
-    /// 3rd seat: complex logic — 4th player may be opponent or teammate.
+    /// 3rd seat: complex logic — Teammate is leading
     /// </summary>
     private Card ChooseThirdSeat(
         IReadOnlyList<Card> hand,
@@ -989,6 +990,15 @@ public class DeterministicPlayerAgent : IPlayerAgent
         var leadSuit = trick.LeadSuit!.Value;
         var fourthPlayer = Position.Next();
 
+        if (!mode.IsColourMode())
+        {
+            var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
+                .Intersect(validPlays).ToList();
+
+            if (masterCards.Any())
+                return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
+        }
+
         if (teammateWinning && winningCard.HasValue)
         {
             // Safe to load points when the trick cannot be taken from us: either the
@@ -997,9 +1007,21 @@ public class DeterministicPlayerAgent : IPlayerAgent
                                || (IsPlayerVoidIn(fourthPlayer, leadSuit)
                                    && (!mode.IsColourMode() || IsOpponentOutOfTrump(fourthPlayer)));
 
-            return trickIsSafe
-                ? ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit)
-                : ChooseLeastValuableCard(validPlays, mode, hand);
+            if (trickIsSafe)
+                return ChooseMostValuableUselessCard(validPlays, mode, hand, leadSuit);
+            else
+            {
+                if (mode.IsColourMode() && (!IsPlayerVoidIn(fourthPlayer, leadSuit) || IsOpponentOutOfTrump(fourthPlayer)))
+                {
+                    var masterCards = PlayerAgentHelper.GetMasterCards(hand, mode, _playedCards, true)
+                        .Intersect(validPlays).ToList();
+
+                    if (masterCards.Any())
+                        return masterCards.OrderByDescending(c => c.GetStrength(mode)).First();
+                }
+
+                return ChooseLeastValuableCard(validPlays, mode, hand);
+            }
         }
 
         // Opponent winning — try to win with master or cheap card
