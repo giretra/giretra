@@ -24,15 +24,24 @@ public class Program
     {
         LoadDotEnv();
 
+        // Information by default: at Debug the engine logs every card and trick
+        // of every table. GIRETRA_LOG_LEVEL=Debug turns that back on for a deployment.
+        var minimumLevel = Enum.TryParse<Serilog.Events.LogEventLevel>(
+            Environment.GetEnvironmentVariable("GIRETRA_LOG_LEVEL"), ignoreCase: true, out var configuredLevel)
+            ? configuredLevel
+            : Serilog.Events.LogEventLevel.Information;
+
         var loggerConfig = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Is(minimumLevel)
             .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
             .Enrich.WithProperty("Host", Environment.MachineName)
             .Enrich.FromLogContext()
-            .WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}      {Message:lj}{NewLine}{Exception}");
+            // The console sink writes synchronously under a global lock, which every
+            // request and every table would otherwise contend on.
+            .WriteTo.Async(sink => sink.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}      {Message:lj}{NewLine}{Exception}"));
 
         var seqUrl = Environment.GetEnvironmentVariable("SEQ_URL");
         if (!string.IsNullOrEmpty(seqUrl))
@@ -87,7 +96,15 @@ public class Program
             });
 
             // Add SignalR with string enum serialization (matching REST API)
-            builder.Services.AddSignalR()
+            builder.Services.AddSignalR(options =>
+                {
+                    // Detect half-dead sockets (phone with the screen off, dropped
+                    // cellular link) in ~24 s instead of the default 30 s. The web client
+                    // pings every 8 s to match; any other client must keep its keepalive
+                    // interval well under the client timeout.
+                    options.KeepAliveInterval = TimeSpan.FromSeconds(8);
+                    options.ClientTimeoutInterval = TimeSpan.FromSeconds(24);
+                })
                 .AddJsonProtocol(options =>
                 {
                     options.PayloadSerializerOptions.Converters.Add(
@@ -113,6 +130,7 @@ public class Program
             // Register services
             builder.Services.AddSingleton<UserSyncCache>();
             builder.Services.AddSingleton<AiPlayerRegistry>();
+            builder.Services.AddSingleton<RoomEventDispatcher>();
             builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IGameService, GameService>();
             builder.Services.AddSingleton<IChatService, ChatService>();
