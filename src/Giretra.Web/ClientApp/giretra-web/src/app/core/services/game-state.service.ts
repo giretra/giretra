@@ -4,6 +4,7 @@ import {
   AchievementEarnedDto,
   CardResponse,
   CardPointsBreakdownResponse,
+  CardPlayedEvent,
   CardPlayType,
   GameMode,
   PlayerPosition,
@@ -532,7 +533,28 @@ export class GameStateService {
   /**
    * Refresh game/player state from server
    */
-  async refreshState(): Promise<void> {
+  // At most one state request in flight and one queued behind it. Hub events
+  // arrive in bursts (CardPlayed, PlayerTurn, YourTurn within milliseconds) and
+  // each used to start its own request; a burst now costs one request plus one
+  // follow-up, and the follow-up observes everything the burst announced.
+  private _refreshInFlight: Promise<void> | null = null;
+  private _refreshFollowUp: Promise<void> | null = null;
+
+  refreshState(): Promise<void> {
+    if (this._refreshInFlight) {
+      this._refreshFollowUp ??= this._refreshInFlight.then(() => {
+        this._refreshFollowUp = null;
+        return this.refreshState();
+      });
+      return this._refreshFollowUp;
+    }
+    this._refreshInFlight = this.fetchState().finally(() => {
+      this._refreshInFlight = null;
+    });
+    return this._refreshInFlight;
+  }
+
+  private async fetchState(): Promise<void> {
     const gameId = this._gameId();
     const clientId = this.session.clientId();
     const isWatcher = this.session.isWatcher();
@@ -594,6 +616,38 @@ export class GameStateService {
         await this.attemptRejoin();
       }
     }
+  }
+
+  /**
+   * Optimistically append a played card to the current trick (and, for the local
+   * player, take it out of the hand). The applied state version is left alone:
+   * the server bumped its version before broadcasting the event, so any snapshot
+   * that could undo this edit is rejected as stale by acceptSnapshot.
+   */
+  private applyCardPlayedLocally(event: CardPlayedEvent): void {
+    const state = this._gameState();
+    const trick = state?.currentTrick;
+    if (!state || state.gameId !== event.gameId || !trick) return;
+    if (trick.playedCards.some((pc) => pc.player === event.player)) return; // snapshot got there first
+
+    this._gameState.set({
+      ...state,
+      currentTrick: { ...trick, playedCards: [...trick.playedCards, { player: event.player, card: event.card }] },
+      pendingActionType: null,
+      pendingActionPlayer: null,
+      pendingActionTimeoutAt: null,
+    });
+
+    if (event.player !== this.session.position()) return;
+    const playerState = this._playerState();
+    if (!playerState) return;
+    this._playerState.set({
+      ...playerState,
+      hand: playerState.hand.filter((c) => !(c.rank === event.card.rank && c.suit === event.card.suit)),
+      isYourTurn: false,
+      pendingActionType: null,
+      validCards: null,
+    });
   }
 
   /**
@@ -841,26 +895,28 @@ export class GameStateService {
       this.refreshState();
     });
 
-    // Card played — only play sound for the local user's own card plays
+    // Card played — applied straight from the event so the card shows without
+    // waiting on a round-trip. The PlayerTurn / TrickCompleted / DealEnded event
+    // that always follows reconciles the full state.
     this.hub.cardPlayed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: cardPlayed', event);
       this._turnTimeoutAt.set(null);
+      this.applyCardPlayedLocally(event);
 
+      // Only play sound for the local user's own card plays
       const isMyPlay = event.player === this.session.position();
-      this.refreshState().then(() => {
-        if (event.playType === CardPlayType.Master) {
-          this.sound.play('card_played_master');
-        } else if (isMyPlay) {
-          switch (event.playType) {
-            case CardPlayType.Under:
-              this.sound.play('card_played_under');
-              break;
-            default:
-              this.sound.play('card_played');
-              break;
-          }
+      if (event.playType === CardPlayType.Master) {
+        this.sound.play('card_played_master');
+      } else if (isMyPlay) {
+        switch (event.playType) {
+          case CardPlayType.Under:
+            this.sound.play('card_played_under');
+            break;
+          default:
+            this.sound.play('card_played');
+            break;
         }
-      });
+      }
     });
 
     // Trick completed - show cards briefly before clearing
