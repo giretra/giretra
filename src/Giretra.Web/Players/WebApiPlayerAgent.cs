@@ -137,7 +137,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
 
     public async Task<(int position, bool fromTop)> ChooseCutAsync(int deckSize, MatchState matchState)
     {
-        var tcs = new TaskCompletionSource<(int position, bool fromTop)>();
+        var tcs = new TaskCompletionSource<(int position, bool fromTop)>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var pending = new PendingAction
         {
@@ -170,7 +170,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<NegotiationAction> validActions)
     {
-        var tcs = new TaskCompletionSource<NegotiationAction>();
+        var tcs = new TaskCompletionSource<NegotiationAction>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var pending = new PendingAction
         {
@@ -205,7 +205,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         MatchState matchState,
         IReadOnlyList<Card> validPlays)
     {
-        var tcs = new TaskCompletionSource<Card>();
+        var tcs = new TaskCompletionSource<Card>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var pending = new PendingAction
         {
@@ -281,7 +281,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
 
     public async Task ConfirmContinueDealAsync(MatchState matchState)
     {
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var pending = new PendingAction
         {
@@ -310,7 +310,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
 
     public async Task ConfirmContinueMatchAsync(MatchState matchState)
     {
-        var tcs = new TaskCompletionSource<bool>();
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var pending = new PendingAction
         {
