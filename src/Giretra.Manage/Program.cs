@@ -14,6 +14,11 @@ app.Configure(config =>
         .WithExample("benchmark")
         .WithExample("benchmark", "MyBot", "CalculatingPlayer", "-n", "500");
 
+    config.AddCommand<AnalyzeCommand>("analyze")
+        .WithDescription("Play matches between two agents and review every card against the perfect-information solver")
+        .WithExample("analyze")
+        .WithExample("analyze", "MyBot", "CalculatingPlayer", "-n", "50", "--seed", "42");
+
     config.AddCommand<SwissCommand>("swiss")
         .WithDescription("Run a Swiss tournament between multiple agents")
         .WithExample("swiss")
