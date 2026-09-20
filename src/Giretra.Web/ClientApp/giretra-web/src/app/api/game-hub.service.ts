@@ -151,6 +151,10 @@ export class GameHubService implements OnDestroy {
     const connection = new HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => this.auth.getToken() })
       .withAutomaticReconnect(new EndlessRetryPolicy())
+      // Matches the server's KeepAliveInterval / ClientTimeoutInterval so a
+      // half-dead socket is noticed within ~24 s on either side.
+      .withKeepAliveInterval(8_000)
+      .withServerTimeout(24_000)
       .configureLogging(LogLevel.Information)
       .build();
     this.hubConnection = connection;
