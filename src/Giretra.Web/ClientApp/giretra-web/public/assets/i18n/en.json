@@ -183,6 +183,7 @@
   "achievements.desc.asio_siramamy": "Win a match in which you personally Doubled or Redoubled in 3 deals or more.",
   "achievements.desc.tanalahy_ny_foko": "Announce a Colour, see the deal end in AllTrumps or NoTrumps, and personally win 5+ tricks with cards of one same suit different from the one you announced.",
   "achievements.desc.tsy_mba_nanisa_fa_niandry_ny_anjarany": "Deny the opponents' sweep by personally winning the very last trick, your team's only trick of the deal.",
+  "achievements.desc.rano_sy_vary": "Sweep all 8 tricks as a team, with you and your partner winning exactly 4 tricks each.",
   "achievements.page.title": "Achievements",
   "achievements.page.subtitle": "{{earned}} / {{total}} unlocked",
   "achievements.page.earned": "Earned",
