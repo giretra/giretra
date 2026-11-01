@@ -60,6 +60,9 @@ public sealed class AchievementEvaluator
         if (eligiblePlayers.Count == 0)
             return allEarned;
 
+        var ratingsBefore = session.EloResults?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.EloBefore)
+            ?? new Dictionary<PlayerPosition, int>();
+
         // Load already-earned codes per player (once, updated as we go)
         var earnedSets = new Dictionary<PlayerPosition, HashSet<string>>();
         foreach (var (position, playerId) in eligiblePlayers)
@@ -90,7 +93,7 @@ public sealed class AchievementEvaluator
                     var context = BuildContext(
                         AchievementTrigger.DealEnd, dealResult, dealNumber,
                         matchState, position, playerId, recordedDeal, recordedDeals,
-                        earnedSets[position]);
+                        ratingsBefore, earnedSets[position]);
 
                     var newlyEarned = await EvaluateRulesAsync(
                         db, dealRules, context, matchId, dealNumber,
@@ -111,7 +114,7 @@ public sealed class AchievementEvaluator
                 var context = BuildContext(
                     AchievementTrigger.MatchEnd, null, null,
                     matchState, position, playerId, lastRecordedDeal, recordedDeals,
-                    earnedSets[position]);
+                    ratingsBefore, earnedSets[position]);
 
                 var newlyEarned = await EvaluateRulesAsync(
                     db, matchRules, context, matchId, null,
@@ -241,6 +244,7 @@ public sealed class AchievementEvaluator
         Guid playerId,
         RecordedDeal? recordedDeal,
         IReadOnlyList<RecordedDeal> allRecordedDeals,
+        IReadOnlyDictionary<PlayerPosition, int> ratingsBefore,
         IReadOnlySet<string> alreadyEarned)
     {
         var initialHand = recordedDeal?.InitialHands.GetValueOrDefault(position)
@@ -275,6 +279,7 @@ public sealed class AchievementEvaluator
             MatchNegotiations = matchNegotiations,
             CutterPosition = cutterPosition,
             Tricks = tricks,
+            RatingsBefore = ratingsBefore,
             AlreadyEarnedCodes = alreadyEarned
         };
     }

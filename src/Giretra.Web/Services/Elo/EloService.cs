@@ -39,6 +39,7 @@ public sealed class EloService : IEloService
             eloResults = await PreviewMatchEloAsync(session);
             if (eloResults == null)
                 return;
+            session.EloResults = eloResults;
         }
 
         // Resolve Player entities for DB writes

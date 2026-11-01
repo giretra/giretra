@@ -94,6 +94,13 @@ public sealed record AchievementContext
     public IReadOnlyList<CompletedTrick> Tricks { get; init; } = [];
 
     /// <summary>
+    /// Elo rating of every seat at the start of the match (bots use their fixed rating).
+    /// Empty when the ratings are unknown.
+    /// </summary>
+    public IReadOnlyDictionary<PlayerPosition, int> RatingsBefore { get; init; } =
+        new Dictionary<PlayerPosition, int>();
+
+    /// <summary>
     /// Achievement codes this player already has. Used to skip already-earned achievements.
     /// </summary>
     public required IReadOnlySet<string> AlreadyEarnedCodes { get; init; }
