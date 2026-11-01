@@ -184,6 +184,7 @@
   "achievements.desc.tanalahy_ny_foko": "Annoncer une Couleur, voir la donne finir en Tout Atout ou Sans Atout, et remporter soi-même 5+ plis avec des cartes d'une même couleur différente de celle annoncée.",
   "achievements.desc.tsy_mba_nanisa_fa_niandry_ny_anjarany": "Éviter le capot adverse en remportant soi-même le tout dernier pli, seul pli de votre équipe dans la donne.",
   "achievements.desc.rano_sy_vary": "Faire capot en équipe en remportant exactement 4 plis chacun, vous et votre partenaire.",
+  "achievements.desc.efa_nozakaiko_izay_rehetra_midona": "En Tout Atout ou Sans Atout, tenir une couleur entièrement gagnante (2+ cartes, toutes maîtresses ou relativement maîtresses) pendant que votre partenaire, qui en a encore une carte, entame deux fois une autre couleur et perd le pli face aux adversaires.",
   "achievements.page.title": "Succès",
   "achievements.page.subtitle": "{{earned}} / {{total}} débloqués",
   "achievements.page.earned": "Obtenu",
