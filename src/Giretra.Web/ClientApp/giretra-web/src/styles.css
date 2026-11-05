@@ -4,6 +4,14 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css";
 
+/* Self-hosted fonts (no runtime dependency on Google Fonts; deterministic headless rendering) */
+@import "@fontsource/inter/300.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/urbanist/800.css";
+
 /* ── Giretra dark card-table theme ─────────────────────────────── */
 @layer base {
   :root {

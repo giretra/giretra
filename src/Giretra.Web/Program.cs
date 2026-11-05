@@ -222,6 +222,7 @@ public class Program
                 builder.Services.AddScoped<IMatchHistoryService, MatchHistoryService>();
                 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
                 builder.Services.AddScoped<IHighlightsService, HighlightsService>();
+                builder.Services.AddScoped<Giretra.Web.Services.Replay.IDealReplayService, Giretra.Web.Services.Replay.DealReplayService>();
 
                 // Contact form: mail moderators (+ extra recipients) over SMTP when configured,
                 // otherwise the form is reported as unavailable and only the GitHub route is offered
