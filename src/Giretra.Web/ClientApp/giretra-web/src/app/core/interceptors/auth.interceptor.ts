@@ -14,6 +14,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const auth = inject(AuthService);
+  if (auth.anonymous()) {
+    return next(req);
+  }
 
   return from(auth.getToken()).pipe(
     switchMap((token) => {

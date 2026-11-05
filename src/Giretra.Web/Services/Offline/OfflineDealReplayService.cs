@@ -17,6 +17,9 @@ public sealed class OfflineDealReplayService : IDealReplayService
 {
     private const int DemoTotalDeals = 10;
 
+    public Task<DealReplayResult> GetPublicReplayAsync(Guid matchId, int dealNumber, string locale)
+        => GetReplayAsync(matchId, dealNumber, Guid.Empty);
+
     public Task<DealReplayResult> GetReplayAsync(Guid matchId, int dealNumber, Guid userId)
     {
         if (dealNumber < 1 || dealNumber > DemoTotalDeals)

@@ -17,7 +17,7 @@ namespace Giretra.Model.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.4")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -267,6 +267,135 @@ namespace Giretra.Model.Migrations
                         .HasDatabaseName("ix_bots_agent_type");
 
                     b.ToTable("bots", (string)null);
+                });
+
+            modelBuilder.Entity("Giretra.Model.Entities.Clip", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int>("Attempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset?>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedByPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_player_id");
+
+                    b.Property<short>("DealNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("deal_number");
+
+                    b.Property<int?>("DurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("error");
+
+                    b.Property<short>("FromTrick")
+                        .HasColumnType("smallint")
+                        .HasColumnName("from_trick");
+
+                    b.Property<bool>("HasPoster")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_poster");
+
+                    b.Property<bool>("HasVideo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_video");
+
+                    b.Property<DateTimeOffset?>("LastViewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_viewed_at");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasDefaultValue("en")
+                        .HasColumnName("locale");
+
+                    b.Property<Guid>("MatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("match_id");
+
+                    b.Property<DateTimeOffset?>("RenderedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rendered_at");
+
+                    b.Property<string>("ShortId")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("short_id");
+
+                    b.Property<bool>("ShowAllHands")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("show_all_hands");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("status");
+
+                    b.Property<short>("ToTrick")
+                        .HasColumnType("smallint")
+                        .HasColumnName("to_trick");
+
+                    b.Property<int>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("view_count");
+
+                    b.Property<int>("ViewPosition")
+                        .HasColumnType("integer")
+                        .HasColumnName("view_position");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clips");
+
+                    b.HasIndex("CreatedByPlayerId")
+                        .HasDatabaseName("ix_clips_created_by_player_id");
+
+                    b.HasIndex("ShortId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_clips_short_id");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_clips_status_created_at");
+
+                    b.HasIndex("MatchId", "DealNumber", "FromTrick", "ToTrick", "ViewPosition", "ShowAllHands", "Locale")
+                        .IsUnique()
+                        .HasDatabaseName("ix_clips_match_id_deal_number_from_trick_to_trick_view_positio");
+
+                    b.ToTable("clips", (string)null);
                 });
 
             modelBuilder.Entity("Giretra.Model.Entities.Deal", b =>
@@ -677,6 +806,12 @@ namespace Giretra.Model.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<bool>("AppearInSharedClips")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("appear_in_shared_clips");
+
                     b.Property<int>("BestWinStreak")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -984,6 +1119,27 @@ namespace Giretra.Model.Migrations
                     b.Navigation("Blocked");
 
                     b.Navigation("Blocker");
+                });
+
+            modelBuilder.Entity("Giretra.Model.Entities.Clip", b =>
+                {
+                    b.HasOne("Giretra.Model.Entities.Player", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByPlayerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_clips_players_created_by_player_id");
+
+                    b.HasOne("Giretra.Model.Entities.Match", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_clips_matches_match_id");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Match");
                 });
 
             modelBuilder.Entity("Giretra.Model.Entities.Deal", b =>

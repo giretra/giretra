@@ -1,10 +1,12 @@
 /**
- * Route `/replay/match/:matchId/:dealNumber` — interactive replay of one deal, and the page
- * the headless clip renderer loads with `?render=1`.
+ * Deal replay page. Two sources:
+ *  - `/replay/match/:matchId/:dealNumber` — participants, authenticated; offers "Share".
+ *  - `/replay/clip/:shortId` — public, anonymous (AuthService skips Keycloak on this path);
+ *    range, perspective and language come from the clip.
  *
- * Query params: `t` (ms), `from`/`to` (trick range, 1-based), `view` (seat at the bottom,
- * defaults to the viewer's seat), `hands=all` (show every hand), `render=1` (deterministic
- * frames, no controls, exposes `window.__giretra.seek`), `lang` (en|fr|mg).
+ * Query params: `t` (ms), `from`/`to` (trick range), `view` (seat at the bottom),
+ * `hands=all`, `render=1` (deterministic frames, no controls, exposes
+ * `window.__giretra.seek` for the clip renderer), `lang`, `autoplay=0`.
  */
 import {
   Component,
@@ -21,7 +23,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { take } from 'rxjs/operators';
 import {
@@ -33,19 +35,22 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  Share2,
 } from 'lucide-angular';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
-import { ApiService, DealReplayResponse } from '../../core/services/api.service';
+import { ApiService, ClipResponse, DealReplayResponse } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ReplayTimeline } from './replay-timeline';
 import {
   ReplayStageComponent,
   REPLAY_STAGE_HEIGHT,
   REPLAY_STAGE_WIDTH,
 } from './replay-stage.component';
+import { ClipShareDialogComponent } from './clip-share-dialog.component';
 
 declare global {
   interface Window {
-    __giretra?: { seek: (ms: number) => Promise<number>; duration: number };
+    __giretra?: { seek: (ms: number) => Promise<number>; duration: number; posterTime: number };
   }
 }
 
@@ -54,13 +59,24 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
 @Component({
   selector: 'app-replay-page',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, TranslocoDirective, LucideAngularModule, ReplayStageComponent],
+  imports: [
+    DecimalPipe,
+    RouterLink,
+    TranslocoDirective,
+    LucideAngularModule,
+    ReplayStageComponent,
+    ClipShareDialogComponent,
+  ],
   template: `
     <div class="replay-page" [class.render]="renderMode()" *transloco="let t">
       @if (error(); as err) {
         <div class="replay-message">
           <p>{{ t(err) }}</p>
-          <a routerLink="/settings" class="replay-link">{{ t('replay.backToHistory') }}</a>
+          @if (isClip()) {
+            <a href="/" class="replay-link">{{ t('replay.playCta') }}</a>
+          } @else {
+            <a routerLink="/settings" class="replay-link">{{ t('replay.backToHistory') }}</a>
+          }
         </div>
       } @else if (!replay() || !timeline()) {
         <div class="replay-message">{{ t('common.loading') }}</div>
@@ -83,9 +99,16 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
         @if (!renderMode()) {
           <div class="controls">
             <div class="controls-row">
-              <a class="ctl-btn ghost" routerLink="/settings" [title]="t('replay.backToHistory')">
-                <lucide-icon [img]="ArrowLeft" [size]="18" />
-              </a>
+              @if (!isClip()) {
+                <a
+                  class="ctl-btn ghost"
+                  routerLink="/settings"
+                  [queryParams]="{ section: 'history' }"
+                  [title]="t('replay.backToHistory')"
+                >
+                  <lucide-icon [img]="ArrowLeft" [size]="18" />
+                </a>
+              }
               <button
                 type="button"
                 class="ctl-btn"
@@ -118,6 +141,16 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
               >
                 <lucide-icon [img]="showAllHands() ? EyeOff : Eye" [size]="18" />
               </button>
+              @if (canShare()) {
+                <button
+                  type="button"
+                  class="ctl-btn share"
+                  (click)="shareOpen.set(true)"
+                  [title]="t('clip.share.button')"
+                >
+                  <lucide-icon [img]="Share2" [size]="18" />
+                </button>
+              }
               <span class="ctl-time">{{ time() / 1000 | number: '1.1-1' }}s</span>
             </div>
             <input
@@ -129,29 +162,50 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
               [value]="time()"
               (input)="onScrub($event)"
             />
-            <div class="controls-row deals">
-              @if (replay()!.dealNumber > 1) {
-                <a
-                  class="deal-link"
-                  [routerLink]="dealLink(replay()!.dealNumber - 1)"
-                  [queryParams]="dealQuery()"
-                  >‹ {{ t('replay.dealNumber', { number: replay()!.dealNumber - 1 }) }}</a
+            @if (isClip()) {
+              <div class="controls-row deals">
+                <span class="deal-current">{{ clip()?.title }}</span>
+                <a class="deal-link cta" href="/?utm_source=replay&utm_medium=share">{{
+                  t('replay.playCta')
+                }}</a>
+              </div>
+            } @else {
+              <div class="controls-row deals">
+                @if (replay()!.dealNumber > 1) {
+                  <a
+                    class="deal-link"
+                    [routerLink]="dealLink(replay()!.dealNumber - 1)"
+                    [queryParams]="dealQuery()"
+                    >‹ {{ t('replay.dealNumber', { number: replay()!.dealNumber - 1 }) }}</a
+                  >
+                }
+                <span class="deal-current"
+                  >{{ t('replay.dealNumber', { number: replay()!.dealNumber }) }} /
+                  {{ replay()!.totalDeals }}</span
                 >
-              }
-              <span class="deal-current"
-                >{{ t('replay.dealNumber', { number: replay()!.dealNumber }) }} /
-                {{ replay()!.totalDeals }}</span
-              >
-              @if (replay()!.dealNumber < replay()!.totalDeals) {
-                <a
-                  class="deal-link"
-                  [routerLink]="dealLink(replay()!.dealNumber + 1)"
-                  [queryParams]="dealQuery()"
-                  >{{ t('replay.dealNumber', { number: replay()!.dealNumber + 1 }) }} ›</a
-                >
-              }
-            </div>
+                @if (replay()!.dealNumber < replay()!.totalDeals) {
+                  <a
+                    class="deal-link"
+                    [routerLink]="dealLink(replay()!.dealNumber + 1)"
+                    [queryParams]="dealQuery()"
+                    >{{ t('replay.dealNumber', { number: replay()!.dealNumber + 1 }) }} ›</a
+                  >
+                }
+              </div>
+            }
           </div>
+
+          @if (canShare()) {
+            <app-clip-share-dialog
+              [open]="shareOpen()"
+              (openChange)="shareOpen.set($event)"
+              [matchId]="matchId"
+              [dealNumber]="replay()!.dealNumber"
+              [suggestedTrick]="currentTrickNumber()"
+              [viewPosition]="anchor()"
+              [initialAllHands]="showAllHands()"
+            />
+          }
         }
       }
     </div>
@@ -190,11 +244,6 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
       .replay-page.render .stage-scale {
         transform: none !important;
       }
-      .stage-box {
-        position: relative;
-        overflow: hidden;
-        flex: 0 0 auto;
-      }
       .stage-fit {
         flex: 1 1 auto;
         width: 100%;
@@ -202,6 +251,11 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
         align-items: center;
         justify-content: center;
         min-height: 0;
+      }
+      .stage-box {
+        position: relative;
+        overflow: hidden;
+        flex: 0 0 auto;
       }
       .stage-scale {
         width: 540px;
@@ -226,6 +280,8 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
         font-size: 0.85rem;
         color: hsl(var(--muted-foreground));
         gap: 1rem;
+        flex-wrap: wrap;
+        text-align: center;
       }
       .deal-link {
         color: hsl(var(--foreground));
@@ -233,6 +289,10 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
       }
       .deal-link:hover {
         text-decoration: underline;
+      }
+      .deal-link.cta {
+        color: hsl(var(--gold));
+        font-weight: 600;
       }
       .ctl-btn {
         display: inline-flex;
@@ -252,6 +312,10 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
         background: hsl(var(--gold));
         color: hsl(var(--background));
         border-color: transparent;
+      }
+      .ctl-btn.share {
+        border-color: hsl(var(--gold));
+        color: hsl(var(--gold));
       }
       .ctl-btn.ghost {
         border-color: transparent;
@@ -285,8 +349,8 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
 })
 export class ReplayPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly zone = inject(NgZone);
   private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
@@ -298,9 +362,12 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
   readonly ArrowLeft = ArrowLeft;
   readonly Eye = Eye;
   readonly EyeOff = EyeOff;
+  readonly Share2 = Share2;
 
   readonly fit = viewChild<ElementRef<HTMLElement>>('fit');
 
+  readonly isClip = signal(false);
+  readonly clip = signal<ClipResponse | null>(null);
   readonly replay = signal<DealReplayResponse | null>(null);
   readonly timeline = signal<ReplayTimeline | null>(null);
   readonly error = signal<string | null>(null);
@@ -310,18 +377,19 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
   readonly showAllHands = signal(false);
   readonly requestedView = signal<PlayerPosition | null>(null);
   readonly scale = signal(1);
+  readonly shareOpen = signal(false);
 
-  private resizeObserver: ResizeObserver | null = null;
-  private matchId = '';
+  matchId = '';
   private range: { fromTrick?: number; toTrick?: number } = {};
   private rafId: number | null = null;
   private lastTick = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
-  readonly anchor = computed<PlayerPosition>(() => {
-    const requested = this.requestedView();
-    if (requested) return requested;
-    // Default to the viewer's own seat: the human player whose profile we know, else Bottom.
-    return PlayerPosition.Bottom;
+  readonly anchor = computed<PlayerPosition>(() => this.requestedView() ?? PlayerPosition.Bottom);
+  readonly canShare = computed(() => !this.isClip() && !this.auth.anonymous());
+  readonly currentTrickNumber = computed(() => {
+    const tl = this.timeline();
+    return tl ? tl.frameAt(this.time()).trickNumber : null;
   });
 
   constructor() {
@@ -339,13 +407,12 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const q = this.route.snapshot.queryParamMap;
     const p = this.route.snapshot.paramMap;
-    this.matchId = p.get('matchId') ?? '';
-    const dealNumber = Number(p.get('dealNumber') ?? 1) || 1;
-
+    this.isClip.set(this.route.snapshot.data['source'] === 'clip');
     this.renderMode.set(q.get('render') === '1');
-    this.showAllHands.set(q.get('hands') === 'all');
+
     const view = q.get('view');
     if (view && POSITIONS.has(view)) this.requestedView.set(view as PlayerPosition);
+    if (q.get('hands') === 'all') this.showAllHands.set(true);
     const from = Number(q.get('from'));
     const to = Number(q.get('to'));
     this.range = {
@@ -353,46 +420,41 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
       toTrick: Number.isFinite(to) && to > 0 ? to : undefined,
     };
     const lang = q.get('lang');
-    if (
-      lang &&
-      this.transloco.getAvailableLangs().some((l) => (typeof l === 'string' ? l : l.id) === lang)
-    ) {
-      this.transloco.setActiveLang(lang);
-    }
+    if (lang) this.setLanguage(lang);
     const t0 = Number(q.get('t') ?? 0) || 0;
+    const autoplay = q.get('autoplay') !== '0';
 
-    this.api.getDealReplay(this.matchId, dealNumber).subscribe({
-      next: (replay) => {
-        const timeline = new ReplayTimeline(replay, this.range);
-        this.replay.set(replay);
-        this.timeline.set(timeline);
-        this.time.set(Math.max(0, Math.min(timeline.duration, t0)));
-        if (this.renderMode()) {
-          // Expose the seek hook only once the translations are loaded, so the first frame
-          // the renderer captures already has its captions.
-          this.transloco
-            .selectTranslate('replay.dealNumber')
-            .pipe(take(1))
-            .subscribe(() => {
-              window.__giretra = { duration: timeline.duration, seek: (ms) => this.seek(ms) };
-            });
-        } else if (q.get('autoplay') !== '0') {
-          this.togglePlay();
-        }
-      },
-      error: (err) => {
-        const status = err?.status;
-        this.error.set(
-          status === 403
-            ? 'replay.errors.forbidden'
-            : status === 404
-              ? 'replay.errors.notFound'
-              : status === 422
-                ? 'replay.errors.notReplayable'
-                : 'replay.errors.generic',
-        );
-      },
-    });
+    if (this.isClip()) {
+      const shortId = p.get('shortId') ?? '';
+      this.api.getClip(shortId).subscribe({
+        next: (clip) => {
+          if (!clip.replay) {
+            this.error.set('replay.errors.clipGone');
+            return;
+          }
+          this.clip.set(clip);
+          this.matchId = clip.matchId;
+          // The clip defines the defaults; query params may still override them.
+          if (!view) this.requestedView.set(clip.viewPosition);
+          if (q.get('hands') === null) this.showAllHands.set(clip.showAllHands);
+          if (!lang) this.setLanguage(clip.locale);
+          this.range = {
+            fromTrick: this.range.fromTrick ?? clip.fromTrick,
+            toTrick: this.range.toTrick ?? clip.toTrick,
+          };
+          this.start(clip.replay, t0, autoplay);
+        },
+        error: (err) =>
+          this.error.set(err?.status === 410 ? 'replay.errors.clipGone' : this.errorKey(err)),
+      });
+    } else {
+      this.matchId = p.get('matchId') ?? '';
+      const dealNumber = Number(p.get('dealNumber') ?? 1) || 1;
+      this.api.getDealReplay(this.matchId, dealNumber).subscribe({
+        next: (replay) => this.start(replay, t0, autoplay),
+        error: (err) => this.error.set(this.errorKey(err)),
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -416,7 +478,7 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.space', ['$event'])
   onSpace(event: Event): void {
-    if (this.renderMode()) return;
+    if (this.renderMode() || this.shareOpen()) return;
     event.preventDefault();
     this.togglePlay();
   }
@@ -471,8 +533,7 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
   }
 
   onScrub(event: Event): void {
-    const value = Number((event.target as HTMLInputElement).value);
-    this.time.set(value);
+    this.time.set(Number((event.target as HTMLInputElement).value));
   }
 
   dealLink(dealNumber: number): string[] {
@@ -485,6 +546,57 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
     if (view) q['view'] = view;
     if (this.showAllHands()) q['hands'] = 'all';
     return q;
+  }
+
+  private start(replay: DealReplayResponse, t0: number, autoplay: boolean): void {
+    const timeline = new ReplayTimeline(replay, this.range);
+    this.replay.set(replay);
+    this.timeline.set(timeline);
+    this.time.set(Math.max(0, Math.min(timeline.duration, t0)));
+
+    if (this.renderMode()) {
+      // Expose the seek hook only once the translations are loaded, so the first frame the
+      // renderer captures already has its captions.
+      this.transloco
+        .selectTranslate('replay.dealNumber')
+        .pipe(take(1))
+        .subscribe(() => {
+          window.__giretra = {
+            duration: timeline.duration,
+            posterTime: ReplayPageComponent.posterTime(timeline),
+            seek: (ms) => this.seek(ms),
+          };
+        });
+    } else if (autoplay) {
+      this.togglePlay();
+    }
+  }
+
+  /** Frame used as the clip's poster: the first trick of the range complete, winner highlighted. */
+  static posterTime(timeline: ReplayTimeline): number {
+    const { card, entry } = timeline.timing;
+    return timeline.trickStart(timeline.range.fromTrick) + 3 * card + entry + 100;
+  }
+
+  private setLanguage(lang: string): void {
+    const available = this.transloco
+      .getAvailableLangs()
+      .map((l) => (typeof l === 'string' ? l : l.id));
+    if (available.includes(lang) && this.transloco.getActiveLang() !== lang)
+      this.transloco.setActiveLang(lang);
+  }
+
+  private errorKey(err: { status?: number } | null): string {
+    switch (err?.status) {
+      case 403:
+        return 'replay.errors.forbidden';
+      case 404:
+        return 'replay.errors.notFound';
+      case 422:
+        return 'replay.errors.notReplayable';
+      default:
+        return 'replay.errors.generic';
+    }
   }
 
   private stopLoop(): void {

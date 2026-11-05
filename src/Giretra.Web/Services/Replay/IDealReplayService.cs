@@ -26,4 +26,11 @@ public interface IDealReplayService
     /// non-abandoned matches are replayable.
     /// </summary>
     Task<DealReplayResult> GetReplayAsync(Guid matchId, int dealNumber, Guid userId);
+
+    /// <summary>
+    /// Replay for a public clip: no participant check (the clip's existence is the
+    /// authorisation), names of players who opted out replaced by a placeholder in
+    /// <paramref name="locale"/>. Only completed, non-abandoned matches.
+    /// </summary>
+    Task<DealReplayResult> GetPublicReplayAsync(Guid matchId, int dealNumber, string locale);
 }

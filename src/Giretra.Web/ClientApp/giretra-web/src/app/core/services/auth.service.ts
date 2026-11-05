@@ -35,7 +35,20 @@ export class AuthService {
     return roles.includes('moderator') || roles.includes('admin');
   });
 
+  /** Public pages (shared clips) run without any session; no Keycloak redirect, no token. */
+  static isPublicPath(pathname: string): boolean {
+    return pathname.startsWith('/replay/clip/');
+  }
+
+  private readonly _anonymous = signal(false);
+  readonly anonymous = this._anonymous.asReadonly();
+
   async init(): Promise<void> {
+    if (AuthService.isPublicPath(window.location.pathname)) {
+      this._anonymous.set(true);
+      return;
+    }
+
     // Check auth mode from server
     const authMode = await this.fetchAuthConfig();
 
@@ -48,6 +61,10 @@ export class AuthService {
   }
 
   async getToken(): Promise<string> {
+    if (this._anonymous()) {
+      return '';
+    }
+
     if (this._offlineMode()) {
       return this.offlineUsername ?? '';
     }

@@ -19,6 +19,9 @@ public class Player
 
     public bool EloIsPublic { get; set; }
 
+    /// <summary>Whether the player's display name may appear in publicly shared clips.</summary>
+    public bool AppearInSharedClips { get; set; } = true;
+
     public int GamesPlayed { get; set; }
 
     public int GamesWon { get; set; }

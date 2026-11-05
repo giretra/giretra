@@ -182,6 +182,7 @@ export interface ProfileResponse {
   avatarUrl: string | null;
   eloRating: number;
   eloIsPublic: boolean;
+  appearInSharedClips: boolean;
   gamesPlayed: number;
   gamesWon: number;
   winStreak: number;
@@ -271,6 +272,43 @@ export interface DealReplayResponse {
   players: DealReplayPlayerResponse[];
   hands: DealReplayHandResponse[];
   tricks: DealReplayTrickResponse[];
+}
+
+export type ClipStatus = 'Pending' | 'Rendering' | 'Ready' | 'Failed' | 'Evicted' | 'Removed';
+
+export interface ClipResponse {
+  shortId: string;
+  status: ClipStatus;
+  matchId: string;
+  dealNumber: number;
+  fromTrick: number;
+  toTrick: number;
+  viewPosition: PlayerPosition;
+  showAllHands: boolean;
+  locale: string;
+  createdAt: string;
+  renderedAt: string | null;
+  durationMs: number | null;
+  viewCount: number;
+  title: string;
+  pageUrl: string;
+  posterUrl: string | null;
+  videoUrl: string | null;
+  replay: DealReplayResponse | null;
+}
+
+export interface ClipListResponse {
+  items: ClipResponse[];
+}
+
+export interface CreateClipRequest {
+  matchId: string;
+  dealNumber: number;
+  fromTrick: number;
+  toTrick: number;
+  viewPosition: PlayerPosition | null;
+  showAllHands: boolean;
+  locale: string;
 }
 
 export interface MatchHistoryItemResponse {
@@ -900,6 +938,41 @@ export class ApiService {
   getDealReplay(matchId: string, dealNumber: number): Observable<DealReplayResponse> {
     return this.http
       .get<DealReplayResponse>(`${this.baseUrl}/api/matches/${matchId}/deals/${dealNumber}/replay`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Clips
+  // ─────────────────────────────────────────────────────────────────────────
+
+  createClip(request: CreateClipRequest): Observable<ClipResponse> {
+    return this.http
+      .post<ClipResponse>(`${this.baseUrl}/api/clips`, request)
+      .pipe(catchError(this.handleError));
+  }
+
+  /** Public, works without a session. */
+  getClip(shortId: string): Observable<ClipResponse> {
+    return this.http
+      .get<ClipResponse>(`${this.baseUrl}/api/clips/${shortId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getMyClips(): Observable<ClipListResponse> {
+    return this.http
+      .get<ClipListResponse>(`${this.baseUrl}/api/clips/mine`)
+      .pipe(catchError(this.handleError));
+  }
+
+  deleteClip(shortId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/clips/${shortId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  updateClipNameVisibility(visible: boolean): Observable<void> {
+    return this.http
+      .put<void>(`${this.baseUrl}/api/settings/profile/clip-name-visibility`, { visible })
       .pipe(catchError(this.handleError));
   }
 

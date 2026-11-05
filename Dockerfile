@@ -29,3 +29,18 @@ EXPOSE 8080
 COPY --from=publish /app/publish .
 COPY --from=frontend /app/src/Giretra.Web/ClientApp/giretra-web/dist/giretra-web/browser wwwroot/
 ENTRYPOINT ["dotnet", "Giretra.Web.dll"]
+
+# --- Render worker: same publish output + Chromium (via Playwright) + ffmpeg ---
+# aspnet:10.0 is Ubuntu 24.04, whose apt "chromium" is a snap stub, so the browser comes from
+# Playwright's own installer (bundled node + cli in the publish output).
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS render
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+WORKDIR /app
+COPY --from=publish /app/publish .
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-noto-color-emoji ca-certificates \
+    && ./.playwright/node/linux-x64/node ./.playwright/package/cli.js install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod -R a+rX /ms-playwright
+ENV Render__Enabled=true
+ENTRYPOINT ["dotnet", "Giretra.Web.dll", "--render-worker"]

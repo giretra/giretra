@@ -19,6 +19,7 @@ public class PlayerConfiguration : IEntityTypeConfiguration<Player>
 
         builder.Property(p => p.EloRating).HasDefaultValue(1000);
         builder.Property(p => p.EloIsPublic).HasDefaultValue(true);
+        builder.Property(p => p.AppearInSharedClips).HasDefaultValue(true);
         builder.Property(p => p.GamesPlayed).HasDefaultValue(0);
         builder.Property(p => p.GamesWon).HasDefaultValue(0);
         builder.Property(p => p.WinStreak).HasDefaultValue(0);

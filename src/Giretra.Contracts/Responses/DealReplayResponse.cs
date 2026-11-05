@@ -50,6 +50,9 @@ public sealed class DealReplayPlayerResponse
     public required string DisplayName { get; init; }
     public required bool IsBot { get; init; }
     public Guid? PlayerId { get; init; }
+
+    /// <summary>True when the player opted out of appearing by name in public clips; DisplayName is then a placeholder.</summary>
+    public bool NameHidden { get; init; }
 }
 
 public sealed class DealReplayHandResponse
