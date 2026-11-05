@@ -1,6 +1,6 @@
 # Shareable trick clips — implementation plan
 
-Status: phases 0 and 1 done (2026-11-05), phase 2 next. Owner: Haga.
+Status: phases 0–2 done (2026-11-05), phase 3 (video) next. Owner: Haga.
 
 ## 1. Goal and scope
 
@@ -335,6 +335,62 @@ that assumes a single instance (gate every hosted service behind the role flag).
 
 Ideas: a `ClipRenderOptions.Enabled=false` default makes `--offline` dev unaffected; a
 `giretra-manage render-clip <shortId>` command reuses the same service for debugging.
+
+**Results (2026-11-05)**
+
+Shipped on `feature/shareable-clips`:
+
+- Data: `Clip` entity (+ `ClipStatus`), unique dedupe index on (match, deal, range, view,
+  all-hands, locale), `(status, created_at)` index for the queue, `claimed_at` for stale
+  claims; `Player.AppearInSharedClips` (default true). Migration `AddClips`.
+- API: `POST /api/clips` (201 new / 200 existing / 400 / 403 / 404 / 422 / 429),
+  `GET /api/clips/mine`, `GET /api/clips/{shortId}` (anonymous, replay payload with names
+  of opted-out humans replaced by a localised placeholder and `NameHidden=true`),
+  `DELETE /api/clips/{shortId}` (creator or moderator, status Removed, files deleted),
+  `PUT /api/settings/profile/clip-name-visibility`. Throttle 10 new clips per rolling 24 h
+  (dedupe hits are free). Short ids: 10 chars base62.
+- Public pages (`Endpoints/ClipPagesEndpoints`, mapped before the SPA fallback):
+  `/c/{shortId}` server-rendered HTML with og:title/description/url/locale/image and, when
+  a video exists, og:type video.other + og:video(:secure_url/:type/:width/:height) +
+  twitter player; pending clips are `noindex` with a 6 s refresh and the generic image;
+  removed → 410. `/c/{shortId}/poster.png` and `/c/{shortId}/video.mp4` stream from the
+  clips volume with range support and a one-year immutable cache; `?download=1` sets a
+  filename. All names HTML-encoded (tested with a `<script>` display name).
+- Render worker: `--render-worker` runs a minimal host (DB + `ClipRenderHostedService`
+  + `/health`); `PostgresClipJobQueue` claims with `UPDATE … WHERE id = (SELECT … FOR UPDATE
+  SKIP LOCKED) RETURNING id`, re-queues stale claims, fails after 2 attempts.
+  `ClipRenderer` (Microsoft.Playwright 1.64.1) loads `/replay/clip/{id}?render=1`, seeks to
+  `window.__giretra.posterTime` (first trick of the range complete, winner highlighted) and
+  writes the PNG poster; browser recycled every 20 jobs or on failure. In `--offline` mode
+  `Render__Enabled=true` runs the same loop in-process against in-memory clips.
+- Docker: `render` target in the Dockerfile (aspnet:10.0 + Playwright's own
+  `cli.js install --with-deps chromium` + ffmpeg, `--no-sandbox` by default); compose
+  service `render` with `shm_size 1g`, `mem_limit 1500m`, `cpus 1.0`, shared `clips` volume,
+  `Render__WebBaseUrl=http://web:8080`; `web` gets `Clips__RootPath` and
+  `Clips__PublicBaseUrl`.
+- Frontend: anonymous mode in `AuthService` for `/replay/clip/*` (no Keycloak, interceptor
+  sends no header); route `/replay/clip/:shortId` reuses the replay page with the clip's
+  range/view/hands/locale; Share button on the participant replay opens
+  `clip-share-dialog` (trick chips, all-hands, language → create → polls until Ready →
+  copy link / open page / download when a video exists); settings: "Clips" section (list,
+  copy, open, delete) and a "Name in shared clips" toggle. Translations en/fr/mg.
+- Tests: `ClipServiceTests` (create, dedupe, validation, throttle with `FakeTimeProvider`,
+  privacy masking, delete permissions, ready URLs) and landing page tests (OG video tags,
+  escaping, pending/removed states): 11 tests; full suite 658 + 8 Vitest green.
+- Verified locally end to end in offline mode: create via API → in-process Chromium
+  rendered the poster in 1.5 s → landing page served the OG tags and the immutable poster →
+  share dialog and public replay checked in the browser.
+
+Deviations and notes:
+
+- NSwag still unusable; the clip DTOs are hand-typed in `api.service.ts`.
+- The render image is based on aspnet:10.0 rather than the Playwright .NET image, to keep
+  the SDK out of production and avoid a .NET version mismatch; the browser is installed by
+  Playwright's bundled CLI from the publish output. Not yet built on the VPS.
+- Migration not applied anywhere yet; `web` uses `EnsureCreated` at startup, so the
+  migration must be applied explicitly (`dotnet ef database update`) on production.
+- The `web` container must be able to reach itself as `http://web:8080` from the render
+  container; the landing page's replay link uses `Clips__PublicBaseUrl`.
 
 ### Phase 3 — Video rendering (3 days)
 

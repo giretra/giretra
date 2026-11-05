@@ -61,6 +61,7 @@ public sealed class ProfileService : IProfileService
             AvatarUrl = user.AvatarUrl,
             EloRating = user.Player.EloRating,
             EloIsPublic = user.Player.EloIsPublic,
+            AppearInSharedClips = user.Player.AppearInSharedClips,
             GamesPlayed = user.Player.GamesPlayed,
             GamesWon = user.Player.GamesWon,
             WinStreak = user.Player.WinStreak,
@@ -233,6 +234,16 @@ public sealed class ProfileService : IProfileService
 
         user.AvatarUrl = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateClipNameVisibilityAsync(Guid userId, bool visible)
+    {
+        var player = await _db.Players.FirstOrDefaultAsync(p => p.UserId == userId);
+        if (player == null)
+            return;
+        player.AppearInSharedClips = visible;
+        player.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
     }
 

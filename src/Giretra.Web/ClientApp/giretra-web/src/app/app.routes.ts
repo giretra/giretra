@@ -88,6 +88,13 @@ export const routes: Routes = [
       import('./features/replay/replay-page.component').then((m) => m.ReplayPageComponent),
   },
   {
+    // Public replay of a shared clip (anonymous: AuthService skips Keycloak on this path).
+    path: 'replay/clip/:shortId',
+    data: { source: 'clip' },
+    loadComponent: () =>
+      import('./features/replay/replay-page.component').then((m) => m.ReplayPageComponent),
+  },
+  {
     // The game table is a full-bleed HUD and deliberately sits outside the layout shell.
     path: 'table/:roomId',
     loadComponent: () =>

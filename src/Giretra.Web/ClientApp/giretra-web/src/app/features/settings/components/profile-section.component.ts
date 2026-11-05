@@ -140,6 +140,13 @@ import { SoundService } from '../../../core/services/sound.service';
                 </span>
                 <p-toggleswitch [ngModel]="eloPublic()" (ngModelChange)="toggleEloVisibility()" [ariaLabel]="t('settings.profile.eloVisibility')" />
               </label>
+              <label class="pref">
+                <span class="pref-text">
+                  <span class="pref-label"><i class="pi pi-video"></i>{{ t('settings.profile.clipName') }}</span>
+                  <span class="pref-hint">{{ t('settings.profile.clipNameHint') }}</span>
+                </span>
+                <p-toggleswitch [ngModel]="clipNameVisible()" (ngModelChange)="toggleClipName()" [ariaLabel]="t('settings.profile.clipName')" />
+              </label>
             </div>
           </div>
         </div>
@@ -203,6 +210,7 @@ export class ProfileSectionComponent implements OnInit {
   readonly nameError = signal<string | null>(null);
   readonly nameDirty = signal(false);
   readonly eloPublic = signal(false);
+  readonly clipNameVisible = signal(true);
 
   nameValue = '';
 
@@ -215,6 +223,7 @@ export class ProfileSectionComponent implements OnInit {
       next: (p) => {
         this.profile.set(p);
         this.eloPublic.set(p.eloIsPublic);
+        this.clipNameVisible.set(p.appearInSharedClips ?? true);
         this.nameValue = p.displayName;
         this.nameDirty.set(false);
       },
@@ -310,6 +319,17 @@ export class ProfileSectionComponent implements OnInit {
 
   goToAchievements(): void {
     this.router.navigate(['/achievements']);
+  }
+
+  toggleClipName(): void {
+    const newVal = !this.clipNameVisible();
+    this.api.updateClipNameVisibility(newVal).subscribe({
+      next: () => {
+        this.clipNameVisible.set(newVal);
+        const p = this.profile();
+        if (p) this.profile.set({ ...p, appearInSharedClips: newVal });
+      },
+    });
   }
 
   toggleEloVisibility(): void {

@@ -7,6 +7,9 @@ public sealed class ProfileResponse
     public string? AvatarUrl { get; init; }
     public required int EloRating { get; init; }
     public required bool EloIsPublic { get; init; }
+
+    /// <summary>Whether the display name may appear in publicly shared clips.</summary>
+    public bool AppearInSharedClips { get; init; } = true;
     public required int GamesPlayed { get; init; }
     public required int GamesWon { get; init; }
     public required int WinStreak { get; init; }

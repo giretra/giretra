@@ -61,6 +61,12 @@ public class Program
 
         try
         {
+            if (args.Contains("--render-worker"))
+            {
+                await Giretra.Web.Services.Rendering.RenderWorkerHost.RunAsync(args);
+                return;
+            }
+
             var offline = args.Contains("--offline");
 
             Log.Information("Starting Giretra.Web{OfflineFlag}", offline ? " (OFFLINE mode)" : "");
@@ -145,6 +151,11 @@ public class Program
                 builder.Configuration.GetSection(FeedbackOptions.SectionName));
             builder.Services.PostConfigure<FeedbackOptions>(o => o.ApplyEnvironmentOverrides(Environment.GetEnvironmentVariable));
             builder.Services.AddSingleton<FeedbackThrottle>();
+            builder.Services.Configure<Giretra.Web.Services.Clips.ClipOptions>(
+                builder.Configuration.GetSection(Giretra.Web.Services.Clips.ClipOptions.Section));
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<Giretra.Web.Services.Clips.ClipThrottle>();
+            builder.Services.AddSingleton<Giretra.Web.Services.Clips.ClipStorage>();
             builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
             if (offline)
@@ -157,6 +168,13 @@ public class Program
 
                 // Offline service stubs (no DB needed)
                 builder.Services.AddOfflineServices();
+
+                // Optional in-process clip rendering (Render__Enabled=true) against the in-memory clips
+                builder.Services.Configure<Giretra.Web.Services.Rendering.ClipRenderOptions>(
+                    builder.Configuration.GetSection(Giretra.Web.Services.Rendering.ClipRenderOptions.Section));
+                builder.Services.AddSingleton<Giretra.Web.Services.Rendering.ClipRenderer>();
+                builder.Services.AddSingleton<Giretra.Web.Services.Rendering.IClipJobQueue, Giretra.Web.Services.Rendering.InMemoryClipJobQueue>();
+                builder.Services.AddHostedService<Giretra.Web.Services.Rendering.ClipRenderHostedService>();
 
                 // Contact form messages are written to the log instead of being mailed
                 builder.Services.AddSingleton<IEmailSender>(sp =>
@@ -223,6 +241,7 @@ public class Program
                 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
                 builder.Services.AddScoped<IHighlightsService, HighlightsService>();
                 builder.Services.AddScoped<Giretra.Web.Services.Replay.IDealReplayService, Giretra.Web.Services.Replay.DealReplayService>();
+                builder.Services.AddScoped<Giretra.Web.Services.Clips.IClipService, Giretra.Web.Services.Clips.ClipService>();
 
                 // Contact form: mail moderators (+ extra recipients) over SMTP when configured,
                 // otherwise the form is reported as unavailable and only the GitHub route is offered
@@ -352,6 +371,7 @@ public class Program
 
             app.MapControllers();
             app.MapHub<GameHub>("/hubs/game");
+            Giretra.Web.Endpoints.ClipPagesEndpoints.MapClipPages(app);
             app.MapFallbackToFile("index.html");
 
             await app.RunAsync();

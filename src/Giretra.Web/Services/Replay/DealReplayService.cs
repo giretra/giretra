@@ -24,7 +24,13 @@ public sealed class DealReplayService : IDealReplayService
         _logger = logger;
     }
 
-    public async Task<DealReplayResult> GetReplayAsync(Guid matchId, int dealNumber, Guid userId)
+    public Task<DealReplayResult> GetReplayAsync(Guid matchId, int dealNumber, Guid userId)
+        => BuildAsync(matchId, dealNumber, requireParticipant: userId, hideOptedOut: false, locale: "en");
+
+    public Task<DealReplayResult> GetPublicReplayAsync(Guid matchId, int dealNumber, string locale)
+        => BuildAsync(matchId, dealNumber, requireParticipant: null, hideOptedOut: true, locale: Clips.ClipTexts.Normalize(locale));
+
+    private async Task<DealReplayResult> BuildAsync(Guid matchId, int dealNumber, Guid? requireParticipant, bool hideOptedOut, string locale)
     {
         var match = await _db.Matches
             .AsNoTracking()
@@ -34,7 +40,7 @@ public sealed class DealReplayService : IDealReplayService
         if (match == null)
             return DealReplayResult.Of(DealReplayStatus.MatchNotFound);
 
-        if (!match.MatchPlayers.Any(mp => mp.Player.UserId == userId))
+        if (requireParticipant is { } userId && !match.MatchPlayers.Any(mp => mp.Player.UserId == userId))
             return DealReplayResult.Of(DealReplayStatus.Forbidden);
 
         if (match.CompletedAt == null || match.WasAbandoned)
@@ -93,15 +99,24 @@ public sealed class DealReplayService : IDealReplayService
 
         var players = match.MatchPlayers
             .OrderBy(mp => mp.Position)
-            .Select(mp => new DealReplayPlayerResponse
+            .Select(mp =>
             {
-                Position = (CorePosition)(int)mp.Position,
-                Team = (CoreTeam)(int)mp.Team,
-                DisplayName = mp.Player.PlayerType == PlayerType.Bot
-                    ? mp.Player.Bot?.DisplayName ?? "Bot"
-                    : mp.Player.User?.EffectiveDisplayName ?? "Player",
-                IsBot = mp.Player.PlayerType == PlayerType.Bot,
-                PlayerId = mp.PlayerId,
+                var position = (CorePosition)(int)mp.Position;
+                var isBot = mp.Player.PlayerType == PlayerType.Bot;
+                var hidden = hideOptedOut && !isBot && !mp.Player.AppearInSharedClips;
+                return new DealReplayPlayerResponse
+                {
+                    Position = position,
+                    Team = (CoreTeam)(int)mp.Team,
+                    DisplayName = hidden
+                        ? Clips.ClipTexts.HiddenPlayer(position, locale)
+                        : isBot
+                            ? mp.Player.Bot?.DisplayName ?? "Bot"
+                            : mp.Player.User?.EffectiveDisplayName ?? "Player",
+                    IsBot = isBot,
+                    PlayerId = hidden ? null : mp.PlayerId,
+                    NameHidden = hidden,
+                };
             })
             .ToList();
 
