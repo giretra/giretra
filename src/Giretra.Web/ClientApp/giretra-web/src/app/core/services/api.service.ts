@@ -227,6 +227,52 @@ export interface MatchHistoryPlayerResponse {
   isWinner: boolean;
 }
 
+export interface DealReplayPlayerResponse {
+  position: PlayerPosition;
+  team: Team;
+  displayName: string;
+  isBot: boolean;
+  playerId: string | null;
+}
+
+export interface DealReplayHandResponse {
+  position: PlayerPosition;
+  cards: CardResponse[];
+}
+
+export interface DealReplayTrickResponse {
+  trickNumber: number;
+  leader: PlayerPosition;
+  plays: Array<{ player: PlayerPosition; card: CardResponse }>;
+  winner: PlayerPosition;
+  team1CumulativeCardPoints: number;
+  team2CumulativeCardPoints: number;
+}
+
+/** One deal of a finished match, enough to replay it as a pure function of time. */
+export interface DealReplayResponse {
+  matchId: string;
+  dealNumber: number;
+  totalDeals: number;
+  isRanked: boolean;
+  dealer: PlayerPosition;
+  gameMode: GameMode;
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
+  announcerTeam: Team | null;
+  team1ScoreBefore: number;
+  team2ScoreBefore: number;
+  team1MatchPointsEarned: number;
+  team2MatchPointsEarned: number;
+  team1CardPoints: number;
+  team2CardPoints: number;
+  wasSweep: boolean;
+  sweepingTeam: Team | null;
+  isInstantWin: boolean;
+  players: DealReplayPlayerResponse[];
+  hands: DealReplayHandResponse[];
+  tricks: DealReplayTrickResponse[];
+}
+
 export interface MatchHistoryItemResponse {
   matchId: string;
   roomName: string;
@@ -848,6 +894,12 @@ export class ApiService {
   getMatchHistory(page: number = 1, pageSize: number = 20): Observable<MatchHistoryListResponse> {
     return this.http
       .get<MatchHistoryListResponse>(`${this.baseUrl}/api/settings/matches`, { params: { page, pageSize } })
+      .pipe(catchError(this.handleError));
+  }
+
+  getDealReplay(matchId: string, dealNumber: number): Observable<DealReplayResponse> {
+    return this.http
+      .get<DealReplayResponse>(`${this.baseUrl}/api/matches/${matchId}/deals/${dealNumber}/replay`)
       .pipe(catchError(this.handleError));
   }
 

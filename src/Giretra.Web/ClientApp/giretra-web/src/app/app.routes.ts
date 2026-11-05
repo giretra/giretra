@@ -81,6 +81,13 @@ export const confirmLeaveGameGuard = async () => {
 
 export const routes: Routes = [
   {
+    // Deal replay: full-bleed stage outside the layout shell, also loaded headless by the
+    // clip renderer (?render=1). See docs/plans/shareable-clips.md.
+    path: 'replay/match/:matchId/:dealNumber',
+    loadComponent: () =>
+      import('./features/replay/replay-page.component').then((m) => m.ReplayPageComponent),
+  },
+  {
     // The game table is a full-bleed HUD and deliberately sits outside the layout shell.
     path: 'table/:roomId',
     loadComponent: () =>
