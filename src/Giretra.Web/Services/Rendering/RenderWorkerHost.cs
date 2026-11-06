@@ -20,9 +20,13 @@ public static class RenderWorkerHost
         builder.Services.Configure<ClipRenderOptions>(builder.Configuration.GetSection(ClipRenderOptions.Section));
         builder.Services.PostConfigure<ClipRenderOptions>(o => o.Enabled = true);
         builder.Services.AddSingleton<ClipStorage>();
+        builder.Services.AddHttpClient();
+        builder.Services.AddSingleton<ClipSoundBank>();
         builder.Services.AddSingleton<ClipRenderer>();
         builder.Services.AddScoped<IClipJobQueue, PostgresClipJobQueue>();
+        builder.Services.AddScoped<IClipRetention, PostgresClipRetention>();
         builder.Services.AddHostedService<ClipRenderHostedService>();
+        builder.Services.AddHostedService<ClipRetentionHostedService>();
 
         var app = builder.Build();
         app.MapGet("/health", () => Results.Ok(new { status = "ok", role = "render-worker" }));

@@ -64,6 +64,13 @@ public static class ClipTexts
         _ => "The video is being prepared…",
     };
 
+    public static string Failed(string locale) => locale switch
+    {
+        "fr" => "La vidéo n'a pas pu être générée. Le pli reste visible en interactif.",
+        "mg" => "Tsy afaka namboarina ny horonan-tsary. Mbola azo jerena ny famerenana.",
+        _ => "The video could not be generated. The interactive replay still works.",
+    };
+
     public static string Removed(string locale) => locale switch
     {
         "fr" => "Ce clip n'est plus disponible.",

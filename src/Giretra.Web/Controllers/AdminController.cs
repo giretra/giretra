@@ -3,6 +3,7 @@ using Giretra.Web.Auth;
 using Giretra.Web.Models.Requests;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Services;
+using Giretra.Web.Services.Clips;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,15 +17,18 @@ public class AdminController : ControllerBase
     private readonly IAdminUserService _adminUserService;
     private readonly IAdminGameService _adminGameService;
     private readonly IProfileService _profileService;
+    private readonly IClipService _clips;
 
     public AdminController(
         IAdminUserService adminUserService,
         IAdminGameService adminGameService,
-        IProfileService profileService)
+        IProfileService profileService,
+        IClipService clips)
     {
         _adminUserService = adminUserService;
         _adminGameService = adminGameService;
         _profileService = profileService;
+        _clips = clips;
     }
 
     [HttpGet("users")]
@@ -98,6 +102,29 @@ public class AdminController : ControllerBase
     {
         await _profileService.DeleteAvatarAsync(userId);
         return NoContent();
+    }
+
+    /// <summary>Shared clips with render diagnostics; filter by status (e.g. Failed).</summary>
+    [HttpGet("clips")]
+    public async Task<ActionResult<AdminClipListResponse>> GetClips(
+        [FromQuery] ClipStatusResponse? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        return Ok(await _clips.ListForAdminAsync(status, page, pageSize, ClipPublicOrigin.Resolve(HttpContext)));
+    }
+
+    /// <summary>Queues a clip for rendering again (failed, evicted or stuck).</summary>
+    [HttpPost("clips/{shortId}/retry")]
+    public async Task<ActionResult> RetryClip(string shortId)
+        => await _clips.RetryAsync(shortId) ? NoContent() : NotFound();
+
+    /// <summary>Takes a clip down (moderation).</summary>
+    [HttpDelete("clips/{shortId}")]
+    public async Task<ActionResult> RemoveClip(string shortId)
+    {
+        var result = await _clips.DeleteAsync(GetAuthenticatedUser().Id, shortId, isModerator: true);
+        return result == ClipDeleteStatus.Ok ? NoContent() : NotFound();
     }
 
     private User GetAuthenticatedUser() => (User)HttpContext.Items["GiretraUser"]!;

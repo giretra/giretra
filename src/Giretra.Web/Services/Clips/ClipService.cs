@@ -111,8 +111,74 @@ public sealed class ClipService : IClipService
     {
         if (!ShortId.IsValid(shortId))
             return null;
-        var clip = await _db.Clips.AsNoTracking().FirstOrDefaultAsync(c => c.ShortId == shortId);
-        return clip == null ? null : await ToResponseAsync(clip, origin, includeReplay && clip.Status != ClipStatus.Removed);
+        var clip = await _db.Clips.FirstOrDefaultAsync(c => c.ShortId == shortId);
+        if (clip == null)
+            return null;
+
+        // An evicted clip is a cache miss: somebody wants it again, so queue a fresh render.
+        if (clip.Status == ClipStatus.Evicted)
+        {
+            Requeue(clip);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Clip {ShortId} re-queued after eviction", shortId);
+        }
+
+        return await ToResponseAsync(clip, origin, includeReplay && clip.Status != ClipStatus.Removed);
+    }
+
+    public async Task<AdminClipListResponse> ListForAdminAsync(ClipStatusResponse? status, int page, int pageSize, PublicOrigin origin)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _db.Clips.AsNoTracking().Include(c => c.CreatedBy).ThenInclude(p => p.User).AsQueryable();
+        if (status is { } s)
+        {
+            var wanted = (ClipStatus)(int)s;
+            query = query.Where(c => c.Status == wanted);
+        }
+
+        var total = await query.CountAsync();
+        var clips = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var items = new List<AdminClipEntry>(clips.Count);
+        foreach (var clip in clips)
+        {
+            items.Add(new AdminClipEntry
+            {
+                Clip = await ToResponseAsync(clip, origin, includeReplay: false),
+                Attempts = clip.Attempts,
+                Error = clip.Error,
+                ClaimedAt = clip.ClaimedAt,
+                CreatedByPlayerId = clip.CreatedByPlayerId,
+                CreatedByName = clip.CreatedBy?.User?.EffectiveDisplayName ?? "?",
+            });
+        }
+        return new AdminClipListResponse { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
+    }
+
+    public async Task<bool> RetryAsync(string shortId)
+    {
+        if (!ShortId.IsValid(shortId))
+            return false;
+        var clip = await _db.Clips.FirstOrDefaultAsync(c => c.ShortId == shortId);
+        if (clip == null || clip.Status == ClipStatus.Removed)
+            return false;
+        Requeue(clip);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    private static void Requeue(Clip clip)
+    {
+        clip.Status = ClipStatus.Pending;
+        clip.Attempts = 0;
+        clip.Error = null;
+        clip.ClaimedAt = null;
     }
 
     public async Task<ClipListResponse> ListMineAsync(Guid userId, PublicOrigin origin)

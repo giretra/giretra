@@ -1,6 +1,6 @@
 # Shareable trick clips — implementation plan
 
-Status: phases 0–2 done (2026-11-05), phase 3 (video) next. Owner: Haga.
+Status: phases 0–3 done (2026-11-06), phase 4 (growth polish) next. Owner: Haga.
 
 ## 1. Goal and scope
 
@@ -425,6 +425,54 @@ the container limits. iOS needs `playsinline` and `-profile:v main`.
 
 Ideas: JPEG screenshots at quality 90 are 2–3× faster if PNG is too slow; H.264 is lossy
 anyway. Keep the frame count constant per second; do not try to skip static frames.
+
+**Results (2026-11-06)**
+
+Shipped on `feature/shareable-clips`:
+
+- Frame loop in `ClipRenderer`: after the poster, `seek(i/fps)` + JPEG q90 screenshot per
+  frame at 540×960 @2x, piped to `FfmpegEncoder` (image2pipe → libx264 veryfast, CRF 23,
+  Main 4.0, `scale=in_range=full:out_range=limited,format=yuv420p`, `+faststart`, `-f mp4`
+  because the output is `{id}.mp4.tmp`, renamed when ffmpeg exits 0). stderr drained
+  asynchronously, process killed on dispose/timeout. `Render__Video=false` keeps poster only.
+- Sound: the replay page exposes `window.__giretra.events` from
+  `ReplayTimeline.soundEvents()` (card sound per play, the trick's winning card gets
+  `card_played_master`, `card_folding_started` when the trick is collected). `ClipSoundBank`
+  fetches the app's own `/assets/sounds/*.mp3` from the web origin, decodes once with ffmpeg
+  to 44.1 kHz stereo PCM; `ClipAudio.Mix` adds them at the event times (clipped, gain 0.7)
+  and writes a WAV that ffmpeg muxes as AAC 96k with `-shortest`. A missing sample never
+  fails a job (silent instead).
+- Measured on the dev machine (Angular dev server, Google Chrome 156): 84 ms/frame
+  (seek 26, screenshot 56), 3-trick clip = 501 frames, 16.7 s, 826 KiB, 42 s wall; 1-trick
+  clip = 237 frames, 20 s wall. Two renders of the same clip are byte-identical (mp4 and
+  poster). ffprobe: h264 Main 1080×1920 yuv420p tv range 30 fps + aac LC 44.1 kHz stereo,
+  `ftyp` first (faststart). Default job timeout raised to 300 s for 8-trick clips on a slow core.
+- Retention: `ClipRetentionHostedService` (render worker only) runs `PostgresClipRetention`
+  every 6 h: Ready clips with `coalesce(last_viewed_at, rendered_at, created_at)` older than
+  180 days lose their files and become Evicted. Any public read of an Evicted clip re-queues
+  it (Pending, attempts reset) so the landing page shows "preparing" and the worker
+  re-renders it. Failed clips get a landing page that explains and does not auto-refresh.
+- Admin: `GET /api/admin/clips?status=&page=` (title, creator, status, attempts, error,
+  claimed_at), `POST /api/admin/clips/{id}/retry`, `DELETE /api/admin/clips/{id}`; Angular
+  page `/admin/clips` (filter chips, Failed by default; retry / take down / open), linked from
+  the admin overview and the sidebar. Share dialog shows the finished video inline.
+- Tests: `ClipAudioTests` (mix placement, clipping, gain, WAV header, ffmpeg args, event
+  parsing), `ClipRetentionTests`, and in `ClipServiceTests` evicted re-queue, admin list /
+  filter / retry, failed landing page; `soundEvents` in Vitest. Totals 668 .NET + 9 Vitest.
+- Verified end to end in offline mode: API-created clip rendered with sound, landing page
+  served og:video + `<video>` + range requests (206, immutable), admin list/filter/retry over
+  HTTP, admin page and share dialog with the playing video in the browser.
+
+Deviations and notes:
+
+- The planned xUnit "render five frames twice" integration test is not there: it needs the
+  Angular app served, which the test host cannot do. `tools/clip-spike` remains the
+  determinism harness (run it against the dev server after any change to the stage).
+- Sounds come over HTTP from the web container rather than from disk so the Angular bundle
+  stays the single source; in the render container that is `http://web:8080/assets/sounds/`.
+- `card_played_master.mp3` peaks at 0 dBFS; with gain 0.8 the AAC output touched 0 dB, hence 0.7.
+- Not device-tested yet (iOS Safari, WhatsApp, Facebook scraper); the file is at the
+  standard settings those platforms accept.
 
 ### Phase 4 — Growth polish (2–4 days)
 

@@ -39,4 +39,10 @@ public interface IClipService
 
     /// <summary>Counts a landing-page view (best effort).</summary>
     Task RecordViewAsync(string shortId);
+
+    /// <summary>Moderation list, newest first; <paramref name="status"/> null means every status.</summary>
+    Task<AdminClipListResponse> ListForAdminAsync(ClipStatusResponse? status, int page, int pageSize, PublicOrigin origin);
+
+    /// <summary>Queues the clip again from scratch (attempts reset); false when unknown or removed.</summary>
+    Task<bool> RetryAsync(string shortId);
 }

@@ -43,6 +43,12 @@ export interface ReplayRange {
   toTrick: number;
 }
 
+/** Sound asset name (public/assets/sounds/{sound}.mp3) to play at `t` ms. */
+export interface ReplaySoundEvent {
+  t: number;
+  sound: 'card_played' | 'card_played_master' | 'card_folding_started';
+}
+
 export type ReplayCaption =
   | { kind: 'intro' }
   | { kind: 'trick'; trickNumber: number }
@@ -127,6 +133,28 @@ export class ReplayTimeline {
   trickStart(trickNumber: number): number {
     const n = Math.max(this.range.fromTrick, Math.min(this.range.toTrick, trickNumber));
     return this.timing.intro + (n - this.range.fromTrick) * this.trickDuration;
+  }
+
+  /**
+   * Soundtrack of the range: the live table's card sound for each play (the winning card of
+   * the trick gets the "master" sound) and the collect sound when the trick leaves the table.
+   * Pure function of the timeline; the clip renderer mixes these into the video.
+   */
+  soundEvents(): ReplaySoundEvent[] {
+    const { card, hold } = this.timing;
+    const events: ReplaySoundEvent[] = [];
+    for (let n = this.range.fromTrick; n <= this.range.toTrick; n++) {
+      const trick = this.tricks[n - 1];
+      const start = this.trickStart(n);
+      trick.plays.forEach((play, i) => {
+        events.push({
+          t: start + i * card,
+          sound: play.player === trick.winner ? 'card_played_master' : 'card_played',
+        });
+      });
+      events.push({ t: start + 4 * card + hold, sound: 'card_folding_started' });
+    }
+    return events;
   }
 
   /** Points collected by the winner of a trick (difference of cumulative points). */

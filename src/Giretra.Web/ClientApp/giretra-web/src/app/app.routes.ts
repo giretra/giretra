@@ -186,6 +186,14 @@ export const routes: Routes = [
                 (m) => m.AdminGamesComponent,
               ),
           },
+          {
+            path: 'clips',
+            data: { breadcrumb: 'breadcrumb.adminClips' },
+            loadComponent: () =>
+              import('./features/admin/clips/admin-clips.component').then(
+                (m) => m.AdminClipsComponent,
+              ),
+          },
         ],
       },
     ],
