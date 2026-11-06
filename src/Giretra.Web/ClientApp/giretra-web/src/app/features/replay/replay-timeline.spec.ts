@@ -192,6 +192,22 @@ describe('ReplayTimeline', () => {
     expect(f.hands.Right).toHaveLength(0);
   });
 
+  it('lists one sound per card plus a collect sound per trick', () => {
+    const timeline = new ReplayTimeline(buildReplay(), { fromTrick: 2, toTrick: 3 });
+    const { intro, card, hold } = DEFAULT_REPLAY_TIMING;
+
+    const events = timeline.soundEvents();
+
+    expect(events).toHaveLength(2 * 5);
+    expect(events[0]).toEqual({ t: intro, sound: expect.any(String) });
+    expect(events[3].t).toBe(intro + 3 * card);
+    expect(events[4]).toEqual({ t: intro + 4 * card + hold, sound: 'card_folding_started' });
+    expect(events[5].t).toBe(timeline.trickStart(3));
+    // Exactly one "master" per trick: the card that wins it.
+    expect(events.filter((e) => e.sound === 'card_played_master')).toHaveLength(2);
+    expect(events.every((e) => e.t < timeline.duration)).toBe(true);
+  });
+
   it('is a pure function of t', () => {
     const tl = new ReplayTimeline(buildReplay());
     const a = JSON.stringify(tl.frameAt(12345));

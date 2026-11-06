@@ -254,6 +254,85 @@ public sealed class ClipServiceTests : IDisposable
         Assert.DoesNotContain("<video", html);
     }
 
+    [Fact]
+    public async Task LandingPage_Failed_ExplainsAndDoesNotRefresh()
+    {
+        var (userId, _, match) = await SeedMatchAsync();
+        var created = await _service.CreateAsync(userId, Request(match.Id, 1, 3), Origin);
+        var row = await _db.Clips.FirstAsync(c => c.ShortId == created.Clip!.ShortId);
+        row.Status = ClipStatus.Failed;
+        row.Error = "ffmpeg exited with 1";
+        await _db.SaveChangesAsync();
+        var view = (await _service.GetPublicAsync(created.Clip!.ShortId, Origin))!;
+
+        var html = ClipLandingPage.Render(view, Origin);
+
+        Assert.Contains("could not be generated", html);
+        Assert.DoesNotContain("http-equiv=\"refresh\"", html);
+        Assert.Contains("noindex", html);
+        Assert.DoesNotContain("ffmpeg", html);
+    }
+
+    #endregion
+
+    #region Retention and moderation
+
+    [Fact]
+    public async Task GetPublic_RequeuesAnEvictedClip()
+    {
+        var (userId, _, match) = await SeedMatchAsync();
+        var created = await _service.CreateAsync(userId, Request(match.Id, 1, 3), Origin);
+        var row = await _db.Clips.FirstAsync(c => c.ShortId == created.Clip!.ShortId);
+        row.Status = ClipStatus.Evicted;
+        row.Attempts = 2;
+        row.Error = "old";
+        await _db.SaveChangesAsync();
+
+        var view = (await _service.GetPublicAsync(created.Clip!.ShortId, Origin))!;
+
+        Assert.Equal(ClipStatusResponse.Pending, view.Status);
+        Assert.Null(view.VideoUrl);
+        var after = await _db.Clips.AsNoTracking().FirstAsync(c => c.Id == row.Id);
+        Assert.Equal(ClipStatus.Pending, after.Status);
+        Assert.Equal(0, after.Attempts);
+        Assert.Null(after.Error);
+    }
+
+    [Fact]
+    public async Task Admin_ListsWithDiagnostics_FiltersByStatus_AndRetries()
+    {
+        var (userId, _, match) = await SeedMatchAsync();
+        var ok = await _service.CreateAsync(userId, Request(match.Id, 1, 2), Origin);
+        var bad = await _service.CreateAsync(userId, Request(match.Id, 3, 4), Origin);
+        var row = await _db.Clips.FirstAsync(c => c.ShortId == bad.Clip!.ShortId);
+        row.Status = ClipStatus.Failed;
+        row.Attempts = 2;
+        row.Error = "Render timed out";
+        await _db.SaveChangesAsync();
+
+        var all = await _service.ListForAdminAsync(null, 1, 25, Origin);
+        var failed = await _service.ListForAdminAsync(ClipStatusResponse.Failed, 1, 25, Origin);
+
+        Assert.Equal(2, all.TotalCount);
+        Assert.Single(failed.Items);
+        var entry = failed.Items[0];
+        Assert.Equal(bad.Clip!.ShortId, entry.Clip.ShortId);
+        Assert.Equal("Render timed out", entry.Error);
+        Assert.Equal(2, entry.Attempts);
+        Assert.Equal("Alice", entry.CreatedByName);
+        Assert.Null(entry.Clip.Replay);
+
+        Assert.True(await _service.RetryAsync(bad.Clip.ShortId));
+        var after = await _db.Clips.AsNoTracking().FirstAsync(c => c.Id == row.Id);
+        Assert.Equal(ClipStatus.Pending, after.Status);
+        Assert.Equal(0, after.Attempts);
+        Assert.Null(after.Error);
+
+        await _service.DeleteAsync(userId, ok.Clip!.ShortId, isModerator: true);
+        Assert.False(await _service.RetryAsync(ok.Clip.ShortId));
+        Assert.False(await _service.RetryAsync("nope"));
+    }
+
     #endregion
 
     #region Fixture

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, Shield, Users, Dices, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, Shield, Users, Dices, Video, ChevronRight } from 'lucide-angular';
 import { TranslocoDirective } from '@jsverse/transloco';
 
 @Component({
@@ -41,6 +41,16 @@ import { TranslocoDirective } from '@jsverse/transloco';
           </span>
           <i-lucide [img]="ChevronRightIcon" [size]="16" [strokeWidth]="2" class="tool-arrow"></i-lucide>
         </a>
+        <a class="tool-card" (click)="goToClips()">
+          <span class="tool-icon">
+            <i-lucide [img]="VideoIcon" [size]="20" [strokeWidth]="2"></i-lucide>
+          </span>
+          <span class="tool-text">
+            <span class="tool-title">{{ t('admin.tools.clips.title') }}</span>
+            <span class="tool-desc">{{ t('admin.tools.clips.desc') }}</span>
+          </span>
+          <i-lucide [img]="ChevronRightIcon" [size]="16" [strokeWidth]="2" class="tool-arrow"></i-lucide>
+        </a>
       </div>
     </div>
   `,
@@ -70,6 +80,7 @@ export class AdminComponent {
   readonly ShieldIcon = Shield;
   readonly UsersIcon = Users;
   readonly DicesIcon = Dices;
+  readonly VideoIcon = Video;
   readonly ChevronRightIcon = ChevronRight;
 
   private readonly router = inject(Router);
@@ -82,5 +93,9 @@ export class AdminComponent {
 
   goToGames(): void {
     this.router.navigate(['/admin/games']);
+  }
+
+  goToClips(): void {
+    this.router.navigate(['/admin/clips']);
   }
 }

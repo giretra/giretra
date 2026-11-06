@@ -23,6 +23,7 @@ public static class ClipLandingPage
         var pageUrl = Html(clip.PageUrl);
         var ready = clip.Status == ClipStatusResponse.Ready;
         var removed = clip.Status == ClipStatusResponse.Removed;
+        var failed = clip.Status == ClipStatusResponse.Failed;
         var poster = clip.PosterUrl != null ? Html(clip.PosterUrl) : Html(origin.Url("/og-image.png"));
         var video = clip.VideoUrl != null ? Html(clip.VideoUrl) : null;
         var replayUrl = Html(origin.Url($"/replay/clip/{clip.ShortId}"));
@@ -72,7 +73,7 @@ public static class ClipLandingPage
         sb.Append("<meta name=\"twitter:title\" content=\"").Append(title).Append("\">\n");
         sb.Append("<meta name=\"twitter:description\" content=\"").Append(description).Append("\">\n");
         sb.Append("<meta name=\"twitter:image\" content=\"").Append(poster).Append("\">\n");
-        if (!ready && !removed)
+        if (!ready && !removed && !failed)
             sb.Append("<meta http-equiv=\"refresh\" content=\"6\">\n");
 
         sb.Append("<style>").Append(Css).Append("</style>\n</head>\n<body>\n<main class=\"page\">\n");
@@ -82,6 +83,10 @@ public static class ClipLandingPage
         if (removed)
         {
             sb.Append("<p class=\"note\">").Append(Html(ClipTexts.Removed(locale))).Append("</p>\n");
+        }
+        else if (failed)
+        {
+            sb.Append("<p class=\"note\">").Append(Html(ClipTexts.Failed(locale))).Append("</p>\n");
         }
         else if (video != null)
         {

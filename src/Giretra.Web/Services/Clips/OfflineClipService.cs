@@ -95,6 +95,35 @@ public sealed class OfflineClipService : IClipService
         return Task.CompletedTask;
     }
 
+    public async Task<AdminClipListResponse> ListForAdminAsync(ClipStatusResponse? status, int page, int pageSize, PublicOrigin origin)
+    {
+        var all = _clips.Values.Where(c => status == null || c.Status == status).OrderByDescending(c => c.CreatedAt).ToList();
+        var items = new List<AdminClipEntry>();
+        foreach (var clip in all.Skip((Math.Max(1, page) - 1) * pageSize).Take(pageSize))
+        {
+            items.Add(new AdminClipEntry
+            {
+                Clip = await ToResponseAsync(clip, origin, false),
+                Attempts = clip.Attempts,
+                Error = clip.Error,
+                CreatedByPlayerId = Guid.Empty,
+                CreatedByName = "You",
+            });
+        }
+        return new AdminClipListResponse { Items = items, TotalCount = all.Count, Page = page, PageSize = pageSize };
+    }
+
+    public Task<bool> RetryAsync(string shortId)
+    {
+        var clip = Find(shortId);
+        if (clip == null || clip.Status == ClipStatusResponse.Removed)
+            return Task.FromResult(false);
+        clip.Status = ClipStatusResponse.Pending;
+        clip.Attempts = 0;
+        clip.Error = null;
+        return Task.FromResult(true);
+    }
+
     private async Task<ClipResponse> ToResponseAsync(OfflineClip clip, PublicOrigin origin, bool includeReplay)
     {
         var replay = (await _replays.GetPublicReplayAsync(clip.Request.MatchId, clip.Request.DealNumber, clip.Locale)).Replay!;

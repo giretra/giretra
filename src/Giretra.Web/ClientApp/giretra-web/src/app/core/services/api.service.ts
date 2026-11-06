@@ -301,6 +301,22 @@ export interface ClipListResponse {
   items: ClipResponse[];
 }
 
+export interface AdminClipEntry {
+  clip: ClipResponse;
+  attempts: number;
+  error: string | null;
+  claimedAt: string | null;
+  createdByPlayerId: string;
+  createdByName: string;
+}
+
+export interface AdminClipListResponse {
+  items: AdminClipEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface CreateClipRequest {
   matchId: string;
   dealNumber: number;
@@ -1071,6 +1087,30 @@ export class ApiService {
   getAdminGameDeals(matchId: string): Observable<AdminGameDealsResponse> {
     return this.http
       .get<AdminGameDealsResponse>(`${this.baseUrl}/api/admin/games/${matchId}/deals`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAdminClips(
+    status: ClipStatus | null,
+    page: number,
+    pageSize: number,
+  ): Observable<AdminClipListResponse> {
+    const params: Record<string, string> = { page: `${page}`, pageSize: `${pageSize}` };
+    if (status) params['status'] = status;
+    return this.http
+      .get<AdminClipListResponse>(`${this.baseUrl}/api/admin/clips`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  retryAdminClip(shortId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/admin/clips/${shortId}/retry`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  deleteAdminClip(shortId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/admin/clips/${shortId}`)
       .pipe(catchError(this.handleError));
   }
 

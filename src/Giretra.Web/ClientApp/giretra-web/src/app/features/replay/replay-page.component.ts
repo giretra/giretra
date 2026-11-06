@@ -40,7 +40,7 @@ import {
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 import { ApiService, ClipResponse, DealReplayResponse } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ReplayTimeline } from './replay-timeline';
+import { ReplayTimeline, ReplaySoundEvent } from './replay-timeline';
 import {
   ReplayStageComponent,
   REPLAY_STAGE_HEIGHT,
@@ -50,7 +50,12 @@ import { ClipShareDialogComponent } from './clip-share-dialog.component';
 
 declare global {
   interface Window {
-    __giretra?: { seek: (ms: number) => Promise<number>; duration: number; posterTime: number };
+    __giretra?: {
+      seek: (ms: number) => Promise<number>;
+      duration: number;
+      posterTime: number;
+      events: ReplaySoundEvent[];
+    };
   }
 }
 
@@ -564,6 +569,7 @@ export class ReplayPageComponent implements OnInit, OnDestroy {
           window.__giretra = {
             duration: timeline.duration,
             posterTime: ReplayPageComponent.posterTime(timeline),
+            events: timeline.soundEvents(),
             seek: (ms) => this.seek(ms),
           };
         });

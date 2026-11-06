@@ -105,7 +105,16 @@ const POLL_MS = 3000;
                 <p class="state">{{ t('clip.share.preparing') }}</p>
               }
             }
-            @if (clip()!.posterUrl; as poster) {
+            @if (clip()!.videoUrl; as video) {
+              <video
+                class="poster"
+                controls
+                playsinline
+                preload="metadata"
+                [poster]="clip()!.posterUrl ?? ''"
+                [src]="video"
+              ></video>
+            } @else if (clip()!.posterUrl; as poster) {
               <img class="poster" [src]="poster" alt="" />
             }
             <div class="link-row">

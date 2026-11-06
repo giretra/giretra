@@ -172,6 +172,8 @@ public class Program
                 // Optional in-process clip rendering (Render__Enabled=true) against the in-memory clips
                 builder.Services.Configure<Giretra.Web.Services.Rendering.ClipRenderOptions>(
                     builder.Configuration.GetSection(Giretra.Web.Services.Rendering.ClipRenderOptions.Section));
+                builder.Services.AddHttpClient();
+                builder.Services.AddSingleton<Giretra.Web.Services.Rendering.ClipSoundBank>();
                 builder.Services.AddSingleton<Giretra.Web.Services.Rendering.ClipRenderer>();
                 builder.Services.AddSingleton<Giretra.Web.Services.Rendering.IClipJobQueue, Giretra.Web.Services.Rendering.InMemoryClipJobQueue>();
                 builder.Services.AddHostedService<Giretra.Web.Services.Rendering.ClipRenderHostedService>();
