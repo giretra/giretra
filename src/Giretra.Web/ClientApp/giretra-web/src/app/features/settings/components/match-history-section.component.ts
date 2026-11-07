@@ -39,8 +39,9 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
               <i class="pi" [class.pi-trophy]="match.isWinner" [class.pi-times]="!match.isWinner"></i>
             </span>
             <div class="match-main">
-              <span class="match-room">{{ match.roomName }}</span>
+              <span class="match-room" [title]="match.roomName">{{ t('settings.history.vsOpponents', { opponents: opponentNames(match) }) }}</span>
               <span class="match-meta">
+                @if (partnerName(match); as partner) { {{ t('settings.history.withPartner', { partner }) }} · }
                 {{ formatDate(match.playedAt) }} · {{ t('settings.history.deals', { count: match.totalDeals }) }}
                 @if (match.durationSeconds !== null) { · {{ formatDuration(match.durationSeconds) }} }
               </span>
@@ -63,11 +64,26 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
 
           @if (expandedId() === match.matchId) {
             <div class="match-details">
-              @if (!match.wasAbandoned) {
-                <a class="replay-link" [routerLink]="['/replay/match', match.matchId, 1]" [queryParams]="{ view: match.position }">
-                  <i class="pi pi-play"></i> {{ t('settings.history.replay') }}
+              <div class="ctas">
+                @if (!match.wasAbandoned) {
+                  <a class="replay-cta" [routerLink]="['/replay/match', match.matchId, 1]" [queryParams]="{ view: match.position }">
+                    <span class="replay-cta-icon"><i class="pi pi-play"></i></span>
+                    <span class="replay-cta-text">
+                      <span class="replay-cta-title">{{ t('settings.history.replayCta') }}</span>
+                      <span class="replay-cta-hint">{{ t('settings.history.replayCtaHint') }}</span>
+                    </span>
+                    <i class="pi pi-arrow-right replay-cta-arrow"></i>
+                  </a>
+                }
+                <a class="replay-cta summary" [routerLink]="['/history/match', match.matchId]">
+                  <span class="replay-cta-icon"><i class="pi pi-chart-bar"></i></span>
+                  <span class="replay-cta-text">
+                    <span class="replay-cta-title">{{ t('settings.history.summaryCta') }}</span>
+                    <span class="replay-cta-hint">{{ t('settings.history.summaryCtaHint') }}</span>
+                  </span>
+                  <i class="pi pi-arrow-right replay-cta-arrow"></i>
                 </a>
-              }
+              </div>
               @for (player of match.players; track player.position) {
                 <div class="player" [class.winner]="player.isWinner">
                   <span class="player-pos">{{ positionKey(player.position) | transloco }}</span>
@@ -101,8 +117,26 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
     .g-empty.compact { padding:1.5rem 0.5rem; }
     .match { border:1px solid var(--surface-border); border-radius:1rem; background:var(--p-surface-900); overflow:hidden; transition:border-color var(--transition-duration); }
     .match.open { border-color:var(--p-surface-600); }
-    .replay-link { display:inline-flex; align-items:center; gap:0.375rem; margin:0 0 0.5rem; font-size:0.85rem; color:var(--p-primary-color, #e3b341); text-decoration:none; }
-    .replay-link:hover { text-decoration:underline; }
+    .ctas { grid-column:1 / -1; display:grid; grid-template-columns:1fr; gap:0.5rem; }
+    @media (min-width:640px) { .ctas { grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr)); } }
+    .replay-cta { display:flex; align-items:center; gap:0.875rem; padding:0.75rem 1rem; border-radius:0.875rem; text-decoration:none; color:var(--text-color);
+      background:linear-gradient(120deg, color-mix(in srgb, var(--p-sky-500) 22%, var(--p-surface-800)), color-mix(in srgb, var(--p-violet-500) 14%, var(--p-surface-800)));
+      border:1px solid color-mix(in srgb, var(--p-sky-400) 35%, transparent);
+      transition:transform var(--transition-duration), border-color var(--transition-duration), box-shadow var(--transition-duration); }
+    .replay-cta:hover { transform:translateY(-1px); border-color:color-mix(in srgb, var(--p-sky-400) 70%, transparent); box-shadow:0 6px 18px color-mix(in srgb, var(--p-sky-500) 22%, transparent); }
+    .replay-cta:hover .replay-cta-arrow { transform:translateX(3px); }
+    .replay-cta-icon { display:inline-flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:50%; flex-shrink:0; background:var(--p-sky-500); color:#fff; box-shadow:0 2px 10px color-mix(in srgb, var(--p-sky-500) 45%, transparent); }
+    .replay-cta-icon i { font-size:0.9rem; margin-left:2px; }
+    .replay-cta-text { display:flex; flex-direction:column; gap:0.125rem; flex:1; min-width:0; }
+    .replay-cta-title { font-weight:600; font-size:0.95rem; }
+    .replay-cta-hint { font-size:0.75rem; color:var(--text-color-secondary); }
+    .replay-cta-arrow { color:var(--p-sky-300); transition:transform var(--transition-duration); flex-shrink:0; }
+    .replay-cta.summary { background:linear-gradient(120deg, color-mix(in srgb, var(--p-emerald-500) 20%, var(--p-surface-800)), color-mix(in srgb, var(--p-teal-500) 12%, var(--p-surface-800))); border-color:color-mix(in srgb, var(--p-emerald-400) 35%, transparent); }
+    .replay-cta.summary:hover { border-color:color-mix(in srgb, var(--p-emerald-400) 70%, transparent); box-shadow:0 6px 18px color-mix(in srgb, var(--p-emerald-500) 22%, transparent); }
+    .replay-cta.summary .replay-cta-icon { background:var(--p-emerald-500); box-shadow:0 2px 10px color-mix(in srgb, var(--p-emerald-500) 45%, transparent); }
+    .replay-cta.summary .replay-cta-icon i { margin-left:0; }
+    .replay-cta.summary .replay-cta-arrow { color:var(--p-emerald-300); }
+    @media (max-width:639px) { .replay-cta-hint { display:none; } }
     .match-row { display:flex; align-items:center; gap:0.875rem; width:100%; padding:0.75rem 1rem; border:none; background:transparent; color:inherit; text-align:left; cursor:pointer; transition:background-color var(--transition-duration); }
     .match-row:hover { background:var(--surface-hover); }
     .result-disc { display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:0.75rem; flex-shrink:0; }
@@ -171,6 +205,20 @@ export class MatchHistorySectionComponent implements OnInit {
       this.currentPage.set(page);
       this.loadMatches();
     }
+  }
+
+  /** Opponents' names joined with " & ", used as the match title. */
+  opponentNames(match: MatchHistoryItemResponse): string {
+    return match.players
+      .filter((p) => p.team !== match.team)
+      .map((p) => p.displayName)
+      .join(' & ');
+  }
+
+  /** The player's partner (same team, other seat), or null if unknown. */
+  partnerName(match: MatchHistoryItemResponse): string | null {
+    const partner = match.players.find((p) => p.team === match.team && p.position !== match.position);
+    return partner?.displayName ?? null;
   }
 
   positionKey(position: string): string {
