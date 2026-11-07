@@ -1,5 +1,5 @@
 # --- Angular frontend build ---
-FROM node:20-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /app/src/Giretra.Web/ClientApp/giretra-web
 COPY src/Giretra.Web/ClientApp/giretra-web/package.json src/Giretra.Web/ClientApp/giretra-web/package-lock.json ./
 RUN npm ci
