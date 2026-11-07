@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { TranslocoDirective, TranslocoPipe } from '@jsverse/transloco';
 import { TagModule } from 'primeng/tag';
@@ -9,7 +10,7 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
 @Component({
   selector: 'app-match-history-section',
   standalone: true,
-  imports: [TranslocoDirective, TranslocoPipe, TagModule, SkeletonModule, PaginatorModule],
+  imports: [RouterLink, TranslocoDirective, TranslocoPipe, TagModule, SkeletonModule, PaginatorModule],
   template: `
     <ng-container *transloco="let t">
       <div class="g-panel-head">
@@ -62,6 +63,11 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
 
           @if (expandedId() === match.matchId) {
             <div class="match-details">
+              @if (!match.wasAbandoned) {
+                <a class="replay-link" [routerLink]="['/replay/match', match.matchId, 1]" [queryParams]="{ view: match.position }">
+                  <i class="pi pi-play"></i> {{ t('settings.history.replay') }}
+                </a>
+              }
               @for (player of match.players; track player.position) {
                 <div class="player" [class.winner]="player.isWinner">
                   <span class="player-pos">{{ positionKey(player.position) | transloco }}</span>
@@ -95,6 +101,8 @@ import { getPositionTranslationKey } from '../../../core/utils/position-utils';
     .g-empty.compact { padding:1.5rem 0.5rem; }
     .match { border:1px solid var(--surface-border); border-radius:1rem; background:var(--p-surface-900); overflow:hidden; transition:border-color var(--transition-duration); }
     .match.open { border-color:var(--p-surface-600); }
+    .replay-link { display:inline-flex; align-items:center; gap:0.375rem; margin:0 0 0.5rem; font-size:0.85rem; color:var(--p-primary-color, #e3b341); text-decoration:none; }
+    .replay-link:hover { text-decoration:underline; }
     .match-row { display:flex; align-items:center; gap:0.875rem; width:100%; padding:0.75rem 1rem; border:none; background:transparent; color:inherit; text-align:left; cursor:pointer; transition:background-color var(--transition-duration); }
     .match-row:hover { background:var(--surface-hover); }
     .result-disc { display:inline-flex; align-items:center; justify-content:center; width:2.25rem; height:2.25rem; border-radius:0.75rem; flex-shrink:0; }

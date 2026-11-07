@@ -34,6 +34,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
     private readonly TimeSpan _timeout;
     private readonly TimeSpan _continueMatchTimeout;
     private readonly Func<string, bool> _shouldPauseOnTimeout;
+    private readonly Func<Task>? _onMatchEnded;
     private readonly bool _broadcastsRoomEvents;
 
     public PlayerPosition Position { get; }
@@ -63,7 +64,8 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         TimeSpan? timeout = null,
         TimeSpan? continueMatchTimeout = null,
         Func<string, bool>? shouldPauseOnTimeout = null,
-        bool broadcastsRoomEvents = true)
+        bool broadcastsRoomEvents = true,
+        Func<Task>? onMatchEnded = null)
     {
         Position = position;
         _clientId = clientId;
@@ -73,6 +75,7 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         _continueMatchTimeout = continueMatchTimeout ?? DefaultContinueMatchTimeout;
         _shouldPauseOnTimeout = shouldPauseOnTimeout ?? (_ => false);
         _broadcastsRoomEvents = broadcastsRoomEvents;
+        _onMatchEnded = onMatchEnded;
     }
 
     /// <summary>
@@ -277,6 +280,12 @@ public sealed class WebApiPlayerAgent : IPlayerAgent
         _session.BumpStateVersion();
         if (!_broadcastsRoomEvents) return;
         await _notifications.NotifyMatchEndedAsync(_session.GameId, matchState);
+
+        // The match is final here; the engine only waits for the play-again answers next.
+        // Archiving now (persist, achievements, shareable moments) lets the match-end
+        // screen show them instead of waiting for the window to close.
+        if (_onMatchEnded != null)
+            await _onMatchEnded();
     }
 
     public async Task ConfirmContinueDealAsync(MatchState matchState)

@@ -42,7 +42,10 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
               <div
                 class="card-throw"
                 [class.winning]="posCard.isWinning && hasMultipleCards()"
+                [class.timed]="entryProgress() !== null"
                 [style.--rotation]="getRotation(posCard.relativePosition) + 'deg'"
+                [style.opacity]="getEntryOpacity(posCard.player)"
+                [style.transform]="getEntryTransform(posCard.player, posCard.relativePosition)"
               >
                 <app-card
                   [card]="posCard.card"
@@ -129,6 +132,12 @@ const ROTATION_MAP: Record<RelativePosition, number> = {
       box-shadow: 0 0 10px 2px hsl(var(--gold) / 0.5);
     }
 
+    /* Replay: entry is driven by time instead of the CSS animation */
+    .card-throw.timed {
+      animation: none;
+      transition: none;
+    }
+
     @keyframes throwIn {
       from {
         opacity: 0;
@@ -176,6 +185,12 @@ export class TrickAreaComponent {
   readonly isWatcher = input<boolean>(false);
   readonly myPosition = input<PlayerPosition | null>(null);
   readonly gameMode = input<GameMode | null>(null);
+  /**
+   * Replay only: per-player entry progress (0..1) of the cards on the table. When set, the
+   * CSS throw-in animation is replaced by opacity/scale derived from the progress, so a
+   * frame rendered at time t is always identical.
+   */
+  readonly entryProgress = input<Partial<Record<PlayerPosition, number>> | null>(null);
   readonly dismissCompletedTrick = output<void>();
 
   readonly positions: RelativePosition[] = ['top', 'left', 'right', 'bottom'];
@@ -222,6 +237,19 @@ export class TrickAreaComponent {
     if (pos === 'left') return 'translateY(-50%)';
     if (pos === 'right') return 'translateY(-50%)';
     return '';
+  }
+
+  getEntryOpacity(player: PlayerPosition): string | null {
+    const progress = this.entryProgress();
+    if (!progress) return null;
+    return String(progress[player] ?? 1);
+  }
+
+  getEntryTransform(player: PlayerPosition, pos: RelativePosition): string | null {
+    const progress = this.entryProgress();
+    if (!progress) return null;
+    const p = progress[player] ?? 1;
+    return `rotate(${this.getRotation(pos)}deg) scale(${(0.85 + 0.15 * p).toFixed(4)})`;
   }
 
   @HostListener('document:keydown.space', ['$event'])

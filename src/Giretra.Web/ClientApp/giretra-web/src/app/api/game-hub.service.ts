@@ -32,6 +32,7 @@ class EndlessRetryPolicy implements IRetryPolicy {
 }
 import {
   AchievementsEarnedEvent,
+  MatchArchivedEvent,
   CardPlayedEvent,
   ChatHistoryResponse,
   ChatMessageEvent,
@@ -100,6 +101,7 @@ export class GameHubService implements OnDestroy {
   readonly matchEnded$ = new Subject<MatchEndedEvent>();
   readonly matchAbandoned$ = new Subject<MatchAbandonedEvent>();
   readonly achievementsEarned$ = new Subject<AchievementsEarnedEvent>();
+  readonly matchArchived$ = new Subject<MatchArchivedEvent>();
   readonly playerKicked$ = new Subject<PlayerKickedEvent>();
   readonly seatModeChanged$ = new Subject<SeatModeChangedEvent>();
   readonly roomIdleClosed$ = new Subject<RoomIdleClosedEvent>();
@@ -312,6 +314,7 @@ export class GameHubService implements OnDestroy {
     this.matchEnded$.complete();
     this.matchAbandoned$.complete();
     this.achievementsEarned$.complete();
+    this.matchArchived$.complete();
     this.playerKicked$.complete();
     this.seatModeChanged$.complete();
     this.roomIdleClosed$.complete();
@@ -412,6 +415,11 @@ export class GameHubService implements OnDestroy {
     this.hubConnection.on(GameHubEventNames.AchievementsEarned, (event: AchievementsEarnedEvent) => {
       console.log('[Hub] AchievementsEarned', event);
       this.ngZone.run(() => this.achievementsEarned$.next(event));
+    });
+
+    this.hubConnection.on(GameHubEventNames.MatchArchived, (event: MatchArchivedEvent) => {
+      console.log('[Hub] MatchArchived', event);
+      this.ngZone.run(() => this.matchArchived$.next(event));
     });
 
     this.hubConnection.on(GameHubEventNames.PlayerKicked, (event: PlayerKickedEvent) => {

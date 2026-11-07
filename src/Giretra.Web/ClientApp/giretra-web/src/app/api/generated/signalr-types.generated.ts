@@ -207,6 +207,30 @@ export interface AchievementsEarnedEvent {
   achievements: AchievementEarnedDto[];
 }
 
+export type ClipMomentKind = 'Sweep' | 'Achievement' | 'BrilliantPlay' | 'Swing';
+
+/** A suggested clip of a finished match: a trick range of one deal and why it is notable. */
+export interface ClipMoment {
+  kind: ClipMomentKind;
+  dealNumber: number;
+  fromTrick: number;
+  toTrick: number;
+  /** The team this moment is good news for. */
+  team: Team;
+  /** The player who made the play / earned the achievement / won the trick; null for a team moment. */
+  player: PlayerPosition | null;
+  achievementCode: string | null;
+  matchPoints: number;
+  score: number;
+}
+
+/** Sent once a finished (ranked) match is persisted and its shareable moments are computed. */
+export interface MatchArchivedEvent {
+  gameId: string;
+  matchId: string;
+  moments: ClipMoment[];
+}
+
 export interface PlayerKickedEvent {
   roomId: string;
   playerName: string;
@@ -285,6 +309,7 @@ export interface GameHubEvents {
   onMatchEnded(callback: (event: MatchEndedEvent) => void): void;
   onMatchAbandoned(callback: (event: MatchAbandonedEvent) => void): void;
   onAchievementsEarned(callback: (event: AchievementsEarnedEvent) => void): void;
+  onMatchArchived(callback: (event: MatchArchivedEvent) => void): void;
   onPlayerKicked(callback: (event: PlayerKickedEvent) => void): void;
   onSeatModeChanged(callback: (event: SeatModeChangedEvent) => void): void;
   onRoomIdleClosed(callback: (event: RoomIdleClosedEvent) => void): void;
@@ -312,6 +337,7 @@ export const GameHubEventNames = {
   MatchEnded: 'MatchEnded',
   MatchAbandoned: 'MatchAbandoned',
   AchievementsEarned: 'AchievementsEarned',
+  MatchArchived: 'MatchArchived',
   PlayerKicked: 'PlayerKicked',
   SeatModeChanged: 'SeatModeChanged',
   RoomIdleClosed: 'RoomIdleClosed',

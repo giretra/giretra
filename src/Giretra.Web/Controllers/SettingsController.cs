@@ -93,6 +93,15 @@ public class SettingsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Whether the player's display name may appear in publicly shared clips.</summary>
+    [HttpPut("profile/clip-name-visibility")]
+    public async Task<ActionResult> UpdateClipNameVisibility([FromBody] UpdateClipNameVisibilityRequest request)
+    {
+        var user = GetAuthenticatedUser();
+        await _profileService.UpdateClipNameVisibilityAsync(user.Id, request.Visible);
+        return NoContent();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Friends
     // ─────────────────────────────────────────────────────────────────────────

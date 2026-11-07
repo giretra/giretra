@@ -81,6 +81,20 @@ export const confirmLeaveGameGuard = async () => {
 
 export const routes: Routes = [
   {
+    // Deal replay: full-bleed stage outside the layout shell, also loaded headless by the
+    // clip renderer (?render=1). See docs/plans/shareable-clips.md.
+    path: 'replay/match/:matchId/:dealNumber',
+    loadComponent: () =>
+      import('./features/replay/replay-page.component').then((m) => m.ReplayPageComponent),
+  },
+  {
+    // Public replay of a shared clip (anonymous: AuthService skips Keycloak on this path).
+    path: 'replay/clip/:shortId',
+    data: { source: 'clip' },
+    loadComponent: () =>
+      import('./features/replay/replay-page.component').then((m) => m.ReplayPageComponent),
+  },
+  {
     // The game table is a full-bleed HUD and deliberately sits outside the layout shell.
     path: 'table/:roomId',
     loadComponent: () =>
@@ -170,6 +184,14 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/admin/games/admin-games.component').then(
                 (m) => m.AdminGamesComponent,
+              ),
+          },
+          {
+            path: 'clips',
+            data: { breadcrumb: 'breadcrumb.adminClips' },
+            loadComponent: () =>
+              import('./features/admin/clips/admin-clips.component').then(
+                (m) => m.AdminClipsComponent,
               ),
           },
         ],

@@ -19,6 +19,7 @@ public interface IGameClient
     Task TrickCompleted(TrickCompletedEvent ev);
     Task MatchEnded(MatchEndedEvent ev);
     Task AchievementsEarned(AchievementsEarnedEvent ev);
+    Task MatchArchived(MatchArchivedEvent ev);
     Task PlayerJoined(PlayerJoinedEvent ev);
     Task PlayerLeft(PlayerLeftEvent ev);
     Task GameStarted(GameStartedEvent ev);

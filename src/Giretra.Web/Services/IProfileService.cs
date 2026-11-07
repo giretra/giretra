@@ -12,4 +12,5 @@ public interface IProfileService
     Task<(bool Success, string? AvatarUrl, string? Error)> UpdateAvatarAsync(Guid userId, IFormFile file);
     Task DeleteAvatarAsync(Guid userId);
     Task UpdateEloVisibilityAsync(Guid userId, bool isPublic);
+    Task UpdateClipNameVisibilityAsync(Guid userId, bool visible);
 }

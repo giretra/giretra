@@ -1,9 +1,9 @@
 import { Component, input, output, computed, inject, signal, effect } from '@angular/core';
-import { Team, DealRecapResponse, AchievementEarnedDto, PlayerPosition } from '../../../../../api/generated/signalr-types.generated';
+import { Team, DealRecapResponse, AchievementEarnedDto, PlayerPosition, ClipMoment } from '../../../../../api/generated/signalr-types.generated';
 import { EloChangeResponse } from '../../../../../core/services/api.service';
 import { getTeamLabel } from '../../../../../core/utils';
 import { HlmButton } from '@spartan-ng/helm/button';
-import { LucideAngularModule, Trophy, ArrowUp, ArrowDown, Zap, Star } from 'lucide-angular';
+import { LucideAngularModule, Trophy, ArrowUp, ArrowDown, Zap, Star, Share2 } from 'lucide-angular';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 import { TurnTimerComponent } from '../../../../../shared/components/turn-timer/turn-timer.component';
 import { GameModeIconComponent } from '../../../../../shared/components/game-mode-icon/game-mode-icon.component';
@@ -107,6 +107,21 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
                   </div>
                 }
               </div>
+            </div>
+          }
+
+          <!-- Share this moment (solver suggestion, once the match is archived) -->
+          @if (shareMoment(); as moment) {
+            <div class="share-moment">
+              <div class="share-moment-header">
+                <i-lucide [img]="Share2Icon" [size]="14" [strokeWidth]="2"></i-lucide>
+                <span>{{ t('matchEnd.share.title') }}</span>
+              </div>
+              <p class="share-moment-text">{{ shareMomentText() }}</p>
+              <button type="button" class="share-moment-btn" (click)="shareMomentClicked.emit(moment)">
+                <i-lucide [img]="Share2Icon" [size]="16" [strokeWidth]="2"></i-lucide>
+                {{ t('matchEnd.share.button') }}
+              </button>
             </div>
           }
 
@@ -474,6 +489,58 @@ import { MultiplierBadgeComponent } from '../../../../../shared/components/multi
       line-height: 1.2;
     }
 
+    /* ── Share this moment ── */
+
+    .share-moment {
+      margin-bottom: 0.75rem;
+      padding: 0.625rem 0.75rem;
+      border-radius: 0.75rem;
+      border: 1px solid hsl(var(--gold) / 0.5);
+      background: hsl(var(--gold) / 0.08);
+      animation: slideIn 0.3s ease;
+    }
+
+    .share-moment-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--gold));
+      margin-bottom: 0.375rem;
+    }
+
+    .share-moment-text {
+      margin: 0 0 0.5rem;
+      font-size: 0.8125rem;
+      color: hsl(var(--foreground));
+      line-height: 1.3;
+    }
+
+    .share-moment-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      width: 100%;
+      min-height: 2.25rem;
+      border-radius: 9999px;
+      border: none;
+      background: hsl(var(--gold));
+      color: hsl(var(--background));
+      font: inherit;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .share-moment-btn:hover {
+      filter: brightness(1.08);
+    }
+
     /* ── ELO ── */
 
     .elo-card {
@@ -547,6 +614,7 @@ export class MatchEndOverlayComponent {
   readonly ArrowDownIcon = ArrowDown;
   readonly ZapIcon = Zap;
   readonly StarIcon = Star;
+  readonly Share2Icon = Share2;
 
   readonly winner = input<Team | null>(null);
   readonly myTeam = input<Team | null>(null);
@@ -562,6 +630,8 @@ export class MatchEndOverlayComponent {
   readonly playAgainDeadline = input<Date | null>(null);
   readonly waiting = input<boolean>(false);
   readonly achievements = input<AchievementEarnedDto[]>([]);
+  /** The solver's best shareable moment for this player (null until archived / none found) */
+  readonly shareMoment = input<ClipMoment | null>(null);
 
   private static readonly COLOUR_MODES = new Set(['ColourClubs', 'ColourDiamonds', 'ColourHearts', 'ColourSpades']);
   isColourMode(mode: string): boolean {
@@ -570,6 +640,21 @@ export class MatchEndOverlayComponent {
 
   readonly playAgain = output<void>();
   readonly leaveTable = output<void>();
+  readonly shareMomentClicked = output<ClipMoment>();
+
+  readonly shareMomentText = computed(() => {
+    const m = this.shareMoment();
+    if (!m) return '';
+    const mine = m.player != null && m.player === this.myPosition();
+    const params = { deal: m.dealNumber, trick: m.fromTrick, points: m.matchPoints };
+    const key = {
+      Sweep: 'matchEnd.share.sweep',
+      Achievement: mine ? 'matchEnd.share.achievementMine' : 'matchEnd.share.achievementPartner',
+      BrilliantPlay: mine ? 'matchEnd.share.brilliantMine' : 'matchEnd.share.brilliantPartner',
+      Swing: 'matchEnd.share.swing',
+    }[m.kind];
+    return this.transloco.translate(key, params);
+  });
 
   readonly showElo = computed(() => this.isRanked() && this.eloChange() !== null);
   readonly eloIsPositive = computed(() => (this.eloChange()?.eloChange ?? 0) > 0);
