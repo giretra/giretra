@@ -169,6 +169,7 @@ public sealed class MatchPersistenceService : IMatchPersistenceService
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
         await _dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
+        session.PersistedMatchId = matchId;
 
         _logger.LogInformation(
             "Persisted match {MatchId} for game {GameId}: {DealCount} deals, {ActionCount} actions, {AchievementCount} achievements",

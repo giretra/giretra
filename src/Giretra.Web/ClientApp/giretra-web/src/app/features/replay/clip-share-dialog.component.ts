@@ -325,6 +325,8 @@ export class ClipShareDialogComponent {
   readonly matchId = input.required<string>();
   readonly dealNumber = input.required<number>();
   readonly suggestedTrick = input<number | null>(null);
+  /** Preset trick range (wins over suggestedTrick), e.g. a solver-suggested moment. */
+  readonly suggestedRange = input<readonly [number, number] | null>(null);
   readonly viewPosition = input<PlayerPosition | null>(null);
   readonly initialAllHands = input(false);
   readonly openChange = output<boolean>();
@@ -369,9 +371,10 @@ export class ClipShareDialogComponent {
     effect(() => {
       if (!this.open()) return;
       untracked(() => {
+        const range = this.suggestedRange();
         const suggested = this.suggestedTrick();
-        this.from.set(suggested ?? 1);
-        this.to.set(suggested ?? 8);
+        this.from.set(range?.[0] ?? suggested ?? 1);
+        this.to.set(range?.[1] ?? suggested ?? 8);
         this.anchor = null;
         this.allHands.set(this.initialAllHands());
         this.locale.set(this.transloco.getActiveLang());

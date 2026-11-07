@@ -6,12 +6,14 @@ import { ClientSessionService } from '../../core/services/client-session.service
 import { ApiService, PlayerProfileResponse } from '../../core/services/api.service';
 import { GameHubService } from '../../api/game-hub.service';
 import { FullscreenService } from '../../core/services/fullscreen.service';
-import { AchievementEarnedDto, GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
+import { AchievementEarnedDto, ClipMoment, GameMode, PendingActionType, PlayerPosition, SeatAccessMode } from '../../api/generated/signalr-types.generated';
 import { getTeam } from '../../core/utils/position-utils';
 import { ScoreBarComponent } from './components/score-bar/score-bar.component';
 import { TableSurfaceComponent } from './components/table-surface/table-surface.component';
 import { HandAreaComponent } from './components/hand-area/hand-area.component';
 import { MatchEndOverlayComponent } from './components/center-stage/match-end-overlay/match-end-overlay.component';
+import { ClipShareDialogComponent } from '../replay/clip-share-dialog.component';
+import { pickShareMoment } from '../replay/clip-moments';
 import { BidDialogComponent } from './components/bid-dialog/bid-dialog.component';
 import { GameModePopupComponent } from './components/game-mode-popup/game-mode-popup.component';
 import { NegotiationHistoryPopupComponent } from './components/negotiation-history-popup/negotiation-history-popup.component';
@@ -37,6 +39,7 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
     TableSurfaceComponent,
     HandAreaComponent,
     MatchEndOverlayComponent,
+    ClipShareDialogComponent,
     BidDialogComponent,
     GameModePopupComponent,
     NegotiationHistoryPopupComponent,
@@ -237,8 +240,22 @@ import { ErrorBannerService } from '../../core/services/error-banner.service';
           [playAgainDeadline]="gameState.turnTimeoutAt()"
           [waiting]="waitingForContinue()"
           [achievements]="gameState.earnedAchievements()"
+          [shareMoment]="shareMoment()"
+          (shareMomentClicked)="openShareMoment($event)"
           (playAgain)="onPlayAgain()"
           (leaveTable)="onLeaveTable()"
+        />
+      }
+
+      <!-- Share a suggested moment of the finished match -->
+      @if (shareMomentTarget(); as moment) {
+        <app-clip-share-dialog
+          [open]="shareMomentOpen()"
+          (openChange)="shareMomentOpen.set($event)"
+          [matchId]="gameState.matchArchive()!.matchId"
+          [dealNumber]="moment.dealNumber"
+          [suggestedRange]="[moment.fromTrick, moment.toTrick]"
+          [viewPosition]="gameState.myPosition()"
         />
       }
 
@@ -859,6 +876,19 @@ export class TableComponent implements OnInit, OnDestroy {
   readonly showFullscreenSuggestion = signal(false);
   readonly showAchievementsPopup = signal(false);
   readonly expandedAchievement = signal<string | null>(null);
+
+  /** Solver-suggested clip of the finished match for this player (players only, not watchers) */
+  readonly shareMoment = computed(() => {
+    if (this.session.isWatcher()) return null;
+    return pickShareMoment(this.gameState.matchArchive()?.moments, this.gameState.myPosition());
+  });
+  readonly shareMomentTarget = signal<ClipMoment | null>(null);
+  readonly shareMomentOpen = signal(false);
+
+  openShareMoment(moment: ClipMoment): void {
+    this.shareMomentTarget.set(moment);
+    this.shareMomentOpen.set(true);
+  }
 
   /** True while the local user is playing an active match (leaving = abandoning) */
   readonly gameInProgress = computed(() => {
