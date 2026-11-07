@@ -20,7 +20,7 @@ jobs:
           - bot: random-java-bot
             java-version: '17'
           - bot: random-node-bot
-            node-version: '20'
+            node-version: '24'
           - bot: random-python-bot
             python-version: '3.x'
 
