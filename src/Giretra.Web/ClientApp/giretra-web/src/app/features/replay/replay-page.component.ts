@@ -146,16 +146,6 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
               >
                 <lucide-icon [img]="showAllHands() ? EyeOff : Eye" [size]="18" />
               </button>
-              @if (canShare()) {
-                <button
-                  type="button"
-                  class="ctl-btn share"
-                  (click)="shareOpen.set(true)"
-                  [title]="t('clip.share.button')"
-                >
-                  <lucide-icon [img]="Share2" [size]="18" />
-                </button>
-              }
               <span class="ctl-time">{{ time() / 1000 | number: '1.1-1' }}s</span>
             </div>
             <input
@@ -167,6 +157,12 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
               [value]="time()"
               (input)="onScrub($event)"
             />
+            @if (canShare()) {
+              <button type="button" class="share-cta" (click)="shareOpen.set(true)">
+                <lucide-icon [img]="Share2" [size]="18" />
+                <span>{{ t('clip.share.cta') }}</span>
+              </button>
+            }
             @if (isClip()) {
               <div class="controls-row deals">
                 <span class="deal-current">{{ clip()?.title }}</span>
@@ -318,9 +314,28 @@ const POSITIONS = new Set<string>(Object.values(PlayerPosition));
         color: hsl(var(--background));
         border-color: transparent;
       }
-      .ctl-btn.share {
-        border-color: hsl(var(--gold));
-        color: hsl(var(--gold));
+      .share-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 2.75rem;
+        padding: 0 1rem;
+        border-radius: 9999px;
+        border: none;
+        background: hsl(var(--gold));
+        color: hsl(var(--background));
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        box-shadow: 0 2px 10px hsl(var(--gold) / 0.35);
+      }
+      .share-cta:hover {
+        filter: brightness(1.08);
+      }
+      .share-cta:active {
+        transform: translateY(1px);
       }
       .ctl-btn.ghost {
         border-color: transparent;
