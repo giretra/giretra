@@ -11,6 +11,7 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
@@ -21,6 +22,7 @@ import { SelectModule } from 'primeng/select';
 import { PlayerPosition } from '../../api/generated/signalr-types.generated';
 import { ApiService, ClipResponse } from '../../core/services/api.service';
 import { ErrorBannerService } from '../../core/services/error-banner.service';
+import { facebookShareUrl, shareFileName, taggedUrl, whatsappShareUrl } from './clip-share-links';
 
 const POLL_MS = 3000;
 
@@ -117,21 +119,38 @@ const POLL_MS = 3000;
             } @else if (clip()!.posterUrl; as poster) {
               <img class="poster" [src]="poster" alt="" />
             }
-            <div class="link-row">
-              <input
-                class="link"
-                type="text"
-                readonly
-                [value]="clip()!.pageUrl"
-                (focus)="selectAll($event)"
-              />
-              <p-button
-                icon="pi pi-copy"
-                [label]="copied() ? t('clip.share.copied') : t('clip.share.copy')"
-                severity="secondary"
-                (onClick)="copy()"
-              />
+            <div class="targets">
+              <a class="target whatsapp" [href]="whatsappUrl()" target="_blank" rel="noopener">
+                <i class="pi pi-whatsapp"></i>
+                <span>WhatsApp</span>
+              </a>
+              <a class="target facebook" [href]="facebookUrl()" target="_blank" rel="noopener">
+                <i class="pi pi-facebook"></i>
+                <span>Facebook</span>
+              </a>
+              @if (canNativeShare) {
+                <button type="button" class="target" (click)="nativeShare()" [disabled]="sharing()">
+                  <i
+                    class="pi"
+                    [class.pi-share-alt]="!sharing()"
+                    [class.pi-spinner]="sharing()"
+                    [class.pi-spin]="sharing()"
+                  ></i>
+                  <span>{{ t('clip.share.more') }}</span>
+                </button>
+              }
+              <button type="button" class="target" [class.done]="copied()" (click)="copy()">
+                <i class="pi" [class.pi-copy]="!copied()" [class.pi-check]="copied()"></i>
+                <span>{{ copied() ? t('clip.share.copied') : t('clip.share.copy') }}</span>
+              </button>
             </div>
+            <input
+              class="link"
+              type="text"
+              readonly
+              [value]="clip()!.pageUrl"
+              (focus)="selectAll($event)"
+            />
             <div class="actions">
               <a
                 class="p-button p-button-text"
@@ -227,12 +246,54 @@ const POLL_MS = 3000;
         border-radius: 0.75rem;
         background: #000;
       }
-      .link-row {
-        display: flex;
+      .targets {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
         gap: 0.5rem;
       }
+      .target {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        padding: 0.75rem 0.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--p-surface-600);
+        background: var(--p-surface-800);
+        color: inherit;
+        font: inherit;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .target .pi {
+        font-size: 1.5rem;
+      }
+      .target:hover {
+        filter: brightness(1.15);
+      }
+      .target:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      .target.whatsapp {
+        background: #1f8f4d;
+        border-color: transparent;
+        color: #fff;
+      }
+      .target.facebook {
+        background: #1877f2;
+        border-color: transparent;
+        color: #fff;
+      }
+      .target.done {
+        border-color: var(--p-green-400);
+        color: var(--p-green-400);
+      }
       .link {
-        flex: 1;
+        width: 100%;
         min-width: 0;
         padding: 0.5rem 0.75rem;
         border-radius: 0.5rem;
@@ -283,22 +344,40 @@ export class ClipShareDialogComponent {
   readonly creating = signal(false);
   readonly clip = signal<ClipResponse | null>(null);
   readonly copied = signal(false);
+  readonly sharing = signal(false);
+
+  /** Web Share API (phones, and some desktop browsers); the system sheet reaches TikTok, Instagram, Telegram… */
+  readonly canNativeShare =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  readonly whatsappUrl = computed(() => {
+    const clip = this.clip();
+    return clip ? whatsappShareUrl(clip.pageUrl, this.shareMessage(clip)) : '';
+  });
+  readonly facebookUrl = computed(() => {
+    const clip = this.clip();
+    return clip ? facebookShareUrl(clip.pageUrl) : '';
+  });
 
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private anchor: number | null = null;
 
   constructor() {
-    // Reset the form every time the dialog opens, seeded with the trick on screen.
+    // Reset the form every time the dialog opens, seeded with the trick on screen. Only the
+    // open flag is tracked: the replay keeps playing behind the dialog, and a change of the
+    // suggested trick must not wipe a clip the user is about to share.
     effect(() => {
       if (!this.open()) return;
-      const suggested = this.suggestedTrick();
-      this.from.set(suggested ?? 1);
-      this.to.set(suggested ?? 8);
-      this.anchor = null;
-      this.allHands.set(this.initialAllHands());
-      this.locale.set(this.transloco.getActiveLang());
-      this.clip.set(null);
-      this.copied.set(false);
+      untracked(() => {
+        const suggested = this.suggestedTrick();
+        this.from.set(suggested ?? 1);
+        this.to.set(suggested ?? 8);
+        this.anchor = null;
+        this.allHands.set(this.initialAllHands());
+        this.locale.set(this.transloco.getActiveLang());
+        this.clip.set(null);
+        this.copied.set(false);
+      });
     });
     this.destroyRef.onDestroy(() => this.stopPolling());
   }
@@ -339,11 +418,52 @@ export class ClipShareDialogComponent {
       });
   }
 
+  /**
+   * System share sheet. With the video ready and file sharing supported, the MP4 goes along
+   * (TikTok, Instagram and WhatsApp status take files, not links); otherwise the link alone.
+   */
+  async nativeShare(): Promise<void> {
+    const clip = this.clip();
+    if (!clip || this.sharing()) return;
+    this.sharing.set(true);
+    const url = taggedUrl(clip.pageUrl, 'native');
+    const text = `${this.shareMessage(clip)}\n${url}`;
+    try {
+      let data: ShareData = { title: clip.title, text, url };
+      if (clip.videoUrl && typeof navigator.canShare === 'function') {
+        const file = await this.fetchVideoFile(clip.videoUrl, clip.shortId);
+        if (file && navigator.canShare({ files: [file] }))
+          data = { title: clip.title, text, files: [file] };
+      }
+      await navigator.share(data);
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'AbortError'))
+        this.errorBanner.show(this.transloco.translate('clip.share.shareFailed'));
+    } finally {
+      this.sharing.set(false);
+    }
+  }
+
+  private async fetchVideoFile(videoUrl: string, shortId: string): Promise<File | null> {
+    try {
+      const res = await fetch(videoUrl);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return new File([blob], shareFileName(shortId), { type: 'video/mp4' });
+    } catch {
+      return null;
+    }
+  }
+
+  private shareMessage(clip: ClipResponse): string {
+    return this.transloco.translate('clip.share.message', { title: clip.title });
+  }
+
   async copy(): Promise<void> {
     const clip = this.clip();
     if (!clip) return;
     try {
-      await navigator.clipboard.writeText(clip.pageUrl);
+      await navigator.clipboard.writeText(taggedUrl(clip.pageUrl, 'copy'));
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), 2000);
     } catch {
