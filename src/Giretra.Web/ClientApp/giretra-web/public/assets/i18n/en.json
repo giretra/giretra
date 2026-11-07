@@ -615,6 +615,7 @@
   "clip.status.Evicted": "Expired",
   "clip.status.Removed": "Removed",
   "clip.share.button": "Share",
+  "clip.share.cta": "Share a clip of this deal",
   "clip.share.title": "Share this deal",
   "clip.share.tricks": "Tricks",
   "clip.share.from": "From",
