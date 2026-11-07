@@ -10,6 +10,7 @@ import {
   PlayerPosition,
   Team,
   PendingActionType,
+  ClipMoment,
 } from '../../api/generated/signalr-types.generated';
 import { GameHubService } from '../../api/game-hub.service';
 import { ApiService, EloChangeResponse, GameStateResponse, PlayerStateResponse, RoomResponse, ValidAction, TrickResponse, NegotiationAction } from './api.service';
@@ -430,6 +431,15 @@ export class GameStateService {
   /** Achievements earned during the match */
   private readonly _earnedAchievements = signal<AchievementEarnedDto[]>([]);
   readonly earnedAchievements = this._earnedAchievements.asReadonly();
+
+  /** Persisted match id + solver-suggested clips, once the finished match is archived */
+  private readonly _matchArchive = signal<{ matchId: string; moments: ClipMoment[] } | null>(null);
+  readonly matchArchive = computed(() => {
+    const live = this._matchArchive();
+    if (live) return live;
+    const state = this._gameState();
+    return state?.matchId ? { matchId: state.matchId, moments: state.moments ?? [] } : null;
+  });
 
   /** Match deal history (accumulated during the match from events) */
   readonly matchDealHistory = this._matchDealHistory.asReadonly();
@@ -1015,6 +1025,7 @@ export class GameStateService {
       console.log('[GameState] Hub event: matchEnded', event);
       this._turnTimeoutAt.set(null);
       this._earnedAchievements.set([]);
+      this._matchArchive.set(null);
       this.refreshState();
       // Refresh room to pick up new idleDeadline (room resets to Waiting after match)
       const room = this._currentRoom();
@@ -1030,6 +1041,12 @@ export class GameStateService {
     this.hub.achievementsEarned$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       console.log('[GameState] Hub event: achievementsEarned', event);
       this._earnedAchievements.set(event.achievements);
+    });
+
+    // Match archived (persisted id + shareable moments; after achievements)
+    this.hub.matchArchived$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      console.log('[GameState] Hub event: matchArchived', event);
+      this._matchArchive.set({ matchId: event.matchId, moments: event.moments });
     });
 
     // Player kicked

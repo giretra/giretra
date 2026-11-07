@@ -184,6 +184,9 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
         var matchState = session.MatchState;
         if (matchState == null) return;
 
+        // No database: any id works, the offline replay service serves a demo deal for it.
+        session.PersistedMatchId = Guid.NewGuid();
+
         var dealRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.DealEnd)).ToList();
         var matchRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.MatchEnd)).ToList();
         if (dealRules.Count == 0 && matchRules.Count == 0) return;

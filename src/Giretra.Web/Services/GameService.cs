@@ -5,6 +5,7 @@ using Giretra.Core.Negotiation;
 using Giretra.Core.Players;
 using Giretra.Core.State;
 using Giretra.Web.Achievements;
+using Giretra.Web.Services.Clips;
 using Giretra.Web.Domain;
 using Giretra.Web.Models.Responses;
 using Giretra.Web.Players;
@@ -112,7 +113,8 @@ public sealed class GameService : IGameService
                     TimeSpan.FromSeconds(room.TurnTimerSeconds),
                     continueMatchWindow,
                     clientId => ShouldPauseOnTimeout(room.RoomId, clientId),
-                    broadcastsRoomEvents: position == roomBroadcaster);
+                    broadcastsRoomEvents: position == roomBroadcaster,
+                    onMatchEnded: () => EnsureArchivedAsync(session));
             }
             else
             {
@@ -179,7 +181,7 @@ public sealed class GameService : IGameService
             {
                 _logger.LogInformation("Starting game {GameId}", gameId);
                 await gameManager.PlayMatchAsync(cancellationToken);
-                session.CompletedAt = DateTime.UtcNow;
+                session.CompletedAt ??= DateTime.UtcNow;
                 _logger.LogInformation("Game {GameId} completed", gameId);
             }
             catch (OperationCanceledException)
@@ -196,17 +198,12 @@ public sealed class GameService : IGameService
                 // room's next match.
                 room.TableDeck = gameManager.FinalDeck ?? room.TableDeck;
 
-                // Persist match to database before resetting room,
-                // so ratings and history are up-to-date when clients navigate away.
-                if (session.IsRanked && session.CompletedAt != null)
-                    await PersistMatchAsync(session);
-
-                // Debug: inject fake achievements when DebugAchievements is enabled
-                if (string.Equals(_configuration["DebugAchievements"], "true", StringComparison.OrdinalIgnoreCase)
-                    && session.CompletedAt != null)
-                {
-                    await InjectDebugAchievementsAsync(session);
-                }
+                // Persist match to database before resetting room, so ratings and
+                // history are up-to-date when clients navigate away. Usually already
+                // done by the match-end hook (before the play-again window); this is
+                // the fallback for tables without a human broadcaster.
+                if (session.CompletedAt != null)
+                    await EnsureArchivedAsync(session);
 
                 var roomService = _serviceProvider.GetRequiredService<IRoomService>();
                 roomService.ResetToWaiting(room.RoomId);
@@ -563,7 +560,9 @@ public sealed class GameService : IGameService
             CompletedDeals = matchState.IsComplete ? NotificationService.MapToCompletedDeals(matchState) : null,
             Achievements = matchState.IsComplete && session.EarnedAchievements.Count > 0
                 ? session.EarnedAchievements
-                : null
+                : null,
+            MatchId = session.PersistedMatchId,
+            Moments = matchState.IsComplete ? session.Moments : null
         };
     }
 
@@ -878,6 +877,69 @@ public sealed class GameService : IGameService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist match for game {GameId}", session.GameId);
+        }
+    }
+
+    /// <summary>
+    /// Archives a finished match exactly once: persistence (ranked matches), debug
+    /// achievements, then shareable moments + the MatchArchived event. Called from the
+    /// match-end hook and again from the game loop's exit; the second call awaits the first.
+    /// </summary>
+    private Task EnsureArchivedAsync(GameSession session)
+    {
+        lock (session)
+        {
+            return session.ArchiveTask ??= ArchiveCoreAsync(session);
+        }
+    }
+
+    private async Task ArchiveCoreAsync(GameSession session)
+    {
+        session.CompletedAt ??= DateTime.UtcNow;
+
+        if (session.IsRanked)
+            await PersistMatchAsync(session);
+
+        // Debug: inject fake achievements when DebugAchievements is enabled
+        if (string.Equals(_configuration["DebugAchievements"], "true", StringComparison.OrdinalIgnoreCase))
+            await InjectDebugAchievementsAsync(session);
+
+        // Shareable moments need the persisted match id and the final achievements
+        if (session.PersistedMatchId != null)
+            await ArchiveMatchAsync(session);
+    }
+
+    /// <summary>
+    /// Runs the solver over the finished match to find clip-worthy moments, then tells the
+    /// room the match is archived (persisted id + suggestions). Never fails the game loop.
+    /// </summary>
+    private async Task ArchiveMatchAsync(GameSession session)
+    {
+        try
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            session.Moments = ClipMomentDetector.Detect(
+                ClipMomentDetector.FromSession(session),
+                session.EarnedAchievements,
+                session.MatchState?.ColourSweepMatchPoints);
+            _logger.LogInformation(
+                "Found {Count} shareable moments for match {MatchId} in {Elapsed} ms",
+                session.Moments.Count, session.PersistedMatchId, watch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Moment detection failed for match {MatchId}", session.PersistedMatchId);
+            session.Moments = [];
+        }
+
+        session.BumpStateVersion();
+        try
+        {
+            await _notifications.NotifyMatchArchivedAsync(session.GameId, session.RoomId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to notify match archived for game {GameId}", session.GameId);
         }
     }
 

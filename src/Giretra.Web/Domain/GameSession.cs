@@ -5,6 +5,8 @@ using Giretra.Core.State;
 using Giretra.Web.Achievements;
 using Giretra.Web.Players;
 
+using Giretra.Web.Models.Responses;
+
 namespace Giretra.Web.Domain;
 
 /// <summary>
@@ -126,6 +128,22 @@ public sealed class GameSession
     /// Achievements earned during this game session (accumulated at deal-end and match-end).
     /// </summary>
     public List<EarnedAchievementInfo> EarnedAchievements { get; } = [];
+
+    /// <summary>
+    /// Id of the persisted match row, set once the finished match is saved.
+    /// </summary>
+    public Guid? PersistedMatchId { get; set; }
+
+    /// <summary>
+    /// The one-time archive step (persist, achievements, shareable moments); set when it
+    /// starts so the match-end hook and the game loop's exit share a single run.
+    /// </summary>
+    public Task? ArchiveTask { get; set; }
+
+    /// <summary>
+    /// Shareable moments found by the solver after persistence (null until computed).
+    /// </summary>
+    public IReadOnlyList<ClipMomentResponse>? Moments { get; set; }
 
     /// <summary>
     /// Gets the current match state.

@@ -457,6 +457,22 @@ public sealed class NotificationService : INotificationService
         return Task.CompletedTask;
     }
 
+    public Task NotifyMatchArchivedAsync(string gameId, string roomId)
+    {
+        var session = _gameRepository.GetById(gameId);
+        if (session?.PersistedMatchId is not { } matchId) return Task.CompletedTask;
+
+        var ev = new MatchArchivedEvent
+        {
+            GameId = gameId,
+            MatchId = matchId,
+            Moments = session.Moments ?? [],
+        };
+
+        Dispatch(roomId, "MatchArchived", () => Room(roomId).MatchArchived(ev));
+        return Task.CompletedTask;
+    }
+
     public Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position)
     {
         var ev = new PlayerJoinedEvent

@@ -9,6 +9,7 @@ import {
   CardRank,
   CardResponse,
   CardSuit,
+  ClipMoment,
   DealRecapResponse,
   GameMode,
   PlayerPosition,
@@ -142,6 +143,10 @@ export interface GameStateResponse {
   pendingActionTimeoutAt: string | null;
   eloChanges: Record<string, EloChangeResponse> | null;
   completedDeals: DealRecapResponse[] | null;
+  /** Persisted match id once the finished match is saved (ranked matches only). */
+  matchId: string | null;
+  /** Suggested clips of the finished match, best first; null until computed. */
+  moments: ClipMoment[] | null;
 }
 
 export interface PlayerStateResponse {
