@@ -39,6 +39,7 @@ export class AppMenu {
       items: [
         { label: 'menu.leaderboard', icon: 'pi pi-fw pi-trophy', routerLink: ['/leaderboard'] },
         { label: 'menu.highlights', icon: 'pi pi-fw pi-chart-line', routerLink: ['/highlights'] },
+        { label: 'menu.history', icon: 'pi pi-fw pi-history', routerLink: ['/history'] },
         { label: 'menu.achievements', icon: 'pi pi-fw pi-star', routerLink: ['/achievements'] },
       ],
     },

@@ -279,6 +279,86 @@ export interface DealReplayResponse {
   tricks: DealReplayTrickResponse[];
 }
 
+export interface MatchSummaryPlayerResponse {
+  position: PlayerPosition;
+  team: Team;
+  displayName: string;
+  isBot: boolean;
+  tricksWon: number;
+  contracts: number;
+  contractsMade: number;
+}
+
+export type NegotiationActionKind = 'Announce' | 'Accept' | 'Double' | 'Redouble' | 'ReRedouble';
+
+export interface MatchSummaryNegotiationAction {
+  actionType: NegotiationActionKind;
+  player: PlayerPosition;
+  mode: GameMode | null;
+}
+
+export interface MatchSummaryDealResponse {
+  dealNumber: number;
+  dealer: PlayerPosition;
+  gameMode: GameMode | null;
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
+  announcerTeam: Team | null;
+  announcer: PlayerPosition | null;
+  announcerWon: boolean | null;
+  team1CardPoints: number | null;
+  team2CardPoints: number | null;
+  team1MatchPoints: number;
+  team2MatchPoints: number;
+  team1ScoreAfter: number;
+  team2ScoreAfter: number;
+  wasSweep: boolean;
+  sweepingTeam: Team | null;
+  isInstantWin: boolean;
+  negotiation: MatchSummaryNegotiationAction[];
+  trickWinners: PlayerPosition[];
+  team1Tricks: number;
+  team2Tricks: number;
+  isReplayable: boolean;
+}
+
+export interface MatchSummaryStatsResponse {
+  leadChanges: number;
+  biggestSwingDeal: number | null;
+  biggestSwingPoints: number;
+  biggestSwingTeam: Team | null;
+  longestRunTeam: Team | null;
+  longestRunDeals: number;
+  comebackFrom: number;
+  team1Sweeps: number;
+  team2Sweeps: number;
+  team1Contracts: number;
+  team1ContractsMade: number;
+  team2Contracts: number;
+  team2ContractsMade: number;
+  team1Tricks: number;
+  team2Tricks: number;
+  doubledDeals: number;
+  dealsByMode: Partial<Record<GameMode, number>>;
+}
+
+/** The scoreboard of a finished match: every deal plus match-level statistics. */
+export interface MatchSummaryResponse {
+  matchId: string;
+  isRanked: boolean;
+  wasAbandoned: boolean;
+  targetScore: number;
+  totalDeals: number;
+  winnerTeam: Team | null;
+  team1FinalScore: number;
+  team2FinalScore: number;
+  durationSeconds: number | null;
+  playedAt: string;
+  viewerPosition: PlayerPosition;
+  players: MatchSummaryPlayerResponse[];
+  deals: MatchSummaryDealResponse[];
+  stats: MatchSummaryStatsResponse;
+}
+
 export type ClipStatus = 'Pending' | 'Rendering' | 'Ready' | 'Failed' | 'Evicted' | 'Removed';
 
 export interface ClipResponse {
@@ -959,6 +1039,12 @@ export class ApiService {
   getDealReplay(matchId: string, dealNumber: number): Observable<DealReplayResponse> {
     return this.http
       .get<DealReplayResponse>(`${this.baseUrl}/api/matches/${matchId}/deals/${dealNumber}/replay`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getMatchSummary(matchId: string): Observable<MatchSummaryResponse> {
+    return this.http
+      .get<MatchSummaryResponse>(`${this.baseUrl}/api/matches/${matchId}/summary`)
       .pipe(catchError(this.handleError));
   }
 

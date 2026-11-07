@@ -243,6 +243,7 @@ public class Program
                 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
                 builder.Services.AddScoped<IHighlightsService, HighlightsService>();
                 builder.Services.AddScoped<Giretra.Web.Services.Replay.IDealReplayService, Giretra.Web.Services.Replay.DealReplayService>();
+                builder.Services.AddScoped<Giretra.Web.Services.Replay.IMatchSummaryService, Giretra.Web.Services.Replay.MatchSummaryService>();
                 builder.Services.AddScoped<Giretra.Web.Services.Clips.IClipService, Giretra.Web.Services.Clips.ClipService>();
 
                 // Contact form: mail moderators (+ extra recipients) over SMTP when configured,
