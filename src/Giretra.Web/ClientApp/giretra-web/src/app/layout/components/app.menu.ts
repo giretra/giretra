@@ -57,6 +57,7 @@ export class AppMenu {
         { label: 'menu.admin', icon: 'pi pi-fw pi-shield', routerLink: ['/admin'] },
         { label: 'menu.adminUsers', icon: 'pi pi-fw pi-users', routerLink: ['/admin/users'] },
         { label: 'menu.adminGames', icon: 'pi pi-fw pi-list', routerLink: ['/admin/games'] },
+        { label: 'menu.adminClips', icon: 'pi pi-fw pi-video', routerLink: ['/admin/clips'] },
       ],
     },
   ]);

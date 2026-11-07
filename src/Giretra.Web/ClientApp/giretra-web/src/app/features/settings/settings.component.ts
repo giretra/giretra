@@ -9,8 +9,9 @@ import { ProfileSectionComponent } from './components/profile-section.component'
 import { FriendsSectionComponent } from './components/friends-section.component';
 import { BlockedSectionComponent } from './components/blocked-section.component';
 import { MatchHistorySectionComponent } from './components/match-history-section.component';
+import { ClipsSectionComponent } from './components/clips-section.component';
 
-type Section = 'profile' | 'friends' | 'blocked' | 'history';
+type Section = 'profile' | 'friends' | 'blocked' | 'history' | 'clips';
 
 interface MenuEntry {
   key: Section;
@@ -29,6 +30,7 @@ interface MenuEntry {
     FriendsSectionComponent,
     BlockedSectionComponent,
     MatchHistorySectionComponent,
+    ClipsSectionComponent,
   ],
   template: `
     <div class="g-card settings" *transloco="let t">
@@ -79,6 +81,7 @@ interface MenuEntry {
           @case ('friends') { <app-friends-section /> }
           @case ('blocked') { <app-blocked-section /> }
           @case ('history') { <app-match-history-section /> }
+          @case ('clips') { <app-clips-section /> }
         }
       </div>
     </div>
@@ -121,6 +124,7 @@ export class SettingsComponent {
     { key: 'friends', icon: 'pi pi-users', labelKey: 'settings.tabs.friends' },
     { key: 'blocked', icon: 'pi pi-ban', labelKey: 'settings.tabs.blocked' },
     { key: 'history', icon: 'pi pi-history', labelKey: 'settings.tabs.history' },
+    { key: 'clips', icon: 'pi pi-video', labelKey: 'settings.tabs.clips' },
   ];
 
   readonly section = signal<Section>(this.initialSection());

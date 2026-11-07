@@ -137,4 +137,14 @@ public sealed class GameStateResponse
     /// Achievements earned during this match (only present when match is complete and ranked).
     /// </summary>
     public IReadOnlyList<EarnedAchievementInfo>? Achievements { get; init; }
+
+    /// <summary>
+    /// The persisted match id, once the finished match is saved (ranked matches only).
+    /// </summary>
+    public Guid? MatchId { get; init; }
+
+    /// <summary>
+    /// Suggested clips of the finished match, best first (null until computed).
+    /// </summary>
+    public IReadOnlyList<ClipMomentResponse>? Moments { get; init; }
 }

@@ -4,17 +4,54 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: final
     container_name: giretra-web
     restart: always
     environment:
       - ConnectionStrings__GiretraDb=Host=postgres;Port=5432;Database=giretra;Username=giretra_app;Password=${GIRETRA_DB_PASSWORD}
       - Keycloak__Authority=${KC_AUTHORITY:-https://auth.giretra.com/realms/giretra}
       - Keycloak__Audience=giretra-api
+      - Clips__RootPath=/data/clips
+      - Clips__PublicBaseUrl=${CLIPS_PUBLIC_BASE_URL:-https://play.giretra.com}
       - TZ=Europe/Paris
     env_file:
       - docker/.env
+    volumes:
+      - clips:/data/clips
     networks:
       - tetezana
+
+  # Renders shareable clips (poster + video) from the replay pages served by `web`.
+  # Isolated so a render never competes with gameplay; one job at a time.
+  render:
+    image: giretra-render
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: render
+    container_name: giretra-render
+    restart: always
+    init: true
+    shm_size: 1g
+    mem_limit: 1500m
+    cpus: 1.0
+    environment:
+      - ConnectionStrings__GiretraDb=Host=postgres;Port=5432;Database=giretra;Username=giretra_app;Password=${GIRETRA_DB_PASSWORD}
+      - Clips__RootPath=/data/clips
+      - Render__Enabled=true
+      - Render__WebBaseUrl=http://web:8080
+      - TZ=Europe/Paris
+    env_file:
+      - docker/.env
+    volumes:
+      - clips:/data/clips
+    depends_on:
+      - web
+    networks:
+      - tetezana
+
+volumes:
+  clips:
 
 networks:
   tetezana:

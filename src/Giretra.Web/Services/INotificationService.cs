@@ -53,6 +53,12 @@ public interface INotificationService
     Task NotifyAchievementsEarnedAsync(string gameId, string roomId);
 
     /// <summary>
+    /// Notifies all clients in a room that the finished match is persisted and its
+    /// shareable moments are known (no-op until the session has a persisted match id).
+    /// </summary>
+    Task NotifyMatchArchivedAsync(string gameId, string roomId);
+
+    /// <summary>
     /// Notifies all clients in a room that a player joined.
     /// </summary>
     Task NotifyPlayerJoinedAsync(string roomId, string playerName, PlayerPosition position);

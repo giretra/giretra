@@ -184,6 +184,9 @@ public sealed class OfflineMatchPersistenceService : IMatchPersistenceService
         var matchState = session.MatchState;
         if (matchState == null) return;
 
+        // No database: any id works, the offline replay service serves a demo deal for it.
+        session.PersistedMatchId = Guid.NewGuid();
+
         var dealRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.DealEnd)).ToList();
         var matchRules = _rules.Where(r => r.Trigger.HasFlag(AchievementTrigger.MatchEnd)).ToList();
         if (dealRules.Count == 0 && matchRules.Count == 0) return;
@@ -392,6 +395,7 @@ public sealed class OfflineProfileService : IProfileService
     public Task DeleteAvatarAsync(Guid userId) => Task.CompletedTask;
 
     public Task UpdateEloVisibilityAsync(Guid userId, bool isPublic) => Task.CompletedTask;
+    public Task UpdateClipNameVisibilityAsync(Guid userId, bool visible) => Task.CompletedTask;
 }
 
 /// <summary>
@@ -514,6 +518,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMatchHistoryService, OfflineMatchHistoryService>();
         services.AddSingleton<ILeaderboardService, OfflineLeaderboardService>();
         services.AddSingleton<IHighlightsService, OfflineHighlightsService>();
+        services.AddSingleton<Giretra.Web.Services.Replay.IDealReplayService, OfflineDealReplayService>();
+        services.AddSingleton<Giretra.Web.Services.Clips.OfflineClipService>();
+        services.AddSingleton<Giretra.Web.Services.Clips.IClipService>(sp => sp.GetRequiredService<Giretra.Web.Services.Clips.OfflineClipService>());
         services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
         services.AddSingleton<IAdminGameService, OfflineAdminGameService>();
         services.AddSingleton<IModeratorDirectory>(sp => new OfflineModeratorDirectory(sp.GetRequiredService<OfflineUserSyncService>()));

@@ -9,6 +9,7 @@ import {
   CardRank,
   CardResponse,
   CardSuit,
+  ClipMoment,
   DealRecapResponse,
   GameMode,
   PlayerPosition,
@@ -142,6 +143,10 @@ export interface GameStateResponse {
   pendingActionTimeoutAt: string | null;
   eloChanges: Record<string, EloChangeResponse> | null;
   completedDeals: DealRecapResponse[] | null;
+  /** Persisted match id once the finished match is saved (ranked matches only). */
+  matchId: string | null;
+  /** Suggested clips of the finished match, best first; null until computed. */
+  moments: ClipMoment[] | null;
 }
 
 export interface PlayerStateResponse {
@@ -182,6 +187,7 @@ export interface ProfileResponse {
   avatarUrl: string | null;
   eloRating: number;
   eloIsPublic: boolean;
+  appearInSharedClips: boolean;
   gamesPlayed: number;
   gamesWon: number;
   winStreak: number;
@@ -225,6 +231,105 @@ export interface MatchHistoryPlayerResponse {
   position: PlayerPosition;
   team: Team;
   isWinner: boolean;
+}
+
+export interface DealReplayPlayerResponse {
+  position: PlayerPosition;
+  team: Team;
+  displayName: string;
+  isBot: boolean;
+  playerId: string | null;
+}
+
+export interface DealReplayHandResponse {
+  position: PlayerPosition;
+  cards: CardResponse[];
+}
+
+export interface DealReplayTrickResponse {
+  trickNumber: number;
+  leader: PlayerPosition;
+  plays: Array<{ player: PlayerPosition; card: CardResponse }>;
+  winner: PlayerPosition;
+  team1CumulativeCardPoints: number;
+  team2CumulativeCardPoints: number;
+}
+
+/** One deal of a finished match, enough to replay it as a pure function of time. */
+export interface DealReplayResponse {
+  matchId: string;
+  dealNumber: number;
+  totalDeals: number;
+  isRanked: boolean;
+  dealer: PlayerPosition;
+  gameMode: GameMode;
+  multiplier: 'Normal' | 'Doubled' | 'Redoubled' | 'ReRedoubled';
+  announcerTeam: Team | null;
+  team1ScoreBefore: number;
+  team2ScoreBefore: number;
+  team1MatchPointsEarned: number;
+  team2MatchPointsEarned: number;
+  team1CardPoints: number;
+  team2CardPoints: number;
+  wasSweep: boolean;
+  sweepingTeam: Team | null;
+  isInstantWin: boolean;
+  players: DealReplayPlayerResponse[];
+  hands: DealReplayHandResponse[];
+  tricks: DealReplayTrickResponse[];
+}
+
+export type ClipStatus = 'Pending' | 'Rendering' | 'Ready' | 'Failed' | 'Evicted' | 'Removed';
+
+export interface ClipResponse {
+  shortId: string;
+  status: ClipStatus;
+  matchId: string;
+  dealNumber: number;
+  fromTrick: number;
+  toTrick: number;
+  viewPosition: PlayerPosition;
+  showAllHands: boolean;
+  locale: string;
+  createdAt: string;
+  renderedAt: string | null;
+  durationMs: number | null;
+  viewCount: number;
+  title: string;
+  pageUrl: string;
+  posterUrl: string | null;
+  videoUrl: string | null;
+  replay: DealReplayResponse | null;
+}
+
+export interface ClipListResponse {
+  items: ClipResponse[];
+}
+
+export interface AdminClipEntry {
+  clip: ClipResponse;
+  attempts: number;
+  error: string | null;
+  claimedAt: string | null;
+  createdByPlayerId: string;
+  createdByName: string;
+}
+
+export interface AdminClipListResponse {
+  items: AdminClipEntry[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateClipRequest {
+  matchId: string;
+  dealNumber: number;
+  fromTrick: number;
+  toTrick: number;
+  viewPosition: PlayerPosition | null;
+  showAllHands: boolean;
+  locale: string;
 }
 
 export interface MatchHistoryItemResponse {
@@ -851,6 +956,47 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  getDealReplay(matchId: string, dealNumber: number): Observable<DealReplayResponse> {
+    return this.http
+      .get<DealReplayResponse>(`${this.baseUrl}/api/matches/${matchId}/deals/${dealNumber}/replay`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Clips
+  // ─────────────────────────────────────────────────────────────────────────
+
+  createClip(request: CreateClipRequest): Observable<ClipResponse> {
+    return this.http
+      .post<ClipResponse>(`${this.baseUrl}/api/clips`, request)
+      .pipe(catchError(this.handleError));
+  }
+
+  /** Public, works without a session. */
+  getClip(shortId: string): Observable<ClipResponse> {
+    return this.http
+      .get<ClipResponse>(`${this.baseUrl}/api/clips/${shortId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getMyClips(): Observable<ClipListResponse> {
+    return this.http
+      .get<ClipListResponse>(`${this.baseUrl}/api/clips/mine`)
+      .pipe(catchError(this.handleError));
+  }
+
+  deleteClip(shortId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/clips/${shortId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  updateClipNameVisibility(visible: boolean): Observable<void> {
+    return this.http
+      .put<void>(`${this.baseUrl}/api/settings/profile/clip-name-visibility`, { visible })
+      .pipe(catchError(this.handleError));
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Leaderboard
   // ─────────────────────────────────────────────────────────────────────────
@@ -946,6 +1092,30 @@ export class ApiService {
   getAdminGameDeals(matchId: string): Observable<AdminGameDealsResponse> {
     return this.http
       .get<AdminGameDealsResponse>(`${this.baseUrl}/api/admin/games/${matchId}/deals`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getAdminClips(
+    status: ClipStatus | null,
+    page: number,
+    pageSize: number,
+  ): Observable<AdminClipListResponse> {
+    const params: Record<string, string> = { page: `${page}`, pageSize: `${pageSize}` };
+    if (status) params['status'] = status;
+    return this.http
+      .get<AdminClipListResponse>(`${this.baseUrl}/api/admin/clips`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  retryAdminClip(shortId: string): Observable<void> {
+    return this.http
+      .post<void>(`${this.baseUrl}/api/admin/clips/${shortId}/retry`, {})
+      .pipe(catchError(this.handleError));
+  }
+
+  deleteAdminClip(shortId: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/api/admin/clips/${shortId}`)
       .pipe(catchError(this.handleError));
   }
 
