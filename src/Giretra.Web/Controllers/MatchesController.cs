@@ -40,4 +40,34 @@ public class MatchesController : ControllerBase
             _ => NotFound(),
         };
     }
+
+    /// <summary>
+    /// Gets the scoreboard of a finished match: every deal with its contract, negotiation,
+    /// points and trick winners, plus match-level statistics. Participants only.
+    /// </summary>
+    [HttpGet("{matchId:guid}/summary")]
+    [Authorize]
+    [ProducesResponseType(typeof(MatchSummaryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<MatchSummaryResponse>> GetSummary(
+        Guid matchId,
+        [FromServices] IMatchSummaryService summaryService)
+    {
+        var user = (User)HttpContext.Items["GiretraUser"]!;
+        var result = await summaryService.GetSummaryAsync(matchId, user.Id);
+
+        return result.Status switch
+        {
+            MatchSummaryStatus.Ok => Ok(result.Summary),
+            MatchSummaryStatus.Forbidden => Forbid(),
+            MatchSummaryStatus.NotCompleted => UnprocessableEntity(new ProblemDetails
+            {
+                Title = "Match is not finished",
+                Detail = "The scoreboard is only available once the match is over.",
+            }),
+            _ => NotFound(),
+        };
+    }
 }

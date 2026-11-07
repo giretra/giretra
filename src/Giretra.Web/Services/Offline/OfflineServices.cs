@@ -519,6 +519,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ILeaderboardService, OfflineLeaderboardService>();
         services.AddSingleton<IHighlightsService, OfflineHighlightsService>();
         services.AddSingleton<Giretra.Web.Services.Replay.IDealReplayService, OfflineDealReplayService>();
+        services.AddSingleton<Giretra.Web.Services.Replay.IMatchSummaryService, OfflineMatchSummaryService>();
         services.AddSingleton<Giretra.Web.Services.Clips.OfflineClipService>();
         services.AddSingleton<Giretra.Web.Services.Clips.IClipService>(sp => sp.GetRequiredService<Giretra.Web.Services.Clips.OfflineClipService>());
         services.AddSingleton<IAdminUserService>(sp => new OfflineAdminUserService(sp.GetRequiredService<OfflineUserSyncService>()));
