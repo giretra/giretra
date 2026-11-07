@@ -147,6 +147,18 @@ export const routes: Routes = [
           import('./features/highlights/highlights.component').then((m) => m.HighlightsComponent),
       },
       {
+        path: 'history',
+        data: { breadcrumb: 'breadcrumb.history' },
+        loadComponent: () =>
+          import('./features/history/history.component').then((m) => m.HistoryComponent),
+      },
+      {
+        path: 'history/match/:matchId',
+        data: { breadcrumb: 'breadcrumb.matchSummary' },
+        loadComponent: () =>
+          import('./features/history/match-summary.component').then((m) => m.MatchSummaryComponent),
+      },
+      {
         path: 'leaderboard',
         data: { breadcrumb: 'breadcrumb.leaderboard' },
         loadComponent: () =>
