@@ -168,8 +168,8 @@ export class HlTrendComponent {
         type: 'line',
         name: 'Elo',
         showSymbol: false,
-        smooth: true,
-        symbolSize: 8,
+        smooth: false,
+        symbolSize: 6,
         lineStyle: { width: 2, color: CHART.series1 },
         itemStyle: { color: CHART.series1 },
         areaStyle: {
