@@ -66,9 +66,7 @@ export class HlRadarComponent {
   private readonly lang = signal('');
 
   constructor() {
-    this.transloco.langChanges$
-      .pipe(takeUntilDestroyed())
-      .subscribe((l) => this.lang.set(l));
+    this.transloco.langChanges$.pipe(takeUntilDestroyed()).subscribe((l) => this.lang.set(l));
   }
 
   readonly option = computed<EChartsOption>(() => {
@@ -144,44 +142,93 @@ export class HlTrendComponent {
   readonly points = input.required<HighlightsEloPoint[]>();
   readonly TrendingUpIcon = TrendingUp;
 
-  readonly option = computed<EChartsOption>(() => ({
-    tooltip: {
-      trigger: 'axis',
-      ...CHART_TOOLTIP,
-      axisPointer: { type: 'line', lineStyle: { color: CHART.grid } },
-    },
-    grid: { left: 48, right: 16, top: 16, bottom: 32 },
-    xAxis: {
-      type: 'time',
-      axisLabel: { color: CHART.text, fontSize: 11 },
-      axisLine: { lineStyle: { color: CHART.grid } },
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      axisLabel: { color: CHART.text, fontSize: 11 },
-      splitLine: { lineStyle: { color: CHART.grid } },
-    },
-    series: [
-      {
-        type: 'line',
-        name: 'Elo',
-        showSymbol: false,
-        smooth: false,
-        symbolSize: 6,
-        lineStyle: { width: 2, color: CHART.series1 },
-        itemStyle: { color: CHART.series1 },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(184, 134, 11, 0.22)' },
-            { offset: 1, color: 'rgba(184, 134, 11, 0)' },
-          ]),
+  private readonly transloco = inject(TranslocoService);
+  private readonly lang = signal('');
+
+  constructor() {
+    this.transloco.langChanges$.pipe(takeUntilDestroyed()).subscribe((l) => this.lang.set(l));
+  }
+
+  // One x slot per rated match rather than a time axis: play comes in bursts
+  // (many matches one evening, nothing for days), which a time axis squashes
+  // into vertical zigzags separated by flat gaps.
+  readonly option = computed<EChartsOption>(() => {
+    const lang = this.lang() || 'en';
+    const points = this.points();
+    const dates = points.map((p) => new Date(p.recordedAt));
+    const axisFmt = new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric' });
+    const tipFmt = new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' });
+    const elos = points.map((p) => p.elo);
+    const min = Math.min(...elos);
+    const max = Math.max(...elos);
+    const pad = Math.max(10, Math.round((max - min) * 0.15));
+
+    // Label only where the calendar day changes, and never two labels too close.
+    const minGap = Math.max(1, Math.floor(points.length / 6));
+    let lastLabelIdx = -Infinity;
+    const labels = dates.map((d, i) => {
+      const prev = dates[i - 1];
+      const newDay = !prev || prev.toDateString() !== d.toDateString();
+      if (newDay && i - lastLabelIdx >= minGap) {
+        lastLabelIdx = i;
+        return axisFmt.format(d);
+      }
+      return '';
+    });
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        ...CHART_TOOLTIP,
+        axisPointer: { type: 'line', lineStyle: { color: CHART.grid } },
+        formatter: (params: { dataIndex: number }[]) => {
+          const i = params[0].dataIndex;
+          const elo = elos[i];
+          const delta = i > 0 ? elo - elos[i - 1] : 0;
+          const sign = delta > 0 ? '+' : '';
+          const deltaColor = delta >= 0 ? '#3CA463' : '#D9534F';
+          return (
+            `<div style="color:${CHART.text};font-size:11px">${tipFmt.format(dates[i])}</div>` +
+            `<div><b>${elo}</b> <span style="color:${deltaColor}">${sign}${delta}</span></div>`
+          );
         },
-        data: this.points().map((p) => [p.recordedAt, p.elo]),
       },
-    ],
-  }));
+      grid: { left: 48, right: 16, top: 16, bottom: 32 },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: labels,
+        axisTick: { show: false },
+        axisLabel: { color: CHART.text, fontSize: 11, interval: 0, showMinLabel: true },
+        axisLine: { lineStyle: { color: CHART.grid } },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        min: Math.floor((min - pad) / 10) * 10,
+        max: Math.ceil((max + pad) / 10) * 10,
+        axisLabel: { color: CHART.text, fontSize: 11 },
+        splitLine: { lineStyle: { color: CHART.grid } },
+      },
+      series: [
+        {
+          type: 'line',
+          name: 'Elo',
+          showSymbol: false,
+          symbolSize: 6,
+          lineStyle: { width: 2, color: CHART.series1 },
+          itemStyle: { color: CHART.series1 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(184, 134, 11, 0.22)' },
+              { offset: 1, color: 'rgba(184, 134, 11, 0)' },
+            ]),
+          },
+          data: elos,
+        },
+      ],
+    };
+  });
 }
 
 @Component({
@@ -212,9 +259,7 @@ export class HlActivityComponent {
   private readonly lang = signal('');
 
   constructor() {
-    this.transloco.langChanges$
-      .pipe(takeUntilDestroyed())
-      .subscribe((l) => this.lang.set(l));
+    this.transloco.langChanges$.pipe(takeUntilDestroyed()).subscribe((l) => this.lang.set(l));
   }
 
   readonly option = computed<EChartsOption>(() => {
