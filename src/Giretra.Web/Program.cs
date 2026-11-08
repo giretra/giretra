@@ -18,8 +18,11 @@ using Serilog;
 
 namespace Giretra.Web;
 
-public class Program
+public partial class Program
 {
+    [System.Text.RegularExpressions.GeneratedRegex(@"^(main|polyfills|chunk|styles)-[A-Z0-9]{8}\.(js|css)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex HashedBundleName { get; }
+
     public static async Task Main(string[] args)
     {
         LoadDotEnv();
@@ -341,18 +344,30 @@ public class Program
             }
 
             app.UseDefaultFiles();
-            app.UseStaticFiles(new StaticFileOptions
+            var staticFileOptions = new StaticFileOptions
             {
                 OnPrepareResponse = context =>
                 {
-                    // i18n files are fetched by path without a content hash, so make
-                    // browsers revalidate them instead of relying on heuristic caching.
-                    if (context.Context.Request.Path.StartsWithSegments("/assets/i18n"))
+                    var path = context.Context.Request.Path;
+                    var headers = context.Context.Response.Headers;
+
+                    // index.html and i18n files are fetched by path without a content hash, so make
+                    // browsers revalidate them instead of relying on heuristic caching. A stale
+                    // index.html would otherwise reference chunk hashes that no longer exist after a deploy.
+                    if (context.File.Name.Equals("index.html", StringComparison.OrdinalIgnoreCase)
+                        || path.StartsWithSegments("/assets/i18n"))
                     {
-                        context.Context.Response.Headers.CacheControl = "no-cache";
+                        headers.CacheControl = "no-cache";
+                    }
+                    // Angular emits content-hashed bundles (main-XXXX.js, chunk-XXXX.js, styles-XXXX.css)
+                    // at the root, which are safe to cache forever.
+                    else if (HashedBundleName.IsMatch(context.File.Name))
+                    {
+                        headers.CacheControl = "public, max-age=31536000, immutable";
                     }
                 }
-            });
+            };
+            app.UseStaticFiles(staticFileOptions);
 
             app.UseSerilogRequestLogging(options =>
             {
@@ -375,7 +390,7 @@ public class Program
             app.MapControllers();
             app.MapHub<GameHub>("/hubs/game");
             Giretra.Web.Endpoints.ClipPagesEndpoints.MapClipPages(app);
-            app.MapFallbackToFile("index.html");
+            app.MapFallbackToFile("index.html", staticFileOptions);
 
             await app.RunAsync();
         }
