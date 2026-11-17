@@ -36,6 +36,9 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: true
       KC_SPI_THEME_CACHE_THEMES: false
+      # Java4Shell (CVE-2026-114938) workaround: disable the hardware-accelerated
+      # Base64 decoder. Remove once the image ships a patched JDK.
+      JAVA_OPTS_APPEND: -XX:-UseBASE64Intrinsics
 
       # Social identity providers
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
